@@ -19,6 +19,7 @@ export async function POST(request: Request) {
     // Verify user is authenticated and is a trainer
     const { data: { session }, error: authError } = await supabase.auth.getSession();
     if (authError || !session) {
+      console.error('Authentication error:', authError);
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
       .single();
 
     if (profileError || profile?.role !== 'trainer') {
+      console.error('Profile error:', profileError);
       return NextResponse.json(
         { error: 'Access restricted to trainers' },
         { status: 403 }
@@ -56,11 +58,17 @@ export async function POST(request: Request) {
     });
 
     if (authError2) {
+      console.error('Auth creation error:', authError2);
       return NextResponse.json(
         { error: authError2.message },
         { status: 500 }
       );
     }
+
+    // Process and validate data types
+    const height = data.height ? parseFloat(data.height) : null;
+    const weight = data.weight ? parseFloat(data.weight) : null;
+    const birthDate = data.birthDate || null;
 
     // Create student profile with all fields
     const { data: profileData, error: profileError2 } = await supabase
@@ -69,26 +77,29 @@ export async function POST(request: Request) {
         user_id: authData.user.id,
         email: data.email,
         full_name: data.name,
-        phone: data.phone,
+        phone: data.phone || null,
         role: 'student',
         tenant_id: profile.tenant_id,
         trainer_id: profile.id,
-        birth_date: data.birthDate,
-        gender: data.gender,
-        height: data.height,
-        weight: data.weight,
-        goals: data.goals,
-        medical_conditions: data.medicalConditions,
-        emergency_contact: data.emergencyContact,
-        preferred_training_time: data.preferredTime,
-        experience_level: data.experienceLevel,
-        notes: data.notes,
+        birth_date: birthDate,
+        gender: data.gender || null,
+        height: height,
+        weight: weight,
+        goals: Array.isArray(data.goals) ? data.goals : [],
+        medical_conditions: data.medicalConditions || null,
+        emergency_contact: data.emergencyContact || null,
+        preferred_training_time: data.preferredTime || null,
+        experience_level: data.experienceLevel || null,
+        notes: data.notes || null,
         status: 'active'
       })
       .select()
       .single();
 
     if (profileError2) {
+      console.error('Profile creation error:', profileError2);
+      // Try to clean up the auth user if profile creation fails
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json(
         { error: profileError2.message },
         { status: 500 }
@@ -119,6 +130,7 @@ export async function GET() {
     // Verify user is authenticated and is a trainer
     const { data: { session }, error: authError } = await supabase.auth.getSession();
     if (authError || !session) {
+      console.error('Authentication error:', authError);
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -132,6 +144,7 @@ export async function GET() {
       .single();
 
     if (profileError || profile?.role !== 'trainer') {
+      console.error('Profile error:', profileError);
       return NextResponse.json(
         { error: 'Access restricted to trainers' },
         { status: 403 }
@@ -146,6 +159,7 @@ export async function GET() {
       .eq('tenant_id', profile.tenant_id);
 
     if (error) {
+      console.error('Students fetch error:', error);
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
