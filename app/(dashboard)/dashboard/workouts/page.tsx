@@ -1,6 +1,5 @@
-'use client';
-
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +22,7 @@ const DIFFICULTY_LEVELS = ["Beginner", "Intermediate", "Advanced"];
 const GOALS = ["Strength", "Hypertrophy", "Endurance", "Power", "Weight Loss", "Rehabilitation"];
 
 export default function WorkoutsPage() {
+  const router = useRouter();
   const { supabase } = useSupabase();
   const { toast } = useToast();
   const { exercises } = useExercises();
