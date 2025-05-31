@@ -10,7 +10,12 @@ import {
   Home,
   LayoutDashboard, 
   Settings, 
-  Users 
+  Users,
+  BookOpen,
+  Activity,
+  Heart,
+  Trophy,
+  HelpCircle
 } from "lucide-react";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -34,7 +39,7 @@ export function Sidebar({ className }: SidebarProps) {
     {
       name: "Workouts",
       href: "/dashboard/workouts",
-      icon: Home,
+      icon: Activity,
       isActive: pathname.startsWith("/dashboard/workouts"),
     },
     {
@@ -56,31 +61,79 @@ export function Sidebar({ className }: SidebarProps) {
       isActive: pathname.startsWith("/dashboard/analytics"),
     },
     {
+      name: "Programs",
+      href: "/dashboard/programs",
+      icon: BookOpen,
+      isActive: pathname.startsWith("/dashboard/programs"),
+    },
+    {
+      name: "Health",
+      href: "/dashboard/health",
+      icon: Heart,
+      isActive: pathname.startsWith("/dashboard/health"),
+    },
+    {
+      name: "Achievements",
+      href: "/dashboard/achievements",
+      icon: Trophy,
+      isActive: pathname.startsWith("/dashboard/achievements"),
+    },
+  ];
+
+  const bottomRoutes = [
+    {
       name: "Settings",
       href: "/dashboard/settings",
       icon: Settings,
       isActive: pathname.startsWith("/dashboard/settings"),
     },
+    {
+      name: "Help",
+      href: "/dashboard/help",
+      icon: HelpCircle,
+      isActive: pathname.startsWith("/dashboard/help"),
+    },
   ];
 
   return (
-    <aside className={cn("pb-12 w-64 border-r bg-background", className)}>
-      <div className="space-y-4 py-4">
-        <div className="px-4 py-2">
-          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
-            Main
-          </h2>
+    <aside className={cn("pb-12 w-64 border-r bg-background flex flex-col", className)}>
+      <div className="flex-1 space-y-1 py-4">
+        <div className="px-3 py-2">
           <div className="space-y-1">
             {routes.map((route) => (
               <Link
                 key={route.href}
                 href={route.href}
                 className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
-                  route.isActive ? "bg-accent text-accent-foreground" : "transparent"
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
+                  route.isActive 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <route.icon className="mr-2 h-4 w-4" />
+                <route.icon className="h-4 w-4" />
+                {route.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <div className="border-t">
+        <div className="px-3 py-4">
+          <div className="space-y-1">
+            {bottomRoutes.map((route) => (
+              <Link
+                key={route.href}
+                href={route.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
+                  route.isActive 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <route.icon className="h-4 w-4" />
                 {route.name}
               </Link>
             ))}

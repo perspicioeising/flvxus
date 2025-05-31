@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Dumbbell, Menu, User } from "lucide-react";
+import { Bell, Dumbbell, Menu, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,7 +32,6 @@ export function Header() {
     router.push("/login");
   }
 
-  // Mobile navigation items with active state
   const navigationItems = [
     { name: "Dashboard", href: "/dashboard", current: pathname === "/dashboard" },
     { name: "Students", href: "/dashboard/students", current: pathname.startsWith("/dashboard/students") },
@@ -43,7 +42,7 @@ export function Header() {
   ];
 
   return (
-    <header className="border-b bg-background sticky top-0 z-30">
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full">
       <div className="flex h-16 items-center px-4 sm:px-6">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
@@ -52,9 +51,9 @@ export function Header() {
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="sm:max-w-xs">
+          <SheetContent side="left" className="w-[300px] sm:w-[400px]">
             <div className="flex items-center gap-2 mb-8">
-              <Dumbbell className="h-6 w-6" />
+              <Dumbbell className="h-6 w-6 text-primary" />
               <span className="font-bold text-lg">FitConnect Pro</span>
             </div>
             <nav className="flex flex-col gap-4">
@@ -62,10 +61,10 @@ export function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     item.current
-                      ? "bg-secondary text-secondary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                   onClick={() => setIsOpen(false)}
                 >
@@ -77,9 +76,9 @@ export function Header() {
         </Sheet>
 
         <div className="flex items-center gap-2 md:mr-6">
-          <Dumbbell className="h-6 w-6 text-primary hidden md:block" />
-          <Link href="/dashboard" className="font-bold text-lg hidden md:block">
-            FitConnect Pro
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <Dumbbell className="h-6 w-6 text-primary hidden md:block" />
+            <span className="font-bold text-lg hidden md:block">FitConnect Pro</span>
           </Link>
         </div>
 
@@ -88,10 +87,10 @@ export function Header() {
             <Link
               key={item.name}
               href={item.href}
-              className={`text-sm font-medium transition-colors ${
+              className={`text-sm font-medium transition-colors hover:text-primary ${
                 item.current
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-primary"
+                  : "text-muted-foreground"
               }`}
             >
               {item.name}
@@ -99,12 +98,12 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-4">
           <ThemeToggle />
           
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
+            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full animate-pulse"></span>
           </Button>
           
           <DropdownMenu>
@@ -112,24 +111,31 @@ export function Header() {
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
                   <AvatarImage src="" alt="Profile" />
-                  <AvatarFallback>{userInitial}</AvatarFallback>
+                  <AvatarFallback className="bg-primary/10">{userInitial}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile">
+                <Link href="/dashboard/profile" className="flex items-center">
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">Settings</Link>
+                <Link href="/dashboard/settings" className="flex items-center">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
