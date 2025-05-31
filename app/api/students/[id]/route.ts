@@ -178,29 +178,26 @@ export async function POST(
       );
     }
 
-    // Resend invite
-    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      student.email,
-      {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-        data: {
-          is_student_creation: true,
-          tenant_id: profile.tenant_id
-        }
+    // Generate password reset link instead of sending a new invite
+    const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: student.email,
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`
       }
-    );
+    });
 
-    if (inviteError) {
+    if (resetError) {
       return NextResponse.json(
-        { error: inviteError.message },
+        { error: resetError.message },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ message: 'Invite resent successfully' });
+    return NextResponse.json({ message: 'Password reset link sent successfully' });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'An error occurred while resending invite' },
+      { error: error.message || 'An error occurred while sending password reset link' },
       { status: 500 }
     );
   }
