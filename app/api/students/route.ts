@@ -3,9 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Missing env.SUPABASE_SERVICE_ROLE_KEY');
+
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export async function POST(request: Request) {
@@ -55,19 +58,17 @@ export async function POST(request: Request) {
 
     if (profileError) throw profileError;
 
-    // TODO: Send email to student with temporary password
-    // For now, return the temporary password in the response
     return NextResponse.json({
       message: 'Student created successfully',
       data: {
         ...profileData,
-        temporaryPassword: tempPassword // In production, this should be sent via email
+        temporaryPassword: tempPassword
       }
     });
   } catch (error: any) {
     console.error('Error creating student:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message || 'An error occurred while creating the student' },
       { status: 500 }
     );
   }
@@ -98,7 +99,7 @@ export async function GET() {
   } catch (error: any) {
     console.error('Error fetching students:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message || 'An error occurred while fetching students' },
       { status: 500 }
     );
   }
