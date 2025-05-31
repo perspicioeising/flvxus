@@ -155,6 +155,93 @@ export default function WorkoutsPage() {
     setSelectedExercises(selectedExercises.filter((_, i) => i !== index));
   };
 
+  const handleViewDetails = (workoutId) => {
+    router.push(`/dashboard/workouts/${workoutId}`);
+  };
+
+  const handleCloneWorkout = async (workout) => {
+    try {
+      setIsLoading(true);
+      
+      const workoutData = {
+        name: `${workout.name} (Copy)`,
+        description: workout.description,
+        level: workout.level,
+        goal: workout.goal,
+        exercises: workout.workout_exercises?.map((we, index) => ({
+          exercise_id: we.exercise_id,
+          sets: we.sets,
+          reps: we.reps,
+          rest: we.rest,
+          notes: we.notes,
+          order: index + 1
+        })) || []
+      };
+
+      const response = await fetch('/api/workouts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(workoutData),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Workout cloned",
+        description: `A copy of ${workout.name} has been created`,
+      });
+      
+      await fetchWorkouts();
+      
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error cloning workout",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteWorkout = async (workout) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await fetch(`/api/workouts/${workout.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Workout deleted",
+        description: `${workout.name} has been removed`,
+      });
+      
+      await fetchWorkouts();
+      
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error deleting workout",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const filteredExercises = exercises.filter((exercise) => {
     const matchesSearch = 
       exercise.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase()) ||
@@ -481,16 +568,35 @@ export default function WorkoutsPage() {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewDetails(workout.id)}
+                    >
                       View Details
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => handleViewDetails(workout.id)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => handleCloneWorkout(workout)}
+                    >
                       <Copy className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => handleDeleteWorkout(workout)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
