@@ -1,0 +1,62 @@
+'use client';
+
+import { ThemeProvider } from "next-themes";
+import { Toaster } from "@/components/ui/toaster";
+import { createContext, useContext, useState, useEffect } from "react";
+import { Session, SupabaseClient, createClientComponentClient } from "@supabase/supabase-js";
+import { Database } from "@/lib/database.types";
+
+type SupabaseContext = {
+  supabase: SupabaseClient<Database>;
+  session: Session | null;
+}
+
+const SupabaseContext = createContext<SupabaseContext | undefined>(undefined);
+
+export function SupabaseProvider({ 
+  children 
+}: { 
+  children: React.ReactNode;
+}) {
+  const [supabase] = useState(() => createClientComponentClient<Database>());
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
+      setSession(session);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  return (
+    <SupabaseContext.Provider value={{ supabase, session }}>
+      {children}
+    </SupabaseContext.Provider>
+  );
+}
+
+export function useSupabase() {
+  const context = useContext(SupabaseContext);
+  if (context === undefined) {
+    throw new Error('useSupabase must be used inside SupabaseProvider');
+  }
+  return context;
+}
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <SupabaseProvider>
+        {children}
+        <Toaster />
+      </SupabaseProvider>
+    </ThemeProvider>
+  );
+}
