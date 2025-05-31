@@ -16,25 +16,27 @@ export async function POST(request: Request) {
     // Generate a temporary password
     const tempPassword = Math.random().toString(36).slice(-8);
     
-    // Create auth user using admin client
+    // Get trainer's tenant_id first
+    const { data: trainerData, error: trainerError } = await supabase
+      .from('profiles')
+      .select('tenant_id, id')
+      .single();
+
+    if (trainerError) throw trainerError;
+    
+    // Create auth user using admin client with is_student_creation flag
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: tempPassword,
       email_confirm: true,
       user_metadata: {
         full_name: data.name,
+        is_student_creation: true, // Add this flag to prevent tenant creation
+        tenant_id: trainerData.tenant_id // Store tenant_id in metadata
       }
     });
 
     if (authError) throw authError;
-
-    // Get trainer's tenant_id
-    const { data: trainerData, error: trainerError } = await supabase
-      .from('profiles')
-      .select('tenant_id')
-      .single();
-
-    if (trainerError) throw trainerError;
 
     // Create student profile
     const { data: profileData, error: profileError } = await supabase
@@ -45,7 +47,8 @@ export async function POST(request: Request) {
         full_name: data.name,
         phone: data.phone,
         role: 'student',
-        tenant_id: trainerData.tenant_id
+        tenant_id: trainerData.tenant_id,
+        trainer_id: trainerData.id // Link student to trainer
       })
       .select()
       .single();
