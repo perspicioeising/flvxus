@@ -3,7 +3,8 @@
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { createContext, useContext, useState, useEffect } from "react";
-import { Session, SupabaseClient, createClientComponentClient } from "@supabase/supabase-js";
+import { Session, SupabaseClient } from "@supabase/supabase-js";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/lib/database.types";
 
 type SupabaseContext = {
