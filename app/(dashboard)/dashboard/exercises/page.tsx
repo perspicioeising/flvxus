@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,8 @@ export default function ExercisesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [videoFile, setVideoFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentExerciseId, setCurrentExerciseId] = useState(null);
   
   const [newExercise, setNewExercise] = useState({
     name: "",
@@ -46,6 +48,29 @@ export default function ExercisesPage() {
     tips: "",
     commonErrors: "",
   });
+
+  useEffect(() => {
+    fetchExercises();
+  }, []);
+
+  const fetchExercises = async () => {
+    try {
+      const response = await fetch('/api/exercises');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      setExercises(data);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error fetching exercises",
+        description: error.message,
+      });
+    }
+  };
 
   const handleVideoUpload = async (file) => {
     try {
@@ -97,7 +122,7 @@ export default function ExercisesPage() {
     }));
   };
 
-  const handleAddExercise = async () => {
+  const handleSaveExercise = async () => {
     try {
       setIsLoading(true);
       
@@ -112,8 +137,11 @@ export default function ExercisesPage() {
         common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
       };
 
-      const response = await fetch('/api/exercises', {
-        method: 'POST',
+      const url = isEditing ? `/api/exercises/${currentExerciseId}` : '/api/exercises';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -127,17 +155,17 @@ export default function ExercisesPage() {
       }
 
       toast({
-        title: "Exercise added successfully",
-        description: "The new exercise has been added to your library.",
+        title: isEditing ? "Exercise updated successfully" : "Exercise added successfully",
+        description: isEditing ? "The exercise has been updated." : "The new exercise has been added to your library.",
       });
       
-      setExercises([...exercises, data]);
-      handleCancelAdd();
+      await fetchExercises();
+      handleCancel();
       
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error adding exercise",
+        title: isEditing ? "Error updating exercise" : "Error adding exercise",
         description: error.message,
       });
     } finally {
@@ -145,8 +173,105 @@ export default function ExercisesPage() {
     }
   };
 
-  const handleCancelAdd = () => {
+  const handleEditClick = (exercise) => {
+    setIsEditing(true);
+    setCurrentExerciseId(exercise.id);
+    setNewExercise({
+      name: exercise.name,
+      description: exercise.description,
+      muscleGroups: exercise.muscle_group,
+      equipment: exercise.equipment,
+      variations: exercise.variations?.join('\n') || '',
+      videoUrl: exercise.video_url || '',
+      tips: exercise.tips?.join('\n') || '',
+      commonErrors: exercise.common_errors?.join('\n') || '',
+    });
+    setIsAddingExercise(true);
+  };
+
+  const handleCloneExercise = async (exercise) => {
+    try {
+      setIsLoading(true);
+      
+      const cloneData = {
+        name: `${exercise.name} (Copy)`,
+        description: exercise.description,
+        muscle_group: exercise.muscle_group,
+        equipment: exercise.equipment,
+        variations: exercise.variations,
+        video_url: exercise.video_url,
+        tips: exercise.tips,
+        common_errors: exercise.common_errors,
+      };
+
+      const response = await fetch('/api/exercises', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cloneData),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Exercise cloned successfully",
+        description: `A copy of ${exercise.name} has been created.`,
+      });
+      
+      await fetchExercises();
+      
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error cloning exercise",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteExercise = async (exercise) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await fetch(`/api/exercises/${exercise.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Exercise deleted",
+        description: `${exercise.name} has been removed from your library.`,
+      });
+      
+      await fetchExercises();
+      
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error deleting exercise",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
     setIsAddingExercise(false);
+    setIsEditing(false);
+    setCurrentExerciseId(null);
     setNewExercise({
       name: "",
       description: "",
@@ -159,6 +284,12 @@ export default function ExercisesPage() {
     });
     setVideoFile(null);
   };
+
+  const filteredExercises = exercises.filter((exercise) =>
+    exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    exercise.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    exercise.muscle_group.some(group => group.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="space-y-6">
@@ -177,9 +308,9 @@ export default function ExercisesPage() {
       {isAddingExercise && (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Exercise</CardTitle>
+            <CardTitle>{isEditing ? 'Edit Exercise' : 'Add New Exercise'}</CardTitle>
             <CardDescription>
-              Create a new exercise for your library
+              {isEditing ? 'Update exercise details' : 'Create a new exercise for your library'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -372,11 +503,11 @@ export default function ExercisesPage() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={handleCancelAdd}>
+              <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button onClick={handleAddExercise} disabled={isLoading}>
-                {isLoading ? "Adding..." : "Add Exercise"}
+              <Button onClick={handleSaveExercise} disabled={isLoading}>
+                {isLoading ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Exercise" : "Add Exercise")}
               </Button>
             </div>
           </CardContent>
@@ -406,8 +537,8 @@ export default function ExercisesPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {exercises.map((exercise) => (
-              <Card key={exercise.id} className="overflow-hidden">
+            {filteredExercises.map((exercise) => (
+              <Card key={exercise.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative aspect-video bg-muted">
                   {exercise.video_url ? (
                     <video
@@ -424,7 +555,7 @@ export default function ExercisesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
                       onClick={() => handleEditClick(exercise)}
                     >
                       <Edit className="h-4 w-4" />
@@ -432,7 +563,7 @@ export default function ExercisesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
                       onClick={() => handleCloneExercise(exercise)}
                     >
                       <Copy className="h-4 w-4" />
@@ -440,7 +571,7 @@ export default function ExercisesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
                       onClick={() => handleDeleteExercise(exercise)}
                     >
                       <Trash2 className="h-4 w-4" />
