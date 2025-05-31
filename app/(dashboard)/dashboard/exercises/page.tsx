@@ -4,18 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
@@ -35,45 +26,28 @@ const EQUIPMENT_TYPES = [
   "Outros"
 ];
 
-type Exercise = {
-  id: string;
-  name: string;
-  description: string;
-  video_url: string | null;
-  muscle_group: string[];
-  equipment: string[];
-  variations: string[];
-  tips: string[];
-  common_errors: string[];
-};
-
 export default function ExercisesPage() {
   const { supabase } = useSupabase();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [muscleFilter, setMuscleFilter] = useState("all");
-  const [currentView, setCurrentView] = useState<"grid" | "list">("grid");
-  const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isAddingExercise, setIsAddingExercise] = useState(false);
+  const [exercises, setExercises] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [currentTab, setCurrentTab] = useState("basic");
   
   const [newExercise, setNewExercise] = useState({
     name: "",
     description: "",
-    muscleGroups: [] as string[],
-    equipment: [] as string[],
+    muscleGroups: [],
+    equipment: [],
     variations: "",
     videoUrl: "",
     tips: "",
     commonErrors: "",
   });
 
-  const handleVideoUpload = async (file: File) => {
+  const handleVideoUpload = async (file) => {
     try {
       setVideoFile(file);
       const fileExt = file.name.split('.').pop();
@@ -104,7 +78,7 @@ export default function ExercisesPage() {
         title: "Video uploaded successfully",
         description: "Your video has been uploaded and linked to the exercise.",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error uploading video",
@@ -138,26 +112,32 @@ export default function ExercisesPage() {
         common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
       };
 
-      const { data, error } = await supabase
-        .from('exercises')
-        .insert([exerciseData])
-        .select()
-        .single();
+      const response = await fetch('/api/exercises', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(exerciseData),
+      });
 
-      if (error) throw error;
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
 
       toast({
-        title: "Exercício adicionado",
-        description: `${newExercise.name} foi adicionado à sua biblioteca`,
+        title: "Exercise added successfully",
+        description: "The new exercise has been added to your library.",
       });
       
       setExercises([...exercises, data]);
-      handleCloseDialog();
+      handleCancelAdd();
       
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao adicionar exercício",
+        title: "Error adding exercise",
         description: error.message,
       });
     } finally {
@@ -165,120 +145,8 @@ export default function ExercisesPage() {
     }
   };
 
-  const handleEditExercise = async () => {
-    if (!currentExercise) return;
-
-    try {
-      setIsLoading(true);
-      
-      const exerciseData = {
-        name: newExercise.name,
-        description: newExercise.description,
-        muscle_group: newExercise.muscleGroups,
-        equipment: newExercise.equipment,
-        variations: newExercise.variations.split('\n').filter(v => v.trim()),
-        video_url: newExercise.videoUrl || null,
-        tips: newExercise.tips.split('\n').filter(t => t.trim()),
-        common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
-      };
-
-      const { data, error } = await supabase
-        .from('exercises')
-        .update(exerciseData)
-        .eq('id', currentExercise.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Exercício atualizado",
-        description: `${newExercise.name} foi atualizado com sucesso`,
-      });
-      
-      setExercises(exercises.map(ex => ex.id === currentExercise.id ? data : ex));
-      handleCloseDialog();
-      
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao atualizar exercício",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCloneExercise = async (exercise: Exercise) => {
-    try {
-      setIsLoading(true);
-      
-      const cloneData = {
-        ...exercise,
-        name: `${exercise.name} (Cópia)`,
-        id: undefined
-      };
-
-      const { data, error } = await supabase
-        .from('exercises')
-        .insert([cloneData])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Exercício clonado",
-        description: `Uma cópia de ${exercise.name} foi criada`,
-      });
-      
-      setExercises([...exercises, data]);
-      
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao clonar exercício",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteExercise = async (exercise: Exercise) => {
-    try {
-      setIsLoading(true);
-      
-      const { error } = await supabase
-        .from('exercises')
-        .delete()
-        .eq('id', exercise.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Exercício excluído",
-        description: `${exercise.name} foi removido da sua biblioteca`,
-      });
-      
-      setExercises(exercises.filter(ex => ex.id !== exercise.id));
-      
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao excluir exercício",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCloseDialog = () => {
-    setIsAddExerciseOpen(false);
-    setIsEditMode(false);
-    setCurrentExercise(null);
+  const handleCancelAdd = () => {
+    setIsAddingExercise(false);
     setNewExercise({
       name: "",
       description: "",
@@ -289,128 +157,93 @@ export default function ExercisesPage() {
       tips: "",
       commonErrors: "",
     });
+    setVideoFile(null);
   };
-
-  const handleEditClick = (exercise: Exercise) => {
-    setCurrentExercise(exercise);
-    setNewExercise({
-      name: exercise.name,
-      description: exercise.description,
-      muscleGroups: exercise.muscle_group,
-      equipment: exercise.equipment,
-      variations: exercise.variations.join('\n'),
-      videoUrl: exercise.video_url || "",
-      tips: exercise.tips.join('\n'),
-      commonErrors: exercise.common_errors.join('\n'),
-    });
-    setIsEditMode(true);
-    setIsAddExerciseOpen(true);
-  };
-
-  const filteredExercises = exercises.filter((exercise) => {
-    const matchesQuery = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        exercise.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesMuscle = muscleFilter === "all" || 
-                          exercise.muscle_group.includes(muscleFilter);
-    
-    return matchesQuery && matchesMuscle;
-  });
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Exercícios</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Exercises</h2>
           <p className="text-muted-foreground">
-            Gerencie sua biblioteca de exercícios.
+            Manage your exercise library.
           </p>
         </div>
-        <Dialog open={isAddExerciseOpen} onOpenChange={setIsAddExerciseOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Adicionar Exercício
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader>
-              <DialogTitle>{isEditMode ? "Editar Exercício" : "Adicionar Novo Exercício"}</DialogTitle>
-              <DialogDescription>
-                {isEditMode ? "Atualize as informações do exercício" : "Crie um novo exercício para sua biblioteca"}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Tabs value={currentTab} onValueChange={setCurrentTab}>
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="basic">Informações Básicas</TabsTrigger>
-                <TabsTrigger value="details">Detalhes</TabsTrigger>
-                <TabsTrigger value="media">Mídia</TabsTrigger>
-              </TabsList>
+        <Button onClick={() => setIsAddingExercise(true)} disabled={isAddingExercise}>
+          <Plus className="mr-2 h-4 w-4" /> Add Exercise
+        </Button>
+      </div>
 
-              <TabsContent value="basic" className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nome do Exercício *</Label>
-                    <Input 
-                      id="name" 
-                      placeholder="ex: Supino Reto com Barra" 
-                      value={newExercise.name}
-                      onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descrição *</Label>
-                    <Textarea 
-                      id="description" 
-                      placeholder="Descreva o exercício detalhadamente" 
-                      value={newExercise.description}
-                      onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
-                      className="min-h-[100px]"
-                    />
-                  </div>
+      {isAddingExercise && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Add New Exercise</CardTitle>
+            <CardDescription>
+              Create a new exercise for your library
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Exercise Name *</Label>
+                  <Input
+                    id="name"
+                    value={newExercise.name}
+                    onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g., Barbell Bench Press"
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>Grupos Musculares *</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-lg p-4">
-                      {MUSCLE_GROUPS.map((muscle) => (
-                        <div key={muscle} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id={muscle}
-                            className="rounded border-input"
-                            checked={newExercise.muscleGroups.includes(muscle)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewExercise(prev => ({
-                                  ...prev,
-                                  muscleGroups: [...prev.muscleGroups, muscle]
-                                }));
-                              } else {
-                                setNewExercise(prev => ({
-                                  ...prev,
-                                  muscleGroups: prev.muscleGroups.filter(g => g !== muscle)
-                                }));
-                              }
-                            }}
-                          />
-                          <label htmlFor={muscle} className="text-sm">{muscle}</label>
-                        </div>
-                      ))}
-                    </div>
+                <div>
+                  <Label htmlFor="description">Description *</Label>
+                  <Textarea
+                    id="description"
+                    value={newExercise.description}
+                    onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe the exercise..."
+                    className="min-h-[100px]"
+                  />
+                </div>
+
+                <div>
+                  <Label>Muscle Groups *</Label>
+                  <div className="grid grid-cols-2 gap-2 border rounded-lg p-4 mt-2">
+                    {MUSCLE_GROUPS.map((muscle) => (
+                      <div key={muscle} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={muscle}
+                          checked={newExercise.muscleGroups.includes(muscle)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewExercise(prev => ({
+                                ...prev,
+                                muscleGroups: [...prev.muscleGroups, muscle]
+                              }));
+                            } else {
+                              setNewExercise(prev => ({
+                                ...prev,
+                                muscleGroups: prev.muscleGroups.filter(g => g !== muscle)
+                              }));
+                            }
+                          }}
+                          className="rounded border-input"
+                        />
+                        <label htmlFor={muscle}>{muscle}</label>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </TabsContent>
 
-              <TabsContent value="details" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Equipamentos *</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-lg p-4">
+                <div>
+                  <Label>Equipment *</Label>
+                  <div className="grid grid-cols-2 gap-2 border rounded-lg p-4 mt-2">
                     {EQUIPMENT_TYPES.map((equipment) => (
                       <div key={equipment} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
                           id={equipment}
-                          className="rounded border-input"
                           checked={newExercise.equipment.includes(equipment)}
                           onChange={(e) => {
                             if (e.target.checked) {
@@ -425,326 +258,214 @@ export default function ExercisesPage() {
                               }));
                             }
                           }}
+                          className="rounded border-input"
                         />
-                        <label htmlFor={equipment} className="text-sm">{equipment}</label>
+                        <label htmlFor={equipment}>{equipment}</label>
                       </div>
                     ))}
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="variations">Variações (uma por linha)</Label>
-                  <Textarea 
-                    id="variations" 
-                    placeholder="ex: Com Halter&#10;Com Barra&#10;Na Polia" 
-                    value={newExercise.variations}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, variations: e.target.value }))}
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tips">Dicas de Execução (uma por linha)</Label>
-                  <Textarea 
-                    id="tips" 
-                    placeholder="Digite as dicas para execução correta" 
-                    value={newExercise.tips}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, tips: e.target.value }))}
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="commonErrors">Erros Comuns (um por linha)</Label>
-                  <Textarea 
-                    id="commonErrors" 
-                    placeholder="Liste os erros comuns a evitar" 
-                    value={newExercise.commonErrors}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, commonErrors: e.target.value }))}
-                    className="min-h-[100px]"
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="media" className="space-y-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Vídeo Demonstrativo</Label>
-                    {!videoFile && !newExercise.videoUrl && (
-                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                        <input
-                          type="file"
-                          accept="video/*"
-                          className="hidden"
-                          id="video-upload"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleVideoUpload(file);
-                          }}
-                        />
-                        <label
-                          htmlFor="video-upload"
-                          className="cursor-pointer flex flex-col items-center gap-2"
-                        >
-                          <Upload className="h-8 w-8 text-muted-foreground" />
-                          <span className="text-sm font-medium">
-                            Clique para fazer upload ou cole uma URL
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            MP4, WebM ou OGG (max. 100MB)
-                          </span>
-                        </label>
-                      </div>
-                    )}
-
-                    {(videoFile || newExercise.videoUrl) && (
-                      <div className="relative border rounded-lg p-4">
-                        <div className="flex items-center gap-4">
-                          <Video className="h-8 w-8 text-primary" />
-                          <div className="flex-1">
-                            <p className="font-medium">
-                              {videoFile?.name || "Vídeo carregado"}
-                            </p>
-                            {uploadProgress > 0 && uploadProgress < 100 && (
-                              <div className="w-full bg-muted rounded-full h-2 mt-2">
-                                <div
-                                  className="bg-primary h-2 rounded-full transition-all"
-                                  style={{ width: `${uploadProgress}%` }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={removeVideo}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-4">
-                      <Label htmlFor="videoUrl">Ou cole uma URL do vídeo</Label>
-                      <Input 
-                        id="videoUrl" 
-                        placeholder="https://exemplo.com/video.mp4" 
-                        value={newExercise.videoUrl}
-                        onChange={(e) => setNewExercise(prev => ({ ...prev, videoUrl: e.target.value }))}
+              <div className="space-y-4">
+                <div>
+                  <Label>Demonstration Video</Label>
+                  {!videoFile && !newExercise.videoUrl && (
+                    <div className="border-2 border-dashed rounded-lg p-6 text-center mt-2">
+                      <input
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        id="video-upload"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleVideoUpload(file);
+                        }}
                       />
+                      <label
+                        htmlFor="video-upload"
+                        className="cursor-pointer flex flex-col items-center gap-2"
+                      >
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                          Click to upload or paste a URL
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          MP4, WebM or OGG (max. 100MB)
+                        </span>
+                      </label>
                     </div>
+                  )}
+
+                  {(videoFile || newExercise.videoUrl) && (
+                    <div className="relative border rounded-lg p-4 mt-2">
+                      <div className="flex items-center gap-4">
+                        <Video className="h-8 w-8 text-primary" />
+                        <div className="flex-1">
+                          <p className="font-medium">
+                            {videoFile?.name || "Video loaded"}
+                          </p>
+                          {uploadProgress > 0 && uploadProgress < 100 && (
+                            <div className="w-full bg-muted rounded-full h-2 mt-2">
+                              <div
+                                className="bg-primary h-2 rounded-full transition-all"
+                                style={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={removeVideo}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4">
+                    <Label htmlFor="videoUrl">Or paste a video URL</Label>
+                    <Input
+                      id="videoUrl"
+                      placeholder="https://example.com/video.mp4"
+                      value={newExercise.videoUrl}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, videoUrl: e.target.value }))}
+                    />
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
-              <Button 
-                onClick={isEditMode ? handleEditExercise : handleAddExercise}
-                disabled={isLoading}
-              >
-                {isLoading ? "Salvando..." : isEditMode ? "Salvar Alterações" : "Adicionar Exercício"}
+                <div>
+                  <Label htmlFor="variations">Variations (one per line)</Label>
+                  <Textarea
+                    id="variations"
+                    value={newExercise.variations}
+                    onChange={(e) => setNewExercise(prev => ({ ...prev, variations: e.target.value }))}
+                    placeholder="e.g., Dumbbell Press&#10;Smith Machine Press&#10;Incline Press"
+                    className="min-h-[100px]"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="tips">Execution Tips (one per line)</Label>
+                  <Textarea
+                    id="tips"
+                    value={newExercise.tips}
+                    onChange={(e) => setNewExercise(prev => ({ ...prev, tips: e.target.value }))}
+                    placeholder="Enter tips for proper execution..."
+                    className="min-h-[100px]"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="commonErrors">Common Errors to Avoid (one per line)</Label>
+                  <Textarea
+                    id="commonErrors"
+                    value={newExercise.commonErrors}
+                    onChange={(e) => setNewExercise(prev => ({ ...prev, commonErrors: e.target.value }))}
+                    placeholder="List common mistakes to avoid..."
+                    className="min-h-[100px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={handleCancelAdd}>
+                Cancel
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+              <Button onClick={handleAddExercise} disabled={isLoading}>
+                {isLoading ? "Adding..." : "Add Exercise"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Biblioteca de Exercícios</CardTitle>
-          <CardDescription>
-            Navegue, filtre e gerencie sua coleção de exercícios.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Exercise Library</CardTitle>
+              <CardDescription>
+                Browse and manage your collection of exercises
+              </CardDescription>
+            </div>
+            
+            <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar exercícios..."
+                placeholder="Search exercises..."
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <Select value={muscleFilter} onValueChange={setMuscleFilter}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <div className="flex items-center">
-                    <Filter className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Filtrar por músculo" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Grupos</SelectItem>
-                  {MUSCLE_GROUPS.map((muscle) => (
-                    <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex items-center space-x-1 rounded-md bg-muted p-1">
-                <Button
-                  variant={currentView === 'grid' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setCurrentView('grid')}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                </Button>
-                <Button
-                  variant={currentView === 'list' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setCurrentView('list')}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                </Button>
-              </div>
-            </div>
           </div>
-          
-          {currentView === 'grid' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredExercises.length === 0 ? (
-                <div className="col-span-full text-center py-12 text-muted-foreground">
-                  Nenhum exercício encontrado. Ajuste os filtros ou adicione novos exercícios.
-                </div>
-              ) : (
-                filteredExercises.map((exercise) => (
-                  <Card key={exercise.id} className="overflow-hidden">
-                    <div className="relative aspect-video bg-muted">
-                      {exercise.video_url ? (
-                        <video
-                          src={exercise.video_url}
-                          className="w-full h-full object-cover"
-                          controls
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <PlayCircle className="h-12 w-12 text-primary opacity-80" />
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2 flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 bg-background/80 backdrop-blur-sm"
-                          onClick={() => handleEditClick(exercise)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 bg-background/80 backdrop-blur-sm"
-                          onClick={() => handleCloneExercise(exercise)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 bg-background/80 backdrop-blur-sm"
-                          onClick={() => handleDeleteExercise(exercise)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {exercises.map((exercise) => (
+              <Card key={exercise.id} className="overflow-hidden">
+                <div className="relative aspect-video bg-muted">
+                  {exercise.video_url ? (
+                    <video
+                      src={exercise.video_url}
+                      className="w-full h-full object-cover"
+                      controls
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <PlayCircle className="h-12 w-12 text-primary opacity-80" />
                     </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg mb-1">{exercise.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {exercise.description}
-                      </p>
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {exercise.muscle_group.map((group) => (
-                          <Badge key={group} variant="outline" className="text-xs">
-                            {group}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Equipamentos: {exercise.equipment.join(", ")}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          )}
-          
-          {currentView === 'list' && (
-            <div className="rounded-md border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="py-3 px-4 text-left font-medium">Nome</th>
-                    <th className="py-3 px-4 text-left font-medium hidden md:table-cell">Grupos Musculares</th>
-                    <th className="py-3 px-4 text-left font-medium hidden lg:table-cell">Equipamentos</th>
-                    <th className="py-3 px-4 text-right font-medium">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExercises.map((exercise) => (
-                    <tr key={exercise.id} className="border-b">
-                      <td className="py-3 px-4">
-                        <div className="font-medium">{exercise.name}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-1 md:hidden">
-                          {exercise.muscle_group.join(", ")}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 hidden md:table-cell">
-                        <div className="flex flex-wrap gap-1">
-                          {exercise.muscle_group.map((group) => (
-                            <Badge key={group} variant="outline" className="text-xs">
-                              {group}
-                            </Badge>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 hidden lg:table-cell">
-                        {exercise.equipment.join(", ")}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          {exercise.video_url && (
-                            <Button variant="ghost\" size="icon\" className="h-8 w-8">
-                              <PlayCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleEditClick(exercise)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleCloneExercise(exercise)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleDeleteExercise(exercise)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  )}
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                      onClick={() => handleEditClick(exercise)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                      onClick={() => handleCloneExercise(exercise)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                      onClick={() => handleDeleteExercise(exercise)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-lg mb-1">{exercise.name}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                    {exercise.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {exercise.muscle_group.map((group) => (
+                      <Badge key={group} variant="outline" className="text-xs">
+                        {group}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Equipment: {exercise.equipment.join(", ")}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
