@@ -575,7 +575,7 @@ export default function ExercisesPage() {
                       <td className="py-3 px-4 text-right">
                         <div className="flex justify-end gap-2">
                           {exercise.video_url && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost\" size="icon\" className="h-8 w-8">
                               <PlayCircle className="h-4 w-4" />
                             </Button>
                           )}
