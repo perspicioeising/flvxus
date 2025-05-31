@@ -1,10 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  eslint: {
-    ignoreDuringBuilds: true,
+  reactStrictMode: true,
+  swcMinify: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
-  images: { unoptimized: true },
+  webpack: (config) => {
+    config.resolve.alias['@'] = __dirname;
+    return config;
+  },
 };
 
 module.exports = nextConfig;

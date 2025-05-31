@@ -13,6 +13,8 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
   const cookieStore = cookies();
+  console.log('Received cookies:', cookieStore.getAll());
+
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
   try {
