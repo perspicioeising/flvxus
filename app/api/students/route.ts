@@ -12,8 +12,10 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(request: Request) {
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+
   try {
-    const supabase = createRouteHandlerClient({ cookies });
     const data = await request.json();
     
     // Generate a temporary password
@@ -34,8 +36,8 @@ export async function POST(request: Request) {
       email_confirm: true,
       user_metadata: {
         full_name: data.name,
-        is_student_creation: true, // Add this flag to prevent tenant creation
-        tenant_id: trainerData.tenant_id // Store tenant_id in metadata
+        is_student_creation: true,
+        tenant_id: trainerData.tenant_id
       }
     });
 
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
         phone: data.phone,
         role: 'student',
         tenant_id: trainerData.tenant_id,
-        trainer_id: trainerData.id // Link student to trainer
+        trainer_id: trainerData.id
       })
       .select()
       .single();
@@ -75,9 +77,10 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
     // Get trainer's tenant_id first
     const { data: trainerData, error: trainerError } = await supabase
       .from('profiles')
