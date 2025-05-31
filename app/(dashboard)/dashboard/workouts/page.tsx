@@ -33,6 +33,7 @@ export default function WorkoutsPage() {
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = useState("all");
+  const [workouts, setWorkouts] = useState([]);
   
   const [newWorkout, setNewWorkout] = useState({
     name: "",
@@ -41,6 +42,29 @@ export default function WorkoutsPage() {
     goal: "",
     exercises: []
   });
+
+  useEffect(() => {
+    fetchWorkouts();
+  }, []);
+
+  const fetchWorkouts = async () => {
+    try {
+      const response = await fetch('/api/workouts');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      setWorkouts(data);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error fetching workouts",
+        description: error.message,
+      });
+    }
+  };
 
   const handleAddWorkout = async () => {
     try {
@@ -80,6 +104,7 @@ export default function WorkoutsPage() {
         description: `${newWorkout.name} has been added to your workout library`,
       });
       
+      await fetchWorkouts();
       handleCancel();
       
     } catch (error) {
@@ -140,6 +165,18 @@ export default function WorkoutsPage() {
       exercise.muscle_group.includes(exerciseMuscleFilter);
 
     return matchesSearch && matchesMuscle;
+  });
+
+  const filteredWorkouts = workouts.filter((workout) => {
+    const matchesSearch = 
+      workout.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      workout.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesLevel = 
+      levelFilter === "all" || 
+      workout.level === levelFilter;
+
+    return matchesSearch && matchesLevel;
   });
 
   return (
@@ -417,7 +454,55 @@ export default function WorkoutsPage() {
           </div>
 
           <div className="grid gap-4">
-            {/* Workout cards will be rendered here */}
+            {filteredWorkouts.map((workout) => (
+              <div 
+                key={workout.id} 
+                className="bg-card border rounded-lg p-4 hover:shadow-md transition-all duration-200"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-lg">{workout.name}</h3>
+                      <Badge variant="outline" className="capitalize">
+                        {workout.level}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {workout.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                      <div>Goal: <span className="font-medium">{workout.goal}</span></div>
+                      <div>•</div>
+                      <div className="flex items-center gap-1">
+                        <Dumbbell className="h-3 w-3" />
+                        {workout.workout_exercises?.[0]?.count || 0} exercises
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {filteredWorkouts.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                No workouts found. Try adjusting your filters or create new workouts.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
