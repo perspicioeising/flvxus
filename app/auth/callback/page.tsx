@@ -13,11 +13,14 @@ export default function AuthCallbackPage() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        // Check if user has set their password by checking last_sign_in_at
-        // If it's null, they haven't logged in before (invited user)
-        if (!session.user.last_sign_in_at) {
+        // Check if this is a student creation by looking at user metadata
+        const isStudentCreation = session.user.user_metadata?.is_student_creation;
+        
+        if (isStudentCreation) {
+          // If this is a new student, redirect to set password
           router.push('/dashboard/profile/set-password');
         } else {
+          // For all other cases, redirect to dashboard
           router.push('/dashboard');
         }
       } else {
