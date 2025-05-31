@@ -36,6 +36,7 @@ export default function WorkoutsPage() {
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = useState("all");
   const [workouts, setWorkouts] = useState([]);
+  const [isCloning, setIsCloning] = useState(false);
   
   const [newWorkout, setNewWorkout] = useState({
     name: "",
@@ -102,8 +103,8 @@ export default function WorkoutsPage() {
       }
 
       toast({
-        title: "Workout created",
-        description: `${newWorkout.name} has been added to your workout library`,
+        title: isCloning ? "Workout cloned" : "Workout created",
+        description: `${newWorkout.name} has been ${isCloning ? 'cloned' : 'added'} to your workout library`,
       });
       
       await fetchWorkouts();
@@ -112,7 +113,7 @@ export default function WorkoutsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error creating workout",
+        title: isCloning ? "Error cloning workout" : "Error creating workout",
         description: error.message,
       });
     } finally {
@@ -122,6 +123,7 @@ export default function WorkoutsPage() {
 
   const handleCancel = () => {
     setIsAddingWorkout(false);
+    setIsCloning(false);
     setNewWorkout({
       name: "",
       description: "",
@@ -172,47 +174,35 @@ export default function WorkoutsPage() {
       if (!detailsResponse.ok) {
         throw new Error(workoutDetails.error);
       }
-      
-      const workoutData = {
+
+      // Set the workout details in the form
+      setNewWorkout({
         name: `${workout.name} (Copy)`,
-        description: workout.description,
+        description: workout.description || "",
         level: workout.level,
         goal: workout.goal,
-        exercises: workoutDetails.workout_exercises?.map((we, index) => ({
-          exercise_id: we.exercise.id,
+        exercises: []
+      });
+
+      // Set the exercises with their configurations
+      setSelectedExercises(
+        workoutDetails.workout_exercises?.map(we => ({
+          ...we.exercise,
           sets: we.sets,
           reps: we.reps,
           rest: we.rest,
-          notes: we.notes,
-          order: index + 1
+          notes: we.notes || ""
         })) || []
-      };
+      );
 
-      const response = await fetch('/api/workouts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(workoutData),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      toast({
-        title: "Workout cloned",
-        description: `A copy of ${workout.name} has been created`,
-      });
-      
-      await fetchWorkouts();
+      // Show the form in clone mode
+      setIsCloning(true);
+      setIsAddingWorkout(true);
       
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error cloning workout",
+        title: "Error preparing workout clone",
         description: error.message,
       });
     } finally {
@@ -294,9 +284,9 @@ export default function WorkoutsPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Create New Workout</CardTitle>
+              <CardTitle>{isCloning ? 'Clone Workout' : 'Create New Workout'}</CardTitle>
               <CardDescription>
-                Enter the basic information for your workout
+                {isCloning ? 'Create a copy of an existing workout' : 'Enter the basic information for your workout'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -506,7 +496,7 @@ export default function WorkoutsPage() {
               Cancel
             </Button>
             <Button onClick={handleAddWorkout} disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Workout"}
+              {isLoading ? (isCloning ? "Cloning..." : "Creating...") : (isCloning ? "Clone Workout" : "Create Workout")}
             </Button>
           </div>
         </div>
