@@ -13,12 +13,9 @@ export default function AuthCallbackPage() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        // Check if this is a new user (from invite)
-        const timestamp = new Date(session.user.created_at);
-        const now = new Date();
-        const isNewUser = (now.getTime() - timestamp.getTime()) < 300000; // 5 minutes
-
-        if (isNewUser) {
+        // Check if user has set their password by checking last_sign_in_at
+        // If it's null, they haven't logged in before (invited user)
+        if (!session.user.last_sign_in_at) {
           router.push('/dashboard/profile/set-password');
         } else {
           router.push('/dashboard');
