@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 
@@ -57,6 +58,9 @@ export default function ExercisesPage() {
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentTab, setCurrentTab] = useState("basic");
   
   const [newExercise, setNewExercise] = useState({
     name: "",
@@ -68,6 +72,56 @@ export default function ExercisesPage() {
     tips: "",
     commonErrors: "",
   });
+
+  const handleVideoUpload = async (file: File) => {
+    try {
+      setVideoFile(file);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `videos/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('exercise-videos')
+        .upload(filePath, file, {
+          onUploadProgress: (progress) => {
+            const percent = (progress.loaded / progress.total) * 100;
+            setUploadProgress(percent);
+          },
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('exercise-videos')
+        .getPublicUrl(filePath);
+
+      setNewExercise(prev => ({
+        ...prev,
+        videoUrl: publicUrl
+      }));
+
+      toast({
+        title: "Video uploaded successfully",
+        description: "Your video has been uploaded and linked to the exercise.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error uploading video",
+        description: error.message,
+      });
+    } finally {
+      setUploadProgress(0);
+    }
+  };
+
+  const removeVideo = () => {
+    setVideoFile(null);
+    setNewExercise(prev => ({
+      ...prev,
+      videoUrl: ""
+    }));
+  };
 
   const handleAddExercise = async () => {
     try {
@@ -277,72 +331,86 @@ export default function ExercisesPage() {
               <Plus className="mr-2 h-4 w-4" /> Adicionar Exercício
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
               <DialogTitle>{isEditMode ? "Editar Exercício" : "Adicionar Novo Exercício"}</DialogTitle>
               <DialogDescription>
                 {isEditMode ? "Atualize as informações do exercício" : "Crie um novo exercício para sua biblioteca"}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Exercício</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="ex: Supino Reto com Barra" 
-                    value={newExercise.name}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
-                  <Textarea 
-                    id="description" 
-                    placeholder="Descreva o exercício" 
-                    value={newExercise.description}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Grupos Musculares</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {MUSCLE_GROUPS.map((muscle) => (
-                      <div key={muscle} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={muscle}
-                          checked={newExercise.muscleGroups.includes(muscle)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNewExercise(prev => ({
-                                ...prev,
-                                muscleGroups: [...prev.muscleGroups, muscle]
-                              }));
-                            } else {
-                              setNewExercise(prev => ({
-                                ...prev,
-                                muscleGroups: prev.muscleGroups.filter(g => g !== muscle)
-                              }));
-                            }
-                          }}
-                        />
-                        <label htmlFor={muscle}>{muscle}</label>
-                      </div>
-                    ))}
+            
+            <Tabs value={currentTab} onValueChange={setCurrentTab}>
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="basic">Informações Básicas</TabsTrigger>
+                <TabsTrigger value="details">Detalhes</TabsTrigger>
+                <TabsTrigger value="media">Mídia</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic" className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome do Exercício *</Label>
+                    <Input 
+                      id="name" 
+                      placeholder="ex: Supino Reto com Barra" 
+                      value={newExercise.name}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Descrição *</Label>
+                    <Textarea 
+                      id="description" 
+                      placeholder="Descreva o exercício detalhadamente" 
+                      value={newExercise.description}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Grupos Musculares *</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-lg p-4">
+                      {MUSCLE_GROUPS.map((muscle) => (
+                        <div key={muscle} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={muscle}
+                            className="rounded border-input"
+                            checked={newExercise.muscleGroups.includes(muscle)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewExercise(prev => ({
+                                  ...prev,
+                                  muscleGroups: [...prev.muscleGroups, muscle]
+                                }));
+                              } else {
+                                setNewExercise(prev => ({
+                                  ...prev,
+                                  muscleGroups: prev.muscleGroups.filter(g => g !== muscle)
+                                }));
+                              }
+                            }}
+                          />
+                          <label htmlFor={muscle} className="text-sm">{muscle}</label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
+              </TabsContent>
 
+              <TabsContent value="details" className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Equipamentos</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <Label>Equipamentos *</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-lg p-4">
                     {EQUIPMENT_TYPES.map((equipment) => (
                       <div key={equipment} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
                           id={equipment}
+                          className="rounded border-input"
                           checked={newExercise.equipment.includes(equipment)}
                           onChange={(e) => {
                             if (e.target.checked) {
@@ -358,12 +426,12 @@ export default function ExercisesPage() {
                             }
                           }}
                         />
-                        <label htmlFor={equipment}>{equipment}</label>
+                        <label htmlFor={equipment} className="text-sm">{equipment}</label>
                       </div>
                     ))}
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="variations">Variações (uma por linha)</Label>
                   <Textarea 
@@ -371,19 +439,10 @@ export default function ExercisesPage() {
                     placeholder="ex: Com Halter&#10;Com Barra&#10;Na Polia" 
                     value={newExercise.variations}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, variations: e.target.value }))}
+                    className="min-h-[100px]"
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="videoUrl">URL do Vídeo (opcional)</Label>
-                  <Input 
-                    id="videoUrl" 
-                    placeholder="https://exemplo.com/video.mp4" 
-                    value={newExercise.videoUrl}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, videoUrl: e.target.value }))}
-                  />
-                </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="tips">Dicas de Execução (uma por linha)</Label>
                   <Textarea 
@@ -391,9 +450,10 @@ export default function ExercisesPage() {
                     placeholder="Digite as dicas para execução correta" 
                     value={newExercise.tips}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, tips: e.target.value }))}
+                    className="min-h-[100px]"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="commonErrors">Erros Comuns (um por linha)</Label>
                   <Textarea 
@@ -401,10 +461,84 @@ export default function ExercisesPage() {
                     placeholder="Liste os erros comuns a evitar" 
                     value={newExercise.commonErrors}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, commonErrors: e.target.value }))}
+                    className="min-h-[100px]"
                   />
                 </div>
-              </div>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="media" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Vídeo Demonstrativo</Label>
+                    {!videoFile && !newExercise.videoUrl && (
+                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          id="video-upload"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleVideoUpload(file);
+                          }}
+                        />
+                        <label
+                          htmlFor="video-upload"
+                          className="cursor-pointer flex flex-col items-center gap-2"
+                        >
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            Clique para fazer upload ou cole uma URL
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            MP4, WebM ou OGG (max. 100MB)
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
+                    {(videoFile || newExercise.videoUrl) && (
+                      <div className="relative border rounded-lg p-4">
+                        <div className="flex items-center gap-4">
+                          <Video className="h-8 w-8 text-primary" />
+                          <div className="flex-1">
+                            <p className="font-medium">
+                              {videoFile?.name || "Vídeo carregado"}
+                            </p>
+                            {uploadProgress > 0 && uploadProgress < 100 && (
+                              <div className="w-full bg-muted rounded-full h-2 mt-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full transition-all"
+                                  style={{ width: `${uploadProgress}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={removeVideo}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-4">
+                      <Label htmlFor="videoUrl">Ou cole uma URL do vídeo</Label>
+                      <Input 
+                        id="videoUrl" 
+                        placeholder="https://exemplo.com/video.mp4" 
+                        value={newExercise.videoUrl}
+                        onChange={(e) => setNewExercise(prev => ({ ...prev, videoUrl: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+
             <DialogFooter>
               <Button variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
               <Button 
@@ -575,7 +709,7 @@ export default function ExercisesPage() {
                       <td className="py-3 px-4 text-right">
                         <div className="flex justify-end gap-2">
                           {exercise.video_url && (
-                            <Button variant="ghost\" size="icon\" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
                               <PlayCircle className="h-4 w-4" />
                             </Button>
                           )}
