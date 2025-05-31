@@ -2,7 +2,6 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Missing env.SUPABASE_SERVICE_ROLE_KEY');
@@ -22,30 +21,20 @@ export async function POST(request: Request) {
     if (authError || !session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { 
-          status: 401,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        { status: 401 }
       );
     }
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, tenant_id, id')
       .eq('user_id', session.user.id)
       .single();
 
     if (profileError || profile?.role !== 'trainer') {
       return NextResponse.json(
         { error: 'Access restricted to trainers' },
-        { 
-          status: 403,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        { status: 403 }
       );
     }
 
@@ -53,24 +42,6 @@ export async function POST(request: Request) {
     
     // Generate a temporary password
     const tempPassword = Math.random().toString(36).slice(-8);
-    
-    // Get trainer's tenant_id first
-    const { data: trainerData, error: trainerError } = await supabase
-      .from('profiles')
-      .select('tenant_id, id')
-      .single();
-
-    if (trainerError) {
-      return NextResponse.json(
-        { error: trainerError.message },
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-    }
     
     // Create auth user using admin client with is_student_creation flag
     const { data: authData, error: authError2 } = await supabaseAdmin.auth.admin.createUser({
@@ -80,23 +51,18 @@ export async function POST(request: Request) {
       user_metadata: {
         full_name: data.name,
         is_student_creation: true,
-        tenant_id: trainerData.tenant_id
+        tenant_id: profile.tenant_id
       }
     });
 
     if (authError2) {
       return NextResponse.json(
         { error: authError2.message },
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        { status: 500 }
       );
     }
 
-    // Create student profile
+    // Create student profile with all fields
     const { data: profileData, error: profileError2 } = await supabase
       .from('profiles')
       .insert({
@@ -105,8 +71,19 @@ export async function POST(request: Request) {
         full_name: data.name,
         phone: data.phone,
         role: 'student',
-        tenant_id: trainerData.tenant_id,
-        trainer_id: trainerData.id
+        tenant_id: profile.tenant_id,
+        trainer_id: profile.id,
+        birth_date: data.birthDate,
+        gender: data.gender,
+        height: data.height,
+        weight: data.weight,
+        goals: data.goals,
+        medical_conditions: data.medicalConditions,
+        emergency_contact: data.emergencyContact,
+        preferred_training_time: data.preferredTime,
+        experience_level: data.experienceLevel,
+        notes: data.notes,
+        status: 'active'
       })
       .select()
       .single();
@@ -114,39 +91,22 @@ export async function POST(request: Request) {
     if (profileError2) {
       return NextResponse.json(
         { error: profileError2.message },
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        { status: 500 }
       );
     }
 
-    return NextResponse.json(
-      {
-        message: 'Student created successfully',
-        data: {
-          ...profileData,
-          temporaryPassword: tempPassword
-        }
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
+    return NextResponse.json({
+      message: 'Student created successfully',
+      data: {
+        ...profileData,
+        temporaryPassword: tempPassword
       }
-    );
+    });
   } catch (error: any) {
     console.error('Error creating student:', error);
     return NextResponse.json(
       { error: error.message || 'An error occurred while creating the student' },
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+      { status: 500 }
     );
   }
 }
@@ -161,88 +121,43 @@ export async function GET() {
     if (authError || !session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { 
-          status: 401,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        { status: 401 }
       );
     }
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, tenant_id')
       .eq('user_id', session.user.id)
       .single();
 
     if (profileError || profile?.role !== 'trainer') {
       return NextResponse.json(
         { error: 'Access restricted to trainers' },
-        { 
-          status: 403,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-    }
-
-    // Get trainer's tenant_id first
-    const { data: trainerData, error: trainerError } = await supabase
-      .from('profiles')
-      .select('tenant_id')
-      .single();
-
-    if (trainerError) {
-      return NextResponse.json(
-        { error: trainerError.message },
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        { status: 403 }
       );
     }
     
-    // Get students for this tenant
+    // Get students for this tenant with all fields
     const { data: students, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('role', 'student')
-      .eq('tenant_id', trainerData.tenant_id);
+      .eq('tenant_id', profile.tenant_id);
 
     if (error) {
       return NextResponse.json(
         { error: error.message },
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        { status: 500 }
       );
     }
 
-    return NextResponse.json(
-      students,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    return NextResponse.json(students);
   } catch (error: any) {
     console.error('Error fetching students:', error);
     return NextResponse.json(
       { error: error.message || 'An error occurred while fetching students' },
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+      { status: 500 }
     );
   }
 }

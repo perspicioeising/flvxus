@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, MoreHorizontal, Search, Filter } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,7 +42,42 @@ type Student = {
   email: string;
   phone: string | null;
   status: 'active' | 'inactive';
+  birth_date: string | null;
+  gender: string | null;
+  height: number | null;
+  weight: number | null;
+  goals: string[] | null;
+  medical_conditions: string | null;
+  emergency_contact: string | null;
+  preferred_training_time: string | null;
+  experience_level: string | null;
+  notes: string | null;
 };
+
+const EXPERIENCE_LEVELS = [
+  "Beginner",
+  "Intermediate",
+  "Advanced"
+];
+
+const TRAINING_TIMES = [
+  "Early Morning",
+  "Morning",
+  "Afternoon",
+  "Evening",
+  "Night"
+];
+
+const GOALS = [
+  "Weight Loss",
+  "Muscle Gain",
+  "Strength",
+  "Endurance",
+  "Flexibility",
+  "General Fitness",
+  "Sports Performance",
+  "Rehabilitation"
+];
 
 export default function StudentsPage() {
   const { supabase } = useSupabase();
@@ -52,11 +88,22 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
   
   const [newStudent, setNewStudent] = useState({
     name: "",
     email: "",
     phone: "",
+    birthDate: "",
+    gender: "",
+    height: "",
+    weight: "",
+    goals: [] as string[],
+    medicalConditions: "",
+    emergencyContact: "",
+    preferredTime: "",
+    experienceLevel: "",
+    notes: ""
   });
 
   useEffect(() => {
@@ -120,8 +167,35 @@ export default function StudentsPage() {
 
   const handleDialogClose = () => {
     setIsAddStudentOpen(false);
-    setNewStudent({ name: "", email: "", phone: "" });
+    setNewStudent({
+      name: "",
+      email: "",
+      phone: "",
+      birthDate: "",
+      gender: "",
+      height: "",
+      weight: "",
+      goals: [],
+      medicalConditions: "",
+      emergencyContact: "",
+      preferredTime: "",
+      experienceLevel: "",
+      notes: ""
+    });
+    setCurrentStep(1);
     setTempPassword(null);
+  };
+
+  const nextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   // Filter students based on search query and status filter
@@ -132,6 +206,188 @@ export default function StudentsPage() {
     
     return matchesQuery && matchesStatus;
   });
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input 
+                id="name" 
+                placeholder="Full name" 
+                value={newStudent.name}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="Email address" 
+                value={newStudent.email}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input 
+                id="phone" 
+                placeholder="Phone number" 
+                value={newStudent.phone}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, phone: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="birthDate">Birth Date</Label>
+              <Input 
+                id="birthDate" 
+                type="date" 
+                value={newStudent.birthDate}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, birthDate: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <Select 
+                value={newStudent.gender} 
+                onValueChange={(value) => setNewStudent(prev => ({ ...prev, gender: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="height">Height (cm)</Label>
+              <Input 
+                id="height" 
+                type="number" 
+                placeholder="Height in centimeters" 
+                value={newStudent.height}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, height: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input 
+                id="weight" 
+                type="number" 
+                placeholder="Weight in kilograms" 
+                value={newStudent.weight}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, weight: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Goals</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {GOALS.map((goal) => (
+                  <div key={goal} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={goal}
+                      checked={newStudent.goals.includes(goal)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNewStudent(prev => ({
+                            ...prev,
+                            goals: [...prev.goals, goal]
+                          }));
+                        } else {
+                          setNewStudent(prev => ({
+                            ...prev,
+                            goals: prev.goals.filter(g => g !== goal)
+                          }));
+                        }
+                      }}
+                    />
+                    <label htmlFor={goal}>{goal}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="experienceLevel">Experience Level</Label>
+              <Select 
+                value={newStudent.experienceLevel} 
+                onValueChange={(value) => setNewStudent(prev => ({ ...prev, experienceLevel: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select experience level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXPERIENCE_LEVELS.map((level) => (
+                    <SelectItem key={level} value={level.toLowerCase()}>{level}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="medicalConditions">Medical Conditions</Label>
+              <Textarea 
+                id="medicalConditions" 
+                placeholder="List any medical conditions, injuries, or limitations" 
+                value={newStudent.medicalConditions}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, medicalConditions: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContact">Emergency Contact</Label>
+              <Input 
+                id="emergencyContact" 
+                placeholder="Name and phone number" 
+                value={newStudent.emergencyContact}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, emergencyContact: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="preferredTime">Preferred Training Time</Label>
+              <Select 
+                value={newStudent.preferredTime} 
+                onValueChange={(value) => setNewStudent(prev => ({ ...prev, preferredTime: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select preferred time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRAINING_TIMES.map((time) => (
+                    <SelectItem key={time} value={time.toLowerCase()}>{time}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Additional Notes</Label>
+              <Textarea 
+                id="notes" 
+                placeholder="Any additional information" 
+                value={newStudent.notes}
+                onChange={(e) => setNewStudent(prev => ({ ...prev, notes: e.target.value }))}
+              />
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -148,50 +404,38 @@ export default function StudentsPage() {
               <Plus className="mr-2 h-4 w-4" /> Add Student
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Add New Student</DialogTitle>
               <DialogDescription>
-                Add a new student to your training roster. They'll receive an invitation via email.
+                {currentStep === 1 && "Enter basic information about the student."}
+                {currentStep === 2 && "Enter physical details and goals."}
+                {currentStep === 3 && "Enter medical information and preferences."}
               </DialogDescription>
             </DialogHeader>
             {!tempPassword ? (
               <>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input 
-                      id="name" 
-                      placeholder="Full name" 
-                      value={newStudent.name}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="Email address" 
-                      value={newStudent.email}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number (optional)</Label>
-                    <Input 
-                      id="phone" 
-                      placeholder="Phone number" 
-                      value={newStudent.phone}
-                      onChange={(e) => setNewStudent(prev => ({ ...prev, phone: e.target.value }))}
-                    />
-                  </div>
+                <div className="py-4">
+                  {renderStepContent()}
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={handleDialogClose}>Cancel</Button>
-                  <Button onClick={handleAddStudent} disabled={isLoading}>
-                    {isLoading ? "Adding..." : "Add Student"}
-                  </Button>
+                <DialogFooter className="flex justify-between">
+                  {currentStep > 1 && (
+                    <Button variant="outline" onClick={prevStep}>
+                      Previous
+                    </Button>
+                  )}
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleDialogClose}>
+                      Cancel
+                    </Button>
+                    {currentStep < 3 ? (
+                      <Button onClick={nextStep}>Next</Button>
+                    ) : (
+                      <Button onClick={handleAddStudent} disabled={isLoading}>
+                        {isLoading ? "Adding..." : "Add Student"}
+                      </Button>
+                    )}
+                  </div>
                 </DialogFooter>
               </>
             ) : (
@@ -253,7 +497,7 @@ export default function StudentsPage() {
                   <TableHead>Name</TableHead>
                   <TableHead className="hidden md:table-cell">Email</TableHead>
                   <TableHead className="hidden lg:table-cell">Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Phone</TableHead>
+                  <TableHead className="hidden lg:table-cell">Experience</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -277,7 +521,9 @@ export default function StudentsPage() {
                           {student.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">{student.phone || '-'}</TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {student.experience_level || '-'}
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
