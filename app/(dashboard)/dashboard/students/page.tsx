@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,89 +35,68 @@ import { Label } from "@/components/ui/label";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock data for demonstration
-const MOCK_STUDENTS = [
-  { 
-    id: "1", 
-    name: "Maria Silva", 
-    email: "maria@example.com",
-    phone: "(11) 98765-4321",
-    status: "active",
-    lastWorkout: "2 days ago",
-    progress: "On track",
-    joinDate: "Jan 10, 2025",
-  },
-  { 
-    id: "2", 
-    name: "João Santos", 
-    email: "joao@example.com",
-    phone: "(11) 91234-5678",
-    status: "active",
-    lastWorkout: "Today",
-    progress: "Exceeding",
-    joinDate: "Feb 5, 2025",
-  },
-  { 
-    id: "3", 
-    name: "Ana Costa", 
-    email: "ana@example.com",
-    phone: "(11) 99876-5432",
-    status: "inactive",
-    lastWorkout: "2 weeks ago",
-    progress: "Behind",
-    joinDate: "Dec 15, 2024",
-  },
-  { 
-    id: "4", 
-    name: "Carlos Oliveira", 
-    email: "carlos@example.com",
-    phone: "(11) 95555-9999",
-    status: "active",
-    lastWorkout: "Yesterday",
-    progress: "On track",
-    joinDate: "Mar 20, 2025",
-  },
-  { 
-    id: "5", 
-    name: "Juliana Mendes", 
-    email: "juliana@example.com",
-    phone: "(11) 94444-8888",
-    status: "active",
-    lastWorkout: "3 days ago",
-    progress: "On track",
-    joinDate: "Feb 28, 2025",
-  },
-];
+type Student = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  status: 'active' | 'inactive';
+};
 
 export default function StudentsPage() {
-  const { supabase, session } = useSupabase();
+  const { supabase } = useSupabase();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [newStudent, setNewStudent] = useState({
     name: "",
     email: "",
     phone: "",
   });
 
-  // Filter students based on search query and status filter
-  const filteredStudents = MOCK_STUDENTS.filter((student) => {
-    const matchesQuery = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         student.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || student.status === statusFilter;
-    
-    return matchesQuery && matchesStatus;
-  });
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      const response = await fetch('/api/students');
+      const data = await response.json();
+      if (response.ok) {
+        setStudents(data);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error fetching students",
+        description: error.message,
+      });
+    }
+  };
 
   const handleAddStudent = async () => {
     try {
-      // In a real implementation, we would:
-      // 1. Generate a temporary password
-      // 2. Create the user in Auth
-      // 3. Add the user to the profiles table with role 'student'
-      // 4. Send an invite email to the student
+      setIsLoading(true);
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newStudent),
+      });
+
+      const data = await response.json();
       
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
       toast({
         title: "Student added",
         description: `Invitation sent to ${newStudent.email}`,
@@ -125,16 +104,27 @@ export default function StudentsPage() {
       
       setIsAddStudentOpen(false);
       setNewStudent({ name: "", email: "", phone: "" });
+      fetchStudents();
       
-      // Refresh student list (in real implementation)
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error adding student",
-        description: error.message || "An error occurred",
+        description: error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Filter students based on search query and status filter
+  const filteredStudents = students.filter((student) => {
+    const matchesQuery = student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        student.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || student.status === statusFilter;
+    
+    return matchesQuery && matchesStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -190,7 +180,9 @@ export default function StudentsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsAddStudentOpen(false)}>Cancel</Button>
-              <Button onClick={handleAddStudent}>Add Student</Button>
+              <Button onClick={handleAddStudent} disabled={isLoading}>
+                {isLoading ? "Adding..." : "Add Student"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -236,15 +228,14 @@ export default function StudentsPage() {
                   <TableHead>Name</TableHead>
                   <TableHead className="hidden md:table-cell">Email</TableHead>
                   <TableHead className="hidden lg:table-cell">Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Last Workout</TableHead>
-                  <TableHead className="hidden lg:table-cell">Progress</TableHead>
+                  <TableHead className="hidden lg:table-cell">Phone</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredStudents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                       No students found. Try adjusting your filters or add new students.
                     </TableCell>
                   </TableRow>
@@ -252,7 +243,7 @@ export default function StudentsPage() {
                   filteredStudents.map((student) => (
                     <TableRow key={student.id}>
                       <TableCell>
-                        <div className="font-medium">{student.name}</div>
+                        <div className="font-medium">{student.full_name}</div>
                         <div className="text-xs text-muted-foreground md:hidden">{student.email}</div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{student.email}</TableCell>
@@ -261,17 +252,7 @@ export default function StudentsPage() {
                           {student.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">{student.lastWorkout}</TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Badge 
-                          variant={
-                            student.progress === 'Exceeding' ? 'default' :
-                            student.progress === 'On track' ? 'outline' : 'destructive'
-                          }
-                        >
-                          {student.progress}
-                        </Badge>
-                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">{student.phone || '-'}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
