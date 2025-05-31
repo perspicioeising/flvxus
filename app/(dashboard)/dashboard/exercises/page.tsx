@@ -36,6 +36,7 @@ export default function ExercisesPage() {
   const [videoFile, setVideoFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const [isCloning, setIsCloning] = useState(false);
   const [currentExerciseId, setCurrentExerciseId] = useState(null);
   
   const [newExercise, setNewExercise] = useState({
@@ -137,6 +138,7 @@ export default function ExercisesPage() {
         common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
       };
 
+      // Always use POST for cloning, PUT for editing
       const url = isEditing ? `/api/exercises/${currentExerciseId}` : '/api/exercises';
       const method = isEditing ? 'PUT' : 'POST';
 
@@ -155,8 +157,8 @@ export default function ExercisesPage() {
       }
 
       toast({
-        title: isEditing ? "Exercise updated successfully" : "Exercise added successfully",
-        description: isEditing ? "The exercise has been updated." : "The new exercise has been added to your library.",
+        title: isCloning ? "Exercise cloned successfully" : (isEditing ? "Exercise updated successfully" : "Exercise added successfully"),
+        description: isCloning ? "A copy of the exercise has been created." : (isEditing ? "The exercise has been updated." : "The new exercise has been added to your library."),
       });
       
       await fetchExercises();
@@ -165,7 +167,7 @@ export default function ExercisesPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: isEditing ? "Error updating exercise" : "Error adding exercise",
+        title: "Error saving exercise",
         description: error.message,
       });
     } finally {
@@ -175,6 +177,7 @@ export default function ExercisesPage() {
 
   const handleEditClick = (exercise) => {
     setIsEditing(true);
+    setIsCloning(false);
     setCurrentExerciseId(exercise.id);
     setNewExercise({
       name: exercise.name,
@@ -189,51 +192,21 @@ export default function ExercisesPage() {
     setIsAddingExercise(true);
   };
 
-  const handleCloneExercise = async (exercise) => {
-    try {
-      setIsLoading(true);
-      
-      const cloneData = {
-        name: `${exercise.name} (Copy)`,
-        description: exercise.description,
-        muscle_group: exercise.muscle_group,
-        equipment: exercise.equipment,
-        variations: exercise.variations,
-        video_url: exercise.video_url,
-        tips: exercise.tips,
-        common_errors: exercise.common_errors,
-      };
-
-      const response = await fetch('/api/exercises', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cloneData),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      toast({
-        title: "Exercise cloned successfully",
-        description: `A copy of ${exercise.name} has been created.`,
-      });
-      
-      await fetchExercises();
-      
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error cloning exercise",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleCloneClick = (exercise) => {
+    setIsEditing(false);
+    setIsCloning(true);
+    setCurrentExerciseId(null);
+    setNewExercise({
+      name: `${exercise.name} (Copy)`,
+      description: exercise.description,
+      muscleGroups: exercise.muscle_group,
+      equipment: exercise.equipment,
+      variations: exercise.variations?.join('\n') || '',
+      videoUrl: exercise.video_url || '',
+      tips: exercise.tips?.join('\n') || '',
+      commonErrors: exercise.common_errors?.join('\n') || '',
+    });
+    setIsAddingExercise(true);
   };
 
   const handleDeleteExercise = async (exercise) => {
@@ -271,6 +244,7 @@ export default function ExercisesPage() {
   const handleCancel = () => {
     setIsAddingExercise(false);
     setIsEditing(false);
+    setIsCloning(false);
     setCurrentExerciseId(null);
     setNewExercise({
       name: "",
@@ -308,9 +282,11 @@ export default function ExercisesPage() {
       {isAddingExercise && (
         <Card>
           <CardHeader>
-            <CardTitle>{isEditing ? 'Edit Exercise' : 'Add New Exercise'}</CardTitle>
+            <CardTitle>
+              {isCloning ? 'Clone Exercise' : (isEditing ? 'Edit Exercise' : 'Add New Exercise')}
+            </CardTitle>
             <CardDescription>
-              {isEditing ? 'Update exercise details' : 'Create a new exercise for your library'}
+              {isCloning ? 'Create a copy of an existing exercise' : (isEditing ? 'Update exercise details' : 'Create a new exercise for your library')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -507,7 +483,9 @@ export default function ExercisesPage() {
                 Cancel
               </Button>
               <Button onClick={handleSaveExercise} disabled={isLoading}>
-                {isLoading ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Exercise" : "Add Exercise")}
+                {isLoading ? 
+                  (isCloning ? "Cloning..." : (isEditing ? "Updating..." : "Adding...")) : 
+                  (isCloning ? "Clone Exercise" : (isEditing ? "Update Exercise" : "Add Exercise"))}
               </Button>
             </div>
           </CardContent>
@@ -564,7 +542,7 @@ export default function ExercisesPage() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                      onClick={() => handleCloneExercise(exercise)}
+                      onClick={() => handleCloneClick(exercise)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
