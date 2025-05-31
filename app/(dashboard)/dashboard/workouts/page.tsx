@@ -396,7 +396,7 @@ export default function WorkoutsPage() {
             <DialogFooter className="flex justify-between mt-6">
               <div>
                 {currentStep > 1 && (
-                  <Button variant="outline" onClick={prevStep}>
+                  <Button variant="outline\" onClick={prevStep}>
                     Previous
                   </Button>
                 )}
