@@ -7,7 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 
@@ -38,6 +45,9 @@ export default function ExercisesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
   const [currentExerciseId, setCurrentExerciseId] = useState(null);
+  const [muscleFilter, setMuscleFilter] = useState("all");
+  const [equipmentFilter, setEquipmentFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
   const [newExercise, setNewExercise] = useState({
     name: "",
@@ -138,7 +148,6 @@ export default function ExercisesPage() {
         common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
       };
 
-      // Always use POST for cloning, PUT for editing
       const url = isEditing ? `/api/exercises/${currentExerciseId}` : '/api/exercises';
       const method = isEditing ? 'PUT' : 'POST';
 
@@ -259,11 +268,21 @@ export default function ExercisesPage() {
     setVideoFile(null);
   };
 
-  const filteredExercises = exercises.filter((exercise) =>
-    exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    exercise.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    exercise.muscle_group.some(group => group.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredExercises = exercises.filter((exercise) => {
+    const matchesSearch = 
+      exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      exercise.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesMuscle = 
+      muscleFilter === "all" || 
+      exercise.muscle_group.includes(muscleFilter);
+    
+    const matchesEquipment = 
+      equipmentFilter === "all" || 
+      exercise.equipment.includes(equipmentFilter);
+
+    return matchesSearch && matchesMuscle && matchesEquipment;
+  });
 
   return (
     <div className="space-y-6">
@@ -271,7 +290,7 @@ export default function ExercisesPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Exercises</h2>
           <p className="text-muted-foreground">
-            Manage your exercise library.
+            Manage your exercise library
           </p>
         </div>
         <Button onClick={() => setIsAddingExercise(true)} disabled={isAddingExercise}>
@@ -494,46 +513,189 @@ export default function ExercisesPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle>Exercise Library</CardTitle>
-              <CardDescription>
-                Browse and manage your collection of exercises
-              </CardDescription>
+          <div className="flex flex-col space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle>Exercise Library</CardTitle>
+                <CardDescription>
+                  Browse and manage your collection of exercises
+                </CardDescription>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setViewMode('grid')}
+                  className="h-8 w-8"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setViewMode('list')}
+                  className="h-8 w-8"
+                >
+                  <LayoutList className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search exercises..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search exercises..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <Select value={muscleFilter} onValueChange={setMuscleFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span>Muscle Group</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Muscle Groups</SelectItem>
+                  {MUSCLE_GROUPS.map((group) => (
+                    <SelectItem key={group} value={group}>{group}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={equipmentFilter} onValueChange={setEquipmentFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span>Equipment</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Equipment</SelectItem>
+                  {EQUIPMENT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
+        
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredExercises.map((exercise) => (
-              <Card key={exercise.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="relative aspect-video bg-muted">
-                  {exercise.video_url ? (
-                    <video
-                      src={exercise.video_url}
-                      className="w-full h-full object-cover"
-                      controls
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <PlayCircle className="h-12 w-12 text-primary opacity-80" />
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredExercises.map((exercise) => (
+                <Card key={exercise.id} className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                  <div className="relative aspect-video bg-muted">
+                    {exercise.video_url ? (
+                      <video
+                        src={exercise.video_url}
+                        className="w-full h-full object-cover"
+                        controls
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <PlayCircle className="h-12 w-12 text-primary opacity-80" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                        onClick={() => handleEditClick(exercise)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                        onClick={() => handleCloneClick(exercise)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                        onClick={() => handleDeleteExercise(exercise)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
-                  <div className="absolute top-2 right-2 flex gap-1">
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-lg mb-1">{exercise.name}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                      {exercise.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {exercise.muscle_group.map((group) => (
+                        <Badge 
+                          key={group} 
+                          variant="outline" 
+                          className="text-xs bg-primary/5 hover:bg-primary/10 transition-colors"
+                        >
+                          {group}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Equipment: {exercise.equipment.join(", ")}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredExercises.map((exercise) => (
+                <div 
+                  key={exercise.id} 
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-all duration-300 hover:border-primary/20 bg-card"
+                >
+                  <div className="w-40 h-24 relative rounded-md overflow-hidden bg-muted">
+                    {exercise.video_url ? (
+                      <video
+                        src={exercise.video_url}
+                        className="w-full h-full object-cover"
+                        controls
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <PlayCircle className="h-8 w-8 text-primary opacity-80" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-lg">{exercise.name}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                      {exercise.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {exercise.muscle_group.map((group) => (
+                        <Badge 
+                          key={group} 
+                          variant="outline" 
+                          className="text-xs bg-primary/5"
+                        >
+                          {group}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
                       onClick={() => handleEditClick(exercise)}
                     >
                       <Edit className="h-4 w-4" />
@@ -541,7 +703,6 @@ export default function ExercisesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
                       onClick={() => handleCloneClick(exercise)}
                     >
                       <Copy className="h-4 w-4" />
@@ -549,32 +710,15 @@ export default function ExercisesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
                       onClick={() => handleDeleteExercise(exercise)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg mb-1">{exercise.name}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                    {exercise.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {exercise.muscle_group.map((group) => (
-                      <Badge key={group} variant="outline" className="text-xs">
-                        {group}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Equipment: {exercise.equipment.join(", ")}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
