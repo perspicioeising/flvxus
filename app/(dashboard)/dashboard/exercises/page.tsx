@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -254,7 +253,6 @@ export default function ExercisesPage() {
     setIsAddExerciseOpen(true);
   };
 
-  // Filter exercises based on search query and muscle filter
   const filteredExercises = exercises.filter((exercise) => {
     const matchesQuery = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         exercise.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -453,27 +451,33 @@ export default function ExercisesPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Tabs value={currentView} onValueChange={(v) => setCurrentView(v as "grid" | "list")}>
-                <TabsList className="grid w-[100px] grid-cols-2">
-                  <TabsTrigger value="grid">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                  </TabsTrigger>
-                  <TabsTrigger value="list">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="flex items-center space-x-1 rounded-md bg-muted p-1">
+                <Button
+                  variant={currentView === 'grid' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentView('grid')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </Button>
+                <Button
+                  variant={currentView === 'list' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentView('list')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                </Button>
+              </div>
             </div>
           </div>
           
-          <TabsContent value="grid" className="m-0">
-            {filteredExercises.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Nenhum exercício encontrado. Ajuste os filtros ou adicione novos exercícios.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredExercises.map((exercise) => (
+          {currentView === 'grid' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredExercises.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  Nenhum exercício encontrado. Ajuste os filtros ou adicione novos exercícios.
+                </div>
+              ) : (
+                filteredExercises.map((exercise) => (
                   <Card key={exercise.id} className="overflow-hidden">
                     <div className="relative aspect-video bg-muted">
                       {exercise.video_url ? (
@@ -531,88 +535,82 @@ export default function ExercisesPage() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+                ))
+              )}
+            </div>
+          )}
           
-          <TabsContent value="list" className="m-0">
-            {filteredExercises.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Nenhum exercício encontrado. Ajuste os filtros ou adicione novos exercícios.
-              </div>
-            ) : (
-              <div className="rounded-md border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="py-3 px-4 text-left font-medium">Nome</th>
-                      <th className="py-3 px-4 text-left font-medium hidden md:table-cell">Grupos Musculares</th>
-                      <th className="py-3 px-4 text-left font-medium hidden lg:table-cell">Equipamentos</th>
-                      <th className="py-3 px-4 text-right font-medium">Ações</th>
+          {currentView === 'list' && (
+            <div className="rounded-md border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="py-3 px-4 text-left font-medium">Nome</th>
+                    <th className="py-3 px-4 text-left font-medium hidden md:table-cell">Grupos Musculares</th>
+                    <th className="py-3 px-4 text-left font-medium hidden lg:table-cell">Equipamentos</th>
+                    <th className="py-3 px-4 text-right font-medium">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredExercises.map((exercise) => (
+                    <tr key={exercise.id} className="border-b">
+                      <td className="py-3 px-4">
+                        <div className="font-medium">{exercise.name}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-1 md:hidden">
+                          {exercise.muscle_group.join(", ")}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 hidden md:table-cell">
+                        <div className="flex flex-wrap gap-1">
+                          {exercise.muscle_group.map((group) => (
+                            <Badge key={group} variant="outline" className="text-xs">
+                              {group}
+                            </Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 hidden lg:table-cell">
+                        {exercise.equipment.join(", ")}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          {exercise.video_url && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <PlayCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEditClick(exercise)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleCloneExercise(exercise)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleDeleteExercise(exercise)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredExercises.map((exercise) => (
-                      <tr key={exercise.id} className="border-b">
-                        <td className="py-3 px-4">
-                          <div className="font-medium">{exercise.name}</div>
-                          <div className="text-xs text-muted-foreground line-clamp-1 md:hidden">
-                            {exercise.muscle_group.join(", ")}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 hidden md:table-cell">
-                          <div className="flex flex-wrap gap-1">
-                            {exercise.muscle_group.map((group) => (
-                              <Badge key={group} variant="outline" className="text-xs">
-                                {group}
-                              </Badge>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 hidden lg:table-cell">
-                          {exercise.equipment.join(", ")}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            {exercise.video_url && (
-                              <Button variant="ghost\" size="icon\" className="h-8 w-8">
-                                <PlayCircle className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleEditClick(exercise)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleCloneExercise(exercise)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleDeleteExercise(exercise)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </TabsContent>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
