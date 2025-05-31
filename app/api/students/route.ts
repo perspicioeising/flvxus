@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
   try {
+    console.log('API: Iniciando requisição POST para criar estudante.'); // Adicione este log
     // Verify user is authenticated and is a trainer
     const { data: { session }, error: authError } = await supabase.auth.getSession();
     if (authError || !session) {
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
+    console.log('API: Usuário autenticado. Session ID:', session.user.id); // Adicione este log
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -39,13 +41,16 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
+    console.log('API: Perfil de treinador encontrado. Tenant ID:', profile.tenant_id); // Adicione este log
 
     const data = await request.json();
+    console.log('API: Dados recebidos para novo estudante:', data.email); // Adicione este log
     
     // Generate a temporary password
     const tempPassword = Math.random().toString(36).slice(-8);
     
     // Create auth user using admin client with is_student_creation flag
+    console.log('API: Tentando criar usuário de autenticação para:', data.email); // Adicione este log
     const { data: authData, error: authError2 } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: tempPassword,
@@ -64,6 +69,7 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+    console.log('API: Usuário de autenticação criado com sucesso. User ID:', authData.user.id); // Adicione este log
 
     // Process and validate data types
     const height = data.height ? parseFloat(data.height) : null;
@@ -71,6 +77,7 @@ export async function POST(request: Request) {
     const birthDate = data.birthDate || null;
 
     // Create student profile with all fields
+    console.log('API: Tentando inserir perfil do estudante no banco de dados.'); // Adicione este log
     const { data: profileData, error: profileError2 } = await supabase
       .from('profiles')
       .insert({
@@ -105,6 +112,7 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+    console.log('API: Perfil do estudante criado com sucesso.'); // Adicione este log
 
     return NextResponse.json({
       message: 'Student created successfully',
@@ -114,7 +122,7 @@ export async function POST(request: Request) {
       }
     });
   } catch (error: any) {
-    console.error('Error creating student:', error);
+    console.error('Erro geral na API ao criar estudante:', error); // Modifique este log
     return NextResponse.json(
       { error: error.message || 'An error occurred while creating the student' },
       { status: 500 }
