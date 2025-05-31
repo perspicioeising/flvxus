@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Dumbbell, BarChart, Calendar, Shield } from "lucide-react";
+import { ArrowRight, Dumbbell, BarChart, Calendar, Shield, Users, Trophy } from "lucide-react";
 
 export default function Home() {
   return (
