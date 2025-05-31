@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -12,12 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Filter, MoreHorizontal, Users, ArrowRight, Copy } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Users, ArrowRight, Copy, Dumbbell, Clock, Trash2, Edit } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -28,156 +25,296 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Mock data for demonstration
-const MOCK_WORKOUTS = [
-  {
-    id: "1",
-    name: "Upper Body Power",
-    description: "Focus on strength and power for the upper body.",
-    level: "intermediate",
-    goal: "Strength",
-    exerciseCount: 6,
-    assignedStudents: 4,
-    lastUpdated: "2 days ago"
-  },
-  {
-    id: "2",
-    name: "Leg Day",
-    description: "Comprehensive lower body workout focusing on all major leg muscles.",
-    level: "advanced",
-    goal: "Hypertrophy",
-    exerciseCount: 8,
-    assignedStudents: 7,
-    lastUpdated: "Yesterday"
-  },
-  {
-    id: "3",
-    name: "Core Stability",
-    description: "Strengthen the core muscles and improve stability.",
-    level: "beginner",
-    goal: "Stability",
-    exerciseCount: 5,
-    assignedStudents: 10,
-    lastUpdated: "3 days ago"
-  },
-  {
-    id: "4",
-    name: "Full Body Circuit",
-    description: "High-intensity circuit training for the entire body.",
-    level: "intermediate",
-    goal: "Conditioning",
-    exerciseCount: 10,
-    assignedStudents: 6,
-    lastUpdated: "1 week ago"
-  },
-  {
-    id: "5",
-    name: "Mobility & Recovery",
-    description: "Focus on joint mobility, flexibility, and active recovery.",
-    level: "beginner",
-    goal: "Mobility",
-    exerciseCount: 7,
-    assignedStudents: 3,
-    lastUpdated: "5 days ago"
-  }
-];
-
-// Mock data for workout plans
-const MOCK_WORKOUT_PLANS = [
-  {
-    id: "1",
-    name: "12-Week Strength Program",
-    description: "Progressive strength program for intermediate lifters.",
-    student: "Maria Silva",
-    startDate: "Jan 15, 2025",
-    endDate: "Apr 9, 2025",
-    progress: 25,
-    workouts: ["Upper Body Power", "Leg Day", "Core Stability", "Recovery"]
-  },
-  {
-    id: "2",
-    name: "Weight Loss Challenge",
-    description: "High intensity program focused on calorie burn and muscle retention.",
-    student: "João Santos",
-    startDate: "Feb 1, 2025",
-    endDate: "Apr 30, 2025",
-    progress: 15,
-    workouts: ["Full Body Circuit", "Cardio Blast", "Core Stability"]
-  },
-  {
-    id: "3",
-    name: "Posture Improvement",
-    description: "Corrective exercise program to improve posture and alleviate pain.",
-    student: "Ana Costa",
-    startDate: "Dec 10, 2024",
-    endDate: "Mar 10, 2025",
-    progress: 60,
-    workouts: ["Upper Body Strength", "Mobility & Recovery", "Core Stability"]
-  }
-];
+const DIFFICULTY_LEVELS = ["Beginner", "Intermediate", "Advanced"];
+const GOALS = ["Strength", "Hypertrophy", "Endurance", "Power", "Weight Loss", "Rehabilitation"];
 
 export default function WorkoutsPage() {
-  const { supabase, session } = useSupabase();
+  const { supabase } = useSupabase();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [isAddWorkoutOpen, setIsAddWorkoutOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("workouts");
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedExercises, setSelectedExercises] = useState([]);
+  const [currentStep, setCurrentStep] = useState(1);
   
   const [newWorkout, setNewWorkout] = useState({
     name: "",
     description: "",
-    level: "beginner",
+    level: "",
     goal: "",
-  });
-
-  // Filter workouts based on search query and level filter
-  const filteredWorkouts = MOCK_WORKOUTS.filter((workout) => {
-    const matchesQuery = workout.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        workout.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLevel = levelFilter === "all" || workout.level === levelFilter;
-    
-    return matchesQuery && matchesLevel;
+    exercises: []
   });
 
   const handleAddWorkout = async () => {
     try {
-      // In a real implementation, we would add the workout to the database
+      setIsLoading(true);
       
+      const workoutData = {
+        name: newWorkout.name,
+        description: newWorkout.description,
+        level: newWorkout.level.toLowerCase(),
+        goal: newWorkout.goal,
+        exercises: newWorkout.exercises.map((exercise, index) => ({
+          exercise_id: exercise.id,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          rest: exercise.rest,
+          notes: exercise.notes,
+          order: index + 1
+        }))
+      };
+
+      const response = await fetch('/api/workouts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(workoutData),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
       toast({
         title: "Workout created",
         description: `${newWorkout.name} has been added to your workout library`,
       });
       
-      setIsAddWorkoutOpen(false);
-      setNewWorkout({
-        name: "",
-        description: "",
-        level: "beginner",
-        goal: "",
-      });
+      handleCloseDialog();
       
-      // Refresh workout list (in real implementation)
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error creating workout",
-        description: error.message || "An error occurred",
+        description: error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getLevelBadge = (level: string) => {
-    switch(level) {
-      case "beginner":
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">Beginner</Badge>;
-      case "intermediate":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800">Intermediate</Badge>;
-      case "advanced":
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800">Advanced</Badge>;
+  const handleCloseDialog = () => {
+    setIsAddWorkoutOpen(false);
+    setCurrentStep(1);
+    setNewWorkout({
+      name: "",
+      description: "",
+      level: "",
+      goal: "",
+      exercises: []
+    });
+    setSelectedExercises([]);
+  };
+
+  const nextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleExerciseSelect = (exercise) => {
+    setSelectedExercises([...selectedExercises, {
+      ...exercise,
+      sets: 3,
+      reps: 12,
+      rest: 60,
+      notes: ""
+    }]);
+  };
+
+  const handleExerciseUpdate = (index, field, value) => {
+    const updatedExercises = [...selectedExercises];
+    updatedExercises[index] = {
+      ...updatedExercises[index],
+      [field]: value
+    };
+    setSelectedExercises(updatedExercises);
+  };
+
+  const handleRemoveExercise = (index) => {
+    setSelectedExercises(selectedExercises.filter((_, i) => i !== index));
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Workout Name *</Label>
+                <Input
+                  id="name"
+                  value={newWorkout.name}
+                  onChange={(e) => setNewWorkout(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Upper Body Strength"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="goal">Primary Goal *</Label>
+                <Select
+                  value={newWorkout.goal}
+                  onValueChange={(value) => setNewWorkout(prev => ({ ...prev, goal: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select goal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GOALS.map((goal) => (
+                      <SelectItem key={goal} value={goal}>{goal}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={newWorkout.description}
+                onChange={(e) => setNewWorkout(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe the workout's focus and objectives..."
+                className="min-h-[100px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="level">Difficulty Level *</Label>
+              <Select
+                value={newWorkout.level}
+                onValueChange={(value) => setNewWorkout(prev => ({ ...prev, level: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DIFFICULTY_LEVELS.map((level) => (
+                    <SelectItem key={level} value={level}>{level}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+      
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search exercises..."
+                  className="pl-8"
+                />
+              </div>
+              <Select>
+                <SelectTrigger className="w-[180px]">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span>Muscle Group</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Groups</SelectItem>
+                  {/* Add muscle groups */}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Exercise cards for selection */}
+            </div>
+          </div>
+        );
+      
+      case 3:
+        return (
+          <div className="space-y-4">
+            {selectedExercises.map((exercise, index) => (
+              <Card key={index}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Dumbbell className="h-5 w-5 text-primary" />
+                      <h3 className="font-medium">{exercise.name}</h3>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveExercise(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Sets</Label>
+                      <Input
+                        type="number"
+                        value={exercise.sets}
+                        onChange={(e) => handleExerciseUpdate(index, 'sets', parseInt(e.target.value))}
+                        min={1}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Reps</Label>
+                      <Input
+                        type="number"
+                        value={exercise.reps}
+                        onChange={(e) => handleExerciseUpdate(index, 'reps', parseInt(e.target.value))}
+                        min={1}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Rest (seconds)</Label>
+                      <Input
+                        type="number"
+                        value={exercise.rest}
+                        onChange={(e) => handleExerciseUpdate(index, 'rest', parseInt(e.target.value))}
+                        min={0}
+                        step={15}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Input
+                        value={exercise.notes}
+                        onChange={(e) => handleExerciseUpdate(index, 'notes', e.target.value)}
+                        placeholder="Additional instructions..."
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {selectedExercises.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No exercises selected. Go back to add exercises to your workout.
+              </div>
+            )}
+          </div>
+        );
+      
       default:
-        return <Badge variant="outline">{level}</Badge>;
+        return null;
     }
   };
 
@@ -187,7 +324,7 @@ export default function WorkoutsPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Workouts</h2>
           <p className="text-muted-foreground">
-            Create and manage workout programs for your students.
+            Create and manage workout programs
           </p>
         </div>
         <Dialog open={isAddWorkoutOpen} onOpenChange={setIsAddWorkoutOpen}>
@@ -196,84 +333,86 @@ export default function WorkoutsPage() {
               <Plus className="mr-2 h-4 w-4" /> Create Workout
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
               <DialogTitle>Create New Workout</DialogTitle>
               <DialogDescription>
-                Design a new workout program for your students.
+                Design a new workout program step by step
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Workout Name</Label>
-                <Input 
-                  id="name" 
-                  placeholder="e.g. Upper Body Strength" 
-                  value={newWorkout.name}
-                  onChange={(e) => setNewWorkout(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
-                  placeholder="Describe the workout purpose and focus" 
-                  value={newWorkout.description}
-                  onChange={(e) => setNewWorkout(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="level">Difficulty Level</Label>
-                  <Select 
-                    value={newWorkout.level} 
-                    onValueChange={(value) => setNewWorkout(prev => ({ ...prev, level: value }))}
-                  >
-                    <SelectTrigger id="level">
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="goal">Primary Goal</Label>
-                  <Input 
-                    id="goal" 
-                    placeholder="e.g. Strength, Hypertrophy" 
-                    value={newWorkout.goal}
-                    onChange={(e) => setNewWorkout(prev => ({ ...prev, goal: e.target.value }))}
-                  />
+
+            <div className="relative">
+              <div className="absolute top-0 left-0 w-full">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                        currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                      }`}>
+                        1
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium">Basic Information</p>
+                        <p className="text-sm text-muted-foreground">Workout details and goals</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden md:block w-px h-10 bg-border mx-4" />
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                        currentStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                      }`}>
+                        2
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium">Select Exercises</p>
+                        <p className="text-sm text-muted-foreground">Choose exercises to include</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden md:block w-px h-10 bg-border mx-4" />
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                        currentStep >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                      }`}>
+                        3
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium">Configure Sets</p>
+                        <p className="text-sm text-muted-foreground">Set repetitions and rest periods</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <DialogFooter className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setIsAddWorkoutOpen(false)} className="sm:order-1">
-                Cancel
-              </Button>
-              <Button onClick={handleAddWorkout} className="sm:order-2">
-                Create Workout
-              </Button>
-              <Button 
-                variant="outline"
-                className="sm:order-3 w-full sm:w-auto"
-                onClick={() => {
-                  setIsAddWorkoutOpen(false);
-                  // This would navigate to the workout builder page in a real implementation
-                  toast({
-                    title: "Advanced Mode",
-                    description: "Opening the workout builder...",
-                  });
-                }}
-              >
-                Advanced Builder <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+
+            <div className="mt-16">
+              {renderStepContent()}
+            </div>
+
+            <DialogFooter className="flex justify-between mt-6">
+              <div>
+                {currentStep > 1 && (
+                  <Button variant="outline" onClick={prevStep}>
+                    Previous
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleCloseDialog}>
+                  Cancel
+                </Button>
+                {currentStep < 3 ? (
+                  <Button onClick={nextStep}>Next</Button>
+                ) : (
+                  <Button onClick={handleAddWorkout} disabled={isLoading}>
+                    {isLoading ? "Creating..." : "Create Workout"}
+                  </Button>
+                )}
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -281,182 +420,51 @@ export default function WorkoutsPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <Tabs defaultValue="workouts" value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <Tabs defaultValue="workouts">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <CardTitle>Workout Management</CardTitle>
                 <CardDescription>
-                  Create, edit and assign workout programs to your students.
+                  Create, edit and assign workout programs
                 </CardDescription>
               </div>
               <TabsList>
                 <TabsTrigger value="workouts">Workouts</TabsTrigger>
-                <TabsTrigger value="plans">Training Plans</TabsTrigger>
+                <TabsTrigger value="templates">Templates</TabsTrigger>
               </TabsList>
             </div>
           </Tabs>
         </CardHeader>
         <CardContent>
-          <TabsContent value="workouts" className="mt-0">
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search workouts..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <div className="flex items-center">
-                    <Filter className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Difficulty" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search workouts..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            
-            {filteredWorkouts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                No workouts found. Try adjusting your filters or create new workouts.
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {filteredWorkouts.map((workout) => (
-                  <div key={workout.id} className="bg-card border rounded-lg p-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-lg">{workout.name}</h3>
-                          {getLevelBadge(workout.level)}
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{workout.description}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                          <div>Goal: <span className="font-medium">{workout.goal}</span></div>
-                          <div>•</div>
-                          <div>{workout.exerciseCount} exercises</div>
-                          <div className="hidden md:block">•</div>
-                          <div className="hidden md:flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {workout.assignedStudents} students
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 self-end md:self-auto">
-                        <span className="text-xs text-muted-foreground mr-2">
-                          Updated {workout.lastUpdated}
-                        </span>
-                        <div className="flex md:hidden items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="h-3 w-3" />
-                          {workout.assignedStudents}
-                        </div>
-                        <Link href={`/dashboard/workouts/${workout.id}`}>
-                          <Button size="sm">
-                            View
-                          </Button>
-                        </Link>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <Copy className="mr-2 h-4 w-4" /> Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Edit Workout</DropdownMenuItem>
-                            <DropdownMenuItem>Assign to Students</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
-                              Delete Workout
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="plans" className="mt-0">
-            <div className="flex justify-between items-center mb-6">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search training plans..."
-                  className="pl-8"
-                />
-              </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> Create Plan
-              </Button>
-            </div>
-            
-            <div className="grid gap-4">
-              {MOCK_WORKOUT_PLANS.map((plan) => (
-                <div key={plan.id} className="bg-card border rounded-lg p-4">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold text-lg">{plan.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{plan.description}</p>
-                      <div className="flex flex-wrap gap-y-1 gap-x-4 text-xs text-muted-foreground mt-1">
-                        <div>Student: <span className="font-medium">{plan.student}</span></div>
-                        <div>Start: {plan.startDate}</div>
-                        <div>End: {plan.endDate}</div>
-                      </div>
-                      <div className="mt-2">
-                        <div className="text-xs text-muted-foreground mb-1">Progress: {plan.progress}%</div>
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div 
-                            className="bg-primary h-1.5 rounded-full" 
-                            style={{ width: `${plan.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 self-end md:self-auto">
-                      <Link href={`/dashboard/workout-plans/${plan.id}`}>
-                        <Button size="sm">
-                          View Details
-                        </Button>
-                      </Link>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit Plan</DropdownMenuItem>
-                          <DropdownMenuItem>Reassign Student</DropdownMenuItem>
-                          <DropdownMenuItem>Export as PDF</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            Delete Plan
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
+            <Select value={levelFilter} onValueChange={setLevelFilter}>
+              <SelectTrigger className="w-[180px]">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <span>Difficulty</span>
                 </div>
-              ))}
-            </div>
-          </TabsContent>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                {DIFFICULTY_LEVELS.map((level) => (
+                  <SelectItem key={level} value={level.toLowerCase()}>{level}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-4">
+            {/* Workout cards will be rendered here */}
+          </div>
         </CardContent>
       </Card>
     </div>
