@@ -165,13 +165,21 @@ export default function WorkoutsPage() {
     try {
       setIsLoading(true);
       
+      // First fetch the complete workout details including exercises
+      const detailsResponse = await fetch(`/api/workouts/${workout.id}`);
+      const workoutDetails = await detailsResponse.json();
+      
+      if (!detailsResponse.ok) {
+        throw new Error(workoutDetails.error);
+      }
+      
       const workoutData = {
         name: `${workout.name} (Copy)`,
         description: workout.description,
         level: workout.level,
         goal: workout.goal,
-        exercises: workout.workout_exercises?.map((we, index) => ({
-          exercise_id: we.exercise_id,
+        exercises: workoutDetails.workout_exercises?.map((we, index) => ({
+          exercise_id: we.exercise.id,
           sets: we.sets,
           reps: we.reps,
           rest: we.rest,
