@@ -18,7 +18,8 @@ import {
   Trophy,
   HelpCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -46,6 +47,12 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/dashboard/workouts",
       icon: Activity,
       isActive: pathname.startsWith("/dashboard/workouts"),
+    },
+    {
+      name: "Rotinas",
+      href: "/dashboard/workout-plans",
+      icon: ClipboardList,
+      isActive: pathname.startsWith("/dashboard/workout-plans"),
     },
     {
       name: "Exercícios",
