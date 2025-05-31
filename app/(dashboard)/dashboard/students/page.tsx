@@ -420,7 +420,7 @@ export default function StudentsPage() {
                 </div>
                 <DialogFooter className="flex justify-between">
                   {currentStep > 1 && (
-                    <Button variant="outline" onClick={prevStep}>
+                    <Button variant="outline\" onClick={prevStep}>
                       Previous
                     </Button>
                   )}
