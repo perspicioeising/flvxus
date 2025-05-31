@@ -40,8 +40,9 @@ export async function POST(request: Request) {
 
     const data = await request.json();
     
-    // Invite user using admin client
+    // Invite user using admin client with redirectTo URL
     const { data: authData, error: authError2 } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
       data: {
         full_name: data.name,
         is_student_creation: true,
