@@ -87,7 +87,6 @@ export default function StudentsPage() {
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   
   const [newStudent, setNewStudent] = useState({
@@ -144,15 +143,14 @@ export default function StudentsPage() {
       if (!response.ok) {
         throw new Error(data.error);
       }
-
-      setTempPassword(data.data.temporaryPassword);
       
       toast({
-        title: "Student added successfully",
-        description: "The student will receive an email with login instructions.",
+        title: "Student invited successfully",
+        description: "An invitation email has been sent to the student's email address.",
       });
       
       fetchStudents();
+      handleDialogClose();
       
     } catch (error: any) {
       toast({
@@ -183,7 +181,6 @@ export default function StudentsPage() {
       notes: ""
     });
     setCurrentStep(1);
-    setTempPassword(null);
   };
 
   const nextStep = () => {
@@ -413,46 +410,28 @@ export default function StudentsPage() {
                 {currentStep === 3 && "Enter medical information and preferences."}
               </DialogDescription>
             </DialogHeader>
-            {!tempPassword ? (
-              <>
-                <div className="py-4">
-                  {renderStepContent()}
-                </div>
-                <DialogFooter className="flex justify-between">
-                  {currentStep > 1 && (
-                    <Button variant="outline\" onClick={prevStep}>
-                      Previous
-                    </Button>
-                  )}
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleDialogClose}>
-                      Cancel
-                    </Button>
-                    {currentStep < 3 ? (
-                      <Button onClick={nextStep}>Next</Button>
-                    ) : (
-                      <Button onClick={handleAddStudent} disabled={isLoading}>
-                        {isLoading ? "Adding..." : "Add Student"}
-                      </Button>
-                    )}
-                  </div>
-                </DialogFooter>
-              </>
-            ) : (
-              <div className="py-4">
-                <div className="mb-6 p-4 bg-muted rounded-lg">
-                  <p className="font-medium mb-2">Temporary Password:</p>
-                  <code className="bg-background px-2 py-1 rounded">{tempPassword}</code>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Please save this password and share it securely with the student.
-                    They will be able to change it after their first login.
-                  </p>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleDialogClose}>Close</Button>
-                </DialogFooter>
+            <div className="py-4">
+              {renderStepContent()}
+            </div>
+            <DialogFooter className="flex justify-between">
+              {currentStep > 1 && (
+                <Button variant="outline\" onClick={prevStep}>
+                  Previous
+                </Button>
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleDialogClose}>
+                  Cancel
+                </Button>
+                {currentStep < 3 ? (
+                  <Button onClick={nextStep}>Next</Button>
+                ) : (
+                  <Button onClick={handleAddStudent} disabled={isLoading}>
+                    {isLoading ? "Inviting..." : "Send Invitation"}
+                  </Button>
+                )}
               </div>
-            )}
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
