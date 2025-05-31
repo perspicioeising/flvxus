@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,260 +16,391 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Filter, PlayCircle, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2 } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock data for demonstration
 const MUSCLE_GROUPS = [
-  "Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Full Body", "Cardio"
+  "Peito", "Costas", "Pernas", "Ombros", "Braços", "Core", "Corpo Inteiro", "Cardio"
 ];
 
-const MOCK_EXERCISES = [
-  {
-    id: "1",
-    name: "Barbell Bench Press",
-    description: "A compound exercise that targets the chest, shoulders, and triceps.",
-    muscleGroups: ["Chest", "Shoulders", "Arms"],
-    equipment: ["Barbell", "Bench"],
-    variations: ["Flat", "Incline", "Decline"],
-    videoUrl: "https://example.com/bench-press.mp4",
-    tips: [
-      "Keep your feet flat on the ground",
-      "Maintain a slight arch in your lower back",
-      "Lower the bar to mid-chest"
-    ],
-    commonErrors: [
-      "Bouncing the bar off the chest",
-      "Lifting hips off the bench",
-      "Inconsistent bar path"
-    ]
-  },
-  {
-    id: "2",
-    name: "Pull-up",
-    description: "A bodyweight exercise that targets the back and biceps.",
-    muscleGroups: ["Back", "Arms"],
-    equipment: ["Pull-up Bar"],
-    variations: ["Wide Grip", "Close Grip", "Neutral Grip"],
-    videoUrl: "https://example.com/pull-up.mp4",
-    tips: [
-      "Engage your core throughout the movement",
-      "Pull your shoulders down and back",
-      "Focus on a controlled descent"
-    ],
-    commonErrors: [
-      "Insufficient range of motion",
-      "Swinging the body",
-      "Using momentum"
-    ]
-  },
-  {
-    id: "3",
-    name: "Squat",
-    description: "A fundamental compound exercise that targets primarily the legs and glutes.",
-    muscleGroups: ["Legs"],
-    equipment: ["Bodyweight", "Barbell", "Dumbbell"],
-    variations: ["Bodyweight", "Back Squat", "Front Squat"],
-    videoUrl: "https://example.com/squat.mp4",
-    tips: [
-      "Keep your chest up",
-      "Push your knees out in the direction of your toes",
-      "Aim for proper depth (thighs parallel to ground)"
-    ],
-    commonErrors: [
-      "Knees caving in",
-      "Heels coming off the floor",
-      "Insufficient depth"
-    ]
-  },
-  {
-    id: "4",
-    name: "Plank",
-    description: "An isometric core exercise that builds stability and endurance.",
-    muscleGroups: ["Core"],
-    equipment: ["Bodyweight"],
-    variations: ["Standard", "Side Plank", "Forearm Plank"],
-    videoUrl: "https://example.com/plank.mp4",
-    tips: [
-      "Keep your body in a straight line",
-      "Engage your core and glutes",
-      "Maintain normal breathing"
-    ],
-    commonErrors: [
-      "Sagging hips",
-      "Elevating the hips too high",
-      "Holding breath"
-    ]
-  }
+const EQUIPMENT_TYPES = [
+  "Peso Livre",
+  "Máquina",
+  "Cabo",
+  "Peso Corporal",
+  "Elástico",
+  "Kettlebell",
+  "TRX",
+  "Outros"
 ];
+
+type Exercise = {
+  id: string;
+  name: string;
+  description: string;
+  video_url: string | null;
+  muscle_group: string[];
+  equipment: string[];
+  variations: string[];
+  tips: string[];
+  common_errors: string[];
+};
 
 export default function ExercisesPage() {
-  const { supabase, session } = useSupabase();
+  const { supabase } = useSupabase();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [muscleFilter, setMuscleFilter] = useState("all");
   const [currentView, setCurrentView] = useState<"grid" | "list">("grid");
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [newExercise, setNewExercise] = useState({
     name: "",
     description: "",
     muscleGroups: [] as string[],
-    equipment: "",
+    equipment: [] as string[],
     variations: "",
     videoUrl: "",
     tips: "",
     commonErrors: "",
   });
 
-  // Filter exercises based on search query and muscle filter
-  const filteredExercises = MOCK_EXERCISES.filter((exercise) => {
-    const matchesQuery = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         exercise.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesMuscle = muscleFilter === "all" || 
-                          exercise.muscleGroups.includes(muscleFilter);
-    
-    return matchesQuery && matchesMuscle;
-  });
-
   const handleAddExercise = async () => {
     try {
-      // In a real implementation, we would add the exercise to the database
+      setIsLoading(true);
       
+      const exerciseData = {
+        name: newExercise.name,
+        description: newExercise.description,
+        muscle_group: newExercise.muscleGroups,
+        equipment: newExercise.equipment,
+        variations: newExercise.variations.split('\n').filter(v => v.trim()),
+        video_url: newExercise.videoUrl || null,
+        tips: newExercise.tips.split('\n').filter(t => t.trim()),
+        common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
+      };
+
+      const { data, error } = await supabase
+        .from('exercises')
+        .insert([exerciseData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
       toast({
-        title: "Exercise added",
-        description: `${newExercise.name} has been added to your exercise library`,
+        title: "Exercício adicionado",
+        description: `${newExercise.name} foi adicionado à sua biblioteca`,
       });
       
-      setIsAddExerciseOpen(false);
-      setNewExercise({
-        name: "",
-        description: "",
-        muscleGroups: [],
-        equipment: "",
-        variations: "",
-        videoUrl: "",
-        tips: "",
-        commonErrors: "",
-      });
+      setExercises([...exercises, data]);
+      handleCloseDialog();
       
-      // Refresh exercise list (in real implementation)
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error adding exercise",
-        description: error.message || "An error occurred",
+        title: "Erro ao adicionar exercício",
+        description: error.message,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const handleEditExercise = async () => {
+    if (!currentExercise) return;
+
+    try {
+      setIsLoading(true);
+      
+      const exerciseData = {
+        name: newExercise.name,
+        description: newExercise.description,
+        muscle_group: newExercise.muscleGroups,
+        equipment: newExercise.equipment,
+        variations: newExercise.variations.split('\n').filter(v => v.trim()),
+        video_url: newExercise.videoUrl || null,
+        tips: newExercise.tips.split('\n').filter(t => t.trim()),
+        common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
+      };
+
+      const { data, error } = await supabase
+        .from('exercises')
+        .update(exerciseData)
+        .eq('id', currentExercise.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Exercício atualizado",
+        description: `${newExercise.name} foi atualizado com sucesso`,
+      });
+      
+      setExercises(exercises.map(ex => ex.id === currentExercise.id ? data : ex));
+      handleCloseDialog();
+      
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar exercício",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCloneExercise = async (exercise: Exercise) => {
+    try {
+      setIsLoading(true);
+      
+      const cloneData = {
+        ...exercise,
+        name: `${exercise.name} (Cópia)`,
+        id: undefined
+      };
+
+      const { data, error } = await supabase
+        .from('exercises')
+        .insert([cloneData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Exercício clonado",
+        description: `Uma cópia de ${exercise.name} foi criada`,
+      });
+      
+      setExercises([...exercises, data]);
+      
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao clonar exercício",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteExercise = async (exercise: Exercise) => {
+    try {
+      setIsLoading(true);
+      
+      const { error } = await supabase
+        .from('exercises')
+        .delete()
+        .eq('id', exercise.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Exercício excluído",
+        description: `${exercise.name} foi removido da sua biblioteca`,
+      });
+      
+      setExercises(exercises.filter(ex => ex.id !== exercise.id));
+      
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir exercício",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setIsAddExerciseOpen(false);
+    setIsEditMode(false);
+    setCurrentExercise(null);
+    setNewExercise({
+      name: "",
+      description: "",
+      muscleGroups: [],
+      equipment: [],
+      variations: "",
+      videoUrl: "",
+      tips: "",
+      commonErrors: "",
+    });
+  };
+
+  const handleEditClick = (exercise: Exercise) => {
+    setCurrentExercise(exercise);
+    setNewExercise({
+      name: exercise.name,
+      description: exercise.description,
+      muscleGroups: exercise.muscle_group,
+      equipment: exercise.equipment,
+      variations: exercise.variations.join('\n'),
+      videoUrl: exercise.video_url || "",
+      tips: exercise.tips.join('\n'),
+      commonErrors: exercise.common_errors.join('\n'),
+    });
+    setIsEditMode(true);
+    setIsAddExerciseOpen(true);
+  };
+
+  // Filter exercises based on search query and muscle filter
+  const filteredExercises = exercises.filter((exercise) => {
+    const matchesQuery = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        exercise.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesMuscle = muscleFilter === "all" || 
+                          exercise.muscle_group.includes(muscleFilter);
+    
+    return matchesQuery && matchesMuscle;
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Exercise Library</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Exercícios</h2>
           <p className="text-muted-foreground">
-            Manage and organize your exercise catalog for workouts.
+            Gerencie sua biblioteca de exercícios.
           </p>
         </div>
         <Dialog open={isAddExerciseOpen} onOpenChange={setIsAddExerciseOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Exercise
+              <Plus className="mr-2 h-4 w-4" /> Adicionar Exercício
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Add New Exercise</DialogTitle>
+              <DialogTitle>{isEditMode ? "Editar Exercício" : "Adicionar Novo Exercício"}</DialogTitle>
               <DialogDescription>
-                Create a new exercise to add to your library.
+                {isEditMode ? "Atualize as informações do exercício" : "Crie um novo exercício para sua biblioteca"}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Exercise Name</Label>
+                  <Label htmlFor="name">Nome do Exercício</Label>
                   <Input 
                     id="name" 
-                    placeholder="e.g. Barbell Bench Press" 
+                    placeholder="ex: Supino Reto com Barra" 
                     value={newExercise.name}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">Descrição</Label>
                   <Textarea 
                     id="description" 
-                    placeholder="Describe the exercise" 
+                    placeholder="Descreva o exercício" 
                     value={newExercise.description}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="muscleGroups">Muscle Groups</Label>
-                  <Select 
-                    value={newExercise.muscleGroups[0] || ""} 
-                    onValueChange={(value) => setNewExercise(prev => ({ ...prev, muscleGroups: [value] }))}
-                  >
-                    <SelectTrigger id="muscleGroups">
-                      <SelectValue placeholder="Select primary muscle group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MUSCLE_GROUPS.map((muscle) => (
-                        <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Grupos Musculares</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {MUSCLE_GROUPS.map((muscle) => (
+                      <div key={muscle} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={muscle}
+                          checked={newExercise.muscleGroups.includes(muscle)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewExercise(prev => ({
+                                ...prev,
+                                muscleGroups: [...prev.muscleGroups, muscle]
+                              }));
+                            } else {
+                              setNewExercise(prev => ({
+                                ...prev,
+                                muscleGroups: prev.muscleGroups.filter(g => g !== muscle)
+                              }));
+                            }
+                          }}
+                        />
+                        <label htmlFor={muscle}>{muscle}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Equipamentos</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {EQUIPMENT_TYPES.map((equipment) => (
+                      <div key={equipment} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={equipment}
+                          checked={newExercise.equipment.includes(equipment)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewExercise(prev => ({
+                                ...prev,
+                                equipment: [...prev.equipment, equipment]
+                              }));
+                            } else {
+                              setNewExercise(prev => ({
+                                ...prev,
+                                equipment: prev.equipment.filter(eq => eq !== equipment)
+                              }));
+                            }
+                          }}
+                        />
+                        <label htmlFor={equipment}>{equipment}</label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="equipment">Equipment</Label>
-                  <Input 
-                    id="equipment" 
-                    placeholder="e.g. Barbell, Bench" 
-                    value={newExercise.equipment}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, equipment: e.target.value }))}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="variations">Variations (comma separated)</Label>
-                  <Input 
+                  <Label htmlFor="variations">Variações (uma por linha)</Label>
+                  <Textarea 
                     id="variations" 
-                    placeholder="e.g. Flat, Incline, Decline" 
+                    placeholder="ex: Com Halter&#10;Com Barra&#10;Na Polia" 
                     value={newExercise.variations}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, variations: e.target.value }))}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="videoUrl">Video URL (optional)</Label>
+                  <Label htmlFor="videoUrl">URL do Vídeo (opcional)</Label>
                   <Input 
                     id="videoUrl" 
-                    placeholder="https://example.com/video.mp4" 
+                    placeholder="https://exemplo.com/video.mp4" 
                     value={newExercise.videoUrl}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, videoUrl: e.target.value }))}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="tips">Tips (one per line)</Label>
+                  <Label htmlFor="tips">Dicas de Execução (uma por linha)</Label>
                   <Textarea 
                     id="tips" 
-                    placeholder="Enter tips for proper form" 
+                    placeholder="Digite as dicas para execução correta" 
                     value={newExercise.tips}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, tips: e.target.value }))}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="commonErrors">Common Errors (one per line)</Label>
+                  <Label htmlFor="commonErrors">Erros Comuns (um por linha)</Label>
                   <Textarea 
                     id="commonErrors" 
-                    placeholder="List common mistakes to avoid" 
+                    placeholder="Liste os erros comuns a evitar" 
                     value={newExercise.commonErrors}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, commonErrors: e.target.value }))}
                   />
@@ -277,8 +408,13 @@ export default function ExercisesPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddExerciseOpen(false)}>Cancel</Button>
-              <Button onClick={handleAddExercise}>Add Exercise</Button>
+              <Button variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
+              <Button 
+                onClick={isEditMode ? handleEditExercise : handleAddExercise}
+                disabled={isLoading}
+              >
+                {isLoading ? "Salvando..." : isEditMode ? "Salvar Alterações" : "Adicionar Exercício"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -286,9 +422,9 @@ export default function ExercisesPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Exercise Library</CardTitle>
+          <CardTitle>Biblioteca de Exercícios</CardTitle>
           <CardDescription>
-            Browse, filter, and manage your exercise collection.
+            Navegue, filtre e gerencie sua coleção de exercícios.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -296,7 +432,7 @@ export default function ExercisesPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search exercises..."
+                placeholder="Buscar exercícios..."
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -307,11 +443,11 @@ export default function ExercisesPage() {
                 <SelectTrigger className="w-full sm:w-[200px]">
                   <div className="flex items-center">
                     <Filter className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Filter by muscle" />
+                    <SelectValue placeholder="Filtrar por músculo" />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Muscle Groups</SelectItem>
+                  <SelectItem value="all">Todos os Grupos</SelectItem>
                   {MUSCLE_GROUPS.map((muscle) => (
                     <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>
                   ))}
@@ -333,21 +469,47 @@ export default function ExercisesPage() {
           <TabsContent value="grid" className="m-0">
             {filteredExercises.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                No exercises found. Try adjusting your filters or add new exercises.
+                Nenhum exercício encontrado. Ajuste os filtros ou adicione novos exercícios.
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredExercises.map((exercise) => (
                   <Card key={exercise.id} className="overflow-hidden">
                     <div className="relative aspect-video bg-muted">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <PlayCircle className="h-12 w-12 text-primary opacity-80" />
-                      </div>
+                      {exercise.video_url ? (
+                        <video
+                          src={exercise.video_url}
+                          className="w-full h-full object-cover"
+                          controls
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <PlayCircle className="h-12 w-12 text-primary opacity-80" />
+                        </div>
+                      )}
                       <div className="absolute top-2 right-2 flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 backdrop-blur-sm">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                          onClick={() => handleEditClick(exercise)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 bg-background/80 backdrop-blur-sm">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                          onClick={() => handleCloneExercise(exercise)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+                          onClick={() => handleDeleteExercise(exercise)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -358,14 +520,14 @@ export default function ExercisesPage() {
                         {exercise.description}
                       </p>
                       <div className="flex flex-wrap gap-1 mb-2">
-                        {exercise.muscleGroups.map((group) => (
+                        {exercise.muscle_group.map((group) => (
                           <Badge key={group} variant="outline" className="text-xs">
                             {group}
                           </Badge>
                         ))}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Equipment: {exercise.equipment.join(", ")}
+                        Equipamentos: {exercise.equipment.join(", ")}
                       </div>
                     </CardContent>
                   </Card>
@@ -377,17 +539,17 @@ export default function ExercisesPage() {
           <TabsContent value="list" className="m-0">
             {filteredExercises.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                No exercises found. Try adjusting your filters or add new exercises.
+                Nenhum exercício encontrado. Ajuste os filtros ou adicione novos exercícios.
               </div>
             ) : (
               <div className="rounded-md border">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="py-3 px-4 text-left font-medium">Name</th>
-                      <th className="py-3 px-4 text-left font-medium hidden md:table-cell">Muscle Groups</th>
-                      <th className="py-3 px-4 text-left font-medium hidden lg:table-cell">Equipment</th>
-                      <th className="py-3 px-4 text-right font-medium">Actions</th>
+                      <th className="py-3 px-4 text-left font-medium">Nome</th>
+                      <th className="py-3 px-4 text-left font-medium hidden md:table-cell">Grupos Musculares</th>
+                      <th className="py-3 px-4 text-left font-medium hidden lg:table-cell">Equipamentos</th>
+                      <th className="py-3 px-4 text-right font-medium">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -396,12 +558,12 @@ export default function ExercisesPage() {
                         <td className="py-3 px-4">
                           <div className="font-medium">{exercise.name}</div>
                           <div className="text-xs text-muted-foreground line-clamp-1 md:hidden">
-                            {exercise.muscleGroups.join(", ")}
+                            {exercise.muscle_group.join(", ")}
                           </div>
                         </td>
                         <td className="py-3 px-4 hidden md:table-cell">
                           <div className="flex flex-wrap gap-1">
-                            {exercise.muscleGroups.map((group) => (
+                            {exercise.muscle_group.map((group) => (
                               <Badge key={group} variant="outline" className="text-xs">
                                 {group}
                               </Badge>
@@ -413,13 +575,33 @@ export default function ExercisesPage() {
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <PlayCircle className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            {exercise.video_url && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <PlayCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleEditClick(exercise)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleCloneExercise(exercise)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleDeleteExercise(exercise)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
