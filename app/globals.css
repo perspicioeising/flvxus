@@ -57,6 +57,19 @@
   }
 }
 
+/* Landing Page Dark Mode Overrides */
+.dark .landing-hero {
+  @apply bg-gradient-to-br from-primary/20 to-background;
+}
+
+.dark .landing-feature-card {
+  @apply bg-card/50 backdrop-blur-sm border-primary/20 hover:border-primary/30;
+}
+
+.dark .landing-pricing-card {
+  @apply bg-card/50 backdrop-blur-sm;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

@@ -36,49 +36,49 @@ export function Sidebar({ className }: SidebarProps) {
       isActive: pathname === "/dashboard",
     },
     {
-      name: "Students",
+      name: "Alunos",
       href: "/dashboard/students",
       icon: Users,
       isActive: pathname.startsWith("/dashboard/students"),
     },
     {
-      name: "Workouts",
+      name: "Treinos",
       href: "/dashboard/workouts",
       icon: Activity,
       isActive: pathname.startsWith("/dashboard/workouts"),
     },
     {
-      name: "Exercises",
+      name: "Exercícios",
       href: "/dashboard/exercises",
       icon: Dumbbell,
       isActive: pathname.startsWith("/dashboard/exercises"),
     },
     {
-      name: "Calendar",
+      name: "Agenda",
       href: "/dashboard/calendar",
       icon: Calendar,
       isActive: pathname.startsWith("/dashboard/calendar"),
     },
     {
-      name: "Analytics",
+      name: "Análises",
       href: "/dashboard/analytics",
       icon: BarChart4,
       isActive: pathname.startsWith("/dashboard/analytics"),
     },
     {
-      name: "Programs",
+      name: "Programas",
       href: "/dashboard/programs",
       icon: BookOpen,
       isActive: pathname.startsWith("/dashboard/programs"),
     },
     {
-      name: "Health",
+      name: "Saúde",
       href: "/dashboard/health",
       icon: Heart,
       isActive: pathname.startsWith("/dashboard/health"),
     },
     {
-      name: "Achievements",
+      name: "Conquistas",
       href: "/dashboard/achievements",
       icon: Trophy,
       isActive: pathname.startsWith("/dashboard/achievements"),
@@ -87,13 +87,13 @@ export function Sidebar({ className }: SidebarProps) {
 
   const bottomRoutes = [
     {
-      name: "Settings",
+      name: "Configurações",
       href: "/dashboard/settings",
       icon: Settings,
       isActive: pathname.startsWith("/dashboard/settings"),
     },
     {
-      name: "Help",
+      name: "Ajuda",
       href: "/dashboard/help",
       icon: HelpCircle,
       isActive: pathname.startsWith("/dashboard/help"),
