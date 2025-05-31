@@ -51,6 +51,7 @@ export default function StudentsPage() {
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
   
   const [newStudent, setNewStudent] = useState({
     name: "",
@@ -97,13 +98,13 @@ export default function StudentsPage() {
         throw new Error(data.error);
       }
 
+      setTempPassword(data.data.temporaryPassword);
+      
       toast({
-        title: "Student added",
-        description: `Invitation sent to ${newStudent.email}`,
+        title: "Student added successfully",
+        description: "The student will receive an email with login instructions.",
       });
       
-      setIsAddStudentOpen(false);
-      setNewStudent({ name: "", email: "", phone: "" });
       fetchStudents();
       
     } catch (error: any) {
@@ -115,6 +116,12 @@ export default function StudentsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDialogClose = () => {
+    setIsAddStudentOpen(false);
+    setNewStudent({ name: "", email: "", phone: "" });
+    setTempPassword(null);
   };
 
   // Filter students based on search query and status filter
@@ -148,42 +155,60 @@ export default function StudentsPage() {
                 Add a new student to your training roster. They'll receive an invitation via email.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input 
-                  id="name" 
-                  placeholder="Full name" 
-                  value={newStudent.name}
-                  onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
-                />
+            {!tempPassword ? (
+              <>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input 
+                      id="name" 
+                      placeholder="Full name" 
+                      value={newStudent.name}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="Email address" 
+                      value={newStudent.email}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number (optional)</Label>
+                    <Input 
+                      id="phone" 
+                      placeholder="Phone number" 
+                      value={newStudent.phone}
+                      onChange={(e) => setNewStudent(prev => ({ ...prev, phone: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={handleDialogClose}>Cancel</Button>
+                  <Button onClick={handleAddStudent} disabled={isLoading}>
+                    {isLoading ? "Adding..." : "Add Student"}
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <div className="py-4">
+                <div className="mb-6 p-4 bg-muted rounded-lg">
+                  <p className="font-medium mb-2">Temporary Password:</p>
+                  <code className="bg-background px-2 py-1 rounded">{tempPassword}</code>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Please save this password and share it securely with the student.
+                    They will be able to change it after their first login.
+                  </p>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleDialogClose}>Close</Button>
+                </DialogFooter>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="Email address" 
-                  value={newStudent.email}
-                  onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number (optional)</Label>
-                <Input 
-                  id="phone" 
-                  placeholder="Phone number" 
-                  value={newStudent.phone}
-                  onChange={(e) => setNewStudent(prev => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddStudentOpen(false)}>Cancel</Button>
-              <Button onClick={handleAddStudent} disabled={isLoading}>
-                {isLoading ? "Adding..." : "Add Student"}
-              </Button>
-            </DialogFooter>
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -296,4 +321,3 @@ export default function StudentsPage() {
       </Card>
     </div>
   );
-}
