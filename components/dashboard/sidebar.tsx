@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -15,13 +16,17 @@ import {
   Activity,
   Heart,
   Trophy,
-  HelpCircle
+  HelpCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const routes = [
     {
@@ -96,7 +101,26 @@ export function Sidebar({ className }: SidebarProps) {
   ];
 
   return (
-    <aside className={cn("pb-12 w-64 border-r bg-background flex flex-col", className)}>
+    <aside 
+      className={cn(
+        "border-r bg-background flex flex-col relative",
+        isCollapsed ? "sidebar-collapsed" : "sidebar-expanded",
+        className
+      )}
+    >
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute -right-4 top-6 h-8 w-8 rounded-full border bg-background"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-4 w-4" />
+        ) : (
+          <ChevronLeft className="h-4 w-4" />
+        )}
+      </Button>
+
       <div className="flex-1 space-y-1 py-4">
         <div className="px-3 py-2">
           <div className="space-y-1">
@@ -105,14 +129,19 @@ export function Sidebar({ className }: SidebarProps) {
                 key={route.href}
                 href={route.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
-                  route.isActive 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
+                  "sidebar-item",
+                  isCollapsed && "sidebar-item-collapsed",
+                  route.isActive && "sidebar-item-active"
                 )}
+                title={isCollapsed ? route.name : undefined}
               >
-                <route.icon className="h-4 w-4" />
-                {route.name}
+                <route.icon className="h-4 w-4 flex-shrink-0" />
+                <span className={cn(
+                  "sidebar-text",
+                  isCollapsed && "sidebar-text-collapsed"
+                )}>
+                  {route.name}
+                </span>
               </Link>
             ))}
           </div>
@@ -127,14 +156,19 @@ export function Sidebar({ className }: SidebarProps) {
                 key={route.href}
                 href={route.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
-                  route.isActive 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
+                  "sidebar-item",
+                  isCollapsed && "sidebar-item-collapsed",
+                  route.isActive && "sidebar-item-active"
                 )}
+                title={isCollapsed ? route.name : undefined}
               >
-                <route.icon className="h-4 w-4" />
-                {route.name}
+                <route.icon className="h-4 w-4 flex-shrink-0" />
+                <span className={cn(
+                  "sidebar-text",
+                  isCollapsed && "sidebar-text-collapsed"
+                )}>
+                  {route.name}
+                </span>
               </Link>
             ))}
           </div>
