@@ -12,21 +12,34 @@ export default function DashboardPage() {
     const checkUserRole = async () => {
       if (!session?.user?.id) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .single();
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
 
-      if (profile?.role === 'student') {
-        router.push('/dashboard/my-workouts');
-      } else {
-        router.push('/dashboard/students');
+        if (error) throw error;
+
+        if (profile?.role === 'student') {
+          router.push('/dashboard/my-workouts');
+        } else if (profile?.role === 'trainer') {
+          router.push('/dashboard/students');
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
       }
     };
 
     checkUserRole();
-  }, [session]);
+  }, [session, supabase, router]);
 
-  return null;
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold mb-2">Setting up your dashboard...</h2>
+        <p className="text-muted-foreground">Please wait while we redirect you to the appropriate view.</p>
+      </div>
+    </div>
+  );
 }

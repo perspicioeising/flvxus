@@ -36,7 +36,6 @@ export function Header({ userRole }: HeaderProps) {
     router.push("/login");
   }
 
-  // Navigation items based on user role
   const getNavigationItems = () => {
     if (userRole === 'trainer') {
       return [
