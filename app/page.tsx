@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from 'next/image';
 import { ArrowRight, Dumbbell, BarChart, Calendar, Shield, Users, Trophy } from "lucide-react";
 
 export default function Home() {
@@ -48,9 +49,11 @@ export default function Home() {
           </div>
           <div className="relative">
             <div className="aspect-video bg-muted rounded-lg overflow-hidden shadow-2xl">
-              <img 
-                src="https://images.pexels.com/photos/4498362/pexels-photo-4498362.jpeg" 
-                alt="FitConnect Pro Dashboard" 
+              <Image 
+                src="https://images.pexels.com/photos/4498362/pexels-photo-4498362.jpeg"
+                alt="FitConnect Pro Dashboard"
+                width={1920}
+                height={1080}
                 className="w-full h-full object-cover"
               />
             </div>
