@@ -31,25 +31,6 @@ export default function MyWorkoutsPage() {
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryItem[]>([]);
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
 
-  useEffect(() => {
-    const init = async () => {
-      await fetchWorkoutPlans();
-      await fetchWorkoutHistory();
-    };
-    init();
-  }, [fetchWorkoutPlans, fetchWorkoutHistory]);
-
-  // Timer effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
-    if (isTimerRunning) {
-      interval = setInterval(() => {
-        setWorkoutTime(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning]);
-
   const fetchWorkoutPlans = async () => {
     try {
       const response = await fetch('/api/my-workouts');
@@ -87,6 +68,25 @@ export default function MyWorkoutsPage() {
       });
     }
   };
+
+  useEffect(() => {
+    const init = async () => {
+      await fetchWorkoutPlans();
+      await fetchWorkoutHistory();
+    };
+    init();
+  }, [fetchWorkoutPlans, fetchWorkoutHistory]);
+
+  // Timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setWorkoutTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning]);
 
   interface Exercise {
     id: string;
