@@ -32,9 +32,12 @@ export default function MyWorkoutsPage() {
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
 
   useEffect(() => {
-    fetchWorkoutPlans();
-    fetchWorkoutHistory();
-  }, []);
+    const init = async () => {
+      await fetchWorkoutPlans();
+      await fetchWorkoutHistory();
+    };
+    init();
+  }, [fetchWorkoutPlans, fetchWorkoutHistory]);
 
   // Timer effect
   useEffect(() => {
@@ -217,7 +220,7 @@ export default function MyWorkoutsPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{activeWorkout.name}</h2>
             <p className="text-muted-foreground">
-              Keep going! You're doing great.
+              Keep going! You&apos;re doing great.
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -352,7 +355,7 @@ export default function MyWorkoutsPage() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Today's Workouts</CardTitle>
+            <CardTitle>Today&apos;s Workouts</CardTitle>
             <CardDescription>
               Your scheduled workouts for today
             </CardDescription>
