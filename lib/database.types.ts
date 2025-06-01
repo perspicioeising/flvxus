@@ -59,10 +59,29 @@ export interface Database {
           student_id: string
           weight: number
           height: number
-          body_fat: number | null
-          muscle_mass: number | null
-          bmi: number | null
-          measurements: Json | null
+          protocol: string
+          date: string
+          gender: string
+          age: number
+          neck: number | null
+          shoulders: number | null
+          chest: number | null
+          abdomen: number | null
+          waist: number | null
+          hips: number | null
+          left_arm: number | null
+          right_arm: number | null
+          left_thigh: number | null
+          right_thigh: number | null
+          left_calf: number | null
+          right_calf: number | null
+          triceps: number | null
+          abdominal: number | null
+          suprailiac: number | null
+          body_density: number | null
+          fat_percentage: number | null
+          fat_mass: number | null
+          lean_mass: number | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -73,10 +92,29 @@ export interface Database {
           student_id: string
           weight: number
           height: number
-          body_fat?: number | null
-          muscle_mass?: number | null
-          bmi?: number | null
-          measurements?: Json | null
+          protocol: string
+          date: string
+          gender: string
+          age: number
+          neck?: number | null
+          shoulders?: number | null
+          chest?: number | null
+          abdomen?: number | null
+          waist?: number | null
+          hips?: number | null
+          left_arm?: number | null
+          right_arm?: number | null
+          left_thigh?: number | null
+          right_thigh?: number | null
+          left_calf?: number | null
+          right_calf?: number | null
+          triceps?: number | null
+          abdominal?: number | null
+          suprailiac?: number | null
+          body_density?: number | null
+          fat_percentage?: number | null
+          fat_mass?: number | null
+          lean_mass?: number | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -87,10 +125,29 @@ export interface Database {
           student_id?: string
           weight?: number
           height?: number
-          body_fat?: number | null
-          muscle_mass?: number | null
-          bmi?: number | null
-          measurements?: Json | null
+          protocol?: string
+          date?: string
+          gender?: string
+          age?: number
+          neck?: number | null
+          shoulders?: number | null
+          chest?: number | null
+          abdomen?: number | null
+          waist?: number | null
+          hips?: number | null
+          left_arm?: number | null
+          right_arm?: number | null
+          left_thigh?: number | null
+          right_thigh?: number | null
+          left_calf?: number | null
+          right_calf?: number | null
+          triceps?: number | null
+          abdominal?: number | null
+          suprailiac?: number | null
+          body_density?: number | null
+          fat_percentage?: number | null
+          fat_mass?: number | null
+          lean_mass?: number | null
           notes?: string | null
           created_at?: string
           updated_at?: string
