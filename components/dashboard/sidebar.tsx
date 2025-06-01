@@ -32,104 +32,105 @@ export function Sidebar({ className, userRole }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const getRoutes = () => {
-    if (userRole === 'trainer') {
-      return [
-        {
-          name: "Dashboard",
-          href: "/dashboard",
-          icon: LayoutDashboard,
-          isActive: pathname === "/dashboard",
-        },
-        {
-          name: "Students",
-          href: "/dashboard/students",
-          icon: Users,
-          isActive: pathname.startsWith("/dashboard/students"),
-        },
-        {
-          name: "Workouts",
-          href: "/dashboard/workouts",
-          icon: Activity,
-          isActive: pathname.startsWith("/dashboard/workouts"),
-        },
-        {
-          name: "Training Plans",
-          href: "/dashboard/workout-plans",
-          icon: ClipboardList,
-          isActive: pathname.startsWith("/dashboard/workout-plans"),
-        },
-        {
-          name: "Exercises",
-          href: "/dashboard/exercises",
-          icon: Dumbbell,
-          isActive: pathname.startsWith("/dashboard/exercises"),
-        },
-        {
-          name: "Calendar",
-          href: "/dashboard/calendar",
-          icon: Calendar,
-          isActive: pathname.startsWith("/dashboard/calendar"),
-        },
-        {
-          name: "Physical Assessments",
-          href: "/dashboard/physical-assessments",
-          icon: BookOpen,
-          isActive: pathname.startsWith("/dashboard/physical-assessments"),
-        },
-        {
-          name: "Posture Assessments",
-          href: "/dashboard/posture-assessments",
-          icon: Camera,
-          isActive: pathname.startsWith("/dashboard/posture-assessments"),
-        },
+  if (userRole === 'trainer') {
+    return [
+      {
+        name: "Painel",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        isActive: pathname === "/dashboard",
+      },
+      {
+        name: "Alunos",
+        href: "/dashboard/students",
+        icon: Users,
+        isActive: pathname.startsWith("/dashboard/students"),
+      },
+      {
+        name: "Av Física",
+        href: "/dashboard/physical-assessments",
+        icon: BookOpen,
+        isActive: pathname.startsWith("/dashboard/physical-assessments"),
+      },
+      {
+        name: "Av Postural",
+        href: "/dashboard/posture-assessments",
+        icon: Camera,
+        isActive: pathname.startsWith("/dashboard/posture-assessments"),
+      },
+       {
+        name: "Calendário",
+        href: "/dashboard/calendar",
+        icon: Calendar,
+        isActive: pathname.startsWith("/dashboard/calendar"),
+      },     
+      {
+        name: "Conquistas",
+        href: "/dashboard/achievements",
+        icon: Trophy,
+        isActive: pathname.startsWith("/dashboard/achievements"),
+      },
+       {
+        name: "Exercícios",
+        href: "/dashboard/exercises",
+        icon: Dumbbell,
+        isActive: pathname.startsWith("/dashboard/exercises"),
+      },
+      {
+        name: "Treinos",
+        href: "/dashboard/workouts",
+        icon: Activity,
+        isActive: pathname.startsWith("/dashboard/workouts"),
+      },
+      {
+        name: "Planos de Treino",
+        href: "/dashboard/workout-plans",
+        icon: ClipboardList,
+        isActive: pathname.startsWith("/dashboard/workout-plans"),
+      },
      
-        {
-          name: "Achievements",
-          href: "/dashboard/achievements",
-          icon: Trophy,
-          isActive: pathname.startsWith("/dashboard/achievements"),
-        }
-      ];
-    } else {
-      return [
-        {
-          name: "My Workouts",
-          href: "/dashboard/my-workouts",
-          icon: Activity,
-          isActive: pathname.startsWith("/dashboard/my-workouts"),
-        },
-        {
-          name: "Progress",
-          href: "/dashboard/progress",
-          icon: BarChart4,
-          isActive: pathname.startsWith("/dashboard/progress"),
-        },
-        {
-          name: "Achievements",
-          href: "/dashboard/achievements",
-          icon: Trophy,
-          isActive: pathname.startsWith("/dashboard/achievements"),
-        }
-      ];
-    }
-  };
+     
+    ];
+  } else {
+    return [
+      {
+        name: "Meus Treinos",
+        href: "/dashboard/my-workouts",
+        icon: Activity,
+        isActive: pathname.startsWith("/dashboard/my-workouts"),
+      },
+      {
+        name: "Progresso",
+        href: "/dashboard/progress",
+        icon: BarChart4,
+        isActive: pathname.startsWith("/dashboard/progress"),
+      },
+      {
+        name: "Conquistas",
+        href: "/dashboard/achievements",
+        icon: Trophy,
+        isActive: pathname.startsWith("/dashboard/achievements"),
+      }
+    ];
+  }
+};
 
   const routes = getRoutes();
 
-  const bottomRoutes = [
-    {
-      name: "Settings",
-      href: "/dashboard/settings",
-      icon: Settings,
-      isActive: pathname.startsWith("/dashboard/settings"),
-    },
-    {
-      name: "Help",
-      href: "/dashboard/help",
-      icon: HelpCircle,
-      isActive: pathname.startsWith("/dashboard/help"),
-    },
-  ];
+const bottomRoutes = [
+  {
+    name: "Configurações",
+    href: "/dashboard/settings",
+    icon: Settings,
+    isActive: pathname.startsWith("/dashboard/settings"),
+  },
+  {
+    name: "Ajuda",
+    href: "/dashboard/help",
+    icon: HelpCircle,
+    isActive: pathname.startsWith("/dashboard/help"),
+  },
+];
 
   return (
     <aside 
