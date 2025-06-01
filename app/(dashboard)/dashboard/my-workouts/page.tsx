@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { 
@@ -18,7 +19,9 @@ import {
   Timer,
   MessageSquare,
   Trophy,
-  BarChart
+  BarChart,
+  Info,
+  Video
 } from "lucide-react";
 
 export default function MyWorkoutsPage() {
@@ -30,6 +33,7 @@ export default function MyWorkoutsPage() {
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryItem[]>([]);
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
+  const [showExerciseDetails, setShowExerciseDetails] = useState(false);
 
   const fetchWorkoutPlans = async () => {
     try {
@@ -91,17 +95,25 @@ export default function MyWorkoutsPage() {
   interface Exercise {
     id: string;
     name: string;
+    description: string;
+    videoUrl?: string;
+    muscleGroup?: string[];
+    equipment?: string[];
     sets: number;
     reps: number;
-    weight?: number;
+    rest: number;
     notes?: string;
+    tips?: string[];
+    commonErrors?: string[];
     completed?: boolean;
     completedSets?: number;
+    weight?: number;
   }
 
   interface WorkoutPlan {
     id: string;
     name: string;
+    description: string;
     exercises: Exercise[];
     duration: number;
   }
@@ -220,7 +232,7 @@ export default function MyWorkoutsPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{activeWorkout.name}</h2>
             <p className="text-muted-foreground">
-              Keep going! You&apos;re doing great.
+              {activeWorkout.description}
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -239,12 +251,33 @@ export default function MyWorkoutsPage() {
           {currentExercise && (
             <Card>
               <CardHeader>
-                <CardTitle>{currentExercise.name}</CardTitle>
-                <CardDescription>
-                  Complete all sets to move to the next exercise
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{currentExercise.name}</CardTitle>
+                    <CardDescription>
+                      Complete all sets to move to the next exercise
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowExerciseDetails(true)}
+                  >
+                    <Info className="h-4 w-4 mr-2" />
+                    Exercise Details
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                {currentExercise.videoUrl && (
+                  <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                    <video
+                      src={currentExercise.videoUrl}
+                      controls
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Weight Used (kg)</label>
@@ -302,6 +335,67 @@ export default function MyWorkoutsPage() {
             </Card>
           )}
 
+          <Dialog open={showExerciseDetails} onOpenChange={setShowExerciseDetails}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{currentExercise?.name}</DialogTitle>
+                <DialogDescription>
+                  Detailed instructions and tips for this exercise
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Description</h4>
+                  <p className="text-muted-foreground">{currentExercise?.description}</p>
+                </div>
+
+                {currentExercise?.muscleGroup && (
+                  <div>
+                    <h4 className="font-medium mb-2">Target Muscles</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {currentExercise.muscleGroup.map((muscle) => (
+                        <Badge key={muscle} variant="secondary">{muscle}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentExercise?.equipment && (
+                  <div>
+                    <h4 className="font-medium mb-2">Equipment Needed</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {currentExercise.equipment.map((item) => (
+                        <Badge key={item} variant="outline">{item}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentExercise?.tips && currentExercise.tips.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Execution Tips</h4>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      {currentExercise.tips.map((tip, index) => (
+                        <li key={index}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {currentExercise?.commonErrors && currentExercise.commonErrors.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Common Mistakes to Avoid</h4>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      {currentExercise.commonErrors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Card>
             <CardHeader>
               <CardTitle>Workout Progress</CardTitle>
@@ -325,7 +419,7 @@ export default function MyWorkoutsPage() {
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {exercise.sets} sets × {exercise.reps} reps
+                        {exercise.sets} sets × {exercise.reps} reps • {exercise.rest}s rest
                       </div>
                     </div>
                     {exercise.weight && (
@@ -374,8 +468,18 @@ export default function MyWorkoutsPage() {
                     <div>
                       <h3 className="font-medium">{plan.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {plan.exercises.length} exercises • Approximately {plan.duration} minutes
+                        {plan.description}
                       </p>
+                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Dumbbell className="h-4 w-4" />
+                          {plan.exercises.length} exercises
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          ~{plan.duration} minutes
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <Button onClick={() => startWorkout(plan)}>
