@@ -18,7 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  BookOpen
+  BookOpen,
+  Camera
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -74,6 +75,12 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           href: "/dashboard/physical-assessments",
           icon: BookOpen,
           isActive: pathname.startsWith("/dashboard/physical-assessments"),
+        },
+        {
+          name: "Posture Assessments",
+          href: "/dashboard/posture-assessments",
+          icon: Camera,
+          isActive: pathname.startsWith("/dashboard/posture-assessments"),
         },
         {
           name: "Analytics",
