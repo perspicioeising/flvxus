@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,11 +60,7 @@ export default function ExercisesPage() {
     commonErrors: "",
   });
 
-  useEffect(() => {
-    fetchExercises();
-  }, []);
-
-  const fetchExercises = async () => {
+  const fetchExercises = useCallback(async () => {
     try {
       const response = await fetch('/api/exercises');
       const data = await response.json();
@@ -81,7 +77,11 @@ export default function ExercisesPage() {
         description: error instanceof Error ? error.message : String(error),
       });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchExercises();
+  }, [fetchExercises]);
 
   interface HandleVideoUploadProps {
     file: File;
