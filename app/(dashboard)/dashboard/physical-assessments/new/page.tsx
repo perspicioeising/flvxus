@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -17,29 +16,43 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const PROTOCOLS = [
+  "McArdle 1992",
+  "Guedes 1994"
+];
+
 export default function NewPhysicalAssessmentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [students, setStudents] = useState([]);
+  const [calculatedResults, setCalculatedResults] = useState(null);
   
   const [assessment, setAssessment] = useState({
+    protocol: "",
     student_id: "",
+    date: new Date().toISOString().split('T')[0],
     weight: "",
     height: "",
-    body_fat: "",
-    muscle_mass: "",
-    measurements: {
-      chest: "",
-      waist: "",
-      hips: "",
-      rightArm: "",
-      leftArm: "",
-      rightThigh: "",
-      leftThigh: "",
-      rightCalf: "",
-      leftCalf: "",
-    },
+    age: "",
+    gender: "",
+    // Perimetry
+    neck: "",
+    shoulders: "",
+    chest: "",
+    abdomen: "",
+    waist: "",
+    hips: "",
+    leftArm: "",
+    rightArm: "",
+    leftThigh: "",
+    rightThigh: "",
+    leftCalf: "",
+    rightCalf: "",
+    // Skinfolds
+    triceps: "",
+    abdominal: "",
+    suprailiac: "",
     notes: ""
   });
 
@@ -66,29 +79,101 @@ export default function NewPhysicalAssessmentPage() {
     }
   };
 
+  const calculateResults = () => {
+    const {
+      protocol,
+      gender,
+      age,
+      weight,
+      triceps,
+      abdominal,
+      suprailiac,
+      leftThigh,
+    } = assessment;
+
+    let densityResult;
+    let fatPercentageResult;
+
+    // Convert string values to numbers
+    const measurements = {
+      triceps: parseFloat(triceps),
+      abdominal: parseFloat(abdominal),
+      suprailiac: parseFloat(suprailiac),
+      thigh: parseFloat(leftThigh),
+    };
+
+    if (protocol === "McArdle 1992") {
+      if (gender === "male") {
+        if (age >= 18 && age <= 34) {
+          densityResult = 1.1610 - 0.0632 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
+        } else if (age >= 18 && age <= 27) {
+          densityResult = 1.0913 - 0.00116 * (measurements.triceps + measurements.suprailiac);
+        }
+      } else if (gender === "female") {
+        if (age >= 18 && age <= 48) {
+          densityResult = 1.06234 - 0.00068 * measurements.suprailiac - 0.00039 * measurements.triceps - 0.00025 * measurements.suprailiac;
+        }
+      }
+    } else if (protocol === "Guedes 1994") {
+      if (gender === "male") {
+        densityResult = 1.17136 - 0.06706 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
+      } else if (gender === "female") {
+        densityResult = 1.16650 - 0.07063 * Math.log10(measurements.thigh + measurements.suprailiac + measurements.suprailiac);
+      }
+    }
+
+    if (densityResult) {
+      fatPercentageResult = ((4.95 / densityResult) - 4.50) * 100;
+      const fatMass = (fatPercentageResult / 100) * parseFloat(weight);
+      const leanMass = parseFloat(weight) - fatMass;
+
+      setCalculatedResults({
+        bodyDensity: densityResult.toFixed(4),
+        fatPercentage: fatPercentageResult.toFixed(2),
+        fatMass: fatMass.toFixed(2),
+        leanMass: leanMass.toFixed(2)
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (assessment.protocol && assessment.gender && assessment.age && 
+        assessment.weight && assessment.triceps && assessment.abdominal && 
+        assessment.suprailiac) {
+      calculateResults();
+    }
+  }, [assessment]);
+
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
 
-      // Convert string values to numbers
+      if (!calculatedResults) {
+        throw new Error("Please fill in all required fields to calculate results");
+      }
+
       const assessmentData = {
-        student_id: assessment.student_id,
+        ...assessment,
+        ...calculatedResults,
+        // Convert string values to numbers
         weight: parseFloat(assessment.weight),
         height: parseFloat(assessment.height),
-        body_fat: parseFloat(assessment.body_fat),
-        muscle_mass: parseFloat(assessment.muscle_mass),
-        measurements: {
-          chest: parseFloat(assessment.measurements.chest),
-          waist: parseFloat(assessment.measurements.waist),
-          hips: parseFloat(assessment.measurements.hips),
-          rightArm: parseFloat(assessment.measurements.rightArm),
-          leftArm: parseFloat(assessment.measurements.leftArm),
-          rightThigh: parseFloat(assessment.measurements.rightThigh),
-          leftThigh: parseFloat(assessment.measurements.leftThigh),
-          rightCalf: parseFloat(assessment.measurements.rightCalf),
-          leftCalf: parseFloat(assessment.measurements.leftCalf),
-        },
-        notes: assessment.notes
+        age: parseInt(assessment.age),
+        neck: parseFloat(assessment.neck),
+        shoulders: parseFloat(assessment.shoulders),
+        chest: parseFloat(assessment.chest),
+        abdomen: parseFloat(assessment.abdomen),
+        waist: parseFloat(assessment.waist),
+        hips: parseFloat(assessment.hips),
+        leftArm: parseFloat(assessment.leftArm),
+        rightArm: parseFloat(assessment.rightArm),
+        leftThigh: parseFloat(assessment.leftThigh),
+        rightThigh: parseFloat(assessment.rightThigh),
+        leftCalf: parseFloat(assessment.leftCalf),
+        rightCalf: parseFloat(assessment.rightCalf),
+        triceps: parseFloat(assessment.triceps),
+        abdominal: parseFloat(assessment.abdominal),
+        suprailiac: parseFloat(assessment.suprailiac),
       };
 
       const response = await fetch('/api/physical-assessments', {
@@ -156,11 +241,30 @@ export default function NewPhysicalAssessmentPage() {
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
             <CardDescription>
-              Enter the student's basic measurements
+              Enter the assessment protocol and student information
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="protocol">Protocol *</Label>
+                <Select
+                  value={assessment.protocol}
+                  onValueChange={(value) => setAssessment(prev => ({ ...prev, protocol: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select protocol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROTOCOLS.map((protocol) => (
+                      <SelectItem key={protocol} value={protocol}>
+                        {protocol}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <Label htmlFor="student">Student *</Label>
                 <Select
@@ -180,7 +284,42 @@ export default function NewPhysicalAssessmentPage() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="date">Assessment Date *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={assessment.date}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="gender">Gender *</Label>
+                <Select
+                  value={assessment.gender}
+                  onValueChange={(value) => setAssessment(prev => ({ ...prev, gender: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="age">Age *</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    value={assessment.age}
+                    onChange={(e) => setAssessment(prev => ({ ...prev, age: e.target.value }))}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="weight">Weight (kg) *</Label>
                   <Input
@@ -202,53 +341,57 @@ export default function NewPhysicalAssessmentPage() {
                   />
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="bodyFat">Body Fat %</Label>
-                  <Input
-                    id="bodyFat"
-                    type="number"
-                    step="0.1"
-                    value={assessment.body_fat}
-                    onChange={(e) => setAssessment(prev => ({ ...prev, body_fat: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="muscleMass">Muscle Mass %</Label>
-                  <Input
-                    id="muscleMass"
-                    type="number"
-                    step="0.1"
-                    value={assessment.muscle_mass}
-                    onChange={(e) => setAssessment(prev => ({ ...prev, muscle_mass: e.target.value }))}
-                  />
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Body Measurements</CardTitle>
+            <CardTitle>Perimetry Measurements</CardTitle>
             <CardDescription>
-              Record detailed body measurements (in cm)
+              Record body circumference measurements (in cm)
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label htmlFor="neck">Neck</Label>
+                <Input
+                  id="neck"
+                  type="number"
+                  step="0.1"
+                  value={assessment.neck}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, neck: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="shoulders">Shoulders</Label>
+                <Input
+                  id="shoulders"
+                  type="number"
+                  step="0.1"
+                  value={assessment.shoulders}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, shoulders: e.target.value }))}
+                />
+              </div>
               <div>
                 <Label htmlFor="chest">Chest</Label>
                 <Input
                   id="chest"
                   type="number"
                   step="0.1"
-                  value={assessment.measurements.chest}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, chest: e.target.value }
-                  }))}
+                  value={assessment.chest}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, chest: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="abdomen">Abdomen</Label>
+                <Input
+                  id="abdomen"
+                  type="number"
+                  step="0.1"
+                  value={assessment.abdomen}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, abdomen: e.target.value }))}
                 />
               </div>
               <div>
@@ -257,11 +400,8 @@ export default function NewPhysicalAssessmentPage() {
                   id="waist"
                   type="number"
                   step="0.1"
-                  value={assessment.measurements.waist}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, waist: e.target.value }
-                  }))}
+                  value={assessment.waist}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, waist: e.target.value }))}
                 />
               </div>
               <div>
@@ -270,24 +410,8 @@ export default function NewPhysicalAssessmentPage() {
                   id="hips"
                   type="number"
                   step="0.1"
-                  value={assessment.measurements.hips}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, hips: e.target.value }
-                  }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="rightArm">Right Arm</Label>
-                <Input
-                  id="rightArm"
-                  type="number"
-                  step="0.1"
-                  value={assessment.measurements.rightArm}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, rightArm: e.target.value }
-                  }))}
+                  value={assessment.hips}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, hips: e.target.value }))}
                 />
               </div>
               <div>
@@ -296,24 +420,18 @@ export default function NewPhysicalAssessmentPage() {
                   id="leftArm"
                   type="number"
                   step="0.1"
-                  value={assessment.measurements.leftArm}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, leftArm: e.target.value }
-                  }))}
+                  value={assessment.leftArm}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, leftArm: e.target.value }))}
                 />
               </div>
               <div>
-                <Label htmlFor="rightThigh">Right Thigh</Label>
+                <Label htmlFor="rightArm">Right Arm</Label>
                 <Input
-                  id="rightThigh"
+                  id="rightArm"
                   type="number"
                   step="0.1"
-                  value={assessment.measurements.rightThigh}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, rightThigh: e.target.value }
-                  }))}
+                  value={assessment.rightArm}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, rightArm: e.target.value }))}
                 />
               </div>
               <div>
@@ -322,24 +440,18 @@ export default function NewPhysicalAssessmentPage() {
                   id="leftThigh"
                   type="number"
                   step="0.1"
-                  value={assessment.measurements.leftThigh}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, leftThigh: e.target.value }
-                  }))}
+                  value={assessment.leftThigh}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, leftThigh: e.target.value }))}
                 />
               </div>
               <div>
-                <Label htmlFor="rightCalf">Right Calf</Label>
+                <Label htmlFor="rightThigh">Right Thigh</Label>
                 <Input
-                  id="rightCalf"
+                  id="rightThigh"
                   type="number"
                   step="0.1"
-                  value={assessment.measurements.rightCalf}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, rightCalf: e.target.value }
-                  }))}
+                  value={assessment.rightThigh}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, rightThigh: e.target.value }))}
                 />
               </div>
               <div>
@@ -348,11 +460,18 @@ export default function NewPhysicalAssessmentPage() {
                   id="leftCalf"
                   type="number"
                   step="0.1"
-                  value={assessment.measurements.leftCalf}
-                  onChange={(e) => setAssessment(prev => ({
-                    ...prev,
-                    measurements: { ...prev.measurements, leftCalf: e.target.value }
-                  }))}
+                  value={assessment.leftCalf}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, leftCalf: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="rightCalf">Right Calf</Label>
+                <Input
+                  id="rightCalf"
+                  type="number"
+                  step="0.1"
+                  value={assessment.rightCalf}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, rightCalf: e.target.value }))}
                 />
               </div>
             </div>
@@ -361,18 +480,68 @@ export default function NewPhysicalAssessmentPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Additional Notes</CardTitle>
+            <CardTitle>Skinfold Measurements</CardTitle>
             <CardDescription>
-              Add any relevant observations or notes
+              Record skinfold measurements (in mm)
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Textarea
-              value={assessment.notes}
-              onChange={(e) => setAssessment(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Enter any additional notes or observations..."
-              className="min-h-[100px]"
-            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label htmlFor="triceps">Triceps *</Label>
+                <Input
+                  id="triceps"
+                  type="number"
+                  step="0.1"
+                  value={assessment.triceps}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, triceps: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="abdominal">Abdominal *</Label>
+                <Input
+                  id="abdominal"
+                  type="number"
+                  step="0.1"
+                  value={assessment.abdominal}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, abdominal: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="suprailiac">Suprailiac *</Label>
+                <Input
+                  id="suprailiac"
+                  type="number"
+                  step="0.1"
+                  value={assessment.suprailiac}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, suprailiac: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {calculatedResults && (
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <h3 className="font-semibold mb-4">Calculated Results:</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label>Body Density</Label>
+                    <p className="text-lg font-medium">{calculatedResults.bodyDensity}</p>
+                  </div>
+                  <div>
+                    <Label>Body Fat %</Label>
+                    <p className="text-lg font-medium">{calculatedResults.fatPercentage}%</p>
+                  </div>
+                  <div>
+                    <Label>Fat Mass</Label>
+                    <p className="text-lg font-medium">{calculatedResults.fatMass} kg</p>
+                  </div>
+                  <div>
+                    <Label>Lean Mass</Label>
+                    <p className="text-lg font-medium">{calculatedResults.leanMass} kg</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
