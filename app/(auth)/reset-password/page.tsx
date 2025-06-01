@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dumbbell } from 'lucide-react';
 
-export default function ResetPasswordContent() {
+ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { supabase } = useSupabase();
@@ -127,7 +127,7 @@ export default function ResetPasswordContent() {
   );
 }
 
-export function ResetPasswordPage() {
+export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <ResetPasswordContent />
