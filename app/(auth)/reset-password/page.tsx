@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSupabase } from '@/app/providers';
 import { useToast } from '@/hooks/use-toast';
@@ -80,6 +80,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
+     <Suspense fallback={<div>Carregando...</div>}>
     <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
@@ -124,5 +125,7 @@ export default function ResetPasswordPage() {
         </CardContent>
       </Card>
     </div>
+        </Suspense>
+
   );
 }

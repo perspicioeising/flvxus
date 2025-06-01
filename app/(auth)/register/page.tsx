@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -119,6 +119,8 @@ export default function RegisterPage() {
   }
 
   return (
+        <Suspense fallback={<div>Carregando...</div>}>
+
     <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-muted/30">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
@@ -207,5 +209,6 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+    </Suspense>
   );
 }
