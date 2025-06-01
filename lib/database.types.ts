@@ -9,6 +9,120 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          id: string
+          name: string
+          description: string
+          criteria_type: string
+          criteria_value: number
+          points_reward: number
+          icon: string | null
+          created_at: string
+          updated_at: string
+          tenant_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description: string
+          criteria_type: string
+          criteria_value: number
+          points_reward: number
+          icon?: string | null
+          created_at?: string
+          updated_at?: string
+          tenant_id: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string
+          criteria_type?: string
+          criteria_value?: number
+          points_reward?: number
+          icon?: string | null
+          created_at?: string
+          updated_at?: string
+          tenant_id?: string
+        }
+      }
+      appointments: {
+        Row: {
+          id: string
+          trainer_id: string
+          student_id: string
+          title: string
+          description: string | null
+          start_time: string
+          end_time: string
+          status: 'scheduled' | 'completed' | 'cancelled'
+          created_at: string
+          updated_at: string
+          tenant_id: string
+        }
+        Insert: {
+          id?: string
+          trainer_id: string
+          student_id: string
+          title: string
+          description?: string | null
+          start_time: string
+          end_time: string
+          status: 'scheduled' | 'completed' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+          tenant_id: string
+        }
+        Update: {
+          id?: string
+          trainer_id?: string
+          student_id?: string
+          title?: string
+          description?: string | null
+          start_time?: string
+          end_time?: string
+          status?: 'scheduled' | 'completed' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+          tenant_id?: string
+        }
+      }
+      exercise_progress: {
+        Row: {
+          id: string
+          student_id: string
+          workout_id: string
+          exercise_id: string
+          weight: number | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          tenant_id: string
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          workout_id: string
+          exercise_id: string
+          weight?: number | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          tenant_id: string
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          workout_id?: string
+          exercise_id?: string
+          weight?: number | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          tenant_id?: string
+        }
+      }
       exercises: {
         Row: {
           id: string
@@ -206,6 +320,18 @@ export interface Database {
           role: 'trainer' | 'student'
           trainer_id: string | null
           tenant_id: string
+          birth_date: string | null
+          gender: string | null
+          height: number | null
+          weight: number | null
+          goals: string[] | null
+          medical_conditions: string | null
+          emergency_contact: string | null
+          preferred_training_time: string | null
+          experience_level: string | null
+          notes: string | null
+          total_points: number
+          last_workout_date: string | null
           created_at: string
           updated_at: string
         }
@@ -219,6 +345,18 @@ export interface Database {
           role: 'trainer' | 'student'
           trainer_id?: string | null
           tenant_id: string
+          birth_date?: string | null
+          gender?: string | null
+          height?: number | null
+          weight?: number | null
+          goals?: string[] | null
+          medical_conditions?: string | null
+          emergency_contact?: string | null
+          preferred_training_time?: string | null
+          experience_level?: string | null
+          notes?: string | null
+          total_points?: number
+          last_workout_date?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -232,6 +370,18 @@ export interface Database {
           role?: 'trainer' | 'student'
           trainer_id?: string | null
           tenant_id?: string
+          birth_date?: string | null
+          gender?: string | null
+          height?: number | null
+          weight?: number | null
+          goals?: string[] | null
+          medical_conditions?: string | null
+          emergency_contact?: string | null
+          preferred_training_time?: string | null
+          experience_level?: string | null
+          notes?: string | null
+          total_points?: number
+          last_workout_date?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -271,33 +421,30 @@ export interface Database {
           updated_at?: string
         }
       }
-      workouts: {
+      user_achievements: {
         Row: {
           id: string
-          name: string
-          description: string | null
-          level: 'beginner' | 'intermediate' | 'advanced'
-          goal: string
+          user_id: string
+          achievement_id: string
+          earned_at: string
           created_at: string
           updated_at: string
           tenant_id: string
         }
         Insert: {
           id?: string
-          name: string
-          description?: string | null
-          level: 'beginner' | 'intermediate' | 'advanced'
-          goal: string
+          user_id: string
+          achievement_id: string
+          earned_at?: string
           created_at?: string
           updated_at?: string
           tenant_id: string
         }
         Update: {
           id?: string
-          name?: string
-          description?: string | null
-          level?: 'beginner' | 'intermediate' | 'advanced'
-          goal?: string
+          user_id?: string
+          achievement_id?: string
+          earned_at?: string
           created_at?: string
           updated_at?: string
           tenant_id?: string
@@ -342,6 +489,47 @@ export interface Database {
           rest?: number
           notes?: string | null
           order?: number
+          created_at?: string
+          updated_at?: string
+          tenant_id?: string
+        }
+      }
+      workout_history: {
+        Row: {
+          id: string
+          student_id: string
+          workout_id: string
+          completed_at: string
+          duration: number
+          exercises_completed: number
+          total_weight: number | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+          tenant_id: string
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          workout_id: string
+          completed_at: string
+          duration: number
+          exercises_completed: number
+          total_weight?: number | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          tenant_id: string
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          workout_id?: string
+          completed_at?: string
+          duration?: number
+          exercises_completed?: number
+          total_weight?: number | null
+          notes?: string | null
           created_at?: string
           updated_at?: string
           tenant_id?: string
@@ -406,47 +594,6 @@ export interface Database {
           workout_plan_id?: string
           workout_id?: string
           day_of_week?: number
-          created_at?: string
-          updated_at?: string
-          tenant_id?: string
-        }
-      }
-      appointments: {
-        Row: {
-          id: string
-          trainer_id: string
-          student_id: string
-          title: string
-          description: string | null
-          start_time: string
-          end_time: string
-          status: 'scheduled' | 'completed' | 'cancelled'
-          created_at: string
-          updated_at: string
-          tenant_id: string
-        }
-        Insert: {
-          id?: string
-          trainer_id: string
-          student_id: string
-          title: string
-          description?: string | null
-          start_time: string
-          end_time: string
-          status: 'scheduled' | 'completed' | 'cancelled'
-          created_at?: string
-          updated_at?: string
-          tenant_id: string
-        }
-        Update: {
-          id?: string
-          trainer_id?: string
-          student_id?: string
-          title?: string
-          description?: string | null
-          start_time?: string
-          end_time?: string
-          status?: 'scheduled' | 'completed' | 'cancelled'
           created_at?: string
           updated_at?: string
           tenant_id?: string
