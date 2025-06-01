@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,23 +46,12 @@ export default function PhysicalAssessmentDetailsPage() {
     triceps?: number | string;
     abdominal?: number | string;
     suprailiac?: number | string;
-    // add other fields as needed
   };
 
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [assessmentHistory, setAssessmentHistory] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchAssessmentDetails();
-  }, []);
-
-  useEffect(() => {
-    if (assessment?.student_id) {
-      fetchAssessmentHistory();
-    }
-  }, [assessment]);
-
-  const fetchAssessmentDetails = async () => {
+  const fetchAssessmentDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/physical-assessments/${params.id}`);
       const data = await response.json();
@@ -81,9 +70,9 @@ export default function PhysicalAssessmentDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id, toast]);
 
-  const fetchAssessmentHistory = async () => {
+  const fetchAssessmentHistory = useCallback(async () => {
     try {
       const response = await fetch('/api/physical-assessments');
       const data = await response.json();
@@ -92,7 +81,6 @@ export default function PhysicalAssessmentDetailsPage() {
         throw new Error(data.error);
       }
       
-      // Sort by date and get only assessments for this student
       interface AssessmentHistoryItem {
         date: string;
         weight?: number;
@@ -109,7 +97,6 @@ export default function PhysicalAssessmentDetailsPage() {
         fat_percentage?: number | string;
         lean_mass?: number | string;
         fat_mass?: number | string;
-        // other fields omitted for brevity
       }
 
       const studentAssessments: AssessmentHistoryItem[] = (data as AssessmentApi[])
@@ -131,7 +118,17 @@ export default function PhysicalAssessmentDetailsPage() {
         description: error instanceof Error ? error.message : String(error),
       });
     }
-  };
+  }, [assessment, toast]);
+
+  useEffect(() => {
+    fetchAssessmentDetails();
+  }, [fetchAssessmentDetails]);
+
+  useEffect(() => {
+    if (assessment?.student_id) {
+      fetchAssessmentHistory();
+    }
+  }, [assessment?.student_id, fetchAssessmentHistory]);
 
   const handleDelete = async () => {
     try {
@@ -209,13 +206,6 @@ export default function PhysicalAssessmentDetailsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          {/* <Button
-            variant="outline"
-            onClick={() => router.push(`/dashboard/physical-assessments/${params.id}/posture`)}
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Posture Assessment
-          </Button> */}
           <Button
             variant="outline"
             onClick={() => router.push(`/dashboard/physical-assessments/${params.id}/edit`)}
