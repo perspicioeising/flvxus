@@ -155,13 +155,13 @@ export default function PhysicalAssessmentDetailsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
+          {/* <Button
             variant="outline"
             onClick={() => router.push(`/dashboard/physical-assessments/${params.id}/posture`)}
           >
             <Camera className="h-4 w-4 mr-2" />
             Posture Assessment
-          </Button>
+          </Button> */}
           <Button
             variant="outline"
             onClick={() => router.push(`/dashboard/physical-assessments/${params.id}/edit`)}

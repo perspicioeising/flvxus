@@ -27,12 +27,19 @@ export default function NewPhysicalAssessmentPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [students, setStudents] = useState([]);
-  const [calculatedResults, setCalculatedResults] = useState(null);
-  
+  type CalculatedResults = {
+    body_density: string;
+    fat_percentage: string;
+    fat_mass: string;
+    lean_mass: string;
+  } | null;
+
+  const [calculatedResults, setCalculatedResults] = useState<CalculatedResults>(null);
+
   const [assessment, setAssessment] = useState({
     protocol: "",
     student_id: "",
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0], // formato YYYY-MM-DD
     weight: "",
     height: "",
     age: "",
@@ -44,18 +51,20 @@ export default function NewPhysicalAssessmentPage() {
     abdomen: "",
     waist: "",
     hips: "",
-    leftArm: "",
-    rightArm: "",
-    leftThigh: "",
-    rightThigh: "",
-    leftCalf: "",
-    rightCalf: "",
+    left_arm: "",
+    right_arm: "",
+    left_thigh: "",
+    right_thigh: "",
+    left_calf: "",
+    right_calf: "",
     // Skinfolds
     triceps: "",
     abdominal: "",
     suprailiac: "",
+    // Outros
     notes: ""
   });
+
 
   useEffect(() => {
     fetchStudents();
@@ -65,17 +74,17 @@ export default function NewPhysicalAssessmentPage() {
     try {
       const response = await fetch('/api/students');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       setStudents(data);
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error fetching students",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -89,7 +98,6 @@ export default function NewPhysicalAssessmentPage() {
       triceps,
       abdominal,
       suprailiac,
-      leftThigh,
     } = assessment;
 
     let body_density;
@@ -100,18 +108,20 @@ export default function NewPhysicalAssessmentPage() {
       triceps: parseFloat(triceps),
       abdominal: parseFloat(abdominal),
       suprailiac: parseFloat(suprailiac),
-      thigh: parseFloat(leftThigh),
+      thigh: parseFloat(assessment.left_thigh), // or use right_thigh if needed
     };
+
+    const numericAge = typeof age === "string" ? parseInt(age, 10) : age;
 
     if (protocol === "McArdle 1992") {
       if (gender === "male") {
-        if (age >= 18 && age <= 34) {
+        if (numericAge >= 18 && numericAge <= 34) {
           body_density = 1.1610 - 0.0632 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
-        } else if (age >= 18 && age <= 27) {
+        } else if (numericAge >= 18 && numericAge <= 27) {
           body_density = 1.0913 - 0.00116 * (measurements.triceps + measurements.suprailiac);
         }
       } else if (gender === "female") {
-        if (age >= 18 && age <= 48) {
+        if (numericAge >= 18 && numericAge <= 48) {
           body_density = 1.06234 - 0.00068 * measurements.suprailiac - 0.00039 * measurements.triceps - 0.00025 * measurements.suprailiac;
         }
       }
@@ -138,9 +148,9 @@ export default function NewPhysicalAssessmentPage() {
   };
 
   useEffect(() => {
-    if (assessment.protocol && assessment.gender && assessment.age && 
-        assessment.weight && assessment.triceps && assessment.abdominal && 
-        assessment.suprailiac) {
+    if (assessment.protocol && assessment.gender && assessment.age &&
+      assessment.weight && assessment.triceps && assessment.abdominal &&
+      assessment.suprailiac) {
       calculateResults();
     }
   }, [assessment]);
@@ -166,16 +176,17 @@ export default function NewPhysicalAssessmentPage() {
         abdomen: parseFloat(assessment.abdomen),
         waist: parseFloat(assessment.waist),
         hips: parseFloat(assessment.hips),
-        leftArm: parseFloat(assessment.leftArm),
-        rightArm: parseFloat(assessment.rightArm),
-        leftThigh: parseFloat(assessment.leftThigh),
-        rightThigh: parseFloat(assessment.rightThigh),
-        leftCalf: parseFloat(assessment.leftCalf),
-        rightCalf: parseFloat(assessment.rightCalf),
+        left_arm: parseFloat(assessment.left_arm),
+        right_arm: parseFloat(assessment.right_arm),
+        left_thigh: parseFloat(assessment.left_thigh),
+        right_thigh: parseFloat(assessment.right_thigh),
+        left_calf: parseFloat(assessment.left_calf),
+        right_calf: parseFloat(assessment.right_calf),
         triceps: parseFloat(assessment.triceps),
         abdominal: parseFloat(assessment.abdominal),
         suprailiac: parseFloat(assessment.suprailiac),
       };
+
 
       const response = await fetch('/api/physical-assessments', {
         method: 'POST',
@@ -186,7 +197,7 @@ export default function NewPhysicalAssessmentPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
@@ -195,14 +206,14 @@ export default function NewPhysicalAssessmentPage() {
         title: "Assessment created",
         description: "Physical assessment has been saved successfully",
       });
-      
+
       router.push('/dashboard/physical-assessments');
-      
+
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error creating assessment",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
@@ -416,67 +427,58 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="leftArm">Left Arm</Label>
+                <Label htmlFor="right_arm">Right Arm</Label>
                 <Input
-                  id="leftArm"
+                  id="right_arm"
                   type="number"
                   step="0.1"
-                  value={assessment.leftArm}
-                  onChange={(e) => setAssessment(prev => ({ ...prev, leftArm: e.target.value }))}
+                  value={assessment.right_arm}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, right_arm: e.target.value }))}
                 />
               </div>
               <div>
-                <Label htmlFor="rightArm">Right Arm</Label>
+                <Label htmlFor="left_thigh">Left Thigh</Label>
                 <Input
-                  id="rightArm"
+                  id="left_thigh"
                   type="number"
                   step="0.1"
-                  value={assessment.rightArm}
-                  onChange={(e) => setAssessment(prev => ({ ...prev, rightArm: e.target.value }))}
+                  value={assessment.left_thigh}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, left_thigh: e.target.value }))}
                 />
               </div>
               <div>
-                <Label htmlFor="leftThigh">Left Thigh</Label>
+                <Label htmlFor="right_thigh">Right Thigh</Label>
                 <Input
-                  id="leftThigh"
+                  id="right_thigh"
                   type="number"
                   step="0.1"
-                  value={assessment.leftThigh}
-                  onChange={(e) => setAssessment(prev => ({ ...prev, leftThigh: e.target.value }))}
+                  value={assessment.right_thigh}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, right_thigh: e.target.value }))}
                 />
               </div>
               <div>
-                <Label htmlFor="rightThigh">Right Thigh</Label>
+                <Label htmlFor="left_calf">Left Calf</Label>
                 <Input
-                  id="rightThigh"
+                  id="left_calf"
                   type="number"
                   step="0.1"
-                  value={assessment.rightThigh}
-                  onChange={(e) => setAssessment(prev => ({ ...prev, rightThigh: e.target.value }))}
+                  value={assessment.left_calf}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, left_calf: e.target.value }))}
                 />
               </div>
               <div>
-                <Label htmlFor="leftCalf">Left Calf</Label>
+                <Label htmlFor="right_calf">Right Calf</Label>
                 <Input
-                  id="leftCalf"
+                  id="right_calf"
                   type="number"
                   step="0.1"
-                  value={assessment.leftCalf}
-                  onChange={(e) => setAssessment(prev => ({ ...prev, leftCalf: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="rightCalf">Right Calf</Label>
-                <Input
-                  id="rightCalf"
-                  type="number"
-                  step="0.1"
-                  value={assessment.rightCalf}
-                  onChange={(e) => setAssessment(prev => ({ ...prev, rightCalf: e.target.value }))}
+                  value={assessment.right_calf}
+                  onChange={(e) => setAssessment(prev => ({ ...prev, right_calf: e.target.value }))}
                 />
               </div>
             </div>
           </CardContent>
+
         </Card>
 
         <Card>
