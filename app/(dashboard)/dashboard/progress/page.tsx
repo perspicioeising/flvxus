@@ -64,7 +64,7 @@ export default function ProgressPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching assessments",
+        title: "Erro ao carregar avaliações",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -87,13 +87,13 @@ export default function ProgressPage() {
     
     const latest = physicalAssessments[0];
     return [
-      { name: 'Chest', value: latest.chest },
-      { name: 'Waist', value: latest.waist },
-      { name: 'Hips', value: latest.hips },
-      { name: 'Left Arm', value: latest.left_arm },
-      { name: 'Right Arm', value: latest.right_arm },
-      { name: 'Left Thigh', value: latest.left_thigh },
-      { name: 'Right Thigh', value: latest.right_thigh }
+      { name: 'Peitoral', value: latest.chest },
+      { name: 'Cintura', value: latest.waist },
+      { name: 'Quadril', value: latest.hips },
+      { name: 'Braço Esq.', value: latest.left_arm },
+      { name: 'Braço Dir.', value: latest.right_arm },
+      { name: 'Coxa Esq.', value: latest.left_thigh },
+      { name: 'Coxa Dir.', value: latest.right_thigh }
     ].filter(item => item.value);
   };
 
@@ -101,8 +101,8 @@ export default function ProgressPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Loading your progress...</h2>
-          <p className="text-muted-foreground">Please wait while we fetch your assessment data.</p>
+          <h2 className="text-2xl font-semibold mb-2">Carregando seu progresso...</h2>
+          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos seus dados.</p>
         </div>
       </div>
     );
@@ -111,9 +111,9 @@ export default function ProgressPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">My Progress</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Meu Progresso</h2>
         <p className="text-muted-foreground">
-          Track your fitness journey and body composition changes
+          Acompanhe sua jornada fitness e mudanças na composição corporal
         </p>
       </div>
 
@@ -125,7 +125,7 @@ export default function ProgressPage() {
               <div className="flex items-center gap-3">
                 <Scale className="h-8 w-8 text-primary" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Current Weight</p>
+                  <p className="text-sm text-muted-foreground">Peso Atual</p>
                   <p className="text-2xl font-bold">
                     {physicalAssessments[0]?.weight || '-'} kg
                   </p>
@@ -139,7 +139,7 @@ export default function ProgressPage() {
               <div className="flex items-center gap-3">
                 <Heart className="h-8 w-8 text-primary" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Body Fat</p>
+                  <p className="text-sm text-muted-foreground">Gordura Corporal</p>
                   <p className="text-2xl font-bold">
                     {physicalAssessments[0]?.fat_percentage || '-'}%
                   </p>
@@ -153,7 +153,7 @@ export default function ProgressPage() {
               <div className="flex items-center gap-3">
                 <Activity className="h-8 w-8 text-primary" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Lean Mass</p>
+                  <p className="text-sm text-muted-foreground">Massa Magra</p>
                   <p className="text-2xl font-bold">
                     {physicalAssessments[0]?.lean_mass || '-'} kg
                   </p>
@@ -167,7 +167,7 @@ export default function ProgressPage() {
               <div className="flex items-center gap-3">
                 <Ruler className="h-8 w-8 text-primary" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Height</p>
+                  <p className="text-sm text-muted-foreground">Altura</p>
                   <p className="text-2xl font-bold">
                     {physicalAssessments[0]?.height || '-'} cm
                   </p>
@@ -180,17 +180,17 @@ export default function ProgressPage() {
         {/* Main Content */}
         <Tabs defaultValue="physical" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="physical">Physical Assessments</TabsTrigger>
-            <TabsTrigger value="posture">Posture Assessments</TabsTrigger>
+            <TabsTrigger value="physical">Avaliações Físicas</TabsTrigger>
+            <TabsTrigger value="posture">Avaliações Posturais</TabsTrigger>
           </TabsList>
 
           <TabsContent value="physical" className="space-y-4">
             {/* Progress Chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Body Composition Progress</CardTitle>
+                <CardTitle>Progresso da Composição Corporal</CardTitle>
                 <CardDescription>
-                  Track changes in your weight and body composition over time
+                  Acompanhe as mudanças no seu peso e composição corporal ao longo do tempo
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -204,21 +204,21 @@ export default function ProgressPage() {
                       <Line 
                         type="monotone" 
                         dataKey="weight" 
-                        name="Weight (kg)"
+                        name="Peso (kg)"
                         stroke="hsl(var(--primary))" 
                         strokeWidth={2}
                       />
                       <Line 
                         type="monotone" 
                         dataKey="bodyFat"
-                        name="Body Fat (%)" 
+                        name="Gordura Corporal (%)" 
                         stroke="hsl(var(--destructive))" 
                         strokeWidth={2}
                       />
                       <Line 
                         type="monotone" 
                         dataKey="leanMass"
-                        name="Lean Mass (kg)" 
+                        name="Massa Magra (kg)" 
                         stroke="hsl(var(--secondary))" 
                         strokeWidth={2}
                       />
@@ -231,9 +231,9 @@ export default function ProgressPage() {
             {/* Measurements Chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Latest Measurements</CardTitle>
+                <CardTitle>Medidas Recentes</CardTitle>
                 <CardDescription>
-                  Your most recent body measurements
+                  Suas medidas corporais mais recentes
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -254,9 +254,9 @@ export default function ProgressPage() {
             {/* Assessment History */}
             <Card>
               <CardHeader>
-                <CardTitle>Assessment History</CardTitle>
+                <CardTitle>Histórico de Avaliações</CardTitle>
                 <CardDescription>
-                  View all your physical assessment records
+                  Visualize todos os seus registros de avaliação física
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -270,13 +270,13 @@ export default function ProgressPage() {
                         <div className="flex items-center gap-2">
                           <CalendarDays className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">
-                            {format(new Date(assessment.date), 'MMMM d, yyyy')}
+                            {format(new Date(assessment.date), 'dd/MM/yyyy')}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>Weight: {assessment.weight}kg</span>
-                          <span>Body Fat: {assessment.fat_percentage}%</span>
-                          <span>Protocol: {assessment.protocol}</span>
+                          <span>Peso: {assessment.weight}kg</span>
+                          <span>Gordura: {assessment.fat_percentage}%</span>
+                          <span>Protocolo: {assessment.protocol}</span>
                         </div>
                       </div>
                       <Button
@@ -296,9 +296,9 @@ export default function ProgressPage() {
           <TabsContent value="posture" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Posture Assessments</CardTitle>
+                <CardTitle>Avaliações Posturais</CardTitle>
                 <CardDescription>
-                  View your posture assessment history and analysis
+                  Visualize seu histórico de avaliações posturais e análises
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -312,15 +312,15 @@ export default function ProgressPage() {
                         <div className="flex items-center gap-2">
                           <CalendarDays className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">
-                            {format(new Date(assessment.created_at), 'MMMM d, yyyy')}
+                            {format(new Date(assessment.created_at), 'dd/MM/yyyy')}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Camera className="h-4 w-4" />
                           <span>
                             {assessment.front_image_url && assessment.side_image_url && assessment.back_image_url
-                              ? "All photos uploaded"
-                              : "Partial assessment"}
+                              ? "Todas as fotos enviadas"
+                              : "Avaliação parcial"}
                           </span>
                         </div>
                       </div>
@@ -336,7 +336,7 @@ export default function ProgressPage() {
 
                   {postureAssessments.length === 0 && (
                     <div className="text-center py-6 text-muted-foreground">
-                      No posture assessments found.
+                      Nenhuma avaliação postural encontrada.
                     </div>
                   )}
                 </div>
