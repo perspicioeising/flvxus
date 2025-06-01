@@ -70,32 +70,55 @@ export async function GET() {
       );
     }
 
+    // Define types for workout_exercises and exercise
+    type Exercise = {
+      id: string;
+      name: string;
+      description: string;
+      video_url: string;
+      muscle_group: string;
+      equipment: string;
+    };
+
+    type WorkoutExercise = {
+      id: string;
+      exercise: Exercise;
+      sets: number;
+      reps: number;
+      rest: number;
+      notes: string;
+      order: number;
+    };
+
     // Transform the data for the frontend
-    const transformedWorkouts = workouts.map(item => ({
-      id: item.workout.id,
-      name: item.workout.name,
-      description: item.workout.description,
-      level: item.workout.level,
-      goal: item.workout.goal,
-      exercises: item.workout.workout_exercises
-        .sort((a, b) => a.order - b.order)
-        .map(we => ({
-          id: we.exercise.id,
-          name: we.exercise.name,
-          description: we.exercise.description,
-          videoUrl: we.exercise.video_url,
-          muscleGroup: we.exercise.muscle_group,
-          equipment: we.exercise.equipment,
-          sets: we.sets,
-          reps: we.reps,
-          rest: we.rest,
-          notes: we.notes,
-          completed: false,
-          completedSets: 0,
-          weight: null
-        })),
-      duration: item.workout.workout_exercises.length * 5 // Rough estimate
-    }));
+    const transformedWorkouts = workouts.map((item: any) => {
+      const workout = Array.isArray(item.workout) ? item.workout[0] : item.workout;
+      return {
+        id: workout.id,
+        name: workout.name,
+        description: workout.description,
+        level: workout.level,
+        goal: workout.goal,
+        exercises: (workout.workout_exercises as WorkoutExercise[])
+          .sort((a, b) => a.order - b.order)
+          .map(we => ({
+            id: we.exercise.id,
+            name: we.exercise.name,
+            description: we.exercise.description,
+            videoUrl: we.exercise.video_url,
+            muscleGroup: we.exercise.muscle_group,
+            equipment: we.exercise.equipment,
+            sets: we.sets,
+            reps: we.reps,
+            rest: we.rest,
+            notes: we.notes,
+            completed: false,
+            completedSets: 0,
+            weight: null
+          })),
+        duration: workout.workout_exercises.length * 5 // Rough estimate
+      };
+    });
 
     return NextResponse.json(transformedWorkouts);
   } catch (error: any) {

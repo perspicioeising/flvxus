@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +46,7 @@ export default function AchievementsPage() {
     icon: "trophy"
   });
 
-  const fetchUserRole = async () => {
+  const fetchUserRole = useCallback(async () => {
     try {
       if (!session || !session.user) {
         setUserRole(null);
@@ -63,9 +63,9 @@ export default function AchievementsPage() {
     } catch (error) {
       console.error('Error fetching user role:', error);
     }
-  };
+  }, [session, supabase]);
 
-  const fetchAchievements = async () => {
+  const fetchAchievements = useCallback(async () => {
     try {
       const response = await fetch('/api/achievements');
       const data = await response.json();
@@ -82,7 +82,7 @@ export default function AchievementsPage() {
         description: error.message,
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     const init = async () => {
@@ -91,6 +91,7 @@ export default function AchievementsPage() {
     };
     init();
   }, [fetchUserRole, fetchAchievements]);
+
 
   const handleAddAchievement = async () => {
     try {

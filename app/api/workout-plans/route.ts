@@ -119,7 +119,19 @@ export async function POST(request: Request) {
 
     // Then add the workout assignments
     if (data.workouts && data.workouts.length > 0) {
-      const planItems = data.workouts.map(item => ({
+      interface WorkoutItemInput {
+        workout_id: string;
+        day_of_week: number;
+      }
+
+      interface PlanItemInsert {
+        workout_plan_id: string;
+        workout_id: string;
+        day_of_week: number;
+        tenant_id: string;
+      }
+
+      const planItems: PlanItemInsert[] = (data.workouts as WorkoutItemInput[]).map((item: WorkoutItemInput): PlanItemInsert => ({
         workout_plan_id: plan.id,
         workout_id: item.workout_id,
         day_of_week: item.day_of_week,

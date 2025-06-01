@@ -56,10 +56,6 @@ export default function StudentDetailsPage() {
     status: ""
   });
 
-  useEffect(() => {
-    fetchStudentDetails();
-  }, [fetchStudentDetails]);
-
   const fetchStudentDetails = async () => {
     try {
       setIsLoading(true);
@@ -96,6 +92,10 @@ export default function StudentDetailsPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStudentDetails();
+  }, [fetchStudentDetails]);
 
   const handleSave = async () => {
     try {

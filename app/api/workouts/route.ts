@@ -105,7 +105,27 @@ export async function POST(request: Request) {
 
     // Then add the exercises
     if (data.exercises && data.exercises.length > 0) {
-      const workoutExercises = data.exercises.map(exercise => ({
+      interface ExerciseInput {
+        exercise_id: string;
+        sets: number;
+        reps: number;
+        rest?: number;
+        notes?: string;
+        order: number;
+      }
+
+      interface WorkoutExerciseInsert {
+        workout_id: string;
+        exercise_id: string;
+        sets: number;
+        reps: number;
+        rest?: number;
+        notes?: string;
+        order: number;
+        tenant_id: string;
+      }
+
+      const workoutExercises: WorkoutExerciseInsert[] = (data.exercises as ExerciseInput[]).map((exercise: ExerciseInput): WorkoutExerciseInsert => ({
         workout_id: workout.id,
         exercise_id: exercise.exercise_id,
         sets: exercise.sets,

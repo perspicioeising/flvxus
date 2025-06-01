@@ -120,15 +120,35 @@ export async function PUT(
 
     // Add updated exercises
     if (data.exercises && data.exercises.length > 0) {
-      const workoutExercises = data.exercises.map(exercise => ({
-        workout_id: workout.id,
+      interface ExerciseInput {
+        exercise_id: string;
+        sets: number;
+        reps: number;
+        rest: number;
+        notes?: string;
+        order: number;
+      }
+
+      interface WorkoutExerciseInsert {
+        workout_id: string;
+        exercise_id: string;
+        sets: number;
+        reps: number;
+        rest: number;
+        notes?: string;
+        order: number;
+        tenant_id: string;
+      }
+
+      const workoutExercises: WorkoutExerciseInsert[] = (data.exercises as ExerciseInput[]).map((exercise: ExerciseInput): WorkoutExerciseInsert => ({
+        workout_id: workout.id as string,
         exercise_id: exercise.exercise_id,
         sets: exercise.sets,
         reps: exercise.reps,
         rest: exercise.rest,
         notes: exercise.notes,
         order: exercise.order,
-        tenant_id: profile.tenant_id
+        tenant_id: profile.tenant_id as string
       }));
 
       const { error: exercisesError } = await supabase
