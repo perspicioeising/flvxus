@@ -85,16 +85,15 @@ export async function POST(request: Request) {
 
     const data = await request.json();
 
-    // Calculate BMI
-    const heightInMeters = data.height / 100;
-    const bmi = data.weight / (heightInMeters * heightInMeters);
-
     // Create the assessment
     const { data: assessment, error } = await supabase
       .from('physical_assessments')
       .insert({
         ...data,
-        bmi: parseFloat(bmi.toFixed(2)),
+        body_density: data.body_density,
+        fat_percentage: data.fat_percentage,
+        fat_mass: data.fat_mass,
+        lean_mass: data.lean_mass,
         tenant_id: profile.tenant_id
       })
       .select()
