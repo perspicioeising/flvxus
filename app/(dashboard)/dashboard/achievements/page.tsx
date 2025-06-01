@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -168,6 +168,16 @@ export default function AchievementsPage() {
     return Math.floor(Math.random() * 100);
   };
 
+  const renderAchievementIcon = (criteriaType) => {
+    const IconComponent = CRITERIA_TYPES.find(t => t.value === criteriaType)?.icon;
+    if (!IconComponent) return null;
+    return (
+      <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+        <IconComponent className="h-6 w-6 text-primary" />
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -312,14 +322,7 @@ export default function AchievementsPage() {
               )}
               <CardContent className="pt-6">
                 <div className="text-center mb-4">
-                  {CRITERIA_TYPES.find(t => t.value === achievement.criteria_type)?.icon && (
-                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
-                      {React.createElement(
-                        CRITERIA_TYPES.find(t => t.value === achievement.criteria_type)?.icon,
-                        { className: "h-6 w-6 text-primary" }
-                      )}
-                    </div>
-                  )}
+                  {renderAchievementIcon(achievement.criteria_type)}
                   <h3 className="font-semibold text-lg mb-1">{achievement.name}</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     {achievement.description}
