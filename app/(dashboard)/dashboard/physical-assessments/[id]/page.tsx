@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Chart } from "@/components/ui/chart";
@@ -155,6 +155,13 @@ export default function PhysicalAssessmentDetailsPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/dashboard/physical-assessments/${params.id}/posture`)}
+          >
+            <Camera className="h-4 w-4 mr-2" />
+            Posture Assessment
+          </Button>
           <Button
             variant="outline"
             onClick={() => router.push(`/dashboard/physical-assessments/${params.id}/edit`)}
