@@ -18,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  User
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -52,6 +52,12 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           isActive: pathname.startsWith("/dashboard/workouts"),
         },
         {
+          name: "Training Plans",
+          href: "/dashboard/workout-plans",
+          icon: ClipboardList,
+          isActive: pathname.startsWith("/dashboard/workout-plans"),
+        },
+        {
           name: "Exercises",
           href: "/dashboard/exercises",
           icon: Dumbbell,
@@ -64,11 +70,23 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           isActive: pathname.startsWith("/dashboard/calendar"),
         },
         {
+          name: "Physical Assessments",
+          href: "/dashboard/physical-assessments",
+          icon: BookOpen,
+          isActive: pathname.startsWith("/dashboard/physical-assessments"),
+        },
+        {
           name: "Analytics",
           href: "/dashboard/analytics",
           icon: BarChart4,
           isActive: pathname.startsWith("/dashboard/analytics"),
         },
+        {
+          name: "Achievements",
+          href: "/dashboard/achievements",
+          icon: Trophy,
+          isActive: pathname.startsWith("/dashboard/achievements"),
+        }
       ];
     } else {
       return [
@@ -85,11 +103,11 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           isActive: pathname.startsWith("/dashboard/progress"),
         },
         {
-          name: "Profile",
-          href: "/dashboard/profile",
-          icon: User,
-          isActive: pathname.startsWith("/dashboard/profile"),
-        },
+          name: "Achievements",
+          href: "/dashboard/achievements",
+          icon: Trophy,
+          isActive: pathname.startsWith("/dashboard/achievements"),
+        }
       ];
     }
   };
