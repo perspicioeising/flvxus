@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -248,9 +249,11 @@ export default function PostureAssessmentPage() {
                   <Label className="capitalize">{view} View</Label>
                   {imageUrls[view] ? (
                     <div className="relative aspect-[3/4] rounded-lg overflow-hidden border">
-                      <img 
+                      <Image 
                         src={imageUrls[view] as string} 
                         alt={`${view} view`}
+                        width={400}
+                        height={600}
                         className="w-full h-full object-cover"
                       />
                       <Button
