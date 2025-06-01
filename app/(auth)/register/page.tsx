@@ -27,7 +27,7 @@ const formSchema = z.object({
   businessName: z.string().min(2, { message: "Business name must be at least 2 characters" }),
 });
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { supabase } = useSupabase();
@@ -119,8 +119,6 @@ export default function RegisterPage() {
   }
 
   return (
-        <Suspense fallback={<div>Carregando...</div>}>
-
     <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-muted/30">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
@@ -209,6 +207,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RegisterContent />
     </Suspense>
   );
 }
