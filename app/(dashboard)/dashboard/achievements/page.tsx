@@ -46,14 +46,6 @@ export default function AchievementsPage() {
     icon: "trophy"
   });
 
-  useEffect(() => {
-    const init = async () => {
-      await fetchUserRole();
-      await fetchAchievements();
-    };
-    init();
-  }, [fetchUserRole, fetchAchievements]);
-
   const fetchUserRole = async () => {
     try {
       if (!session || !session.user) {
@@ -91,6 +83,14 @@ export default function AchievementsPage() {
       });
     }
   };
+
+  useEffect(() => {
+    const init = async () => {
+      await fetchUserRole();
+      await fetchAchievements();
+    };
+    init();
+  }, [fetchUserRole, fetchAchievements]);
 
   const handleAddAchievement = async () => {
     try {
