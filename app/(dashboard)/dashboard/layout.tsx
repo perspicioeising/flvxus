@@ -1,5 +1,6 @@
 import { Header } from "@/components/dashboard/header";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { useSupabase } from "@/app/providers";
 
 export default function DashboardLayout({
   children,

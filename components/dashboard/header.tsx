@@ -24,6 +24,7 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [userRole, setUserRole] = useState<'trainer' | 'student'>('student');
 
   const userInitial = session?.user?.email?.charAt(0).toUpperCase() || "U";
 
@@ -32,14 +33,27 @@ export function Header() {
     router.push("/login");
   }
 
-  const navigationItems = [
-    { name: "Dashboard", href: "/dashboard", current: pathname === "/dashboard" },
-    { name: "Students", href: "/dashboard/students", current: pathname.startsWith("/dashboard/students") },
-    { name: "Workouts", href: "/dashboard/workouts", current: pathname.startsWith("/dashboard/workouts") },
-    { name: "Exercises", href: "/dashboard/exercises", current: pathname.startsWith("/dashboard/exercises") },
-    { name: "Calendar", href: "/dashboard/calendar", current: pathname.startsWith("/dashboard/calendar") },
-    { name: "Analytics", href: "/dashboard/analytics", current: pathname.startsWith("/dashboard/analytics") },
-  ];
+  // Navigation items based on user role
+  const getNavigationItems = () => {
+    if (userRole === 'trainer') {
+      return [
+        { name: "Dashboard", href: "/dashboard", current: pathname === "/dashboard" },
+        { name: "Students", href: "/dashboard/students", current: pathname.startsWith("/dashboard/students") },
+        { name: "Workouts", href: "/dashboard/workouts", current: pathname.startsWith("/dashboard/workouts") },
+        { name: "Exercises", href: "/dashboard/exercises", current: pathname.startsWith("/dashboard/exercises") },
+        { name: "Calendar", href: "/dashboard/calendar", current: pathname.startsWith("/dashboard/calendar") },
+        { name: "Analytics", href: "/dashboard/analytics", current: pathname.startsWith("/dashboard/analytics") },
+      ];
+    } else {
+      return [
+        { name: "My Workouts", href: "/dashboard/my-workouts", current: pathname.startsWith("/dashboard/my-workouts") },
+        { name: "Progress", href: "/dashboard/progress", current: pathname.startsWith("/dashboard/progress") },
+        { name: "Profile", href: "/dashboard/profile", current: pathname.startsWith("/dashboard/profile") },
+      ];
+    }
+  };
+
+  const navigationItems = getNavigationItems();
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full">
