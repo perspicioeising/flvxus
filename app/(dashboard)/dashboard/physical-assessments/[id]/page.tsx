@@ -4,20 +4,10 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from 'recharts';
+import { Chart } from "@/components/ui/chart";
 
 export default function PhysicalAssessmentDetailsPage() {
   const params = useParams();
@@ -29,8 +19,13 @@ export default function PhysicalAssessmentDetailsPage() {
 
   useEffect(() => {
     fetchAssessmentDetails();
-    fetchAssessmentHistory();
   }, []);
+
+  useEffect(() => {
+    if (assessment?.student_id) {
+      fetchAssessmentHistory();
+    }
+  }, [assessment]);
 
   const fetchAssessmentDetails = async () => {
     try {
@@ -64,7 +59,7 @@ export default function PhysicalAssessmentDetailsPage() {
       
       // Sort by date and get only assessments for this student
       const studentAssessments = data
-        .filter(a => a.student_id === assessment?.student_id)
+        .filter(a => a.student_id === assessment.student_id)
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .map(a => ({
           date: format(new Date(a.date), 'MMM d'),
@@ -186,41 +181,7 @@ export default function PhysicalAssessmentDetailsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={assessmentHistory}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="weight" 
-                    stroke="#10b981" 
-                    name="Weight (kg)"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="bodyFat" 
-                    stroke="#f43f5e" 
-                    name="Body Fat (%)"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="leanMass" 
-                    stroke="#3b82f6" 
-                    name="Lean Mass (kg)"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="fatMass" 
-                    stroke="#eab308" 
-                    name="Fat Mass (kg)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <Chart data={assessmentHistory} />
           </CardContent>
         </Card>
 
