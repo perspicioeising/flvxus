@@ -32,8 +32,34 @@ import {
 export default function ProgressPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [physicalAssessments, setPhysicalAssessments] = useState([]);
-  const [postureAssessments, setPostureAssessments] = useState([]);
+  type PhysicalAssessment = {
+    id: string | number;
+    date: string;
+    weight: number;
+    fat_percentage: string;
+    lean_mass: string;
+    fat_mass: string;
+    chest?: number;
+    waist?: number;
+    hips?: number;
+    left_arm?: number;
+    right_arm?: number;
+    left_thigh?: number;
+    right_thigh?: number;
+    height?: number;
+    protocol?: string;
+  };
+
+  type PostureAssessment = {
+    id: string | number;
+    created_at: string;
+    front_image_url?: string;
+    side_image_url?: string;
+    back_image_url?: string;
+  };
+
+  const [physicalAssessments, setPhysicalAssessments] = useState<PhysicalAssessment[]>([]);
+  const [postureAssessments, setPostureAssessments] = useState<PostureAssessment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
