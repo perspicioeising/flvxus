@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -91,8 +92,8 @@ export default function NewPhysicalAssessmentPage() {
       leftThigh,
     } = assessment;
 
-    let densityResult;
-    let fatPercentageResult;
+    let body_density;
+    let fat_percentage;
 
     // Convert string values to numbers
     const measurements = {
@@ -105,33 +106,33 @@ export default function NewPhysicalAssessmentPage() {
     if (protocol === "McArdle 1992") {
       if (gender === "male") {
         if (age >= 18 && age <= 34) {
-          densityResult = 1.1610 - 0.0632 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
+          body_density = 1.1610 - 0.0632 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
         } else if (age >= 18 && age <= 27) {
-          densityResult = 1.0913 - 0.00116 * (measurements.triceps + measurements.suprailiac);
+          body_density = 1.0913 - 0.00116 * (measurements.triceps + measurements.suprailiac);
         }
       } else if (gender === "female") {
         if (age >= 18 && age <= 48) {
-          densityResult = 1.06234 - 0.00068 * measurements.suprailiac - 0.00039 * measurements.triceps - 0.00025 * measurements.suprailiac;
+          body_density = 1.06234 - 0.00068 * measurements.suprailiac - 0.00039 * measurements.triceps - 0.00025 * measurements.suprailiac;
         }
       }
     } else if (protocol === "Guedes 1994") {
       if (gender === "male") {
-        densityResult = 1.17136 - 0.06706 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
+        body_density = 1.17136 - 0.06706 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
       } else if (gender === "female") {
-        densityResult = 1.16650 - 0.07063 * Math.log10(measurements.thigh + measurements.suprailiac + measurements.suprailiac);
+        body_density = 1.16650 - 0.07063 * Math.log10(measurements.thigh + measurements.suprailiac + measurements.suprailiac);
       }
     }
 
-    if (densityResult) {
-      fatPercentageResult = ((4.95 / densityResult) - 4.50) * 100;
-      const fatMass = (fatPercentageResult / 100) * parseFloat(weight);
-      const leanMass = parseFloat(weight) - fatMass;
+    if (body_density) {
+      fat_percentage = ((4.95 / body_density) - 4.50) * 100;
+      const fat_mass = (fat_percentage / 100) * parseFloat(weight);
+      const lean_mass = parseFloat(weight) - fat_mass;
 
       setCalculatedResults({
-        bodyDensity: densityResult.toFixed(4),
-        fatPercentage: fatPercentageResult.toFixed(2),
-        fatMass: fatMass.toFixed(2),
-        leanMass: leanMass.toFixed(2)
+        body_density: body_density.toFixed(4),
+        fat_percentage: fat_percentage.toFixed(2),
+        fat_mass: fat_mass.toFixed(2),
+        lean_mass: lean_mass.toFixed(2)
       });
     }
   };
@@ -525,19 +526,19 @@ export default function NewPhysicalAssessmentPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <Label>Body Density</Label>
-                    <p className="text-lg font-medium">{calculatedResults.bodyDensity}</p>
+                    <p className="text-lg font-medium">{calculatedResults.body_density}</p>
                   </div>
                   <div>
                     <Label>Body Fat %</Label>
-                    <p className="text-lg font-medium">{calculatedResults.fatPercentage}%</p>
+                    <p className="text-lg font-medium">{calculatedResults.fat_percentage}%</p>
                   </div>
                   <div>
                     <Label>Fat Mass</Label>
-                    <p className="text-lg font-medium">{calculatedResults.fatMass} kg</p>
+                    <p className="text-lg font-medium">{calculatedResults.fat_mass} kg</p>
                   </div>
                   <div>
                     <Label>Lean Mass</Label>
-                    <p className="text-lg font-medium">{calculatedResults.leanMass} kg</p>
+                    <p className="text-lg font-medium">{calculatedResults.lean_mass} kg</p>
                   </div>
                 </div>
               </div>
