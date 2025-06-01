@@ -55,28 +55,28 @@ type Student = {
 };
 
 const EXPERIENCE_LEVELS = [
-  "Beginner",
-  "Intermediate",
-  "Advanced"
+  "Iniciante",
+  "Intermediário",
+  "Avançado"
 ];
 
 const TRAINING_TIMES = [
-  "Early Morning",
+  "Madrugada",
   "Morning",
-  "Afternoon",
-  "Evening",
-  "Night"
+  "Tarde",
+  "Noite",
+  "Madrugada"
 ];
 
 const GOALS = [
-  "Weight Loss",
-  "Muscle Gain",
-  "Strength",
-  "Endurance",
-  "Flexibility",
-  "General Fitness",
-  "Sports Performance",
-  "Rehabilitation"
+  "Perda de Peso",
+  "Ganho de Massa",
+  "Força",
+  "Resistência",
+  "Flexibilidade",
+  "Condicionamento Geral",
+  "Performance Esportiva",
+  "Reabilitação"
 ];
 
 export default function StudentsPage() {
@@ -121,7 +121,7 @@ export default function StudentsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error fetching students",
+        title: "Erro ao buscar alunos",
         description: error.message,
       });
     }
@@ -145,8 +145,8 @@ export default function StudentsPage() {
       }
       
       toast({
-        title: "Student invited successfully",
-        description: "An invitation email has been sent to the student's email address.",
+        title: "Aluno convidado com sucesso",
+        description: "Um email de convite foi enviado para o endereço do aluno.",
       });
       
       fetchStudents();
@@ -155,7 +155,7 @@ export default function StudentsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error adding student",
+        title: "Erro ao adicionar aluno",
         description: error.message,
       });
     } finally {
@@ -210,7 +210,7 @@ export default function StudentsPage() {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name *</Label>
+              <Label htmlFor="name">Nome Completo *</Label>
               <Input 
                 id="name" 
                 placeholder="Full name" 
@@ -219,7 +219,7 @@ export default function StudentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email">E-mail *</Label>
               <Input 
                 id="email" 
                 type="email" 
@@ -229,7 +229,7 @@ export default function StudentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">Número de Telefone</Label>
               <Input 
                 id="phone" 
                 placeholder="Phone number" 
@@ -238,7 +238,7 @@ export default function StudentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="birthDate">Birth Date</Label>
+              <Label htmlFor="birthDate">Data de Nascimento</Label>
               <Input 
                 id="birthDate" 
                 type="date" 
@@ -247,18 +247,18 @@ export default function StudentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
+              <Label htmlFor="gender">Gênero</Label>
               <Select 
                 value={newStudent.gender} 
                 onValueChange={(value) => setNewStudent(prev => ({ ...prev, gender: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
+                  <SelectValue placeholder="Selecione o gênero" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="male">Masculino</SelectItem>
+                  <SelectItem value="female">Feminino</SelectItem>
+                  <SelectItem value="other">Outro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -268,7 +268,7 @@ export default function StudentsPage() {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="height">Height (cm)</Label>
+              <Label htmlFor="height">Altura (cm)</Label>
               <Input 
                 id="height" 
                 type="number" 
@@ -278,7 +278,7 @@ export default function StudentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="weight">Weight (kg)</Label>
+              <Label htmlFor="weight">Peso (kg)</Label>
               <Input 
                 id="weight" 
                 type="number" 
@@ -288,7 +288,7 @@ export default function StudentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Goals</Label>
+              <Label>Objetivos</Label>
               <div className="grid grid-cols-2 gap-2">
                 {GOALS.map((goal) => (
                   <div key={goal} className="flex items-center space-x-2">
@@ -322,7 +322,7 @@ export default function StudentsPage() {
                 onValueChange={(value) => setNewStudent(prev => ({ ...prev, experienceLevel: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select experience level" />
+                  <SelectValue placeholder="Selecione o nível de experiência" />
                 </SelectTrigger>
                 <SelectContent>
                   {EXPERIENCE_LEVELS.map((level) => (
@@ -337,31 +337,31 @@ export default function StudentsPage() {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="medicalConditions">Medical Conditions</Label>
+              <Label htmlFor="medicalConditions">Condições Médicas</Label>
               <Textarea 
                 id="medicalConditions" 
-                placeholder="List any medical conditions, injuries, or limitations" 
+                placeholder="Liste quaisquer condições médicas, lesões ou limitações" 
                 value={newStudent.medicalConditions}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, medicalConditions: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="emergencyContact">Emergency Contact</Label>
+              <Label htmlFor="emergencyContact">Contato de Emergência</Label>
               <Input 
                 id="emergencyContact" 
-                placeholder="Name and phone number" 
+                placeholder="Nome e número de telefone" 
                 value={newStudent.emergencyContact}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, emergencyContact: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="preferredTime">Preferred Training Time</Label>
+              <Label htmlFor="preferredTime">Horário Preferido de Treino</Label>
               <Select 
                 value={newStudent.preferredTime} 
                 onValueChange={(value) => setNewStudent(prev => ({ ...prev, preferredTime: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select preferred time" />
+                  <SelectValue placeholder="Selecione o horário preferido" />
                 </SelectTrigger>
                 <SelectContent>
                   {TRAINING_TIMES.map((time) => (
@@ -371,10 +371,10 @@ export default function StudentsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">Additional Notes</Label>
+              <Label htmlFor="notes">Notas Adicionais</Label>
               <Textarea 
                 id="notes" 
-                placeholder="Any additional information" 
+                placeholder="Qualquer informação adicional" 
                 value={newStudent.notes}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, notes: e.target.value }))}
               />
@@ -390,24 +390,24 @@ export default function StudentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Students</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Meus Alunos</h2>
           <p className="text-muted-foreground">
-            Manage and track your student profiles.
+            Gerencie e acompanhe os perfis dos seus alunos.
           </p>
         </div>
         <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Student
+              <Plus className="mr-2 h-4 w-4" /> Adicionar Aluno
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Add New Student</DialogTitle>
+              <DialogTitle>Adicionar Novo Aluno</DialogTitle>
               <DialogDescription>
-                {currentStep === 1 && "Enter basic information about the student."}
-                {currentStep === 2 && "Enter physical details and goals."}
-                {currentStep === 3 && "Enter medical information and preferences."}
+                {currentStep === 1 && "Insira as informações básicas do aluno."}
+                {currentStep === 2 && "Insira detalhes físicos e objetivos."}
+                {currentStep === 3 && "Insira informações médicas e preferências."}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -416,18 +416,18 @@ export default function StudentsPage() {
             <DialogFooter className="flex justify-between">
               {currentStep > 1 && (
                 <Button variant="outline" onClick={prevStep}>
-                  Previous
+                  Anterior
                 </Button>
               )}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleDialogClose}>
-                  Cancel
+                  Cancelar
                 </Button>
                 {currentStep < 3 ? (
-                  <Button onClick={nextStep}>Next</Button>
+                  <Button onClick={nextStep}>Próximo</Button>
                 ) : (
                   <Button onClick={handleAddStudent} disabled={isLoading}>
-                    {isLoading ? "Inviting..." : "Send Invitation"}
+                    {isLoading ? "Convidando..." : "Enviar Convite"}
                   </Button>
                 )}
               </div>
@@ -438,9 +438,9 @@ export default function StudentsPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Student Management</CardTitle>
+          <CardTitle>Gerenciamento de Alunos</CardTitle>
           <CardDescription>
-            View and manage your students' information and progress.
+            Visualize e gerencie as informações e o progresso dos seus alunos.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -448,7 +448,7 @@ export default function StudentsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search students..."
+                placeholder="Buscar alunos..."
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -462,9 +462,9 @@ export default function StudentsPage() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="active">Ativo</SelectItem>
+                <SelectItem value="inactive">Inativo</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -484,7 +484,7 @@ export default function StudentsPage() {
                 {filteredStudents.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No students found. Try adjusting your filters or add new students.
+                      Nenhum aluno encontrado. Tente ajustar os filtros ou adicionar novos alunos.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -508,30 +508,30 @@ export default function StudentsPage() {
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
                               <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
+                              <span className="sr-only">Abrir menu</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
                               <Link href={`/dashboard/students/${student.id}`}>
-                                View Profile
+                                Ver Perfil
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href={`/dashboard/students/${student.id}/workouts`}>
-                                Manage Workouts
+                                Gerenciar Treinos
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href={`/dashboard/students/${student.id}/assessments`}>
-                                Physical Assessments
+                                Avaliações Físicas
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>Send Message</DropdownMenuItem>
+                            <DropdownMenuItem>Enviar Mensagem</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive">
-                              Remove Student
+                              Remover Aluno
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

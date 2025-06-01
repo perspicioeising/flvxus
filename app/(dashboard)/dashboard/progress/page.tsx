@@ -113,13 +113,13 @@ export default function ProgressPage() {
     
     const latest = physicalAssessments[0];
     return [
-      { name: 'Peitoral', value: latest.chest },
+      { name: 'Peito', value: latest.chest },
       { name: 'Cintura', value: latest.waist },
       { name: 'Quadril', value: latest.hips },
-      { name: 'Braço Esq.', value: latest.left_arm },
-      { name: 'Braço Dir.', value: latest.right_arm },
-      { name: 'Coxa Esq.', value: latest.left_thigh },
-      { name: 'Coxa Dir.', value: latest.right_thigh }
+      { name: 'Braço Esquerdo', value: latest.left_arm },
+      { name: 'Braço Direito', value: latest.right_arm },
+      { name: 'Coxa Esquerda', value: latest.left_thigh },
+      { name: 'Coxa Direita', value: latest.right_thigh }
     ].filter(item => item.value);
   };
 

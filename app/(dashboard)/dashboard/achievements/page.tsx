@@ -21,10 +21,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Trophy, Target, Dumbbell, Calendar, BarChart, Award, Star, Trash2 } from "lucide-react";
 
 const CRITERIA_TYPES = [
-  { value: "workouts_completed", label: "Workouts Completed", icon: Dumbbell },
-  { value: "consecutive_days", label: "Consecutive Days", icon: Calendar },
-  { value: "total_weight", label: "Total Weight Lifted", icon: BarChart },
-  { value: "exercises_completed", label: "Exercises Completed", icon: Target },
+  { value: "workouts_completed", label: "Treinos Completados", icon: Dumbbell },
+  { value: "consecutive_days", label: "Dias Consecutivos", icon: Calendar },
+  { value: "total_weight", label: "Peso Total Levantado", icon: BarChart },
+  { value: "exercises_completed", label: "Exercícios Completados", icon: Target },
 ];
 
 export default function AchievementsPage() {
@@ -78,7 +78,7 @@ export default function AchievementsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error fetching achievements",
+        title: "Erro ao buscar conquistas",
         description: error.message,
       });
     }
@@ -112,8 +112,8 @@ export default function AchievementsPage() {
       }
 
       toast({
-        title: "Achievement created",
-        description: "New achievement has been added successfully",
+        title: "Conquista criada",
+        description: "Nova conquista adicionada com sucesso",
       });
       
       setIsAddingAchievement(false);
@@ -131,7 +131,7 @@ export default function AchievementsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error creating achievement",
+        title: "Erro ao criar conquista",
         description: error.message,
       });
     } finally {
@@ -154,8 +154,8 @@ export default function AchievementsPage() {
       }
 
       toast({
-        title: "Achievement deleted",
-        description: "The achievement has been removed",
+        title: "Conquista deletada",
+        description: "A conquista foi removida",
       });
       
       fetchAchievements();
@@ -163,7 +163,7 @@ export default function AchievementsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error deleting achievement",
+        title: "Erro ao deletar conquista",
         description: error.message,
       });
     } finally {
@@ -214,32 +214,32 @@ export default function AchievementsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Achievements</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Gerenciar conquistas</h2>
           <p className="text-muted-foreground">
             {userRole === 'trainer' 
-              ? 'Manage achievements and rewards for your students'
-              : 'Track your progress and earn rewards'}
+              ? 'Gerencie as conquistas e recompensas dos seus alunos'
+              : 'Acompanhe seu progresso e ganhe recompensas'}
           </p>
         </div>
         {userRole === 'trainer' && (
           <Dialog open={isAddingAchievement} onOpenChange={setIsAddingAchievement}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" /> Create Achievement
+                <Plus className="mr-2 h-4 w-4" /> Criar conquista
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Achievement</DialogTitle>
+                <DialogTitle>Criar Nova Conquista</DialogTitle>
                 <DialogDescription>
-                  Set up a new achievement for your students to earn
+                  Configure uma nova conquista para seus alunos ganharem
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Achievement Name</Label>
+                  <Label>Nome da Conquista</Label>
                   <Input
-                    placeholder="e.g., Workout Warrior"
+                    placeholder="ex: Guerreiro dos Treinos"
                     value={newAchievement.name}
                     onChange={(e) => setNewAchievement(prev => ({ ...prev, name: e.target.value }))}
                   />
@@ -248,7 +248,7 @@ export default function AchievementsPage() {
                 <div className="space-y-2">
                   <Label>Description</Label>
                   <Textarea
-                    placeholder="Describe how to earn this achievement..."
+                    placeholder="Descreva como ganhar esta conquista..."
                     value={newAchievement.description}
                     onChange={(e) => setNewAchievement(prev => ({ ...prev, description: e.target.value }))}
                   />
@@ -256,13 +256,13 @@ export default function AchievementsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Criteria Type</Label>
+                    <Label>Tipo de Critério</Label>
                     <Select
                       value={newAchievement.criteria_type}
                       onValueChange={(value) => setNewAchievement(prev => ({ ...prev, criteria_type: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
                         {CRITERIA_TYPES.map((type) => (
@@ -275,7 +275,7 @@ export default function AchievementsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Target Value</Label>
+                    <Label>Valor Alvo</Label>
                     <Input
                       type="number"
                       placeholder="e.g., 10"
@@ -286,10 +286,10 @@ export default function AchievementsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Points Reward</Label>
+                  <Label>Pontos de Recompensa</Label>
                   <Input
                     type="number"
-                    placeholder="e.g., 100"
+                    placeholder="ex: 100"
                     value={newAchievement.points_reward}
                     onChange={(e) => setNewAchievement(prev => ({ ...prev, points_reward: e.target.value }))}
                   />
@@ -297,10 +297,10 @@ export default function AchievementsPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddingAchievement(false)}>
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button onClick={handleAddAchievement} disabled={isLoading}>
-                  {isLoading ? "Creating..." : "Create Achievement"}
+                  {isLoading ? "Criando..." : "Create Achievement"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -312,9 +312,9 @@ export default function AchievementsPage() {
         {userRole === 'student' && (
           <Card>
             <CardHeader>
-              <CardTitle>Your Progress</CardTitle>
+              <CardTitle>Seu Progresso</CardTitle>
               <CardDescription>
-                Track your fitness journey and achievements
+                Acompanhe sua jornada fitness e conquistas
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -322,17 +322,17 @@ export default function AchievementsPage() {
                 <div className="p-4 rounded-lg bg-primary/10 text-center">
                   <Trophy className="h-8 w-8 text-primary mx-auto mb-2" />
                   <div className="text-2xl font-bold">1,250</div>
-                  <div className="text-sm text-muted-foreground">Total Points</div>
+                  <div className="text-sm text-muted-foreground">Pontos Totais</div>
                 </div>
                 <div className="p-4 rounded-lg bg-muted text-center">
                   <Award className="h-8 w-8 text-primary mx-auto mb-2" />
                   <div className="text-2xl font-bold">8</div>
-                  <div className="text-sm text-muted-foreground">Achievements Earned</div>
+                  <div className="text-sm text-muted-foreground">Conquistas Ganhas</div>
                 </div>
                 <div className="p-4 rounded-lg bg-muted text-center">
                   <Star className="h-8 w-8 text-primary mx-auto mb-2" />
                   <div className="text-2xl font-bold">Silver</div>
-                  <div className="text-sm text-muted-foreground">Current Rank</div>
+                  <div className="text-sm text-muted-foreground">Rank Atual</div>
                 </div>
               </div>
             </CardContent>

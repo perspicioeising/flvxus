@@ -20,13 +20,13 @@ import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
 
 const DAYS_OF_WEEK = [
-  { value: 1, label: "Monday" },
-  { value: 2, label: "Tuesday" },
-  { value: 3, label: "Wednesday" },
-  { value: 4, label: "Thursday" },
-  { value: 5, label: "Friday" },
-  { value: 6, label: "Saturday" },
-  { value: 7, label: "Sunday" },
+  { value: 1, label: "Segunda" },
+  { value: 2, label: "Terça" },
+  { value: 3, label: "Quarta" },
+  { value: 4, label: "Quinta" },
+  { value: 5, label: "Sexta" },
+  { value: 6, label: "Sábado" },
+  { value: 7, label: "Domingo" },
 ];
 
 export default function WorkoutPlansPage() {
@@ -97,7 +97,7 @@ export default function WorkoutPlansPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching workout plans",
+        title: "Erro ao buscar planos de treino",
         description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     }
@@ -116,7 +116,7 @@ export default function WorkoutPlansPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching workouts",
+        title: "Erro ao buscar treinos",
         description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     }
@@ -135,7 +135,7 @@ export default function WorkoutPlansPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching students",
+        title: "Erro ao buscar alunos",
         description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     }
@@ -168,7 +168,7 @@ export default function WorkoutPlansPage() {
       }
 
       toast({
-        title: "Workout plan created",
+        title: "Plano de treino criado",
         description: `${newPlan.name} has been created successfully`,
       });
       
@@ -178,7 +178,7 @@ export default function WorkoutPlansPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error creating workout plan",
+        title: "Erro ao criar plano de treino",
         description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     } finally {
@@ -256,7 +256,7 @@ export default function WorkoutPlansPage() {
       }
 
       toast({
-        title: "Workout plan deleted",
+        title: "Plano de treino deletado",
         description: `${plan.name} has been removed`,
       });
       
@@ -265,7 +265,7 @@ export default function WorkoutPlansPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error deleting workout plan",
+        title: "Erro ao deletar plano de treino",
         description: error.message,
       });
     } finally {
@@ -290,13 +290,13 @@ export default function WorkoutPlansPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Training Plans</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Gerencoiar Planos de treino</h2>
           <p className="text-muted-foreground">
-            Create and manage workout plans for your students
+            Crie e gerencie planos de treino para seus alunos
           </p>
         </div>
         <Button onClick={() => setIsAddingPlan(true)} disabled={isAddingPlan}>
-          <Plus className="mr-2 h-4 w-4" /> Create Plan
+          <Plus className="mr-2 h-4 w-4" /> Criar Plano
         </Button>
       </div>
 
@@ -304,21 +304,21 @@ export default function WorkoutPlansPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Create Training Plan</CardTitle>
+              <CardTitle>Criar Plano de Treino</CardTitle>
               <CardDescription>
-                Design a new training plan for your student
+                Crie um novo plano de treino para seu aluno
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Plan Name *</Label>
+                    <Label htmlFor="name">Nome do Plano *</Label>
                     <Input
                       id="name"
                       value={newPlan.name}
                       onChange={(e) => setNewPlan(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., 12-Week Strength Program"
+                      placeholder="ex.: Programa de Força 12 Semanas"
                     />
                   </div>
                   
@@ -328,7 +328,7 @@ export default function WorkoutPlansPage() {
                       id="description"
                       value={newPlan.description}
                       onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Describe the plan's goals and focus..."
+                      placeholder="Descreva os objetivos e foco do plano..."
                       className="min-h-[100px]"
                     />
                   </div>
@@ -336,13 +336,13 @@ export default function WorkoutPlansPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="student">Student *</Label>
+                    <Label htmlFor="student">Aluno *</Label>
                     <Select
                       value={newPlan.student_id}
                       onValueChange={(value) => setNewPlan(prev => ({ ...prev, student_id: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select student" />
+                        <SelectValue placeholder="Selecione aluno" />
                       </SelectTrigger>
                       <SelectContent>
                         {students.map((student) => (
@@ -356,7 +356,7 @@ export default function WorkoutPlansPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="start_date">Start Date *</Label>
+                      <Label htmlFor="start_date">Data de Início *</Label>
                       <Input
                         id="start_date"
                         type="date"
@@ -365,7 +365,7 @@ export default function WorkoutPlansPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="end_date">End Date *</Label>
+                      <Label htmlFor="end_date">Data de Término *</Label>
                       <Input
                         id="end_date"
                         type="date"
@@ -381,9 +381,9 @@ export default function WorkoutPlansPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Select Workouts</CardTitle>
+              <CardTitle>Selecionar Treinos</CardTitle>
               <CardDescription>
-                Choose and schedule workouts for this plan
+                Escolha e agende os treinos para este plano
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -421,7 +421,7 @@ export default function WorkoutPlansPage() {
 
               {selectedWorkouts.length > 0 && (
                 <div className="space-y-4 mt-8">
-                  <h3 className="text-lg font-semibold">Schedule Workouts</h3>
+                  <h3 className="text-lg font-semibold">Agendar Treinos</h3>
                   {selectedWorkouts.map((workout, index) => (
                     <Card key={index}>
                       <CardContent className="p-4">
@@ -440,13 +440,13 @@ export default function WorkoutPlansPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Day of Week</Label>
+                          <Label>Dia da Semana</Label>
                           <Select
                             value={(workout.day_of_week !== undefined ? workout.day_of_week.toString() : "")}
                             onValueChange={(value) => handleWorkoutUpdate(index, 'day_of_week', parseInt(value))}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select day" />
+                              <SelectValue placeholder="Selecione o dia" />
                             </SelectTrigger>
                             <SelectContent>
                               {DAYS_OF_WEEK.map((day) => (
@@ -467,10 +467,10 @@ export default function WorkoutPlansPage() {
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={handleCancel}>
-              Cancel
+              Cancelar
             </Button>
             <Button onClick={handleAddPlan} disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Plan"}
+              {isLoading ? "Salvando..." : "Criar Plano"}
             </Button>
           </div>
         </div>
@@ -480,9 +480,9 @@ export default function WorkoutPlansPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Training Plans</CardTitle>
+              <CardTitle>Planos de Treino</CardTitle>
               <CardDescription>
-                Browse and manage your training plans
+                Navegue e gerencie seus planos de treino
               </CardDescription>
             </div>
           </div>
@@ -492,7 +492,7 @@ export default function WorkoutPlansPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search plans..."
+                placeholder="Buscar planos..."
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -506,7 +506,7 @@ export default function WorkoutPlansPage() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">Todos os Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
@@ -531,9 +531,9 @@ export default function WorkoutPlansPage() {
                       {plan.description}
                     </p>
                     <div className="flex flex-wrap gap-y-1 gap-x-4 text-xs text-muted-foreground mt-1">
-                      <div>Student: <span className="font-medium">{plan.student?.full_name}</span></div>
-                      <div>Start: {format(new Date(plan.start_date), 'MMM d, yyyy')}</div>
-                      <div>End: {format(new Date(plan.end_date), 'MMM d, yyyy')}</div>
+                      <div>Aluno: <span className="font-medium">{plan.student?.full_name}</span></div>
+                      <div>Início: {format(new Date(plan.start_date), 'MMM d, yyyy')}</div>
+                      <div>Término: {format(new Date(plan.end_date), 'MMM d, yyyy')}</div>
                     </div>
                   </div>
                   
@@ -543,7 +543,7 @@ export default function WorkoutPlansPage() {
                       size="sm"
                       onClick={() => router.push(`/dashboard/workout-plans/${plan.id}`)}
                     >
-                      View Details
+                      Ver Detalhes
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -568,7 +568,7 @@ export default function WorkoutPlansPage() {
 
             {filteredPlans.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
-                No training plans found. Try adjusting your filters or create new plans.
+                Nenhum plano de treino encontrado. Tente ajustar os filtros ou criar novos planos.
               </div>
             )}
           </div>

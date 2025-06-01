@@ -19,13 +19,13 @@ import { ArrowLeft, Calendar, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const DAYS_OF_WEEK = [
-  { value: 1, label: "Monday" },
-  { value: 2, label: "Tuesday" },
-  { value: 3, label: "Wednesday" },
-  { value: 4, label: "Thursday" },
-  { value: 5, label: "Friday" },
-  { value: 6, label: "Saturday" },
-  { value: 7, label: "Sunday" },
+  { value: 1, label: "Segunda" },
+  { value: 2, label: "Terça" },
+  { value: 3, label: "Quarta" },
+  { value: 4, label: "Quinta" },
+  { value: 5, label: "Sexta" },
+  { value: 6, label: "Sábado" },
+  { value: 7, label: "Domingo" },
 ];
 
 export default function EditWorkoutPlanPage() {
@@ -100,7 +100,7 @@ export default function EditWorkoutPlanPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching plan details",
+        title: "Erro ao buscar detalhes do plano",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -121,7 +121,7 @@ export default function EditWorkoutPlanPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching workouts",
+        title: "Erro ao buscar treinos",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -140,7 +140,7 @@ export default function EditWorkoutPlanPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching students",
+        title: "Erro ao buscar alunos",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -182,8 +182,8 @@ export default function EditWorkoutPlanPage() {
       }
 
       toast({
-        title: "Plan updated",
-        description: "Changes have been saved successfully",
+        title: "Plano atualizado",
+        description: "As alterações foram salvas com sucesso",
       });
       
       router.push(`/dashboard/workout-plans/${params.id}`);
@@ -191,7 +191,7 @@ export default function EditWorkoutPlanPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error updating plan",
+        title: "Erro ao atualizar plano",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -249,8 +249,8 @@ export default function EditWorkoutPlanPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Loading plan details...</h2>
-          <p className="text-muted-foreground">Please wait while we fetch the information.</p>
+          <h2 className="text-2xl font-semibold mb-2">Carregando detalhes do plano...</h2>
+          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos as informações.</p>
         </div>
       </div>
     );
@@ -265,21 +265,21 @@ export default function EditWorkoutPlanPage() {
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Voltar
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Edit Training Plan</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Editar Plano de Treino</h2>
             <p className="text-muted-foreground">
-              Modify the training plan details
+              Modifique os detalhes do plano de treino
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.back()}>
-            Cancel
+            Cancelar
           </Button>
           <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Changes"}
+            {isLoading ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </div>
       </div>
@@ -287,21 +287,21 @@ export default function EditWorkoutPlanPage() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Plan Information</CardTitle>
+            <CardTitle>Informações do Plano</CardTitle>
             <CardDescription>
-              Update the basic details of your training plan
+              Atualize os detalhes básicos do seu plano de treino
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Plan Name *</Label>
+                  <Label htmlFor="name">Nome do Plano *</Label>
                   <Input
                     id="name"
                     value={plan.name}
                     onChange={(e) => setPlan(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., 12-Week Strength Program"
+                    placeholder="ex.: Programa de Força 12 Semanas"
                   />
                 </div>
                 
@@ -311,7 +311,7 @@ export default function EditWorkoutPlanPage() {
                     id="description"
                     value={plan.description}
                     onChange={(e) => setPlan(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe the plan's goals and focus..."
+                    placeholder="Descreva os objetivos e foco do plano..."
                     className="min-h-[100px]"
                   />
                 </div>
@@ -319,13 +319,13 @@ export default function EditWorkoutPlanPage() {
 
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="student">Student *</Label>
+                  <Label htmlFor="student">Aluno *</Label>
                   <Select
                     value={plan.student_id}
                     onValueChange={(value) => setPlan(prev => ({ ...prev, student_id: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select student" />
+                      <SelectValue placeholder="Selecione aluno" />
                     </SelectTrigger>
                     <SelectContent>
                       {students.map((student) => (
@@ -339,7 +339,7 @@ export default function EditWorkoutPlanPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="start_date">Start Date *</Label>
+                    <Label htmlFor="start_date">Data de Início *</Label>
                     <Input
                       id="start_date"
                       type="date"
@@ -348,7 +348,7 @@ export default function EditWorkoutPlanPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="end_date">End Date *</Label>
+                    <Label htmlFor="end_date">Data de Término *</Label>
                     <Input
                       id="end_date"
                       type="date"
@@ -364,9 +364,9 @@ export default function EditWorkoutPlanPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Manage Workouts</CardTitle>
+            <CardTitle>Gerenciar Treinos</CardTitle>
             <CardDescription>
-              Add or remove workouts from this plan
+              Adicione ou remova treinos deste plano
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -404,7 +404,7 @@ export default function EditWorkoutPlanPage() {
 
             {selectedWorkouts.length > 0 && (
               <div className="space-y-4 mt-8">
-                <h3 className="text-lg font-semibold">Schedule Workouts</h3>
+                <h3 className="text-lg font-semibold">Agendar Treinos</h3>
                 {selectedWorkouts.map((workout, index) => (
                   <Card key={index}>
                     <CardContent className="p-4">
@@ -423,13 +423,13 @@ export default function EditWorkoutPlanPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Day of Week</Label>
+                        <Label>Dia da Semana</Label>
                         <Select
                           value={workout.day_of_week.toString()}
                           onValueChange={(value) => handleWorkoutUpdate(index, 'day_of_week', parseInt(value))}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select day" />
+                            <SelectValue placeholder="Selecione o dia" />
                           </SelectTrigger>
                           <SelectContent>
                             {DAYS_OF_WEEK.map((day) => (
