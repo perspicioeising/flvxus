@@ -73,10 +73,10 @@ export function Sidebar({ className }: SidebarProps) {
       isActive: pathname.startsWith("/dashboard/analytics"),
     },
     {
-      name: "Programas",
-      href: "/dashboard/programs",
+      name: "Avaliação Física",
+      href: "/dashboard/physical-assessments",
       icon: BookOpen,
-      isActive: pathname.startsWith("/dashboard/programs"),
+      isActive: pathname.startsWith("/dashboard/physical-assessments"),
     },
     {
       name: "Saúde",
