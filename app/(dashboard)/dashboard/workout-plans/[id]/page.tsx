@@ -18,7 +18,45 @@ export default function WorkoutPlanDetailsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [plan, setPlan] = useState(null);
+  type WorkoutExercise = {
+    id: number;
+    exercise: {
+      name: string;
+    };
+    sets: number;
+    reps: number;
+    notes?: string;
+  };
+  
+  type Workout = {
+    id: number;
+    name: string;
+    description?: string;
+    level: string;
+    goal: string;
+    workout_exercises?: WorkoutExercise[];
+  };
+  
+  type WorkoutPlanItem = {
+    day_of_week: number;
+    workout: Workout;
+  };
+  
+  type Student = {
+    full_name: string;
+    email: string;
+  };
+  
+  type Plan = {
+    name: string;
+    description?: string;
+    start_date: string;
+    end_date: string;
+    student?: Student;
+    workout_plan_items: WorkoutPlanItem[];
+  };
+  
+  const [plan, setPlan] = useState<Plan | null>(null);
 
   useEffect(() => {
     fetchPlanDetails();
@@ -38,7 +76,7 @@ export default function WorkoutPlanDetailsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching plan details",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
@@ -70,7 +108,7 @@ export default function WorkoutPlanDetailsPage() {
       toast({
         variant: "destructive",
         title: "Error deleting plan",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);

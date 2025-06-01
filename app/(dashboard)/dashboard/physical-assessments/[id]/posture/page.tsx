@@ -19,18 +19,18 @@ export default function PostureAssessmentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [assessment, setAssessment] = useState(null);
-  const [images, setImages] = useState({
+  const [images, setImages] = useState<{ front: File | null; side: File | null; back: File | null }>({
     front: null,
     side: null,
     back: null
   });
-  const [imageUrls, setImageUrls] = useState({
+  const [imageUrls, setImageUrls] = useState<{ front: string | null; side: string | null; back: string | null }>({
     front: null,
     side: null,
     back: null
   });
   const [notes, setNotes] = useState("");
-  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiAnalysis, setAiAnalysis] = useState<Record<string, unknown> | null>(null);
   const [recommendations, setRecommendations] = useState("");
 
   useEffect(() => {
@@ -61,14 +61,22 @@ export default function PostureAssessmentPage() {
       toast({
         variant: "destructive",
         title: "Error fetching assessment details",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleImageUpload = async (file, type) => {
+  interface ImageUrls {
+    front: string | null;
+    side: string | null;
+    back: string | null;
+  }
+
+  type ImageType = keyof ImageUrls;
+
+  const handleImageUpload = async (file: File, type: ImageType) => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
@@ -84,26 +92,38 @@ export default function PostureAssessmentPage() {
         .from('posture-images')
         .getPublicUrl(filePath);
 
-      setImageUrls(prev => ({
+      setImageUrls((prev: ImageUrls) => ({
         ...prev,
         [type]: publicUrl
       }));
 
       // Trigger AI analysis when all images are uploaded
-      if (Object.values({ ...imageUrls, [type]: publicUrl }).every(url => url)) {
+      if (Object.values({ ...imageUrls, [type]: publicUrl }).every((url) => url)) {
         await analyzePosture({ ...imageUrls, [type]: publicUrl });
       }
 
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error uploading image",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
 
-  const analyzePosture = async (images) => {
+  interface AnalyzePostureImages {
+    front: string | null;
+    side: string | null;
+    back: string | null;
+  }
+
+  interface AnalyzePostureResponse {
+    analysis: Record<string, unknown>;
+    recommendations: string;
+    error?: string;
+  }
+
+  const analyzePosture = async (images: AnalyzePostureImages): Promise<void> => {
     try {
       const response = await fetch('/api/ai/analyze-posture', {
         method: 'POST',
@@ -113,7 +133,7 @@ export default function PostureAssessmentPage() {
         body: JSON.stringify({ images }),
       });
 
-      const data = await response.json();
+      const data: AnalyzePostureResponse = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error);
@@ -122,11 +142,11 @@ export default function PostureAssessmentPage() {
       setAiAnalysis(data.analysis);
       setRecommendations(data.recommendations);
       
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error analyzing posture",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -167,7 +187,7 @@ export default function PostureAssessmentPage() {
       toast({
         variant: "destructive",
         title: "Error saving assessment",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsSaving(false);
@@ -223,13 +243,13 @@ export default function PostureAssessmentPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {['front', 'side', 'back'].map((view) => (
+              {(['front', 'side', 'back'] as (keyof typeof imageUrls)[]).map((view) => (
                 <div key={view} className="space-y-4">
                   <Label className="capitalize">{view} View</Label>
                   {imageUrls[view] ? (
                     <div className="relative aspect-[3/4] rounded-lg overflow-hidden border">
                       <img 
-                        src={imageUrls[view]} 
+                        src={imageUrls[view] as string} 
                         alt={`${view} view`}
                         className="w-full h-full object-cover"
                       />
