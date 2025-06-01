@@ -27,7 +27,7 @@ const formSchema = z.object({
   businessName: z.string().min(2, { message: "Business name must be at least 2 characters" }),
 });
 
-function RegisterContent() {
+export function RegisterContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { supabase } = useSupabase();
