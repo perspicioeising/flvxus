@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,13 +71,7 @@ export default function EditWorkoutPlanPage() {
     end_date: "",
   });
 
-  useEffect(() => {
-    fetchPlanDetails();
-    fetchWorkouts();
-    fetchStudents();
-  }, []);
-
-  const fetchPlanDetails = async () => {
+  const fetchPlanDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/workout-plans/${params.id}`);
       const data = await response.json();
@@ -112,9 +106,9 @@ export default function EditWorkoutPlanPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id, toast]);
 
-  const fetchWorkouts = async () => {
+  const fetchWorkouts = useCallback(async () => {
     try {
       const response = await fetch('/api/workouts');
       const data = await response.json();
@@ -131,9 +125,9 @@ export default function EditWorkoutPlanPage() {
         description: error instanceof Error ? error.message : String(error),
       });
     }
-  };
+  }, [toast]);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const response = await fetch('/api/students');
       const data = await response.json();
@@ -150,7 +144,16 @@ export default function EditWorkoutPlanPage() {
         description: error instanceof Error ? error.message : String(error),
       });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    const init = async () => {
+      await fetchPlanDetails();
+      await fetchStudents();
+      await fetchWorkouts();
+    };
+    init();
+  }, [fetchPlanDetails, fetchStudents, fetchWorkouts]);
 
   const handleSave = async () => {
     try {
