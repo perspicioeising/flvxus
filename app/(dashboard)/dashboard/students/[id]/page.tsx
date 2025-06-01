@@ -58,7 +58,7 @@ export default function StudentDetailsPage() {
 
   useEffect(() => {
     fetchStudentDetails();
-  }, []);
+  }, [fetchStudentDetails]);
 
   const fetchStudentDetails = async () => {
     try {
@@ -209,7 +209,7 @@ export default function StudentDetailsPage() {
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
             <CardDescription>
-              Update the student's basic details and contact information.
+              Update the student&apos;s basic details and contact information.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -286,7 +286,7 @@ export default function StudentDetailsPage() {
           <CardHeader>
             <CardTitle>Physical Information</CardTitle>
             <CardDescription>
-              Update the student's physical measurements and fitness goals.
+              Update the student&apos;s physical measurements and fitness goals.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -381,7 +381,7 @@ export default function StudentDetailsPage() {
           <CardHeader>
             <CardTitle>Medical & Emergency Information</CardTitle>
             <CardDescription>
-              Update the student's medical conditions and emergency contact details.
+              Update the student&apos;s medical conditions and emergency contact details.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

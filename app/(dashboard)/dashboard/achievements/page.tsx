@@ -47,9 +47,12 @@ export default function AchievementsPage() {
   });
 
   useEffect(() => {
-    fetchUserRole();
-    fetchAchievements();
-  }, []);
+    const init = async () => {
+      await fetchUserRole();
+      await fetchAchievements();
+    };
+    init();
+  }, [fetchUserRole, fetchAchievements]);
 
   const fetchUserRole = async () => {
     try {
