@@ -33,7 +33,7 @@ export default function AchievementsPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isAddingAchievement, setIsAddingAchievement] = useState(false);
-  const [achievements, setAchievements] = useState([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [userRole, setUserRole] = useState(null);
   const [userAchievements, setUserAchievements] = useState([]);
   
@@ -53,6 +53,10 @@ export default function AchievementsPage() {
 
   const fetchUserRole = async () => {
     try {
+      if (!session || !session.user) {
+        setUserRole(null);
+        return;
+      }
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('role')
@@ -163,13 +167,37 @@ export default function AchievementsPage() {
     }
   };
 
-  const getProgressForAchievement = (achievement) => {
+  interface Achievement {
+    id: string;
+    name: string;
+    description: string;
+    criteria_type: string;
+    criteria_value: string;
+    points_reward: string;
+    icon: string;
+  }
+
+  interface Progress {
+    [achievementId: string]: number;
+  }
+
+  const getProgressForAchievement = (achievement: Achievement): number => {
     // This would be replaced with actual progress data from the backend
     return Math.floor(Math.random() * 100);
   };
 
-  const renderAchievementIcon = (criteriaType) => {
-    const IconComponent = CRITERIA_TYPES.find(t => t.value === criteriaType)?.icon;
+  interface CriteriaType {
+    value: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }
+
+  interface RenderAchievementIconProps {
+    criteriaType: string;
+  }
+
+  const renderAchievementIcon = (criteriaType: string): JSX.Element | null => {
+    const IconComponent = CRITERIA_TYPES.find((t: CriteriaType) => t.value === criteriaType)?.icon;
     if (!IconComponent) return null;
     return (
       <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">

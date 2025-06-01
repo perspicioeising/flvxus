@@ -26,7 +26,8 @@ export default function NewPhysicalAssessmentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [students, setStudents] = useState([]);
+  type Student = { id: string; full_name: string };
+  const [students, setStudents] = useState<Student[]>([]);
   type CalculatedResults = {
     body_density: string;
     fat_percentage: string;

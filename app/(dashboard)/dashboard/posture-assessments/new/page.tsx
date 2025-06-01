@@ -19,7 +19,8 @@ export default function NewPostureAssessmentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [students, setStudents] = useState([]);
+  type Student = { id: string; full_name: string };
+  const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState("");
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function NewPostureAssessmentPage() {
       toast({
         variant: "destructive",
         title: "Error fetching students",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -76,7 +77,7 @@ export default function NewPostureAssessmentPage() {
       toast({
         variant: "destructive",
         title: "Error creating assessment",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);

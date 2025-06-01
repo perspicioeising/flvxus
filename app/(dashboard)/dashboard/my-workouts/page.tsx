@@ -24,12 +24,12 @@ import {
 export default function MyWorkoutsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [activeWorkout, setActiveWorkout] = useState(null);
+  const [activeWorkout, setActiveWorkout] = useState<WorkoutPlan | null>(null);
   const [workoutTime, setWorkoutTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [currentExercise, setCurrentExercise] = useState(null);
-  const [workoutHistory, setWorkoutHistory] = useState([]);
-  const [workoutPlans, setWorkoutPlans] = useState([]);
+  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
+  const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryItem[]>([]);
+  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
 
   useEffect(() => {
     fetchWorkoutPlans();
@@ -38,7 +38,7 @@ export default function MyWorkoutsPage() {
 
   // Timer effect
   useEffect(() => {
-    let interval;
+    let interval: NodeJS.Timeout | undefined;
     if (isTimerRunning) {
       interval = setInterval(() => {
         setWorkoutTime(prev => prev + 1);
@@ -61,7 +61,7 @@ export default function MyWorkoutsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching workouts",
-        description: error.message,
+        description: (error as Error).message,
       });
     }
   };
@@ -80,18 +80,48 @@ export default function MyWorkoutsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching workout history",
-        description: error.message,
+        description: (error as Error).message,
       });
     }
   };
 
-  const startWorkout = (workout) => {
+  interface Exercise {
+    id: string;
+    name: string;
+    sets: number;
+    reps: number;
+    weight?: number;
+    notes?: string;
+    completed?: boolean;
+    completedSets?: number;
+  }
+
+  interface WorkoutPlan {
+    id: string;
+    name: string;
+    exercises: Exercise[];
+    duration: number;
+  }
+
+  interface WorkoutHistoryItem {
+    id: string;
+    name: string;
+    exercises_completed: number;
+    completed_at: string;
+    duration: number;
+  }
+
+  const startWorkout = (workout: WorkoutPlan) => {
     setActiveWorkout(workout);
     setIsTimerRunning(true);
     setCurrentExercise(workout.exercises[0]);
   };
 
-  const completeExercise = async (exerciseId) => {
+  interface CompleteExerciseParams {
+    exerciseId: string;
+  }
+
+  const completeExercise = async ({ exerciseId }: CompleteExerciseParams): Promise<void> => {
     try {
       const response = await fetch('/api/workout-progress', {
         method: 'POST',
@@ -100,9 +130,9 @@ export default function MyWorkoutsPage() {
         },
         body: JSON.stringify({
           exerciseId,
-          workoutId: activeWorkout.id,
-          weight: currentExercise.weight,
-          notes: currentExercise.notes,
+          workoutId: activeWorkout?.id,
+          weight: currentExercise?.weight,
+          notes: currentExercise?.notes,
         }),
       });
 
@@ -111,18 +141,22 @@ export default function MyWorkoutsPage() {
       }
 
       // Move to next exercise
-      const currentIndex = activeWorkout.exercises.findIndex(e => e.id === currentExercise.id);
-      if (currentIndex < activeWorkout.exercises.length - 1) {
+      const currentIndex = activeWorkout?.exercises.findIndex((e: Exercise) => e.id === currentExercise?.id) ?? -1;
+      if (
+        activeWorkout &&
+        currentExercise &&
+        currentIndex < activeWorkout.exercises.length - 1
+      ) {
         setCurrentExercise(activeWorkout.exercises[currentIndex + 1]);
       } else {
         completeWorkout();
       }
 
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error saving progress",
-        description: error.message,
+        description: (error as Error).message,
       });
     }
   };
@@ -135,7 +169,7 @@ export default function MyWorkoutsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          workoutId: activeWorkout.id,
+          workoutId: activeWorkout?.id,
           duration: workoutTime,
         }),
       });
@@ -161,12 +195,16 @@ export default function MyWorkoutsPage() {
       toast({
         variant: "destructive",
         title: "Error completing workout",
-        description: error.message,
+        description: (error as Error).message,
       });
     }
   };
 
-  const formatTime = (seconds) => {
+  interface FormatTime {
+    (seconds: number): string;
+  }
+
+  const formatTime: FormatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -223,7 +261,7 @@ export default function MyWorkoutsPage() {
                       {Array.from({ length: currentExercise.sets }).map((_, i) => (
                         <Button
                           key={i}
-                          variant={currentExercise.completedSets > i ? "default" : "outline"}
+                          variant={(currentExercise.completedSets ?? 0) > i ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCurrentExercise({
                             ...currentExercise,
@@ -252,7 +290,7 @@ export default function MyWorkoutsPage() {
 
                 <Button 
                   className="w-full"
-                  onClick={() => completeExercise(currentExercise.id)}
+                  onClick={() => completeExercise({ exerciseId: currentExercise.id })}
                   disabled={!currentExercise.completedSets}
                 >
                   Complete Exercise

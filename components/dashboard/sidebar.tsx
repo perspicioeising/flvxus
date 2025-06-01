@@ -82,12 +82,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           icon: Camera,
           isActive: pathname.startsWith("/dashboard/posture-assessments"),
         },
-        {
-          name: "Analytics",
-          href: "/dashboard/analytics",
-          icon: BarChart4,
-          isActive: pathname.startsWith("/dashboard/analytics"),
-        },
+     
         {
           name: "Achievements",
           href: "/dashboard/achievements",

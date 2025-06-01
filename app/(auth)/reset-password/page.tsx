@@ -51,10 +51,13 @@ export default function ResetPasswordPage() {
       }
 
       // Update the user's password using the access token
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: '', // Provide refresh_token if available, otherwise empty string
+      });
+
       const { error } = await supabase.auth.updateUser({
         password: password
-      }, {
-        accessToken
       });
 
       if (error) throw error;

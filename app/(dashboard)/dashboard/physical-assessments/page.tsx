@@ -21,8 +21,8 @@ export default function PhysicalAssessmentsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [studentFilter, setStudentFilter] = useState("all");
-  const [assessments, setAssessments] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function PhysicalAssessmentsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching assessments",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
@@ -65,18 +65,36 @@ export default function PhysicalAssessmentsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching students",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
 
-  const handleDeleteAssessment = async (assessment) => {
+  interface Student {
+    id: string;
+    full_name: string;
+    // Add other student fields if needed
+  }
+
+  interface Assessment {
+    id: string;
+    student_id: string;
+    student?: Student;
+    created_at: string;
+    weight: number;
+    height: number;
+    bmi: number;
+    body_fat: number;
+    // Add other assessment fields if needed
+  }
+
+  const handleDeleteAssessment = async (assessment: Assessment): Promise<void> => {
     try {
       const response = await fetch(`/api/physical-assessments/${assessment.id}`, {
         method: 'DELETE',
       });
 
-      const data = await response.json();
+      const data: { error?: string } = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error);
@@ -89,7 +107,7 @@ export default function PhysicalAssessmentsPage() {
       
       await fetchAssessments();
       
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error deleting assessment",

@@ -14,7 +14,19 @@ export default function PostureAssessmentsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [assessments, setAssessments] = useState([]);
+  type Assessment = {
+    id: string;
+    student?: {
+      full_name: string;
+    };
+    created_at: string;
+    front_image_url?: string;
+    side_image_url?: string;
+    back_image_url?: string;
+    // add other fields as needed
+  };
+
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

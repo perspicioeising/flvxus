@@ -36,10 +36,38 @@ export default function WorkoutPlansPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddingPlan, setIsAddingPlan] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [workouts, setWorkouts] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [plans, setPlans] = useState([]);
-  const [selectedWorkouts, setSelectedWorkouts] = useState([]);
+  type Workout = {
+    id: string;
+    name: string;
+    description?: string;
+    level?: string;
+    goal?: string;
+    // Add other fields as needed
+    day_of_week?: number;
+  };
+
+  type Student = {
+    id: string;
+    full_name: string;
+    // Add other fields as needed
+  };
+
+  type Plan = {
+    id: string;
+    name: string;
+    description?: string;
+    student_id: string;
+    start_date: string;
+    end_date: string;
+    workouts: any[];
+    student?: Student;
+    // Add other fields as needed
+  };
+
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [selectedWorkouts, setSelectedWorkouts] = useState<Workout[]>([]);
   
   const [newPlan, setNewPlan] = useState({
     name: "",
@@ -70,7 +98,7 @@ export default function WorkoutPlansPage() {
       toast({
         variant: "destructive",
         title: "Error fetching workout plans",
-        description: error.message,
+        description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     }
   };
@@ -89,7 +117,7 @@ export default function WorkoutPlansPage() {
       toast({
         variant: "destructive",
         title: "Error fetching workouts",
-        description: error.message,
+        description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     }
   };
@@ -108,7 +136,7 @@ export default function WorkoutPlansPage() {
       toast({
         variant: "destructive",
         title: "Error fetching students",
-        description: error.message,
+        description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     }
   };
@@ -151,7 +179,7 @@ export default function WorkoutPlansPage() {
       toast({
         variant: "destructive",
         title: "Error creating workout plan",
-        description: error.message,
+        description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     } finally {
       setIsLoading(false);
@@ -171,7 +199,8 @@ export default function WorkoutPlansPage() {
     setSelectedWorkouts([]);
   };
 
-  const handleWorkoutSelect = (workout) => {
+
+  const handleWorkoutSelect = (workout: Workout) => {
     if (!selectedWorkouts.find(w => w.id === workout.id)) {
       setSelectedWorkouts([...selectedWorkouts, {
         ...workout,
@@ -180,7 +209,16 @@ export default function WorkoutPlansPage() {
     }
   };
 
-  const handleWorkoutUpdate = (index, field, value) => {
+  interface HandleWorkoutUpdateField {
+    day_of_week: number;
+    // Add other fields as needed
+  }
+
+  const handleWorkoutUpdate = (
+    index: number,
+    field: keyof HandleWorkoutUpdateField,
+    value: number
+  ) => {
     const updatedWorkouts = [...selectedWorkouts];
     updatedWorkouts[index] = {
       ...updatedWorkouts[index],
@@ -189,11 +227,21 @@ export default function WorkoutPlansPage() {
     setSelectedWorkouts(updatedWorkouts);
   };
 
-  const handleRemoveWorkout = (index) => {
+  interface HandleRemoveWorkout {
+    (index: number): void;
+  }
+
+  const handleRemoveWorkout: HandleRemoveWorkout = (index) => {
     setSelectedWorkouts(selectedWorkouts.filter((_, i) => i !== index));
   };
 
-  const handleDeletePlan = async (plan) => {
+  interface DeletePlan {
+    id: string;
+    name: string;
+    // Add other fields as needed
+  }
+
+  const handleDeletePlan = async (plan: DeletePlan): Promise<void> => {
     try {
       setIsLoading(true);
       
@@ -214,7 +262,7 @@ export default function WorkoutPlansPage() {
       
       await fetchWorkoutPlans();
       
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error deleting workout plan",
@@ -394,7 +442,7 @@ export default function WorkoutPlansPage() {
                         <div className="space-y-2">
                           <Label>Day of Week</Label>
                           <Select
-                            value={workout.day_of_week.toString()}
+                            value={(workout.day_of_week !== undefined ? workout.day_of_week.toString() : "")}
                             onValueChange={(value) => handleWorkoutUpdate(index, 'day_of_week', parseInt(value))}
                           >
                             <SelectTrigger>

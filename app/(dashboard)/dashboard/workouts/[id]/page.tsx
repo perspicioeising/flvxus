@@ -22,13 +22,28 @@ import { useExercises } from "@/hooks/use-exercises";
 const DIFFICULTY_LEVELS = ["Beginner", "Intermediate", "Advanced"];
 const GOALS = ["Strength", "Hypertrophy", "Endurance", "Power", "Weight Loss", "Rehabilitation"];
 
+// Type definitions
+interface Exercise {
+  id: string;
+  name: string;
+  description: string;
+  muscle_group: string[];
+}
+
+interface SelectedExercise extends Exercise {
+  sets: number;
+  reps: number;
+  rest: number;
+  notes: string;
+}
+
 export default function WorkoutDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const { exercises } = useExercises();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedExercises, setSelectedExercises] = useState([]);
+  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = useState("all");
   
@@ -61,8 +76,30 @@ export default function WorkoutDetailsPage() {
         exercises: []
       });
 
+      interface WorkoutExercise {
+        exercise: Exercise;
+        sets: number;
+        reps: number;
+        rest: number;
+        notes?: string;
+      }
+
+      interface Exercise {
+        id: string;
+        name: string;
+        description: string;
+        muscle_group: string[];
+      }
+
+      interface SelectedExercise extends Exercise {
+        sets: number;
+        reps: number;
+        rest: number;
+        notes: string;
+      }
+
       setSelectedExercises(
-        data.workout_exercises?.map(we => ({
+        (data.workout_exercises as WorkoutExercise[])?.map((we: WorkoutExercise): SelectedExercise => ({
           ...we.exercise,
           sets: we.sets,
           reps: we.reps,
@@ -74,7 +111,7 @@ export default function WorkoutDetailsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching workout details",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -123,26 +160,46 @@ export default function WorkoutDetailsPage() {
       toast({
         variant: "destructive",
         title: "Error updating workout",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleExerciseSelect = (exercise) => {
-    if (!selectedExercises.find(e => e.id === exercise.id)) {
-      setSelectedExercises([...selectedExercises, {
-        ...exercise,
-        sets: 3,
-        reps: 12,
-        rest: 60,
-        notes: ""
-      }]);
+  interface HandleExerciseSelectProps {
+    id: string;
+    name: string;
+    description: string;
+    muscle_group: string[];
+  }
+
+  const handleExerciseSelect = (exercise: HandleExerciseSelectProps) => {
+    if (!selectedExercises.find((e) => e.id === exercise.id)) {
+      setSelectedExercises([
+        ...selectedExercises,
+        {
+          ...exercise,
+          sets: 3,
+          reps: 12,
+          rest: 60,
+          notes: "",
+        },
+      ]);
     }
   };
 
-  const handleExerciseUpdate = (index, field, value) => {
+  interface HandleExerciseUpdate {
+    index: number;
+    field: keyof Pick<SelectedExercise, "sets" | "reps" | "rest" | "notes">;
+    value: number | string;
+  }
+
+  const handleExerciseUpdate = (
+    index: HandleExerciseUpdate["index"],
+    field: HandleExerciseUpdate["field"],
+    value: HandleExerciseUpdate["value"]
+  ) => {
     const updatedExercises = [...selectedExercises];
     updatedExercises[index] = {
       ...updatedExercises[index],
@@ -151,7 +208,11 @@ export default function WorkoutDetailsPage() {
     setSelectedExercises(updatedExercises);
   };
 
-  const handleRemoveExercise = (index) => {
+  interface HandleRemoveExercise {
+    index: number;
+  }
+
+  const handleRemoveExercise = (index: HandleRemoveExercise["index"]) => {
     setSelectedExercises(selectedExercises.filter((_, i) => i !== index));
   };
 

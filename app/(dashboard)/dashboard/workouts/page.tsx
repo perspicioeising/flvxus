@@ -32,10 +32,10 @@ export default function WorkoutsPage() {
   const [levelFilter, setLevelFilter] = useState("all");
   const [isAddingWorkout, setIsAddingWorkout] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedExercises, setSelectedExercises] = useState([]);
+  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = useState("all");
-  const [workouts, setWorkouts] = useState([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isCloning, setIsCloning] = useState(false);
   
   const [newWorkout, setNewWorkout] = useState({
@@ -64,7 +64,7 @@ export default function WorkoutsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching workouts",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -114,7 +114,7 @@ export default function WorkoutsPage() {
       toast({
         variant: "destructive",
         title: isCloning ? "Error cloning workout" : "Error creating workout",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
@@ -134,19 +134,46 @@ export default function WorkoutsPage() {
     setSelectedExercises([]);
   };
 
-  const handleExerciseSelect = (exercise) => {
-    if (!selectedExercises.find(e => e.id === exercise.id)) {
-      setSelectedExercises([...selectedExercises, {
-        ...exercise,
-        sets: 3,
-        reps: 12,
-        rest: 60,
-        notes: ""
-      }]);
+  interface Exercise {
+    id: string;
+    name: string;
+    description: string;
+    muscle_group: string[];
+  }
+
+  interface SelectedExercise extends Exercise {
+    sets: number;
+    reps: number;
+    rest: number;
+    notes: string;
+  }
+
+  const handleExerciseSelect = (exercise: Exercise) => {
+    if (!selectedExercises.find((e) => e.id === exercise.id)) {
+      setSelectedExercises([
+        ...selectedExercises,
+        {
+          ...exercise,
+          sets: 3,
+          reps: 12,
+          rest: 60,
+          notes: "",
+        },
+      ]);
     }
   };
 
-  const handleExerciseUpdate = (index, field, value) => {
+  interface HandleExerciseUpdateParams {
+    index: number;
+    field: keyof SelectedExercise;
+    value: number | string;
+  }
+
+  const handleExerciseUpdate = (
+    index: HandleExerciseUpdateParams["index"],
+    field: HandleExerciseUpdateParams["field"],
+    value: HandleExerciseUpdateParams["value"]
+  ) => {
     const updatedExercises = [...selectedExercises];
     updatedExercises[index] = {
       ...updatedExercises[index],
@@ -155,24 +182,49 @@ export default function WorkoutsPage() {
     setSelectedExercises(updatedExercises);
   };
 
-  const handleRemoveExercise = (index) => {
+  interface HandleRemoveExerciseParams {
+    index: number;
+  }
+
+  const handleRemoveExercise = (index: HandleRemoveExerciseParams["index"]) => {
     setSelectedExercises(selectedExercises.filter((_, i) => i !== index));
   };
 
-  const handleViewDetails = (workoutId) => {
+  interface HandleViewDetailsParams {
+    workoutId: string;
+  }
+
+  const handleViewDetails = (workoutId: HandleViewDetailsParams["workoutId"]) => {
     router.push(`/dashboard/workouts/${workoutId}`);
   };
 
-  const handleCloneWorkout = async (workout) => {
+  interface Workout {
+    id: string;
+    name: string;
+    description?: string;
+    level: string;
+    goal: string;
+    workout_exercises?: WorkoutExercise[];
+  }
+
+  interface WorkoutExercise {
+    sets: number;
+    reps: number;
+    rest: number;
+    notes?: string;
+    exercise: Exercise;
+  }
+
+  const handleCloneWorkout = async (workout: Workout): Promise<void> => {
     try {
       setIsLoading(true);
       
       // First fetch the complete workout details including exercises
       const detailsResponse = await fetch(`/api/workouts/${workout.id}`);
-      const workoutDetails = await detailsResponse.json();
+      const workoutDetails: Workout = await detailsResponse.json();
       
       if (!detailsResponse.ok) {
-        throw new Error(workoutDetails.error);
+        throw new Error((workoutDetails as any).error);
       }
 
       // Set the workout details in the form
@@ -186,7 +238,7 @@ export default function WorkoutsPage() {
 
       // Set the exercises with their configurations
       setSelectedExercises(
-        workoutDetails.workout_exercises?.map(we => ({
+        workoutDetails.workout_exercises?.map((we: WorkoutExercise) => ({
           ...we.exercise,
           sets: we.sets,
           reps: we.reps,
@@ -199,7 +251,7 @@ export default function WorkoutsPage() {
       setIsCloning(true);
       setIsAddingWorkout(true);
       
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error preparing workout clone",
@@ -210,7 +262,12 @@ export default function WorkoutsPage() {
     }
   };
 
-  const handleDeleteWorkout = async (workout) => {
+  interface HandleDeleteWorkoutParams {
+    id: string;
+    name: string;
+  }
+
+  const handleDeleteWorkout = async (workout: HandleDeleteWorkoutParams): Promise<void> => {
     try {
       setIsLoading(true);
       
@@ -218,7 +275,7 @@ export default function WorkoutsPage() {
         method: 'DELETE',
       });
 
-      const data = await response.json();
+      const data: { error?: string } = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error);
@@ -231,7 +288,7 @@ export default function WorkoutsPage() {
       
       await fetchWorkouts();
       
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error deleting workout",
@@ -562,7 +619,7 @@ export default function WorkoutsPage() {
                       <div>•</div>
                       <div className="flex items-center gap-1">
                         <Dumbbell className="h-3 w-3" />
-                        {workout.workout_exercises?.[0]?.count || 0} exercises
+                        {workout.workout_exercises?.length || 0} exercises
                       </div>
                     </div>
                   </div>

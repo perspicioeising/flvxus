@@ -14,8 +14,43 @@ export default function PhysicalAssessmentDetailsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [assessment, setAssessment] = useState(null);
-  const [assessmentHistory, setAssessmentHistory] = useState([]);
+  type Assessment = {
+    id: string;
+    student_id: string;
+    student?: {
+      full_name?: string;
+      email?: string;
+    };
+    protocol?: string;
+    date: string;
+    weight?: number;
+    height?: number;
+    age?: number;
+    gender?: string;
+    fat_percentage?: number | string;
+    body_density?: number | string;
+    fat_mass?: number | string;
+    lean_mass?: number | string;
+    neck?: number | string;
+    shoulders?: number | string;
+    chest?: number | string;
+    abdomen?: number | string;
+    waist?: number | string;
+    hips?: number | string;
+    left_arm?: number | string;
+    right_arm?: number | string;
+    left_thigh?: number | string;
+    right_thigh?: number | string;
+    left_calf?: number | string;
+    right_calf?: number | string;
+    triceps?: number | string;
+    abdominal?: number | string;
+    suprailiac?: number | string;
+    // add other fields as needed
+  };
+
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [assessmentHistory, setAssessmentHistory] = useState<any[]>([]);
 
   useEffect(() => {
     fetchAssessmentDetails();
@@ -41,7 +76,7 @@ export default function PhysicalAssessmentDetailsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching assessment details",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
@@ -58,15 +93,34 @@ export default function PhysicalAssessmentDetailsPage() {
       }
       
       // Sort by date and get only assessments for this student
-      const studentAssessments = data
-        .filter(a => a.student_id === assessment.student_id)
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .map(a => ({
+      interface AssessmentHistoryItem {
+        date: string;
+        weight?: number;
+        bodyFat?: number;
+        leanMass?: number;
+        fatMass?: number;
+      }
+
+      interface AssessmentApi {
+        id: string;
+        student_id: string;
+        date: string;
+        weight?: number;
+        fat_percentage?: number | string;
+        lean_mass?: number | string;
+        fat_mass?: number | string;
+        // other fields omitted for brevity
+      }
+
+      const studentAssessments: AssessmentHistoryItem[] = (data as AssessmentApi[])
+        .filter((a: AssessmentApi) => assessment && a.student_id === assessment.student_id)
+        .sort((a: AssessmentApi, b: AssessmentApi) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .map((a: AssessmentApi): AssessmentHistoryItem => ({
           date: format(new Date(a.date), 'MMM d'),
           weight: a.weight,
-          bodyFat: parseFloat(a.fat_percentage),
-          leanMass: parseFloat(a.lean_mass),
-          fatMass: parseFloat(a.fat_mass),
+          bodyFat: a.fat_percentage !== undefined ? parseFloat(a.fat_percentage as string) : undefined,
+          leanMass: a.lean_mass !== undefined ? parseFloat(a.lean_mass as string) : undefined,
+          fatMass: a.fat_mass !== undefined ? parseFloat(a.fat_mass as string) : undefined,
         }));
       
       setAssessmentHistory(studentAssessments);
@@ -74,7 +128,7 @@ export default function PhysicalAssessmentDetailsPage() {
       toast({
         variant: "destructive",
         title: "Error fetching assessment history",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -104,7 +158,7 @@ export default function PhysicalAssessmentDetailsPage() {
       toast({
         variant: "destructive",
         title: "Error deleting assessment",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);

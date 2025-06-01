@@ -38,18 +38,18 @@ export default function ExercisesPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddingExercise, setIsAddingExercise] = useState(false);
-  const [exercises, setExercises] = useState([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [videoFile, setVideoFile] = useState(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
-  const [currentExerciseId, setCurrentExerciseId] = useState(null);
+  const [currentExerciseId, setCurrentExerciseId] = useState<string | null>(null);
   const [muscleFilter, setMuscleFilter] = useState("all");
   const [equipmentFilter, setEquipmentFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   
-  const [newExercise, setNewExercise] = useState({
+  const [newExercise, setNewExercise] = useState<NewExercise>({
     name: "",
     description: "",
     muscleGroups: [],
@@ -78,30 +78,34 @@ export default function ExercisesPage() {
       toast({
         variant: "destructive",
         title: "Error fetching exercises",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
 
-  const handleVideoUpload = async (file) => {
+  interface HandleVideoUploadProps {
+    file: File;
+  }
+
+  interface SupabaseUploadProgressEvent {
+    loaded: number;
+    total: number;
+  }
+
+  const handleVideoUpload = async (file: File): Promise<void> => {
     try {
       setVideoFile(file);
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `videos/${fileName}`;
 
-      const { data, error } = await supabase.storage
+      const { data, error }: { data: any; error: any } = await supabase.storage
         .from('exercise-videos')
-        .upload(filePath, file, {
-          onUploadProgress: (progress) => {
-            const percent = (progress.loaded / progress.total) * 100;
-            setUploadProgress(percent);
-          },
-        });
+        .upload(filePath, file);
 
       if (error) throw error;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } }: { data: { publicUrl: string } } = supabase.storage
         .from('exercise-videos')
         .getPublicUrl(filePath);
 
@@ -114,11 +118,11 @@ export default function ExercisesPage() {
         title: "Video uploaded successfully",
         description: "Your video has been uploaded and linked to the exercise.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error uploading video",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setUploadProgress(0);
@@ -177,14 +181,37 @@ export default function ExercisesPage() {
       toast({
         variant: "destructive",
         title: "Error saving exercise",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEditClick = (exercise) => {
+  interface Exercise {
+    id: string;
+    name: string;
+    description: string;
+    muscle_group: string[];
+    equipment: string[];
+    variations?: string[];
+    video_url?: string;
+    tips?: string[];
+    common_errors?: string[];
+  }
+
+  interface NewExercise {
+    name: string;
+    description: string;
+    muscleGroups: string[];
+    equipment: string[];
+    variations: string;
+    videoUrl: string;
+    tips: string;
+    commonErrors: string;
+  }
+
+  const handleEditClick = (exercise: Exercise): void => {
     setIsEditing(true);
     setIsCloning(false);
     setCurrentExerciseId(exercise.id);
@@ -201,7 +228,18 @@ export default function ExercisesPage() {
     setIsAddingExercise(true);
   };
 
-  const handleCloneClick = (exercise) => {
+  interface CloneExercise {
+    name: string;
+    description: string;
+    muscle_group: string[];
+    equipment: string[];
+    variations?: string[];
+    video_url?: string;
+    tips?: string[];
+    common_errors?: string[];
+  }
+
+  const handleCloneClick = (exercise: CloneExercise): void => {
     setIsEditing(false);
     setIsCloning(true);
     setCurrentExerciseId(null);
@@ -218,15 +256,20 @@ export default function ExercisesPage() {
     setIsAddingExercise(true);
   };
 
-  const handleDeleteExercise = async (exercise) => {
+  interface DeleteExercise {
+    id: string;
+    name: string;
+  }
+
+  const handleDeleteExercise = async (exercise: DeleteExercise): Promise<void> => {
     try {
       setIsLoading(true);
       
-      const response = await fetch(`/api/exercises/${exercise.id}`, {
+      const response: Response = await fetch(`/api/exercises/${exercise.id}`, {
         method: 'DELETE',
       });
 
-      const data = await response.json();
+      const data: { error?: string } = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error);
@@ -239,11 +282,11 @@ export default function ExercisesPage() {
       
       await fetchExercises();
       
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error deleting exercise",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);

@@ -33,9 +33,35 @@ export default function EditWorkoutPlanPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [workouts, setWorkouts] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [selectedWorkouts, setSelectedWorkouts] = useState([]);
+  type Workout = {
+    id: string;
+    name: string;
+    description?: string;
+    level: string;
+    goal: string;
+  };
+  
+  type Student = {
+    id: string;
+    full_name: string;
+  };
+  
+  type SelectedWorkout = {
+    id: string;
+    name: string;
+    level: string;
+    goal: string;
+    day_of_week: number;
+  };
+  
+  type WorkoutPlanItem = {
+    workout: Workout;
+    day_of_week: number;
+  };
+  
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedWorkouts, setSelectedWorkouts] = useState<SelectedWorkout[]>([]);
   
   const [plan, setPlan] = useState({
     name: "",
@@ -69,7 +95,7 @@ export default function EditWorkoutPlanPage() {
       });
 
       setSelectedWorkouts(
-        data.workout_plan_items.map(item => ({
+        data.workout_plan_items.map((item: WorkoutPlanItem) => ({
           id: item.workout.id,
           name: item.workout.name,
           level: item.workout.level,
@@ -81,7 +107,7 @@ export default function EditWorkoutPlanPage() {
       toast({
         variant: "destructive",
         title: "Error fetching plan details",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
@@ -102,7 +128,7 @@ export default function EditWorkoutPlanPage() {
       toast({
         variant: "destructive",
         title: "Error fetching workouts",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -121,7 +147,7 @@ export default function EditWorkoutPlanPage() {
       toast({
         variant: "destructive",
         title: "Error fetching students",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -163,23 +189,43 @@ export default function EditWorkoutPlanPage() {
       toast({
         variant: "destructive",
         title: "Error updating plan",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleWorkoutSelect = (workout) => {
-    if (!selectedWorkouts.find(w => w.id === workout.id)) {
-      setSelectedWorkouts([...selectedWorkouts, {
-        ...workout,
-        day_of_week: 1
-      }]);
+  interface HandleWorkoutSelectWorkout {
+    id: string;
+    name: string;
+    description?: string;
+    level: string;
+    goal: string;
+  }
+
+  const handleWorkoutSelect = (workout: HandleWorkoutSelectWorkout) => {
+    if (!selectedWorkouts.find((w) => w.id === workout.id)) {
+      setSelectedWorkouts([
+        ...selectedWorkouts,
+        {
+          ...workout,
+          day_of_week: 1,
+        },
+      ]);
     }
   };
 
-  const handleWorkoutUpdate = (index, field, value) => {
+  interface HandleWorkoutUpdateField {
+    day_of_week: number;
+    [key: string]: number | string;
+  }
+
+  const handleWorkoutUpdate = (
+    index: number,
+    field: keyof HandleWorkoutUpdateField,
+    value: number | string
+  ) => {
     const updatedWorkouts = [...selectedWorkouts];
     updatedWorkouts[index] = {
       ...updatedWorkouts[index],
@@ -188,7 +234,11 @@ export default function EditWorkoutPlanPage() {
     setSelectedWorkouts(updatedWorkouts);
   };
 
-  const handleRemoveWorkout = (index) => {
+  interface HandleRemoveWorkout {
+    (index: number): void;
+  }
+
+  const handleRemoveWorkout: HandleRemoveWorkout = (index) => {
     setSelectedWorkouts(selectedWorkouts.filter((_, i) => i !== index));
   };
 
