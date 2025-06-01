@@ -19,12 +19,15 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useSupabase } from "@/app/providers";
 import { useRouter } from "next/navigation";
 
-export function Header() {
+interface HeaderProps {
+  userRole: 'trainer' | 'student' | null;
+}
+
+export function Header({ userRole }: HeaderProps) {
   const { supabase, session } = useSupabase();
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [userRole, setUserRole] = useState<'trainer' | 'student'>('student');
 
   const userInitial = session?.user?.email?.charAt(0).toUpperCase() || "U";
 

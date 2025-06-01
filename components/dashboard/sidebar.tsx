@@ -8,99 +8,103 @@ import {
   BarChart4, 
   Calendar, 
   Dumbbell, 
-  Home,
   LayoutDashboard, 
   Settings, 
   Users,
-  BookOpen,
   Activity,
   Heart,
   Trophy,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  userRole: 'trainer' | 'student' | null;
+}
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, userRole }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const routes = [
-    {
-      name: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      isActive: pathname === "/dashboard",
-    },
-    {
-      name: "Alunos",
-      href: "/dashboard/students",
-      icon: Users,
-      isActive: pathname.startsWith("/dashboard/students"),
-    },
-    {
-      name: "Treinos",
-      href: "/dashboard/workouts",
-      icon: Activity,
-      isActive: pathname.startsWith("/dashboard/workouts"),
-    },
-    {
-      name: "Rotinas",
-      href: "/dashboard/workout-plans",
-      icon: ClipboardList,
-      isActive: pathname.startsWith("/dashboard/workout-plans"),
-    },
-    {
-      name: "Exercícios",
-      href: "/dashboard/exercises",
-      icon: Dumbbell,
-      isActive: pathname.startsWith("/dashboard/exercises"),
-    },
-    {
-      name: "Agenda",
-      href: "/dashboard/calendar",
-      icon: Calendar,
-      isActive: pathname.startsWith("/dashboard/calendar"),
-    },
-    {
-      name: "Análises",
-      href: "/dashboard/analytics",
-      icon: BarChart4,
-      isActive: pathname.startsWith("/dashboard/analytics"),
-    },
-    {
-      name: "Avaliação Física",
-      href: "/dashboard/physical-assessments",
-      icon: BookOpen,
-      isActive: pathname.startsWith("/dashboard/physical-assessments"),
-    },
-    {
-      name: "Saúde",
-      href: "/dashboard/health",
-      icon: Heart,
-      isActive: pathname.startsWith("/dashboard/health"),
-    },
-    {
-      name: "Conquistas",
-      href: "/dashboard/achievements",
-      icon: Trophy,
-      isActive: pathname.startsWith("/dashboard/achievements"),
-    },
-  ];
+  const getRoutes = () => {
+    if (userRole === 'trainer') {
+      return [
+        {
+          name: "Dashboard",
+          href: "/dashboard",
+          icon: LayoutDashboard,
+          isActive: pathname === "/dashboard",
+        },
+        {
+          name: "Students",
+          href: "/dashboard/students",
+          icon: Users,
+          isActive: pathname.startsWith("/dashboard/students"),
+        },
+        {
+          name: "Workouts",
+          href: "/dashboard/workouts",
+          icon: Activity,
+          isActive: pathname.startsWith("/dashboard/workouts"),
+        },
+        {
+          name: "Exercises",
+          href: "/dashboard/exercises",
+          icon: Dumbbell,
+          isActive: pathname.startsWith("/dashboard/exercises"),
+        },
+        {
+          name: "Calendar",
+          href: "/dashboard/calendar",
+          icon: Calendar,
+          isActive: pathname.startsWith("/dashboard/calendar"),
+        },
+        {
+          name: "Analytics",
+          href: "/dashboard/analytics",
+          icon: BarChart4,
+          isActive: pathname.startsWith("/dashboard/analytics"),
+        },
+      ];
+    } else {
+      return [
+        {
+          name: "My Workouts",
+          href: "/dashboard/my-workouts",
+          icon: Activity,
+          isActive: pathname.startsWith("/dashboard/my-workouts"),
+        },
+        {
+          name: "Progress",
+          href: "/dashboard/progress",
+          icon: BarChart4,
+          isActive: pathname.startsWith("/dashboard/progress"),
+        },
+        {
+          name: "Profile",
+          href: "/dashboard/profile",
+          icon: User,
+          isActive: pathname.startsWith("/dashboard/profile"),
+        },
+      ];
+    }
+  };
+
+  const routes = getRoutes();
 
   const bottomRoutes = [
     {
-      name: "Configurações",
+      name: "Settings",
       href: "/dashboard/settings",
       icon: Settings,
       isActive: pathname.startsWith("/dashboard/settings"),
     },
     {
-      name: "Ajuda",
+      name: "Help",
       href: "/dashboard/help",
       icon: HelpCircle,
       isActive: pathname.startsWith("/dashboard/help"),
