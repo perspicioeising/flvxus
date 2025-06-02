@@ -119,7 +119,7 @@ export default function StudentsPage() {
               </div>
               <Button 
                 className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={() => setShowForm(!showForm)}
+              onClick={() => setShowForm(true)}
               >
                 <Plus className="h-6 w-6" />
                 <span className="text-xs">Adicionar</span>
@@ -189,15 +189,7 @@ export default function StudentsPage() {
                     ? "Tente ajustar os filtros de busca"
                     : "Adicione novos alunos para começar"}
                 </p>
-                {!searchQuery && statusFilter === 'all' && (
-                  <Button
-                    className="mt-4"
-                    onClick={() => setShowForm(true)}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Aluno
-                  </Button>
-                )}
+             
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
