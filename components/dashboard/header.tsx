@@ -70,7 +70,7 @@ export function Header({ userRole }: HeaderProps) {
           <SheetContent side="left" className="w-[300px] sm:w-[400px]">
             <div className="flex items-center gap-2 mb-8">
               <Dumbbell className="h-6 w-6 text-primary" />
-              <span className="font-bold text-lg">FitConnect Pro</span>
+              <span className="font-bold text-lg">FLVXUS</span>
             </div>
             <nav className="flex flex-col gap-4">
               {navigationItems.map((item) => (
@@ -94,7 +94,7 @@ export function Header({ userRole }: HeaderProps) {
         <div className="flex items-center gap-2 md:mr-6">
           <Link href="/dashboard" className="flex items-center gap-2">
             <Dumbbell className="h-6 w-6 text-primary hidden md:block" />
-            <span className="font-bold text-lg hidden md:block">FitConnect Pro</span>
+            <span className="font-bold text-lg hidden md:block">FLVXUS</span>
           </Link>
         </div>
 
