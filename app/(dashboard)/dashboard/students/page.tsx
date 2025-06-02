@@ -29,13 +29,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MoreHorizontal, Search, Filter, Eye, Activity, Mail, Calendar } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Filter, Eye, Activity, Mail, Calendar, Users, Loader2, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
+import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationNext } from "@/components/ui/pagination";
 
 type Student = {
   id: string;
@@ -53,6 +54,7 @@ type Student = {
   preferred_training_time: string | null;
   experience_level: string | null;
   notes: string | null;
+  avatar?: string | null;
 };
 
 const EXPERIENCE_LEVELS = [
@@ -390,63 +392,119 @@ export default function StudentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Meus Alunos</h2>
-          <p className="text-muted-foreground">
-            Gerencie e acompanhe os perfis dos seus alunos.
-          </p>
-        </div>
-        <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Adicionar Aluno
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Adicionar Novo Aluno</DialogTitle>
-              <DialogDescription>
-                {currentStep === 1 && "Insira as informações básicas do aluno."}
-                {currentStep === 2 && "Insira detalhes físicos e objetivos."}
-                {currentStep === 3 && "Insira informações médicas e preferências."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              {renderStepContent()}
-            </div>
-            <DialogFooter className="flex justify-between">
-              {currentStep > 1 && (
-                <Button variant="outline" onClick={prevStep}>
-                  Anterior
-                </Button>
-              )}
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleDialogClose}>
-                  Cancelar
-                </Button>
-                {currentStep < 3 ? (
-                  <Button onClick={nextStep}>Próximo</Button>
-                ) : (
-                  <Button onClick={handleAddStudent} disabled={isLoading}>
-                    {isLoading ? "Convidando..." : "Enviar Convite"}
-                  </Button>
-                )}
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight">Meus Alunos</h2>
+                  <p className="text-muted-foreground">
+                    Gerencie e acompanhe os perfis dos seus alunos
+                  </p>
+                </div>
               </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </div>
 
+            {/* Quick Stats */}
+            <div className="flex gap-3">
+              <div className="bg-background border border-primary/20 rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
+                <div className="text-xl font-bold text-primary">{students.filter(s => s.status === 'active').length}</div>
+                <div className="text-xs text-muted-foreground">Ativos</div>
+              </div>
+              <div className="bg-background border border-border rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
+                <div className="text-xl font-bold">{students.length}</div>
+                <div className="text-xs text-muted-foreground">Total</div>
+              </div>
+
+
+              <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
+                <DialogTrigger asChild>
+                  <Button className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Plus className="h-6 w-6" />
+                    <span className="text-xs">Adicionar</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Novo Aluno</DialogTitle>
+                    <DialogDescription>
+                      {currentStep === 1 && "Insira as informações básicas do aluno."}
+                      {currentStep === 2 && "Insira detalhes físicos e objetivos."}
+                      {currentStep === 3 && "Insira informações médicas e preferências."}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {/* Progress Steps Indicator */}
+                  <div className="px-6 pt-2">
+                    <div className="flex justify-between relative">
+                      <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-border -translate-y-1/2 z-0" />
+                      {[1, 2, 3].map((step) => (
+                        <div key={step} className="flex flex-col items-center z-10">
+                          <div className={`h-6 w-6 rounded-full flex items-center justify-center ${currentStep >= step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                            {step}
+                          </div>
+                          <span className={`text-xs mt-1 ${currentStep === step ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+                            Passo {step}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="py-4">
+                    {renderStepContent()}
+                  </div>
+
+                  <DialogFooter className="flex justify-between">
+                    <div>
+                      {currentStep > 1 && (
+                        <Button variant="outline" onClick={prevStep}>
+                          Anterior
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={handleDialogClose}>
+                        Cancelar
+                      </Button>
+                      {currentStep < 3 ? (
+                        <Button onClick={nextStep}>Próximo</Button>
+                      ) : (
+                        <Button onClick={handleAddStudent} disabled={isLoading}>
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Enviando...
+                            </>
+                          ) : "Enviar Convite"}
+                        </Button>
+                      )}
+                    </div>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </div>
+      </div>
       <Card>
         <CardHeader className="pb-3">
-         
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-lg">Lista de Alunos</h3>
+            <div className="text-sm text-muted-foreground">
+              {filteredStudents.length} {filteredStudents.length === 1 ? 'aluno' : 'alunos'} encontrados
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar alunos..."
+                placeholder="Buscar por nome ou email..."
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -454,15 +512,15 @@ export default function StudentsPage() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
-                <div className="flex items-center">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Status" />
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <SelectValue placeholder="Filtrar status" />
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="inactive">Inativo</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -470,81 +528,102 @@ export default function StudentsPage() {
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow  >
-                  <TableHead>Aluno</TableHead>
+                <TableRow>
+                  <TableHead className="w-[40%]">Aluno</TableHead>
                   <TableHead className="hidden lg:table-cell">Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Experience</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="hidden lg:table-cell">Nível</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredStudents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Nenhum aluno encontrado. Tente ajustar os filtros ou adicionar novos alunos.
+                    <TableCell colSpan={4} className="text-center py-8">
+                      <div className="flex flex-col items-center gap-2">
+                        <Users className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-muted-foreground">Nenhum aluno encontrado</p>
+                        <p className="text-sm text-muted-foreground">
+                          {searchQuery || statusFilter !== 'all'
+                            ? "Tente ajustar os filtros de busca"
+                            : "Adicione novos alunos para começar"}
+                        </p>
+                        {!searchQuery && statusFilter === 'all' && (
+                          <Button
+                            variant="ghost"
+                            className="mt-2"
+                            onClick={() => setIsAddStudentOpen(true)}
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Adicionar Aluno
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredStudents.map((student) => (
-                    <TableRow key={student.id}>
+                    <TableRow key={student.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
+                          <Avatar className="h-9 w-9">
                             <AvatarImage alt={student.full_name} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {student.full_name?.substring(0, 2).toUpperCase()}
+                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                              {student.full_name?.split(' ').map(n => n[0]).join('').toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{student.full_name}</p>
-                            <p className="text-xs text-muted-foreground">{student.email}</p>
+                            <p className="text-sm text-muted-foreground truncate max-w-[180px]">
+                              {student.email}
+                            </p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
-                        <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                          {student.status}
+                        <Badge
+                          variant={student.status === 'active' ? 'default' : 'secondary'}
+                          className="capitalize"
+                        >
+                          {student.status === 'active' ? 'Ativo' : 'Inativo'}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
                         {student.experience_level || '-'}
                       </TableCell>
-
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Abrir menu</span>
+                              <span className="sr-only">Menu</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/students/${student.id}`}>
+                              <Link href={`/dashboard/students/${student.id}`} className="flex items-center">
                                 <Eye className="mr-2 h-4 w-4" />
                                 Ver Perfil
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/students/${student.id}/workouts`}>
+                              <Link href={`/dashboard/students/${student.id}/workouts`} className="flex items-center">
                                 <Activity className="mr-2 h-4 w-4" />
                                 Treinos
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/students/${student.id}/assessments`}>
+                              <Link href={`/dashboard/students/${student.id}/assessments`} className="flex items-center">
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Avaliações
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="flex items-center">
                               <Mail className="mr-2 h-4 w-4" />
                               Enviar Mensagem
-
                             </DropdownMenuItem>
-
-
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive flex items-center">
+                              <Trash2 className="mr-2 h-4 w-4" />
                               Remover Aluno
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -556,6 +635,24 @@ export default function StudentsPage() {
               </TableBody>
             </Table>
           </div>
+
+          {filteredStudents.length > 5 && (
+            <div className="mt-4 flex justify-end">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious href="#" />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationLink href="#">1</PaginationLink>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationNext href="#" />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

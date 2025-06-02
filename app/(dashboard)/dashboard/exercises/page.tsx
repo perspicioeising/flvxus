@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList } from "lucide-react";
+import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList, Dumbbell } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 
@@ -330,16 +330,45 @@ export default function ExercisesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Exercícios</h2>
-          <p className="text-muted-foreground">
-            Gerencie sua biblioteca de exercícios
-          </p>
+    <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Dumbbell className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Exercícios</h2>
+              <p className="text-muted-foreground">
+                Gerencie sua biblioteca de exercícios
+              </p>
+            </div>
+          </div>
         </div>
-        <Button onClick={() => setIsAddingExercise(true)} disabled={isAddingExercise}>
-          <Plus className="mr-2 h-4 w-4" /> Adicionar Exercício
-        </Button>
+     <div className="flex gap-3">
+          <div className="bg-background border border-primary/20 rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
+            <div className="text-xl font-bold text-primary">
+              {exercises.length}
+            </div>
+            <div className="text-xs text-muted-foreground">Ativos</div>
+          </div>
+          <div className="bg-background border border-border rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
+            <div className="text-xl font-bold">{exercises.length}</div>
+            <div className="text-xs text-muted-foreground">Total</div>
+          </div>
+          
+          <Button 
+            onClick={() => setIsAddingExercise(true)} 
+            disabled={isAddingExercise}
+            className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            <Plus className="h-6 w-6" />
+            <span className="text-xs">Adicionar</span>
+          </Button>
+        </div>
       </div>
+    </div>
+  </div>
 
       {isAddingExercise && (
         <Card>
