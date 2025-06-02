@@ -12,15 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -29,12 +29,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MoreHorizontal, Search, Filter } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Filter, Eye, Activity, Mail, Calendar } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
 
 type Student = {
   id: string;
@@ -88,7 +89,7 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  
+
   const [newStudent, setNewStudent] = useState({
     name: "",
     email: "",
@@ -139,19 +140,19 @@ export default function StudentsPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       toast({
         title: "Aluno convidado com sucesso",
         description: "Um email de convite foi enviado para o endereço do aluno.",
       });
-      
+
       fetchStudents();
       handleDialogClose();
-      
+
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -198,9 +199,9 @@ export default function StudentsPage() {
   // Filter students based on search query and status filter
   const filteredStudents = students.filter((student) => {
     const matchesQuery = student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        student.email.toLowerCase().includes(searchQuery.toLowerCase());
+      student.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || student.status === statusFilter;
-    
+
     return matchesQuery && matchesStatus;
   });
 
@@ -211,45 +212,45 @@ export default function StudentsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome Completo *</Label>
-              <Input 
-                id="name" 
-                placeholder="Full name" 
+              <Input
+                id="name"
+                placeholder="Full name"
                 value={newStudent.name}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail *</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="Email address" 
+              <Input
+                id="email"
+                type="email"
+                placeholder="Email address"
                 value={newStudent.email}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Número de Telefone</Label>
-              <Input 
-                id="phone" 
-                placeholder="Phone number" 
+              <Input
+                id="phone"
+                placeholder="Phone number"
                 value={newStudent.phone}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, phone: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="birthDate">Data de Nascimento</Label>
-              <Input 
-                id="birthDate" 
-                type="date" 
+              <Input
+                id="birthDate"
+                type="date"
                 value={newStudent.birthDate}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, birthDate: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="gender">Gênero</Label>
-              <Select 
-                value={newStudent.gender} 
+              <Select
+                value={newStudent.gender}
                 onValueChange={(value) => setNewStudent(prev => ({ ...prev, gender: value }))}
               >
                 <SelectTrigger>
@@ -269,20 +270,20 @@ export default function StudentsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="height">Altura (cm)</Label>
-              <Input 
-                id="height" 
-                type="number" 
-                placeholder="Height in centimeters" 
+              <Input
+                id="height"
+                type="number"
+                placeholder="Height in centimeters"
                 value={newStudent.height}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, height: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="weight">Peso (kg)</Label>
-              <Input 
-                id="weight" 
-                type="number" 
-                placeholder="Weight in kilograms" 
+              <Input
+                id="weight"
+                type="number"
+                placeholder="Weight in kilograms"
                 value={newStudent.weight}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, weight: e.target.value }))}
               />
@@ -317,8 +318,8 @@ export default function StudentsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="experienceLevel">Experience Level</Label>
-              <Select 
-                value={newStudent.experienceLevel} 
+              <Select
+                value={newStudent.experienceLevel}
                 onValueChange={(value) => setNewStudent(prev => ({ ...prev, experienceLevel: value }))}
               >
                 <SelectTrigger>
@@ -338,26 +339,26 @@ export default function StudentsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="medicalConditions">Condições Médicas</Label>
-              <Textarea 
-                id="medicalConditions" 
-                placeholder="Liste quaisquer condições médicas, lesões ou limitações" 
+              <Textarea
+                id="medicalConditions"
+                placeholder="Liste quaisquer condições médicas, lesões ou limitações"
                 value={newStudent.medicalConditions}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, medicalConditions: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="emergencyContact">Contato de Emergência</Label>
-              <Input 
-                id="emergencyContact" 
-                placeholder="Nome e número de telefone" 
+              <Input
+                id="emergencyContact"
+                placeholder="Nome e número de telefone"
                 value={newStudent.emergencyContact}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, emergencyContact: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="preferredTime">Horário Preferido de Treino</Label>
-              <Select 
-                value={newStudent.preferredTime} 
+              <Select
+                value={newStudent.preferredTime}
                 onValueChange={(value) => setNewStudent(prev => ({ ...prev, preferredTime: value }))}
               >
                 <SelectTrigger>
@@ -372,9 +373,9 @@ export default function StudentsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notas Adicionais</Label>
-              <Textarea 
-                id="notes" 
-                placeholder="Qualquer informação adicional" 
+              <Textarea
+                id="notes"
+                placeholder="Qualquer informação adicional"
                 value={newStudent.notes}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, notes: e.target.value }))}
               />
@@ -438,10 +439,7 @@ export default function StudentsPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Gerenciamento de Alunos</CardTitle>
-          <CardDescription>
-            Visualize e gerencie as informações e o progresso dos seus alunos.
-          </CardDescription>
+         
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -468,13 +466,12 @@ export default function StudentsPage() {
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="rounded-md border">
+
+          <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableRow  >
+                  <TableHead>Aluno</TableHead>
                   <TableHead className="hidden lg:table-cell">Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Experience</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -491,10 +488,19 @@ export default function StudentsPage() {
                   filteredStudents.map((student) => (
                     <TableRow key={student.id}>
                       <TableCell>
-                        <div className="font-medium">{student.full_name}</div>
-                        <div className="text-xs text-muted-foreground md:hidden">{student.email}</div>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage alt={student.full_name} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {student.full_name?.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{student.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{student.email}</p>
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">{student.email}</TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
                           {student.status}
@@ -503,6 +509,7 @@ export default function StudentsPage() {
                       <TableCell className="hidden lg:table-cell">
                         {student.experience_level || '-'}
                       </TableCell>
+
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -512,24 +519,31 @@ export default function StudentsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
                               <Link href={`/dashboard/students/${student.id}`}>
+                                <Eye className="mr-2 h-4 w-4" />
                                 Ver Perfil
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href={`/dashboard/students/${student.id}/workouts`}>
-                                Gerenciar Treinos
+                                <Activity className="mr-2 h-4 w-4" />
+                                Treinos
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href={`/dashboard/students/${student.id}/assessments`}>
-                                Avaliações Físicas
+                                <Calendar className="mr-2 h-4 w-4" />
+                                Avaliações
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>Enviar Mensagem</DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Mail className="mr-2 h-4 w-4" />
+                              Enviar Mensagem
+
+                            </DropdownMenuItem>
+
+
                             <DropdownMenuItem className="text-destructive">
                               Remover Aluno
                             </DropdownMenuItem>
