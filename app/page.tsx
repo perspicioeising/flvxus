@@ -3,16 +3,16 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from 'next/image';
-import { ArrowRight, Dumbbell, BarChart, Calendar, Shield, Users, Trophy } from "lucide-react";
+import { ArrowRight, Dumbbell, BarChart, Calendar, Shield, Users, Trophy, BarChart3, Check, Play, Sparkles, TrendingUp } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
       {/* Navigation */}
       <header className="w-full py-4 px-6 md:px-8 lg:px-12 flex items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center gap-2 text-primary font-bold text-xl">
           <Dumbbell className="h-6 w-6" />
-          <span>FitConnect Pro</span>
+          <span>FLVXUS</span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/login">
@@ -25,37 +25,131 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-16 md:py-24 px-6 md:px-8 lg:px-12 landing-hero">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Eleve seu Negócio de Personal Training
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground">
-              A plataforma completa para personal trainers gerenciarem alunos, criarem treinos, acompanharem progresso e expandirem seus negócios.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <Link href="/register">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Comece Grátis <ArrowRight className="ml-2 h-4 w-4" />
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+           <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-primary/5" />
+          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full blur-3xl animate-pulse opacity-50" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-tl from-primary/15 to-transparent rounded-full blur-3xl animate-pulse delay-1000 opacity-60" />
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-gradient-to-r from-primary/10 to-primary/20 rounded-full blur-3xl animate-pulse delay-500 opacity-40" />
+          
+          {/* Floating Elements */}
+          <div className="absolute top-1/4 right-1/4 w-4 h-4 bg-primary/30 rounded-full animate-bounce delay-300" />
+          <div className="absolute top-3/4 left-1/4 w-6 h-6 bg-primary/20 rounded-full animate-bounce delay-700" />
+          <div className="absolute top-1/3 left-1/6 w-3 h-3 bg-primary/40 rounded-full animate-bounce delay-1000" />
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            <div className="lg:w-1/2 text-center lg:text-left">
+              {/* Animated Badge */}
+           
+              
+              {/* Main Heading with Animation */}
+              <div className="space-y-4 mb-8 mt-8">
+                <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-6xl font-black leading-none">
+                  <span className="block transform hover:scale-105 transition-transform duration-300">
+                    Transforme
+                  </span>
+                  <span className="block bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent transform hover:scale-105 transition-transform duration-300 delay-100">
+                    seu Negócio
+                  </span>
+                  <span className="block bg-gradient-to-r from-primary/80 via-primary to-primary/90 bg-clip-text text-transparent transform hover:scale-105 transition-transform duration-300 delay-200">
+                    Fitness
+                  </span>
+                </h1>
+              </div>
+              
+              <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                A plataforma que combina{" "}
+                <span className="text-primary font-semibold">gestão inteligente</span>,{" "}
+                <span className="text-primary font-semibold">IA avançada</span> e{" "}
+                <span className="text-primary font-semibold">resultados excepcionais</span>{" "}
+                para personal trainers visionários.
+              </p>
+              
+              {/* Enhanced CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start mb-12">
+                <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-110 hover:-translate-y-1 text-lg px-8 py-4 relative overflow-hidden group" asChild>
+                  <Link href="/register" className="flex items-center relative z-10">
+                    <span className="mr-3">Começar Gratuitamente</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                  </Link>
                 </Button>
-              </Link>
-              <Link href="#pricing">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Ver Preços
+                <Button size="lg" variant="outline" className="border-2 border-primary/30 hover:border-primary hover:bg-primary/5 transition-all duration-300 transform hover:scale-105 text-lg px-8 py-4 group relative overflow-hidden">
+                  <Play className="w-5 h-5 mr-3 group-hover:scale-125 transition-transform duration-300" />
+                  Ver Demo Interativa
+                  <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Button>
-              </Link>
+              </div>
+              
+              {/* Enhanced Trust Indicators */}
+              <div className="flex items-center justify-center lg:justify-start gap-8 text-sm">
+                <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-full px-4 py-2 border border-border/50">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span className="text-muted-foreground font-medium">14 dias grátis</span>
+                </div>
+                <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-full px-4 py-2 border border-border/50">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span className="text-muted-foreground font-medium">Sem cartão</span>
+                </div>
+                <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-full px-4 py-2 border border-border/50">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span className="text-muted-foreground font-medium">Suporte 24/7</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="relative">
-            <div className="aspect-video bg-muted rounded-lg overflow-hidden shadow-2xl">
-              <Image 
-                src="https://images.pexels.com/photos/4498362/pexels-photo-4498362.jpeg"
-                alt="FitConnect Pro Dashboard"
-                width={1920}
-                height={1080}
-                className="w-full h-full object-cover"
-              />
+            
+            {/* Enhanced Image Section */}
+            <div className="lg:w-1/2 relative">
+              <div className="relative group">
+                {/* Background Glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10 rounded-3xl blur-3xl transform rotate-6 group-hover:rotate-12 transition-transform duration-700" />
+                
+                {/* Main Image */}
+                <img 
+                  src="https://images.pexels.com/photos/4498362/pexels-photo-4498362.jpeg" 
+                  alt="Personal trainer revolucionário" 
+                  className="relative rounded-3xl shadow-2xl w-full h-auto max-w-lg mx-auto transform group-hover:scale-105 transition-all duration-700 border border-border/20"
+                />
+                
+                {/* Enhanced Floating Cards */}
+                <div className="absolute -bottom-8 -left-8 bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-border/50 transform hover:scale-110 transition-all duration-500 hover:shadow-3xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <TrendingUp className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg text-green-600">+287% ROI</p>
+                      <p className="text-sm text-muted-foreground">em 6 meses médios</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="absolute -top-8 -right-8 bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-border/50 transform hover:scale-110 transition-all duration-500 hover:shadow-3xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Users className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg text-primary">12.5K+</p>
+                      <p className="text-sm text-muted-foreground">clientes ativos</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="absolute top-1/2 -right-16 bg-gradient-to-br from-card via-card/95 to-card/90 backdrop-blur-xl rounded-3xl p-4 shadow-2xl border border-border/50 transform hover:scale-110 transition-all duration-500 hover:shadow-3xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <BarChart3 className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-purple-600">AI Smart</p>
+                      <p className="text-xs text-muted-foreground">Insights</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
