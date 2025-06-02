@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList, Dumbbell } from "lucide-react";
+import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList, Dumbbell, Eye, List, Library } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -340,9 +340,9 @@ export default function ExercisesPage() {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold tracking-tight">Exercícios</h2>
-                  <p className="text-muted-foreground">
+                  {/* <p className="text-muted-foreground">
                     Gerencie sua biblioteca de exercícios
-                  </p>
+                  </p> */}
                 </div>
               </div>
             </div>
@@ -584,50 +584,43 @@ export default function ExercisesPage() {
         </Card>
       )}
 
-      <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
-        <CardHeader>
-          <div className="flex flex-col space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <CardTitle className="text-2xl font-bold">Biblioteca de Exercícios</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Navegue e gerencie sua coleção de exercícios
-                </CardDescription>
+      <Card className="bg-background/60 backdrop-blur-xl border border-primary/20 border shadow-sm">
+        <CardHeader className="pb-6">
+          <div className="flex flex-col space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-xl">
+                  <Library className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm text-muted-foreground">Biblioteca de Exercícios</CardTitle>
+                  <CardDescription className="text-sm text-muted-foreground">
+                    Navegue e gerencie sua coleção de exercícios
+                  </CardDescription>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={viewMode === 'grid' ? 'default' : 'outline'}
-                      size="icon"
-                      onClick={() => setViewMode('grid')}
-                      className="h-9 w-9 bg-background/70 backdrop-blur-sm"
-                    >
-                      <Grid className="h-4 w-4" />
-                      <span className="sr-only">Visualização em grade</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Visualização em grade</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={viewMode === 'list' ? 'default' : 'outline'}
-                      size="icon"
-                      onClick={() => setViewMode('list')}
-                      className="h-9 w-9 bg-background/70 backdrop-blur-sm"
-                    >
-                      <LayoutList className="h-4 w-4" />
-                      <span className="sr-only">Visualização em lista</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Visualização em lista</TooltipContent>
-                </Tooltip>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setViewMode('grid')}
+                  className="h-12 w-12 rounded-xl"
+                >
+                  <Grid className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="icon"
+                  onClick={() => setViewMode('list')}
+                  className="h-12 w-12 rounded-xl"
+                >
+                  <LayoutList className="h-5 w-5" />
+                </Button>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -640,8 +633,8 @@ export default function ExercisesPage() {
 
               <Select value={muscleFilter} onValueChange={setMuscleFilter}>
                 <SelectTrigger className="w-[180px] bg-background/70 backdrop-blur-sm">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
+                  <div className="flex items-center gap-3">
+                    <Filter className="h-5 w-5" />
                     <span>Grupo Muscular</span>
                   </div>
                 </SelectTrigger>
@@ -655,8 +648,8 @@ export default function ExercisesPage() {
 
               <Select value={equipmentFilter} onValueChange={setEquipmentFilter}>
                 <SelectTrigger className="w-[180px] bg-background/70 backdrop-blur-sm">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
+                  <div className="flex items-center gap-3">
+                    <Filter className="h-5 w-5" />
                     <span>Equipamento</span>
                   </div>
                 </SelectTrigger>
