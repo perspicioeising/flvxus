@@ -174,9 +174,9 @@ export default function AchievementsPage() {
         {userRole === 'trainer' && (
           <Button 
             onClick={() => router.push('/dashboard/achievements/new')}
-            className="bg-primary hover:bg-primary/90"
+                className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <Plus className="mr-2 h-4 w-4" /> Criar Conquista
+            <Plus className="h-6 w-6" /> Adicionar
           </Button>
         )}
       </div>
