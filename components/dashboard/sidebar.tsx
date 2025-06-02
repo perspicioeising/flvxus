@@ -47,13 +47,13 @@ export function Sidebar({ className, userRole }: SidebarProps) {
         isActive: pathname.startsWith("/dashboard/students"),
       },
       {
-        name: "Av Física",
+        name: "Física",
         href: "/dashboard/physical-assessments",
         icon: BookOpen,
         isActive: pathname.startsWith("/dashboard/physical-assessments"),
       },
       {
-        name: "Av Postural",
+        name: "Postural",
         href: "/dashboard/posture-assessments",
         icon: Camera,
         isActive: pathname.startsWith("/dashboard/posture-assessments"),
