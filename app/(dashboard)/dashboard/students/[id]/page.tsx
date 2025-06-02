@@ -18,17 +18,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Send } from "lucide-react";
 
-const EXPERIENCE_LEVELS = ["Beginner", "Intermediate", "Advanced"];
-const TRAINING_TIMES = ["Early Morning", "Morning", "Afternoon", "Evening", "Night"];
+const EXPERIENCE_LEVELS = ["Iniciante", "Intermediário", "Avançado"];
+const TRAINING_TIMES = ["Madrugada", "Morning", "Tarde", "Noite", "Madrugada"];
 const GOALS = [
-  "Weight Loss",
-  "Muscle Gain",
-  "Strength",
-  "Endurance",
-  "Flexibility",
-  "General Fitness",
-  "Sports Performance",
-  "Rehabilitation"
+  "Perda de Peso",
+  "Ganho de Massa",
+  "Força",
+  "Resistência",
+  "Flexibilidade",
+  "Condicionamento Geral",
+  "Performance Esportiva",
+  "Reabilitação"
 ];
 
 export default function StudentDetailsPage() {
@@ -85,7 +85,7 @@ export default function StudentDetailsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error fetching student details",
+        title: "Erro ao buscar detalhes do aluno",
         description: error.message,
       });
     } finally {
@@ -115,13 +115,13 @@ export default function StudentDetailsPage() {
       }
 
       toast({
-        title: "Changes saved successfully",
-        description: "Student profile has been updated.",
+        title: "Alterações salvas com sucesso",
+        description: "O perfil do aluno foi atualizado.",
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error saving changes",
+        title: "Erro ao salvar alterações",
         description: error.message,
       });
     } finally {
@@ -143,13 +143,13 @@ export default function StudentDetailsPage() {
       }
 
       toast({
-        title: "Invite resent successfully",
-        description: "A new invitation email has been sent to the student.",
+        title: "Convite reenviado com sucesso",
+        description: "Um novo email de convite foi enviado para o aluno.",
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error resending invite",
+        title: "Erro ao reenviar convite",
         description: error.message,
       });
     } finally {
@@ -161,8 +161,8 @@ export default function StudentDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Loading student details...</h2>
-          <p className="text-muted-foreground">Please wait while we fetch the information.</p>
+          <h2 className="text-2xl font-semibold mb-2">Carregando detalhes do aluno...</h2>
+          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos as informações.</p>
         </div>
       </div>
     );
@@ -177,12 +177,12 @@ export default function StudentDetailsPage() {
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Voltar
           </Button>
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{student.name}</h2>
             <p className="text-muted-foreground">
-              Student Profile
+              Perfil do Aluno
             </p>
           </div>
         </div>
@@ -193,13 +193,13 @@ export default function StudentDetailsPage() {
             disabled={isResendingInvite}
           >
             <Send className="h-4 w-4 mr-2" />
-            {isResendingInvite ? "Resending..." : "Resend Invite"}
+            {isResendingInvite ? "Reenviando..." : "Reenviar Convite"}
           </Button>
           <Button
             onClick={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </div>
       </div>
@@ -207,15 +207,15 @@ export default function StudentDetailsPage() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <CardTitle>Informações Básicas</CardTitle>
             <CardDescription>
-              Update the student&apos;s basic details and contact information.
+              Atualize os dados básicos e informações de contato do aluno.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Nome Completo</Label>
                 <Input
                   id="name"
                   value={student.name}
@@ -223,7 +223,7 @@ export default function StudentDetailsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">E-mail</Label>
                 <Input
                   id="email"
                   value={student.email}
@@ -231,7 +231,7 @@ export default function StudentDetailsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">Número de Telefone</Label>
                 <Input
                   id="phone"
                   value={student.phone}
@@ -239,7 +239,7 @@ export default function StudentDetailsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="birthDate">Birth Date</Label>
+                <Label htmlFor="birthDate">Data de Nascimento</Label>
                 <Input
                   id="birthDate"
                   type="date"
@@ -248,18 +248,18 @@ export default function StudentDetailsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="gender">Gender</Label>
+                <Label htmlFor="gender">Gênero</Label>
                 <Select
                   value={student.gender}
                   onValueChange={(value) => setStudent(prev => ({ ...prev, gender: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder="Selecione o gênero" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="male">Masculino</SelectItem>
+                    <SelectItem value="female">Feminino</SelectItem>
+                    <SelectItem value="other">Outro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -270,11 +270,11 @@ export default function StudentDetailsPage() {
                   onValueChange={(value) => setStudent(prev => ({ ...prev, status: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="inactive">Inativo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -284,15 +284,15 @@ export default function StudentDetailsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Physical Information</CardTitle>
+            <CardTitle>Informações Físicas</CardTitle>
             <CardDescription>
-              Update the student&apos;s physical measurements and fitness goals.
+              Atualize as medidas físicas e objetivos de fitness do aluno.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="height">Height (cm)</Label>
+                <Label htmlFor="height">Altura (cm)</Label>
                 <Input
                   id="height"
                   type="number"
@@ -301,7 +301,7 @@ export default function StudentDetailsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
+                <Label htmlFor="weight">Peso (kg)</Label>
                 <Input
                   id="weight"
                   type="number"
@@ -312,7 +312,7 @@ export default function StudentDetailsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Fitness Goals</Label>
+              <Label>Objetivos de Fitness</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {GOALS.map((goal) => (
                   <div key={goal} className="flex items-center space-x-2">
@@ -342,13 +342,13 @@ export default function StudentDetailsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="experienceLevel">Experience Level</Label>
+                <Label htmlFor="experienceLevel">Nível de Experiência</Label>
                 <Select
                   value={student.experienceLevel}
                   onValueChange={(value) => setStudent(prev => ({ ...prev, experienceLevel: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select experience level" />
+                    <SelectValue placeholder="Selecione o nível de experiência" />
                   </SelectTrigger>
                   <SelectContent>
                     {EXPERIENCE_LEVELS.map((level) => (
@@ -358,13 +358,13 @@ export default function StudentDetailsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="preferredTime">Preferred Training Time</Label>
+                <Label htmlFor="preferredTime">Horário Preferido</Label>
                 <Select
                   value={student.preferredTime}
                   onValueChange={(value) => setStudent(prev => ({ ...prev, preferredTime: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select preferred time" />
+                    <SelectValue placeholder="Selecione o horário preferido" />
                   </SelectTrigger>
                   <SelectContent>
                     {TRAINING_TIMES.map((time) => (
@@ -379,26 +379,26 @@ export default function StudentDetailsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Medical & Emergency Information</CardTitle>
+            <CardTitle>Informações Médicas e de Emergência</CardTitle>
             <CardDescription>
-              Update the student&apos;s medical conditions and emergency contact details.
+              Atualize as condições médicas e informações de contato de emergência do aluno.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="medicalConditions">Medical Conditions</Label>
+              <Label htmlFor="medicalConditions">Condições Médicas</Label>
               <Textarea
                 id="medicalConditions"
-                placeholder="List any medical conditions, injuries, or limitations"
+                placeholder="Liste quaisquer condições médicas, lesões ou limitações"
                 value={student.medicalConditions}
                 onChange={(e) => setStudent(prev => ({ ...prev, medicalConditions: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="emergencyContact">Emergency Contact</Label>
+              <Label htmlFor="emergencyContact">Contato de Emergência</Label>
               <Input
                 id="emergencyContact"
-                placeholder="Name and phone number"
+                placeholder="Nome e número de telefone"
                 value={student.emergencyContact}
                 onChange={(e) => setStudent(prev => ({ ...prev, emergencyContact: e.target.value }))}
               />

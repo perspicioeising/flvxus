@@ -43,7 +43,7 @@ export default function PhysicalAssessmentsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching assessments",
+        title: "Erro ao buscar avaliações",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -64,7 +64,7 @@ export default function PhysicalAssessmentsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching students",
+        title: "Erro ao buscar alunos",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -101,8 +101,8 @@ export default function PhysicalAssessmentsPage() {
       }
 
       toast({
-        title: "Assessment deleted",
-        description: "The assessment has been removed",
+        title: "Avaliação deletada",
+        description: "A avaliação foi removida",
       });
       
       await fetchAssessments();
@@ -110,7 +110,7 @@ export default function PhysicalAssessmentsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error deleting assessment",
+        title: "Erro ao deletar avaliação",
         description: error.message,
       });
     }
@@ -131,21 +131,21 @@ export default function PhysicalAssessmentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Physical Assessments</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Avaliações Físicas</h2>
           <p className="text-muted-foreground">
-            Track and manage student physical assessments
+            Acompanhe e gerencie as avaliações físicas dos alunos
           </p>
         </div>
         <Button onClick={() => router.push('/dashboard/physical-assessments/new')}>
-          <Plus className="mr-2 h-4 w-4" /> New Assessment
+          <Plus className="mr-2 h-4 w-4" /> Nova Avaliação
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Assessment History</CardTitle>
+          <CardTitle>Histórico de Avaliações</CardTitle>
           <CardDescription>
-            View and manage physical assessments
+            Visualize e gerencie as avaliações físicas
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -153,7 +153,7 @@ export default function PhysicalAssessmentsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search students..."
+                placeholder="Buscar alunos..."
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -161,10 +161,10 @@ export default function PhysicalAssessmentsPage() {
             </div>
             <Select value={studentFilter} onValueChange={setStudentFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by student" />
+                <SelectValue placeholder="Filtrar por aluno" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="all">Todos os Alunos</SelectItem>
                 {students.map((student) => (
                   <SelectItem key={student.id} value={student.id}>
                     {student.full_name}
@@ -190,19 +190,19 @@ export default function PhysicalAssessmentsPage() {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <span className="text-muted-foreground">Weight:</span>
+                          <span className="text-muted-foreground">Peso:</span>
                           <span className="ml-1 font-medium">{assessment.weight} kg</span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Height:</span>
+                          <span className="text-muted-foreground">Altura:</span>
                           <span className="ml-1 font-medium">{assessment.height} cm</span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">BMI:</span>
+                          <span className="text-muted-foreground">IMC:</span>
                           <span className="ml-1 font-medium">{assessment.bmi}</span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Body Fat:</span>
+                          <span className="text-muted-foreground">Gordura Corporal:</span>
                           <span className="ml-1 font-medium">{assessment.body_fat}%</span>
                         </div>
                       </div>
@@ -214,7 +214,7 @@ export default function PhysicalAssessmentsPage() {
                         size="sm"
                         onClick={() => router.push(`/dashboard/physical-assessments/${assessment.id}`)}
                       >
-                        View Details
+                        Ver Detalhes
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -238,7 +238,7 @@ export default function PhysicalAssessmentsPage() {
 
             {filteredAssessments.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
-                No assessments found. Try adjusting your filters or create a new assessment.
+                Nenhuma avaliação encontrada. Tente ajustar os filtros ou criar uma nova avaliação.
               </div>
             )}
           </div>

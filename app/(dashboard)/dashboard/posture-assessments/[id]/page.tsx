@@ -57,7 +57,7 @@ export default function PostureAssessmentDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching assessment details",
+        title: "Erro ao buscar detalhes da avaliação",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -102,7 +102,7 @@ export default function PostureAssessmentDetailsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error uploading image",
+        title: "Erro ao fazer upload da imagem",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -142,7 +142,7 @@ export default function PostureAssessmentDetailsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error analyzing posture",
+        title: "Erro ao analisar postura",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -174,8 +174,8 @@ export default function PostureAssessmentDetailsPage() {
       }
 
       toast({
-        title: "Assessment saved",
-        description: "Posture assessment has been saved successfully",
+        title: "Avaliação salva",
+        description: "Avaliação postural foi salva com sucesso",
       });
       
       router.push('/dashboard/posture-assessments');
@@ -183,7 +183,7 @@ export default function PostureAssessmentDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error saving assessment",
+        title: "Erro ao salvar avaliação",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -195,8 +195,8 @@ export default function PostureAssessmentDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Loading assessment details...</h2>
-          <p className="text-muted-foreground">Please wait while we fetch the information.</p>
+          <h2 className="text-2xl font-semibold mb-2">Carregando detalhes da avaliação...</h2>
+          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos as informações.</p>
         </div>
       </div>
     );
@@ -211,21 +211,21 @@ export default function PostureAssessmentDetailsPage() {
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Voltar
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Posture Assessment Details</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Detalhes da Avaliação Postural</h2>
             <p className="text-muted-foreground">
-              View and update posture assessment
+              Visualize e atualize a avaliação postural
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.back()}>
-            Cancel
+            Cancelar
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </div>
       </div>
@@ -233,9 +233,9 @@ export default function PostureAssessmentDetailsPage() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Photos</CardTitle>
+            <CardTitle>Fotos</CardTitle>
             <CardDescription>
-              View or update posture photos
+              Visualize ou atualize as fotos da postura
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -278,10 +278,10 @@ export default function PostureAssessmentDetailsPage() {
                           htmlFor={`${view}-upload`}
                           className="text-sm font-medium text-primary hover:underline cursor-pointer"
                         >
-                          Upload Photo
+                          Fazer Upload da Foto
                         </label>
                         <p className="text-xs text-muted-foreground mt-1">
-                          or drag and drop
+                          ou arraste e solte
                         </p>
                       </div>
                     </div>
@@ -295,9 +295,9 @@ export default function PostureAssessmentDetailsPage() {
         {aiAnalysis && (
           <Card>
             <CardHeader>
-              <CardTitle>AI Analysis Results</CardTitle>
+              <CardTitle>Resultados da Análise Inteligente</CardTitle>
               <CardDescription>
-                Automated analysis of posture and alignment
+                Análise automática de postura e alinhamento
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -317,16 +317,16 @@ export default function PostureAssessmentDetailsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recommendations</CardTitle>
+            <CardTitle>Recomendações</CardTitle>
             <CardDescription>
-              Suggested exercises and corrections
+              Exercícios e correções sugeridos
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
               value={recommendations}
               onChange={(e) => setRecommendations(e.target.value)}
-              placeholder="Enter recommendations for posture improvement..."
+              placeholder="Digite recomendações para melhoria da postura..."
               className="min-h-[200px]"
             />
           </CardContent>
@@ -334,16 +334,16 @@ export default function PostureAssessmentDetailsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Additional Notes</CardTitle>
+            <CardTitle>Notas Adicionais</CardTitle>
             <CardDescription>
-              Add any other observations or comments
+              Adicione outras observações ou comentários
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Enter additional notes..."
+              placeholder="Digite notas adicionais..."
               className="min-h-[100px]"
             />
           </CardContent>

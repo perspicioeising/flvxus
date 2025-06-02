@@ -21,8 +21,8 @@ import Link from "next/link";
 import { useSupabase } from "@/app/providers";
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  email: z.string().email({ message: "Por favor, insira um email válido" }),
+  password: z.string().min(8, { message: "A senha deve ter pelo menos 8 caracteres" }),
 });
 
 export default function LoginPage() {
@@ -51,15 +51,15 @@ export default function LoginPage() {
       if (error) {
         toast({
           variant: "destructive",
-          title: "Login failed",
+          title: "Falha no login",
           description: error.message,
         });
         return;
       }
       
       toast({
-        title: "Login successful",
-        description: "Redirecting you to the dashboard...",
+        title: "Login bem-sucedido",
+        description: "Redirecionando para o dashboard...",
       });
       
       router.push("/dashboard");
@@ -67,8 +67,8 @@ export default function LoginPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Something went wrong",
-        description: error.message || "Failed to login. Please try again.",
+        title: "Algo deu errado",
+        description: error.message || "Falha ao fazer login. Por favor, tente novamente.",
       });
     } finally {
       setIsLoading(false);
@@ -82,8 +82,8 @@ export default function LoginPage() {
           <div className="flex justify-center mb-2">
             <Dumbbell className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-muted-foreground">Enter your credentials to access your account</p>
+          <h1 className="text-2xl font-bold">Bem-vindo de volta</h1>
+          <p className="text-muted-foreground">Insira suas credenciais para acessar sua conta</p>
         </div>
 
         <div className="bg-card p-8 rounded-lg shadow-sm border">
@@ -94,7 +94,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>E-mail</FormLabel>
                     <FormControl>
                       <Input placeholder="yourname@example.com" {...field} />
                     </FormControl>
@@ -111,7 +111,7 @@ export default function LoginPage() {
                     <div className="flex items-center justify-between">
                       <FormLabel>Password</FormLabel>
                       <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                        Forgot password?
+                        Esqueceu a senha?
                       </Link>
                     </div>
                     <FormControl>
@@ -123,15 +123,15 @@ export default function LoginPage() {
               />
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
           </Form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Don&apos;t have an account? </span>
+            <span className="text-muted-foreground">Não tem uma conta? </span>
             <Link href="/register" className="text-primary hover:underline font-medium">
-              Sign up
+              Cadastre-se
             </Link>
           </div>
         </div>

@@ -19,8 +19,8 @@ import { ArrowLeft, Dumbbell, Clock, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useExercises } from "@/hooks/use-exercises";
 
-const DIFFICULTY_LEVELS = ["Beginner", "Intermediate", "Advanced"];
-const GOALS = ["Strength", "Hypertrophy", "Endurance", "Power", "Weight Loss", "Rehabilitation"];
+const DIFFICULTY_LEVELS = ["Iniciante", "Intermediário", "Avançado"];
+const GOALS = ["Strength", "Hipertrofia", "Resistência", "Potência", "Emagrecimento", "Reabilitação"];
 
 // Type definitions
 interface Exercise {
@@ -110,7 +110,7 @@ export default function WorkoutDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching workout details",
+        title: "Erro ao buscar detalhes do treino",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -150,8 +150,8 @@ export default function WorkoutDetailsPage() {
       }
 
       toast({
-        title: "Workout updated",
-        description: "Changes have been saved successfully",
+        title: "Treino atualizado",
+        description: "As alterações foram salvas com sucesso",
       });
       
       router.push('/dashboard/workouts');
@@ -159,7 +159,7 @@ export default function WorkoutDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error updating workout",
+        title: "Erro ao atualizar treino",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -237,21 +237,21 @@ export default function WorkoutDetailsPage() {
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Voltar
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Edit Workout</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Editar Treino</h2>
             <p className="text-muted-foreground">
-              Modify workout details and exercises
+              Modifique os detalhes e exercícios do treino
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.back()}>
-            Cancel
+            Cancelar
           </Button>
           <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Changes"}
+            {isLoading ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </div>
       </div>
@@ -259,21 +259,21 @@ export default function WorkoutDetailsPage() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Workout Information</CardTitle>
+            <CardTitle>Informações do Treino</CardTitle>
             <CardDescription>
-              Update the basic details of your workout
+              Atualize os detalhes básicos do seu treino
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Workout Name *</Label>
+                  <Label htmlFor="name">Nome do Treino *</Label>
                   <Input
                     id="name"
                     value={workout.name}
                     onChange={(e) => setWorkout(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Upper Body Strength"
+                    placeholder="ex.: Força do Corpo Superior"
                   />
                 </div>
                 
@@ -283,7 +283,7 @@ export default function WorkoutDetailsPage() {
                     id="description"
                     value={workout.description}
                     onChange={(e) => setWorkout(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe the workout's focus and objectives..."
+                    placeholder="Descreva o foco e os objetivos do treino..."
                     className="min-h-[100px]"
                   />
                 </div>
@@ -291,13 +291,13 @@ export default function WorkoutDetailsPage() {
 
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="level">Difficulty Level *</Label>
+                  <Label htmlFor="level">Nível de Dificuldade *</Label>
                   <Select
                     value={workout.level}
                     onValueChange={(value) => setWorkout(prev => ({ ...prev, level: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select level" />
+                      <SelectValue placeholder="Selecione o nível" />
                     </SelectTrigger>
                     <SelectContent>
                       {DIFFICULTY_LEVELS.map((level) => (
@@ -308,13 +308,13 @@ export default function WorkoutDetailsPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="goal">Primary Goal *</Label>
+                  <Label htmlFor="goal">Objetivo Principal *</Label>
                   <Select
                     value={workout.goal}
                     onValueChange={(value) => setWorkout(prev => ({ ...prev, goal: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select goal" />
+                      <SelectValue placeholder="Selecione o objetivo" />
                     </SelectTrigger>
                     <SelectContent>
                       {GOALS.map((goal) => (
@@ -332,24 +332,24 @@ export default function WorkoutDetailsPage() {
           <CardHeader>
             <CardTitle>Exercises</CardTitle>
             <CardDescription>
-              Manage the exercises in this workout
+              Gerencie os exercícios deste treino
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Input
-                  placeholder="Search exercises to add..."
+                  placeholder="Buscar exercícios para adicionar..."
                   value={exerciseSearchQuery}
                   onChange={(e) => setExerciseSearchQuery(e.target.value)}
                 />
               </div>
               <Select value={exerciseMuscleFilter} onValueChange={setExerciseMuscleFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by muscle" />
+                  <SelectValue placeholder="Filtrar por músculo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Groups</SelectItem>
+                  <SelectItem value="all">Todos os Grupos</SelectItem>
                   {["Peito", "Costas", "Pernas", "Ombros", "Braços", "Core"].map((group) => (
                     <SelectItem key={group} value={group}>{group}</SelectItem>
                   ))}
@@ -390,7 +390,7 @@ export default function WorkoutDetailsPage() {
 
             {selectedExercises.length > 0 && (
               <div className="space-y-4 mt-8">
-                <h3 className="text-lg font-semibold">Selected Exercises</h3>
+                <h3 className="text-lg font-semibold">Exercícios Selecionados</h3>
                 {selectedExercises.map((exercise, index) => (
                   <Card key={index}>
                     <CardContent className="p-4">
@@ -410,7 +410,7 @@ export default function WorkoutDetailsPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="space-y-2">
-                          <Label>Sets</Label>
+                          <Label>Séries</Label>
                           <Input
                             type="number"
                             value={exercise.sets}
@@ -419,7 +419,7 @@ export default function WorkoutDetailsPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Reps</Label>
+                          <Label>Repetições</Label>
                           <Input
                             type="number"
                             value={exercise.reps}
@@ -428,7 +428,7 @@ export default function WorkoutDetailsPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Rest (seconds)</Label>
+                          <Label>Descanso (segundos)</Label>
                           <Input
                             type="number"
                             value={exercise.rest}
@@ -438,11 +438,11 @@ export default function WorkoutDetailsPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Notes</Label>
+                          <Label>Notas</Label>
                           <Input
                             value={exercise.notes}
                             onChange={(e) => handleExerciseUpdate(index, 'notes', e.target.value)}
-                            placeholder="Additional instructions..."
+                            placeholder="Instruções adicionais..."
                           />
                         </div>
                       </div>

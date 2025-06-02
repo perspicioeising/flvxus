@@ -73,7 +73,7 @@ export default function ExercisesPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching exercises",
+        title: "Erro ao buscar exercícios",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -115,13 +115,13 @@ export default function ExercisesPage() {
       }));
 
       toast({
-        title: "Video uploaded successfully",
-        description: "Your video has been uploaded and linked to the exercise.",
+        title: "Vídeo enviado com sucesso",
+        description: "Seu vídeo foi enviado e vinculado ao exercício.",
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error uploading video",
+        title: "Erro ao fazer upload do vídeo",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -170,8 +170,8 @@ export default function ExercisesPage() {
       }
 
       toast({
-        title: isCloning ? "Exercise cloned successfully" : (isEditing ? "Exercise updated successfully" : "Exercise added successfully"),
-        description: isCloning ? "A copy of the exercise has been created." : (isEditing ? "The exercise has been updated." : "The new exercise has been added to your library."),
+        title: isCloning ? "Exercício clonado com sucesso" : (isEditing ? "Exercício atualizado com sucesso" : "Exercício adicionado com sucesso"),
+        description: isCloning ? "Uma cópia do exercício foi criada." : (isEditing ? "O exercício foi atualizado." : "O novo exercício foi adicionado à sua biblioteca."),
       });
       
       await fetchExercises();
@@ -180,7 +180,7 @@ export default function ExercisesPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error saving exercise",
+        title: "Erro ao salvar exercício",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -244,7 +244,7 @@ export default function ExercisesPage() {
     setIsCloning(true);
     setCurrentExerciseId(null);
     setNewExercise({
-      name: `${exercise.name} (Copy)`,
+      name: `${exercise.name} (Cópia)`,
       description: exercise.description,
       muscleGroups: exercise.muscle_group,
       equipment: exercise.equipment,
@@ -276,8 +276,8 @@ export default function ExercisesPage() {
       }
 
       toast({
-        title: "Exercise deleted",
-        description: `${exercise.name} has been removed from your library.`,
+        title: "Exercício deletado",
+        description: `${exercise.name} foi removido da sua biblioteca.`,
       });
       
       await fetchExercises();
@@ -285,7 +285,7 @@ export default function ExercisesPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error deleting exercise",
+        title: "Erro ao deletar exercício",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -331,13 +331,13 @@ export default function ExercisesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Exercises</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Exercícios</h2>
           <p className="text-muted-foreground">
-            Manage your exercise library
+            Gerencie sua biblioteca de exercícios
           </p>
         </div>
         <Button onClick={() => setIsAddingExercise(true)} disabled={isAddingExercise}>
-          <Plus className="mr-2 h-4 w-4" /> Add Exercise
+          <Plus className="mr-2 h-4 w-4" /> Adicionar Exercício
         </Button>
       </div>
 
@@ -345,38 +345,38 @@ export default function ExercisesPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {isCloning ? 'Clone Exercise' : (isEditing ? 'Edit Exercise' : 'Add New Exercise')}
+              {isCloning ? 'Clonar Exercício' : (isEditing ? 'Editar Exercício' : 'Adicionar Novo Exercício')}
             </CardTitle>
             <CardDescription>
-              {isCloning ? 'Create a copy of an existing exercise' : (isEditing ? 'Update exercise details' : 'Create a new exercise for your library')}
+              {isCloning ? 'Crie uma cópia de um exercício existente' : (isEditing ? 'Atualize os detalhes do exercício' : 'Crie um novo exercício para sua biblioteca')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Exercise Name *</Label>
+                  <Label htmlFor="name">Nome do Exercício *</Label>
                   <Input
                     id="name"
                     value={newExercise.name}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Barbell Bench Press"
+                    placeholder="ex.: Supino com Barra"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">Descrição *</Label>
                   <Textarea
                     id="description"
                     value={newExercise.description}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe the exercise..."
+                    placeholder="Descreva o exercício..."
                     className="min-h-[100px]"
                   />
                 </div>
 
                 <div>
-                  <Label>Muscle Groups *</Label>
+                  <Label>Grupos Musculares *</Label>
                   <div className="grid grid-cols-2 gap-2 border rounded-lg p-4 mt-2">
                     {MUSCLE_GROUPS.map((muscle) => (
                       <div key={muscle} className="flex items-center space-x-2">
@@ -406,7 +406,7 @@ export default function ExercisesPage() {
                 </div>
 
                 <div>
-                  <Label>Equipment *</Label>
+                  <Label>Equipamento *</Label>
                   <div className="grid grid-cols-2 gap-2 border rounded-lg p-4 mt-2">
                     {EQUIPMENT_TYPES.map((equipment) => (
                       <div key={equipment} className="flex items-center space-x-2">
@@ -438,7 +438,7 @@ export default function ExercisesPage() {
 
               <div className="space-y-4">
                 <div>
-                  <Label>Demonstration Video</Label>
+                  <Label>Adicionar Vídeo</Label>
                   {!videoFile && !newExercise.videoUrl && (
                     <div className="border-2 border-dashed rounded-lg p-6 text-center mt-2">
                       <input
@@ -457,10 +457,10 @@ export default function ExercisesPage() {
                       >
                         <Upload className="h-8 w-8 text-muted-foreground" />
                         <span className="text-sm font-medium">
-                          Click to upload or paste a URL
+                          Clique para fazer upload ou cole uma URL
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          MP4, WebM or OGG (max. 100MB)
+                          MP4, WebM ou OGG (máx. 100MB)
                         </span>
                       </label>
                     </div>
@@ -472,7 +472,7 @@ export default function ExercisesPage() {
                         <Video className="h-8 w-8 text-primary" />
                         <div className="flex-1">
                           <p className="font-medium">
-                            {videoFile?.name || "Video loaded"}
+                            {videoFile?.name || "Vídeo carregado"}
                           </p>
                           {uploadProgress > 0 && uploadProgress < 100 && (
                             <div className="w-full bg-muted rounded-full h-2 mt-2">
@@ -495,7 +495,7 @@ export default function ExercisesPage() {
                   )}
 
                   <div className="mt-4">
-                    <Label htmlFor="videoUrl">Or paste a video URL</Label>
+                    <Label htmlFor="videoUrl">Ou cole uma URL de vídeo</Label>
                     <Input
                       id="videoUrl"
                       placeholder="https://example.com/video.mp4"
@@ -506,34 +506,34 @@ export default function ExercisesPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="variations">Variations (one per line)</Label>
+                  <Label htmlFor="variations">Variações (uma por linha)</Label>
                   <Textarea
                     id="variations"
                     value={newExercise.variations}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, variations: e.target.value }))}
-                    placeholder="e.g., Dumbbell Press&#10;Smith Machine Press&#10;Incline Press"
+                    placeholder="ex.: Supino com Barra, Supino com Halteres..."
                     className="min-h-[100px]"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="tips">Execution Tips (one per line)</Label>
+                  <Label htmlFor="tips">Dicas de Execução (uma por linha)</Label>
                   <Textarea
                     id="tips"
                     value={newExercise.tips}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, tips: e.target.value }))}
-                    placeholder="Enter tips for proper execution..."
+                    placeholder="Adicione dicas para realizar este exercício..."
                     className="min-h-[100px]"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="commonErrors">Common Errors to Avoid (one per line)</Label>
+                  <Label htmlFor="commonErrors">Erros Comuns a Evitar (uma por linha)</Label>
                   <Textarea
                     id="commonErrors"
                     value={newExercise.commonErrors}
                     onChange={(e) => setNewExercise(prev => ({ ...prev, commonErrors: e.target.value }))}
-                    placeholder="List common mistakes to avoid..."
+                    placeholder="Liste erros comuns a evitar..."
                     className="min-h-[100px]"
                   />
                 </div>
@@ -542,12 +542,12 @@ export default function ExercisesPage() {
 
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={handleCancel}>
-                Cancel
+                Cancelar
               </Button>
               <Button onClick={handleSaveExercise} disabled={isLoading}>
                 {isLoading ? 
-                  (isCloning ? "Cloning..." : (isEditing ? "Updating..." : "Adding...")) : 
-                  (isCloning ? "Clone Exercise" : (isEditing ? "Update Exercise" : "Add Exercise"))}
+                  (isCloning ? "Clonando..." : (isEditing ? "Atualizando..." : "Adicionando...")) : 
+                  (isCloning ? "Clonar Exercício" : (isEditing ? "Atualizar Exercício" : "Adicionar Exercício"))}
               </Button>
             </div>
           </CardContent>
@@ -559,9 +559,9 @@ export default function ExercisesPage() {
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle>Exercise Library</CardTitle>
+                <CardTitle>Biblioteca de Exercícios</CardTitle>
                 <CardDescription>
-                  Browse and manage your collection of exercises
+                  Navegue e gerencie sua coleção de exercícios
                 </CardDescription>
               </div>
               
@@ -589,7 +589,7 @@ export default function ExercisesPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search exercises..."
+                  placeholder="Buscar exercícios..."
                   className="pl-8"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}

@@ -84,7 +84,7 @@ export default function NewPhysicalAssessmentPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching students",
+        title: "Erro ao buscar alunos",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -161,7 +161,7 @@ export default function NewPhysicalAssessmentPage() {
       setIsLoading(true);
 
       if (!calculatedResults) {
-        throw new Error("Please fill in all required fields to calculate results");
+        throw new Error("Por favor, preencha todos os campos obrigatórios para calcular os resultados");
       }
 
       const assessmentData = {
@@ -204,8 +204,8 @@ export default function NewPhysicalAssessmentPage() {
       }
 
       toast({
-        title: "Assessment created",
-        description: "Physical assessment has been saved successfully",
+        title: "Avaliação criada",
+        description: "Avaliação física salva com sucesso",
       });
 
       router.push('/dashboard/physical-assessments');
@@ -213,7 +213,7 @@ export default function NewPhysicalAssessmentPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error creating assessment",
+        title: "Erro ao criar avaliação",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -230,21 +230,21 @@ export default function NewPhysicalAssessmentPage() {
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Voltar
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">New Physical Assessment</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Nova Avaliação Física</h2>
             <p className="text-muted-foreground">
-              Create a new physical assessment for a student
+              Crie uma nova avaliação física para um aluno
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.back()}>
-            Cancel
+            Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "Creating..." : "Create Assessment"}
+            {isLoading ? "Creating..." : "Criar Avaliação"}
           </Button>
         </div>
       </div>
@@ -252,21 +252,21 @@ export default function NewPhysicalAssessmentPage() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <CardTitle>Informações básicas</CardTitle>
             <CardDescription>
-              Enter the assessment protocol and student information
+              Insira o protocolo de avaliação e informações do aluno
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="protocol">Protocol *</Label>
+                <Label htmlFor="protocol">Protocolo *</Label>
                 <Select
                   value={assessment.protocol}
                   onValueChange={(value) => setAssessment(prev => ({ ...prev, protocol: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select protocol" />
+                    <SelectValue placeholder="Selecione o protocolo" />
                   </SelectTrigger>
                   <SelectContent>
                     {PROTOCOLS.map((protocol) => (
@@ -279,13 +279,13 @@ export default function NewPhysicalAssessmentPage() {
               </div>
 
               <div>
-                <Label htmlFor="student">Student *</Label>
+                <Label htmlFor="student">Aluno *</Label>
                 <Select
                   value={assessment.student_id}
                   onValueChange={(value) => setAssessment(prev => ({ ...prev, student_id: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select student" />
+                    <SelectValue placeholder="Selecione o aluno" />
                   </SelectTrigger>
                   <SelectContent>
                     {students.map((student) => (
@@ -298,7 +298,7 @@ export default function NewPhysicalAssessmentPage() {
               </div>
 
               <div>
-                <Label htmlFor="date">Assessment Date *</Label>
+                <Label htmlFor="date">Data da Avaliação *</Label>
                 <Input
                   id="date"
                   type="date"
@@ -308,24 +308,24 @@ export default function NewPhysicalAssessmentPage() {
               </div>
 
               <div>
-                <Label htmlFor="gender">Gender *</Label>
+                <Label htmlFor="gender">Gênero *</Label>
                 <Select
                   value={assessment.gender}
                   onValueChange={(value) => setAssessment(prev => ({ ...prev, gender: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder="Selecione o gênero" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="male">Masculino</SelectItem>
+                    <SelectItem value="female">Feminino</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="age">Age *</Label>
+                  <Label htmlFor="age">Idade *</Label>
                   <Input
                     id="age"
                     type="number"
@@ -334,7 +334,7 @@ export default function NewPhysicalAssessmentPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="weight">Weight (kg) *</Label>
+                  <Label htmlFor="weight">Peso (kg) *</Label>
                   <Input
                     id="weight"
                     type="number"
@@ -344,7 +344,7 @@ export default function NewPhysicalAssessmentPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="height">Height (cm) *</Label>
+                  <Label htmlFor="height">Altura (cm) *</Label>
                   <Input
                     id="height"
                     type="number"
@@ -360,15 +360,15 @@ export default function NewPhysicalAssessmentPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Perimetry Measurements</CardTitle>
+            <CardTitle>Medições de perimetria</CardTitle>
             <CardDescription>
-              Record body circumference measurements (in cm)
+              Registre as medidas de circunferência corporal (em cm)
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <Label htmlFor="neck">Neck</Label>
+                <Label htmlFor="neck">Pescoço</Label>
                 <Input
                   id="neck"
                   type="number"
@@ -378,7 +378,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="shoulders">Shoulders</Label>
+                <Label htmlFor="shoulders">Ombros</Label>
                 <Input
                   id="shoulders"
                   type="number"
@@ -388,7 +388,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="chest">Chest</Label>
+                <Label htmlFor="chest">Tórax</Label>
                 <Input
                   id="chest"
                   type="number"
@@ -398,7 +398,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="abdomen">Abdomen</Label>
+                <Label htmlFor="abdomen">Abdômen</Label>
                 <Input
                   id="abdomen"
                   type="number"
@@ -408,7 +408,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="waist">Waist</Label>
+                <Label htmlFor="waist">Cintura</Label>
                 <Input
                   id="waist"
                   type="number"
@@ -418,7 +418,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="hips">Hips</Label>
+                <Label htmlFor="hips">Quadril</Label>
                 <Input
                   id="hips"
                   type="number"
@@ -428,7 +428,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="right_arm">Right Arm</Label>
+                <Label htmlFor="right_arm">Braço Direito</Label>
                 <Input
                   id="right_arm"
                   type="number"
@@ -438,7 +438,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="left_thigh">Left Thigh</Label>
+                <Label htmlFor="left_thigh">Coxa Esquerda</Label>
                 <Input
                   id="left_thigh"
                   type="number"
@@ -448,7 +448,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="right_thigh">Right Thigh</Label>
+                <Label htmlFor="right_thigh">Coxa Direita</Label>
                 <Input
                   id="right_thigh"
                   type="number"
@@ -458,7 +458,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="left_calf">Left Calf</Label>
+                <Label htmlFor="left_calf">Panturrilha Esquerda</Label>
                 <Input
                   id="left_calf"
                   type="number"
@@ -468,7 +468,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="right_calf">Right Calf</Label>
+                <Label htmlFor="right_calf">Panturrilha Direita</Label>
                 <Input
                   id="right_calf"
                   type="number"
@@ -484,15 +484,15 @@ export default function NewPhysicalAssessmentPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Skinfold Measurements</CardTitle>
+            <CardTitle>Medidas de Dobras Cutâneas</CardTitle>
             <CardDescription>
-              Record skinfold measurements (in mm)
+              Registre as medidas de dobras cutâneas (em mm)
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <Label htmlFor="triceps">Triceps *</Label>
+                <Label htmlFor="triceps">Tríceps *</Label>
                 <Input
                   id="triceps"
                   type="number"
@@ -512,7 +512,7 @@ export default function NewPhysicalAssessmentPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="suprailiac">Suprailiac *</Label>
+                <Label htmlFor="suprailiac">Suprailíaca *</Label>
                 <Input
                   id="suprailiac"
                   type="number"
@@ -525,22 +525,22 @@ export default function NewPhysicalAssessmentPage() {
 
             {calculatedResults && (
               <div className="mt-6 p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold mb-4">Calculated Results:</h3>
+                <h3 className="font-semibold mb-4">Resultados Calculados:</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <Label>Body Density</Label>
+                    <Label>Densidade Corporal</Label>
                     <p className="text-lg font-medium">{calculatedResults.body_density}</p>
                   </div>
                   <div>
-                    <Label>Body Fat %</Label>
+                    <Label>Gordura Corporal %</Label>
                     <p className="text-lg font-medium">{calculatedResults.fat_percentage}%</p>
                   </div>
                   <div>
-                    <Label>Fat Mass</Label>
+                    <Label>Massa Gorda</Label>
                     <p className="text-lg font-medium">{calculatedResults.fat_mass} kg</p>
                   </div>
                   <div>
-                    <Label>Lean Mass</Label>
+                    <Label>Massa Magra</Label>
                     <p className="text-lg font-medium">{calculatedResults.lean_mass} kg</p>
                   </div>
                 </div>

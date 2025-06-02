@@ -64,7 +64,7 @@ export default function PhysicalAssessmentDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching assessment details",
+        title: "Erro ao buscar detalhes da avaliação",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -114,7 +114,7 @@ export default function PhysicalAssessmentDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching assessment history",
+        title: "Erro ao buscar histórico de avaliações",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -145,8 +145,8 @@ export default function PhysicalAssessmentDetailsPage() {
       }
 
       toast({
-        title: "Assessment deleted",
-        description: "The assessment has been removed",
+        title: "Avaliação deletada",
+        description: "A avaliação foi removida",
       });
       
       router.push('/dashboard/physical-assessments');
@@ -154,7 +154,7 @@ export default function PhysicalAssessmentDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error deleting assessment",
+        title: "Erro ao deletar avaliação",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -166,8 +166,8 @@ export default function PhysicalAssessmentDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Loading assessment details...</h2>
-          <p className="text-muted-foreground">Please wait while we fetch the information.</p>
+          <h2 className="text-2xl font-semibold mb-2">Carregando detalhes da avaliação...</h2>
+          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos as informações.</p>
         </div>
       </div>
     );
@@ -177,10 +177,10 @@ export default function PhysicalAssessmentDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Assessment not found</h2>
-          <p className="text-muted-foreground">The requested assessment could not be found.</p>
+          <h2 className="text-2xl font-semibold mb-2">Avaliação não encontrada</h2>
+          <p className="text-muted-foreground">A avaliação solicitada não foi encontrada.</p>
           <Button className="mt-4" onClick={() => router.push('/dashboard/physical-assessments')}>
-            Go Back
+            Voltar
           </Button>
         </div>
       </div>
@@ -199,9 +199,9 @@ export default function PhysicalAssessmentDetailsPage() {
             Back
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Assessment Details</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Detalhes da Avaliação</h2>
             <p className="text-muted-foreground">
-              View physical assessment results
+              Visualize os resultados da avaliação física
             </p>
           </div>
         </div>
@@ -211,14 +211,14 @@ export default function PhysicalAssessmentDetailsPage() {
             onClick={() => router.push(`/dashboard/physical-assessments/${params.id}/edit`)}
           >
             <Edit className="h-4 w-4 mr-2" />
-            Edit Assessment
+            Editar Avaliação
           </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Delete Assessment
+            Deletar Avaliação
           </Button>
         </div>
       </div>
@@ -226,9 +226,9 @@ export default function PhysicalAssessmentDetailsPage() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Progress Chart</CardTitle>
+            <CardTitle>Gráfico de Progresso</CardTitle>
             <CardDescription>
-              Track changes in body composition over time
+              Acompanhe as mudanças na composição corporal ao longo do tempo
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -238,22 +238,22 @@ export default function PhysicalAssessmentDetailsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Assessment Information</CardTitle>
+            <CardTitle>Informações da Avaliação</CardTitle>
             <CardDescription>
-              Details of the physical assessment
+              Detalhes da avaliação física
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">Student</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground">Aluno</h3>
                   <p className="text-lg font-medium">{assessment.student?.full_name}</p>
                   <p className="text-sm text-muted-foreground">{assessment.student?.email}</p>
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">Protocol</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground">Protocolo</h3>
                   <p className="text-base">{assessment.protocol}</p>
                 </div>
 
@@ -265,44 +265,44 @@ export default function PhysicalAssessmentDetailsPage() {
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">Basic Measurements</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground">Medidas Básicas</h3>
                   <div className="grid grid-cols-2 gap-4 mt-2">
                     <div>
-                      <span className="text-muted-foreground">Weight:</span>
+                      <span className="text-muted-foreground">Peso:</span>
                       <span className="ml-1 font-medium">{assessment.weight} kg</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Height:</span>
+                      <span className="text-muted-foreground">Altura:</span>
                       <span className="ml-1 font-medium">{assessment.height} cm</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Age:</span>
-                      <span className="ml-1 font-medium">{assessment.age} years</span>
+                      <span className="text-muted-foreground">Idade:</span>
+                      <span className="ml-1 font-medium">{assessment.age} anos</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Gender:</span>
+                      <span className="text-muted-foreground">Gênero:</span>
                       <span className="ml-1 font-medium capitalize">{assessment.gender}</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground">Results</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground">Resultados</h3>
                   <div className="grid grid-cols-2 gap-4 mt-2">
                     <div>
-                      <span className="text-muted-foreground">Body Fat:</span>
+                      <span className="text-muted-foreground">Gordura Corporal:</span>
                       <span className="ml-1 font-medium">{assessment.fat_percentage}%</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Body Density:</span>
+                      <span className="text-muted-foreground">Densidade Corporal:</span>
                       <span className="ml-1 font-medium">{assessment.body_density}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Fat Mass:</span>
+                      <span className="text-muted-foreground">Massa Gorda:</span>
                       <span className="ml-1 font-medium">{assessment.fat_mass} kg</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Lean Mass:</span>
+                      <span className="text-muted-foreground">Massa Magra:</span>
                       <span className="ml-1 font-medium">{assessment.lean_mass} kg</span>
                     </div>
                   </div>
@@ -315,57 +315,57 @@ export default function PhysicalAssessmentDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Perimetry Measurements</CardTitle>
-              <CardDescription>Body circumference measurements in centimeters</CardDescription>
+              <CardTitle>Medidas de Perimetria</CardTitle>
+              <CardDescription>Medidas de circunferência corporal em centímetros</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-muted-foreground">Neck:</span>
+                  <span className="text-muted-foreground">Pescoço:</span>
                   <span className="ml-1 font-medium">{assessment.neck || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Shoulders:</span>
+                  <span className="text-muted-foreground">Ombros:</span>
                   <span className="ml-1 font-medium">{assessment.shoulders || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Chest:</span>
+                  <span className="text-muted-foreground">Tórax:</span>
                   <span className="ml-1 font-medium">{assessment.chest || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Abdomen:</span>
+                  <span className="text-muted-foreground">Abdômen:</span>
                   <span className="ml-1 font-medium">{assessment.abdomen || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Waist:</span>
+                  <span className="text-muted-foreground">Cintura:</span>
                   <span className="ml-1 font-medium">{assessment.waist || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Hips:</span>
+                  <span className="text-muted-foreground">Quadril:</span>
                   <span className="ml-1 font-medium">{assessment.hips || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Left Arm:</span>
+                  <span className="text-muted-foreground">Braço Esquerdo:</span>
                   <span className="ml-1 font-medium">{assessment.left_arm || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Right Arm:</span>
+                  <span className="text-muted-foreground">Braço Direito:</span>
                   <span className="ml-1 font-medium">{assessment.right_arm || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Left Thigh:</span>
+                  <span className="text-muted-foreground">Coxa Esquerda:</span>
                   <span className="ml-1 font-medium">{assessment.left_thigh || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Right Thigh:</span>
+                  <span className="text-muted-foreground">Coxa Direita:</span>
                   <span className="ml-1 font-medium">{assessment.right_thigh || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Left Calf:</span>
+                  <span className="text-muted-foreground">Panturrilha Esquerda:</span>
                   <span className="ml-1 font-medium">{assessment.left_calf || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Right Calf:</span>
+                  <span className="text-muted-foreground">Panturrilha Direita:</span>
                   <span className="ml-1 font-medium">{assessment.right_calf || '-'}</span>
                 </div>
               </div>
@@ -374,13 +374,13 @@ export default function PhysicalAssessmentDetailsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Skinfold Measurements</CardTitle>
-              <CardDescription>Skinfold measurements in millimeters</CardDescription>
+              <CardTitle>Medidas de Dobras Cutâneas</CardTitle>
+              <CardDescription>Medidas de dobras cutâneas em milímetros</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-muted-foreground">Triceps:</span>
+                  <span className="text-muted-foreground">Tríceps:</span>
                   <span className="ml-1 font-medium">{assessment.triceps || '-'}</span>
                 </div>
                 <div>
@@ -388,7 +388,7 @@ export default function PhysicalAssessmentDetailsPage() {
                   <span className="ml-1 font-medium">{assessment.abdominal || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Suprailiac:</span>
+                  <span className="text-muted-foreground">Suprailíaca:</span>
                   <span className="ml-1 font-medium">{assessment.suprailiac || '-'}</span>
                 </div>
               </div>

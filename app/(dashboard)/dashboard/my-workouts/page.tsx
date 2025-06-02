@@ -48,7 +48,7 @@ export default function MyWorkoutsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching workouts",
+        title: "Erro ao buscar treinos",
         description: (error as Error).message,
       });
     }
@@ -67,7 +67,7 @@ export default function MyWorkoutsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching workout history",
+        title: "Erro ao buscar histórico de treinos",
         description: (error as Error).message,
       });
     }
@@ -170,7 +170,7 @@ export default function MyWorkoutsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error saving progress",
+        title: "Erro ao salvar progresso",
         description: (error as Error).message,
       });
     }
@@ -199,8 +199,8 @@ export default function MyWorkoutsPage() {
       setWorkoutTime(0);
 
       toast({
-        title: "Workout completed!",
-        description: "Great job! Your progress has been saved.",
+        title: "Treino concluído!",
+        description: "Ótimo trabalho! Seu progresso foi salvo.",
       });
 
       // Refresh workout history
@@ -209,7 +209,7 @@ export default function MyWorkoutsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error completing workout",
+        title: "Erro ao completar treino",
         description: (error as Error).message,
       });
     }
@@ -255,7 +255,7 @@ export default function MyWorkoutsPage() {
                   <div>
                     <CardTitle>{currentExercise.name}</CardTitle>
                     <CardDescription>
-                      Complete all sets to move to the next exercise
+                      Complete todas as séries para avançar para o próximo exercício
                     </CardDescription>
                   </div>
                   <Button
@@ -263,7 +263,7 @@ export default function MyWorkoutsPage() {
                     onClick={() => setShowExerciseDetails(true)}
                   >
                     <Info className="h-4 w-4 mr-2" />
-                    Exercise Details
+                    Detalhes do Exercício
                   </Button>
                 </div>
               </CardHeader>
@@ -280,7 +280,7 @@ export default function MyWorkoutsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Weight Used (kg)</label>
+                    <label className="text-sm font-medium">Peso Usado (kg)</label>
                     <input
                       type="number"
                       className="w-full mt-1 p-2 border rounded"
@@ -292,7 +292,7 @@ export default function MyWorkoutsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Sets Completed</label>
+                    <label className="text-sm font-medium">Séries Completadas</label>
                     <div className="flex items-center gap-2 mt-1">
                       {Array.from({ length: currentExercise.sets }).map((_, i) => (
                         <Button
@@ -314,7 +314,7 @@ export default function MyWorkoutsPage() {
                 <div>
                   <label className="text-sm font-medium">Notes</label>
                   <Textarea
-                    placeholder="Add any notes about this exercise..."
+                    placeholder="Adicione notas sobre este exercício..."
                     value={currentExercise.notes || ''}
                     onChange={(e) => setCurrentExercise({
                       ...currentExercise,
@@ -329,7 +329,7 @@ export default function MyWorkoutsPage() {
                   onClick={() => completeExercise({ exerciseId: currentExercise.id })}
                   disabled={!currentExercise.completedSets}
                 >
-                  Complete Exercise
+                  Completar Exercício
                 </Button>
               </CardContent>
             </Card>
@@ -340,7 +340,7 @@ export default function MyWorkoutsPage() {
               <DialogHeader>
                 <DialogTitle>{currentExercise?.name}</DialogTitle>
                 <DialogDescription>
-                  Detailed instructions and tips for this exercise
+                  Instruções detalhadas e dicas para este exercício
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -351,7 +351,7 @@ export default function MyWorkoutsPage() {
 
                 {currentExercise?.muscleGroup && (
                   <div>
-                    <h4 className="font-medium mb-2">Target Muscles</h4>
+                    <h4 className="font-medium mb-2">Músculos Alvo</h4>
                     <div className="flex flex-wrap gap-2">
                       {currentExercise.muscleGroup.map((muscle) => (
                         <Badge key={muscle} variant="secondary">{muscle}</Badge>
@@ -362,7 +362,7 @@ export default function MyWorkoutsPage() {
 
                 {currentExercise?.equipment && (
                   <div>
-                    <h4 className="font-medium mb-2">Equipment Needed</h4>
+                    <h4 className="font-medium mb-2">Equipamentos Necessários</h4>
                     <div className="flex flex-wrap gap-2">
                       {currentExercise.equipment.map((item) => (
                         <Badge key={item} variant="outline">{item}</Badge>
@@ -373,7 +373,7 @@ export default function MyWorkoutsPage() {
 
                 {currentExercise?.tips && currentExercise.tips.length > 0 && (
                   <div>
-                    <h4 className="font-medium mb-2">Execution Tips</h4>
+                    <h4 className="font-medium mb-2">Dicas de Execução</h4>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                       {currentExercise.tips.map((tip, index) => (
                         <li key={index}>{tip}</li>
@@ -384,7 +384,7 @@ export default function MyWorkoutsPage() {
 
                 {currentExercise?.commonErrors && currentExercise.commonErrors.length > 0 && (
                   <div>
-                    <h4 className="font-medium mb-2">Common Mistakes to Avoid</h4>
+                    <h4 className="font-medium mb-2">Erros Comuns a Evitar</h4>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                       {currentExercise.commonErrors.map((error, index) => (
                         <li key={index}>{error}</li>
@@ -419,7 +419,7 @@ export default function MyWorkoutsPage() {
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {exercise.sets} sets × {exercise.reps} reps • {exercise.rest}s rest
+                        {exercise.sets} séries × {exercise.reps} repetições • {exercise.rest}s de descanso
                       </div>
                     </div>
                     {exercise.weight && (
@@ -440,18 +440,18 @@ export default function MyWorkoutsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">My Workouts</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Meus Treinos</h2>
         <p className="text-muted-foreground">
-          View your workout plans and track your progress
+          Veja seus planos de treino e acompanhe seu progresso
         </p>
       </div>
 
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Today&apos;s Workouts</CardTitle>
+            <CardTitle>Treinos de Hoje</CardTitle>
             <CardDescription>
-              Your scheduled workouts for today
+              Seus treinos agendados para hoje
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -483,14 +483,14 @@ export default function MyWorkoutsPage() {
                     </div>
                   </div>
                   <Button onClick={() => startWorkout(plan)}>
-                    Start Workout
+                    Iniciar Treino
                   </Button>
                 </div>
               ))}
 
               {workoutPlans.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground">
-                  No workouts scheduled for today
+                  Nenhum treino agendado para hoje
                 </div>
               )}
             </div>
@@ -500,9 +500,9 @@ export default function MyWorkoutsPage() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>Atividade Recente</CardTitle>
               <CardDescription>
-                Your latest completed workouts
+                Seus treinos completados mais recentes
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -537,16 +537,16 @@ export default function MyWorkoutsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Progress & Achievements</CardTitle>
+              <CardTitle>Progresso e Conquistas</CardTitle>
               <CardDescription>
-                Track your fitness journey
+                Acompanhe sua jornada de fitness
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Monthly Goal</span>
+                    <span className="text-sm font-medium">Meta Mensal</span>
                     <span className="text-sm text-muted-foreground">15/20 workouts</span>
                   </div>
                   <Progress value={75} />
@@ -556,23 +556,23 @@ export default function MyWorkoutsPage() {
                   <div className="p-4 rounded-lg bg-muted text-center">
                     <Trophy className="h-5 w-5 text-primary mx-auto mb-2" />
                     <div className="font-medium">Level 5</div>
-                    <div className="text-sm text-muted-foreground">Fitness Rank</div>
+                    <div className="text-sm text-muted-foreground">Rank de Fitness</div>
                   </div>
                   <div className="p-4 rounded-lg bg-muted text-center">
                     <MessageSquare className="h-5 w-5 text-primary mx-auto mb-2" />
                     <div className="font-medium">85%</div>
-                    <div className="text-sm text-muted-foreground">Completion Rate</div>
+                    <div className="text-sm text-muted-foreground">Taxa de Completude</div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Recent Achievements</h4>
+                  <h4 className="text-sm font-medium">Conquistas Recentes</h4>
                   <div className="grid grid-cols-3 gap-2">
                     {['🏃‍♂️', '💪', '🎯'].map((emoji, i) => (
                       <div key={i} className="p-2 text-center rounded-lg border">
                         <div className="text-2xl mb-1">{emoji}</div>
                         <div className="text-xs text-muted-foreground">
-                          {['First Mile', 'Power Up', 'Goal Setter'][i]}
+                          {['Primeira Milha', 'Potência', 'Definidor de Metas'][i]}
                         </div>
                       </div>
                     ))}

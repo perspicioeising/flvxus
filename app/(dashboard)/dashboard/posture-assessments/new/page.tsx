@@ -40,7 +40,7 @@ export default function NewPostureAssessmentPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching students",
+        title: "Erro ao buscar alunos",
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -67,8 +67,8 @@ export default function NewPostureAssessmentPage() {
       }
 
       toast({
-        title: "Assessment created",
-        description: "You can now add photos and analysis",
+        title: "Avaliação criada",
+        description: "Você pode agora adicionar fotos e análise",
       });
       
       router.push(`/dashboard/posture-assessments/${data.id}`);
@@ -76,7 +76,7 @@ export default function NewPostureAssessmentPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error creating assessment",
+        title: "Erro ao criar avaliação",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -93,12 +93,12 @@ export default function NewPostureAssessmentPage() {
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Voltar
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">New Posture Assessment</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Nova Avaliação Postural</h2>
             <p className="text-muted-foreground">
-              Create a new posture assessment for a student
+              Crie uma nova avaliação postural para um aluno
             </p>
           </div>
         </div>
@@ -106,9 +106,9 @@ export default function NewPostureAssessmentPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Select Student</CardTitle>
+          <CardTitle>Selecionar Aluno</CardTitle>
           <CardDescription>
-            Choose a student to create a posture assessment for
+            Escolha um aluno para criar uma avaliação postural
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -119,7 +119,7 @@ export default function NewPostureAssessmentPage() {
               onValueChange={setSelectedStudent}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a student" />
+                <SelectValue placeholder="Selecione um aluno" />
               </SelectTrigger>
               <SelectContent>
                 {students.map((student) => (
@@ -133,13 +133,13 @@ export default function NewPostureAssessmentPage() {
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => router.back()}>
-              Cancel
+              Cancelar
             </Button>
             <Button 
               onClick={handleCreate} 
               disabled={isLoading || !selectedStudent}
             >
-              {isLoading ? "Creating..." : "Create Assessment"}
+              {isLoading ? "Criando..." : "Criar Avaliação"}
             </Button>
           </div>
         </CardContent>
