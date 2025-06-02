@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 const DAYS_OF_WEEK = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+  "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"
 ];
 
 export default function WorkoutPlanDetailsPage() {
@@ -75,7 +75,7 @@ export default function WorkoutPlanDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error fetching plan details",
+        title: "Erro ao buscar detalhes do plano",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -98,8 +98,8 @@ export default function WorkoutPlanDetailsPage() {
       }
 
       toast({
-        title: "Plan deleted",
-        description: "The training plan has been removed",
+        title: "Plano deletado",
+        description: "O plano de treino foi removido",
       });
       
       router.push('/dashboard/workout-plans');
@@ -107,7 +107,7 @@ export default function WorkoutPlanDetailsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error deleting plan",
+        title: "Erro ao deletar plano",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -119,8 +119,8 @@ export default function WorkoutPlanDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Loading plan details...</h2>
-          <p className="text-muted-foreground">Please wait while we fetch the information.</p>
+          <h2 className="text-2xl font-semibold mb-2">Carregando detalhes do plano...</h2>
+          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos as informações.</p>
         </div>
       </div>
     );
@@ -130,10 +130,10 @@ export default function WorkoutPlanDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Plan not found</h2>
-          <p className="text-muted-foreground">The requested training plan could not be found.</p>
+          <h2 className="text-2xl font-semibold mb-2">Plano não encontrado</h2>
+          <p className="text-muted-foreground">O plano de treino solicitado não foi encontrado.</p>
           <Button className="mt-4" onClick={() => router.push('/dashboard/workout-plans')}>
-            Go Back
+            Voltar
           </Button>
         </div>
       </div>
@@ -154,7 +154,7 @@ export default function WorkoutPlanDetailsPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{plan.name}</h2>
             <p className="text-muted-foreground">
-              Training Plan Details
+              Detalhes do Plano de Treino
             </p>
           </div>
         </div>
@@ -164,23 +164,23 @@ export default function WorkoutPlanDetailsPage() {
             onClick={() => router.push(`/dashboard/workout-plans/${params.id}/edit`)}
           >
             <Edit className="h-4 w-4 mr-2" />
-            Edit Plan
+            Editar Plano
           </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Delete Plan
+            Deletar Plano
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Plan Overview</CardTitle>
+          <CardTitle>Visão Geral do Plano</CardTitle>
           <CardDescription>
-            General information about the training plan
+            Informações gerais sobre o plano de treino
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -194,13 +194,13 @@ export default function WorkoutPlanDetailsPage() {
 
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">Description</h3>
-                <p className="text-base">{plan.description || "No description provided"}</p>
+                <p className="text-base">{plan.description || "Sem descrição fornecida"}</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium text-sm text-muted-foreground">Duration</h3>
+                <h3 className="font-medium text-sm text-muted-foreground">Duração</h3>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>{format(new Date(plan.start_date), 'MMM d, yyyy')}</span>
@@ -212,7 +212,7 @@ export default function WorkoutPlanDetailsPage() {
               <div>
                 <h3 className="font-medium text-sm text-muted-foreground">Status</h3>
                 <Badge variant={new Date(plan.end_date) >= new Date() ? 'default' : 'secondary'}>
-                  {new Date(plan.end_date) >= new Date() ? 'Active' : 'Completed'}
+                  {new Date(plan.end_date) >= new Date() ? 'Ativo' : 'Concluído'}
                 </Badge>
               </div>
             </div>
@@ -234,7 +234,7 @@ export default function WorkoutPlanDetailsPage() {
               <CardHeader>
                 <CardTitle>{day}</CardTitle>
                 <CardDescription>
-                  Workouts scheduled for {day}
+                  Treinos agendados para {day}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -268,7 +268,7 @@ export default function WorkoutPlanDetailsPage() {
                               <div className="flex-1">
                                 <p className="font-medium">{we.exercise.name}</p>
                                 <div className="text-sm text-muted-foreground">
-                                  {we.sets} sets × {we.reps} reps
+                                  {we.sets} séries × {we.reps} repetições
                                   {we.notes && ` • ${we.notes}`}
                                 </div>
                               </div>

@@ -46,7 +46,7 @@ export default function PostureAssessmentsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error fetching assessments",
+        title: "Erro ao buscar avaliações",
         description: error.message,
       });
     } finally {
@@ -67,8 +67,8 @@ export default function PostureAssessmentsPage() {
       }
 
       toast({
-        title: "Assessment deleted",
-        description: "The posture assessment has been removed",
+        title: "Avaliação deletada",
+        description: "A avaliação postural foi removida",
       });
       
       fetchAssessments();
@@ -76,7 +76,7 @@ export default function PostureAssessmentsPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error deleting assessment",
+        title: "Erro ao deletar avaliação",
         description: error.message,
       });
     }
@@ -90,13 +90,13 @@ export default function PostureAssessmentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Posture Assessments</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Avaliações Posturais</h2>
           <p className="text-muted-foreground">
-            Manage and track student posture assessments
+            Gerencie e acompanhe as avaliações posturais dos alunos
           </p>
         </div>
         <Button onClick={() => router.push('/dashboard/posture-assessments/new')}>
-          <Plus className="mr-2 h-4 w-4" /> New Assessment
+          <Plus className="mr-2 h-4 w-4" /> Nova Avaliação
         </Button>
       </div>
 
@@ -104,9 +104,9 @@ export default function PostureAssessmentsPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Assessment History</CardTitle>
+              <CardTitle>Histórico de Avaliações</CardTitle>
               <CardDescription>
-                View and manage posture assessments
+                Visualize e gerencie as avaliações posturais
               </CardDescription>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function PostureAssessmentsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search students..."
+                placeholder="Buscar alunos..."
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -140,8 +140,8 @@ export default function PostureAssessmentsPage() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Camera className="h-4 w-4" />
                     {assessment.front_image_url && assessment.side_image_url && assessment.back_image_url
-                      ? "All photos uploaded"
-                      : "Photos pending"}
+                      ? "Todas as fotos enviadas"
+                      : "Fotos pendentes"}
                   </div>
                 </div>
                 
@@ -151,7 +151,7 @@ export default function PostureAssessmentsPage() {
                     size="sm"
                     onClick={() => router.push(`/dashboard/posture-assessments/${assessment.id}`)}
                   >
-                    View Details
+                    Ver Detalhes
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <Button
@@ -167,7 +167,7 @@ export default function PostureAssessmentsPage() {
 
             {filteredAssessments.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
-                No posture assessments found. Create a new assessment to get started.
+                Nenhuma avaliação postural encontrada. Crie uma nova avaliação para começar.
               </div>
             )}
           </div>

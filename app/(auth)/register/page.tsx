@@ -21,10 +21,10 @@ import Link from "next/link";
 import { useSupabase } from "@/app/providers";
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
-  businessName: z.string().min(2, { message: "Business name must be at least 2 characters" }),
+  name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres" }),
+  email: z.string().email({ message: "Por favor, insira um email válido" }),
+  password: z.string().min(8, { message: "A senha deve ter pelo menos 8 caracteres" }),
+  businessName: z.string().min(2, { message: "O nome da empresa deve ter pelo menos 2 caracteres" }),
 });
 
  function RegisterContent() {
@@ -101,7 +101,7 @@ const formSchema = z.object({
       }
       
       toast({
-        title: "Account created successfully",
+        title: "Conta criada com sucesso",
         description: "Redirecting you to the dashboard...",
       });
       
@@ -110,8 +110,8 @@ const formSchema = z.object({
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Registration failed",
-        description: error.message || "Something went wrong. Please try again.",
+        title: "Falha no cadastro",
+        description: error.message || "Algo deu errado. Por favor, tente novamente.",
       });
     } finally {
       setIsLoading(false);
@@ -125,11 +125,11 @@ const formSchema = z.object({
           <div className="flex justify-center mb-2">
             <Dumbbell className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">Create your account</h1>
+          <h1 className="text-2xl font-bold">Crie sua conta</h1>
           <p className="text-muted-foreground">
             {plan === 'free' 
-              ? 'Start your 14-day free trial' 
-              : `Get started with the ${plan} plan`}
+              ? 'Comece sua avaliação gratuita de 14 dias' 
+              : `Comece com o plano ${plan}`}
           </p>
         </div>
 
@@ -141,7 +141,7 @@ const formSchema = z.object({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>Nome Completo</FormLabel>
                     <FormControl>
                       <Input placeholder="John Doe" {...field} />
                     </FormControl>
@@ -155,7 +155,7 @@ const formSchema = z.object({
                 name="businessName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Business Name</FormLabel>
+                    <FormLabel>Nome da Empresa</FormLabel>
                     <FormControl>
                       <Input placeholder="Fitness Studio" {...field} />
                     </FormControl>
@@ -169,7 +169,7 @@ const formSchema = z.object({
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>E-mail</FormLabel>
                     <FormControl>
                       <Input placeholder="yourname@example.com" {...field} />
                     </FormControl>
@@ -193,7 +193,7 @@ const formSchema = z.object({
               />
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create Account"}
+                {isLoading ? "Criando conta..." : "Criar Conta"}
               </Button>
             </form>
           </Form>

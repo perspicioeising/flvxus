@@ -140,7 +140,7 @@ export default function CalendarPage() {
       // In a real implementation, we would add the appointment to the database
       
       toast({
-        title: "Appointment scheduled",
+        title: "Compromisso agendado",
         description: `Appointment with ${MOCK_STUDENTS.find(s => s.id === newAppointment.studentId)?.name} has been scheduled`,
       });
       
@@ -158,8 +158,8 @@ export default function CalendarPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error scheduling appointment",
-        description: error.message || "An error occurred",
+        title: "Erro ao agendar compromisso",
+        description: error.message || "Ocorreu um erro",
       });
     }
   };
@@ -179,7 +179,7 @@ export default function CalendarPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Calendar</h2>
           <p className="text-muted-foreground">
-            Manage appointments and sessions with your students.
+            Gerencie compromissos e sessões com seus alunos.
           </p>
         </div>
         <Dialog open={isAddAppointmentOpen} onOpenChange={setIsAddAppointmentOpen}>
@@ -190,9 +190,9 @@ export default function CalendarPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Schedule New Appointment</DialogTitle>
+              <DialogTitle>Agendar Novo Compromisso</DialogTitle>
               <DialogDescription>
-                Create a new appointment or session with a student.
+                Crie um novo compromisso ou sessão com um aluno.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -200,7 +200,7 @@ export default function CalendarPage() {
                 <Label htmlFor="title">Title</Label>
                 <Input 
                   id="title" 
-                  placeholder="e.g. Training Session" 
+                  placeholder="ex.: Sessão de Treino" 
                   value={newAppointment.title}
                   onChange={(e) => setNewAppointment(prev => ({ ...prev, title: e.target.value }))}
                 />
@@ -213,7 +213,7 @@ export default function CalendarPage() {
                   onValueChange={(value) => setNewAppointment(prev => ({ ...prev, studentId: value }))}
                 >
                   <SelectTrigger id="student">
-                    <SelectValue placeholder="Select a student" />
+                    <SelectValue placeholder="Selecione um aluno" />
                   </SelectTrigger>
                   <SelectContent>
                     {MOCK_STUDENTS.map((student) => (
@@ -246,36 +246,36 @@ export default function CalendarPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Label htmlFor="duration">Duração (minutos)</Label>
                 <Select
                   value={newAppointment.duration}
                   onValueChange={(value) => setNewAppointment(prev => ({ ...prev, duration: value }))}
                 >
                   <SelectTrigger id="duration">
-                    <SelectValue placeholder="Select duration" />
+                    <SelectValue placeholder="Selecione a duração" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="60">60 minutes</SelectItem>
-                    <SelectItem value="90">90 minutes</SelectItem>
-                    <SelectItem value="120">120 minutes</SelectItem>
+                    <SelectItem value="30">30 minutos</SelectItem>
+                    <SelectItem value="60">60 minutos</SelectItem>
+                    <SelectItem value="90">90 minutos</SelectItem>
+                    <SelectItem value="120">120 minutos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
+                <Label htmlFor="description">Descrição (opcional)</Label>
                 <Textarea 
                   id="description" 
-                  placeholder="Add any additional notes or instructions" 
+                  placeholder="Adicione notas ou instruções adicionais" 
                   value={newAppointment.description}
                   onChange={(e) => setNewAppointment(prev => ({ ...prev, description: e.target.value }))}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddAppointmentOpen(false)}>Cancel</Button>
-              <Button onClick={handleAddAppointment}>Schedule Appointment</Button>
+              <Button variant="outline" onClick={() => setIsAddAppointmentOpen(false)}>Cancelar</Button>
+              <Button onClick={handleAddAppointment}>Agendar Compromisso</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -285,9 +285,9 @@ export default function CalendarPage() {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Appointment Calendar</CardTitle>
+              <CardTitle>Calendário de Compromissos</CardTitle>
               <CardDescription>
-                View and manage your scheduled appointments.
+                Veja e gerencie seus compromissos agendados.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -323,7 +323,7 @@ export default function CalendarPage() {
             <div className="absolute top-0 left-0 w-12 h-full border-r">
               {[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(hour => (
                 <div key={hour} className="h-20 flex items-start justify-center pt-1 text-xs text-muted-foreground">
-                  {hour === 12 ? '12 PM' : hour < 12 ? `${hour} AM` : `${hour - 12} PM`}
+                  {hour === 12 ? '12h' : `${hour}h`}
                 </div>
               ))}
             </div>
