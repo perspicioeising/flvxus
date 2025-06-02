@@ -498,7 +498,7 @@ export default function Home() {
               <span>FLVXUS</span>
             </div>
             <div className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} FitConnect Pro. Todos os direitos reservados.
+              © {new Date().getFullYear()} FLVXUS. Todos os direitos reservados.
             </div>
           </div>
         </div>

@@ -17,6 +17,7 @@ import {
 import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList, Dumbbell } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const MUSCLE_GROUPS = [
   "Peito", "Costas", "Pernas", "Ombros", "Braços", "Core", "Corpo Inteiro", "Cardio"
@@ -48,7 +49,7 @@ export default function ExercisesPage() {
   const [muscleFilter, setMuscleFilter] = useState("all");
   const [equipmentFilter, setEquipmentFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  
+
   const [newExercise, setNewExercise] = useState<NewExercise>({
     name: "",
     description: "",
@@ -64,11 +65,11 @@ export default function ExercisesPage() {
     try {
       const response = await fetch('/api/exercises');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       setExercises(data);
     } catch (error) {
       toast({
@@ -140,7 +141,7 @@ export default function ExercisesPage() {
   const handleSaveExercise = async () => {
     try {
       setIsLoading(true);
-      
+
       const exerciseData = {
         name: newExercise.name,
         description: newExercise.description,
@@ -164,7 +165,7 @@ export default function ExercisesPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
@@ -173,10 +174,10 @@ export default function ExercisesPage() {
         title: isCloning ? "Exercício clonado com sucesso" : (isEditing ? "Exercício atualizado com sucesso" : "Exercício adicionado com sucesso"),
         description: isCloning ? "Uma cópia do exercício foi criada." : (isEditing ? "O exercício foi atualizado." : "O novo exercício foi adicionado à sua biblioteca."),
       });
-      
+
       await fetchExercises();
       handleCancel();
-      
+
     } catch (error) {
       toast({
         variant: "destructive",
@@ -264,13 +265,13 @@ export default function ExercisesPage() {
   const handleDeleteExercise = async (exercise: DeleteExercise): Promise<void> => {
     try {
       setIsLoading(true);
-      
+
       const response: Response = await fetch(`/api/exercises/${exercise.id}`, {
         method: 'DELETE',
       });
 
       const data: { error?: string } = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
@@ -279,9 +280,9 @@ export default function ExercisesPage() {
         title: "Exercício deletado",
         description: `${exercise.name} foi removido da sua biblioteca.`,
       });
-      
+
       await fetchExercises();
-      
+
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -312,16 +313,16 @@ export default function ExercisesPage() {
   };
 
   const filteredExercises = exercises.filter((exercise) => {
-    const matchesSearch = 
+    const matchesSearch =
       exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exercise.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesMuscle = 
-      muscleFilter === "all" || 
+
+    const matchesMuscle =
+      muscleFilter === "all" ||
       exercise.muscle_group.includes(muscleFilter);
-    
-    const matchesEquipment = 
-      equipmentFilter === "all" || 
+
+    const matchesEquipment =
+      equipmentFilter === "all" ||
       exercise.equipment.includes(equipmentFilter);
 
     return matchesSearch && matchesMuscle && matchesEquipment;
@@ -330,45 +331,45 @@ export default function ExercisesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Dumbbell className="h-6 w-6 text-primary" />
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Dumbbell className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight">Exercícios</h2>
+                  <p className="text-muted-foreground">
+                    Gerencie sua biblioteca de exercícios
+                  </p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Exercícios</h2>
-              <p className="text-muted-foreground">
-                Gerencie sua biblioteca de exercícios
-              </p>
+            <div className="flex gap-3">
+              <div className="bg-background border border-primary/20 rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
+                <div className="text-xl font-bold text-primary">
+                  {exercises.length}
+                </div>
+                <div className="text-xs text-muted-foreground">Ativos</div>
+              </div>
+              <div className="bg-background border border-border rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
+                <div className="text-xl font-bold">{exercises.length}</div>
+                <div className="text-xs text-muted-foreground">Total</div>
+              </div>
+
+              <Button
+                onClick={() => setIsAddingExercise(true)}
+                disabled={isAddingExercise}
+                className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Plus className="h-6 w-6" />
+                <span className="text-xs">Adicionar</span>
+              </Button>
             </div>
           </div>
-        </div>
-     <div className="flex gap-3">
-          <div className="bg-background border border-primary/20 rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
-            <div className="text-xl font-bold text-primary">
-              {exercises.length}
-            </div>
-            <div className="text-xs text-muted-foreground">Ativos</div>
-          </div>
-          <div className="bg-background border border-border rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
-            <div className="text-xl font-bold">{exercises.length}</div>
-            <div className="text-xs text-muted-foreground">Total</div>
-          </div>
-          
-          <Button 
-            onClick={() => setIsAddingExercise(true)} 
-            disabled={isAddingExercise}
-            className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            <Plus className="h-6 w-6" />
-            <span className="text-xs">Adicionar</span>
-          </Button>
         </div>
       </div>
-    </div>
-  </div>
 
       {isAddingExercise && (
         <Card>
@@ -574,8 +575,8 @@ export default function ExercisesPage() {
                 Cancelar
               </Button>
               <Button onClick={handleSaveExercise} disabled={isLoading}>
-                {isLoading ? 
-                  (isCloning ? "Clonando..." : (isEditing ? "Atualizando..." : "Adicionando...")) : 
+                {isLoading ?
+                  (isCloning ? "Clonando..." : (isEditing ? "Atualizando..." : "Adicionando...")) :
                   (isCloning ? "Clonar Exercício" : (isEditing ? "Atualizar Exercício" : "Adicionar Exercício"))}
               </Button>
             </div>
@@ -583,57 +584,69 @@ export default function ExercisesPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
         <CardHeader>
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle>Biblioteca de Exercícios</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-2xl font-bold">Biblioteca de Exercícios</CardTitle>
+                <CardDescription className="text-muted-foreground">
                   Navegue e gerencie sua coleção de exercícios
                 </CardDescription>
               </div>
-              
+
               <div className="flex items-center gap-2">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'outline'}
-                  size="icon"
-                  onClick={() => setViewMode('grid')}
-                  className="h-8 w-8"
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
-                  size="icon"
-                  onClick={() => setViewMode('list')}
-                  className="h-8 w-8"
-                >
-                  <LayoutList className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'outline'}
+                      size="icon"
+                      onClick={() => setViewMode('grid')}
+                      className="h-9 w-9 bg-background/70 backdrop-blur-sm"
+                    >
+                      <Grid className="h-4 w-4" />
+                      <span className="sr-only">Visualização em grade</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Visualização em grade</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'outline'}
+                      size="icon"
+                      onClick={() => setViewMode('list')}
+                      className="h-9 w-9 bg-background/70 backdrop-blur-sm"
+                    >
+                      <LayoutList className="h-4 w-4" />
+                      <span className="sr-only">Visualização em lista</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Visualização em lista</TooltipContent>
+                </Tooltip>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar exercícios..."
-                  className="pl-8"
+                  placeholder="Buscar exercícios por nome..."
+                  className="pl-10 bg-background/70 backdrop-blur-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              
+
               <Select value={muscleFilter} onValueChange={setMuscleFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] bg-background/70 backdrop-blur-sm">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
-                    <span>Muscle Group</span>
+                    <span>Grupo Muscular</span>
                   </div>
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Muscle Groups</SelectItem>
+                <SelectContent className="bg-background/90 backdrop-blur-sm border border-primary/20">
+                  <SelectItem value="all">Todos os grupos</SelectItem>
                   {MUSCLE_GROUPS.map((group) => (
                     <SelectItem key={group} value={group}>{group}</SelectItem>
                   ))}
@@ -641,14 +654,14 @@ export default function ExercisesPage() {
               </Select>
 
               <Select value={equipmentFilter} onValueChange={setEquipmentFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] bg-background/70 backdrop-blur-sm">
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
-                    <span>Equipment</span>
+                    <span>Equipamento</span>
                   </div>
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Equipment</SelectItem>
+                <SelectContent className="bg-background/90 backdrop-blur-sm border border-primary/20">
+                  <SelectItem value="all">Todos os equipamentos</SelectItem>
                   {EQUIPMENT_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
@@ -657,13 +670,26 @@ export default function ExercisesPage() {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredExercises.length === 0 ? (
+            <div className="text-center py-12 bg-background/40 rounded-lg border border-dashed border-primary/20">
+              <Dumbbell className="h-10 w-10 mx-auto text-muted-foreground" />
+              <p className="text-muted-foreground mt-2">Nenhum exercício encontrado</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {searchQuery || muscleFilter !== 'all' || equipmentFilter !== 'all'
+                  ? "Tente ajustar os filtros de busca"
+                  : "Adicione novos exercícios para começar"}
+              </p>
+            </div>
+          ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredExercises.map((exercise) => (
-                <Card key={exercise.id} className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                  <div className="relative aspect-video bg-muted">
+                <Card
+                  key={exercise.id}
+                  className="bg-background/40 backdrop-blur-sm hover:bg-background/60 transition-all border border-primary/20 hover:border-primary/30 group overflow-hidden"
+                >
+                  <div className="relative aspect-video bg-muted/50">
                     {exercise.video_url ? (
                       <video
                         src={exercise.video_url}
@@ -676,42 +702,57 @@ export default function ExercisesPage() {
                       </div>
                     )}
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                        onClick={() => handleEditClick(exercise)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                        onClick={() => handleCloneClick(exercise)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                        onClick={() => handleDeleteExercise(exercise)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                            onClick={() => handleEditClick(exercise)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Editar exercício</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                            onClick={() => handleCloneClick(exercise)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Clonar exercício</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                            onClick={() => handleDeleteExercise(exercise)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Excluir exercício</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-lg mb-1">{exercise.name}</h3>
+                    <h3 className="font-semibold text-lg mb-1 line-clamp-1">{exercise.name}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                       {exercise.description}
                     </p>
                     <div className="flex flex-wrap gap-1 mb-2">
                       {exercise.muscle_group.map((group) => (
-                        <Badge 
-                          key={group} 
-                          variant="outline" 
+                        <Badge
+                          key={group}
+                          variant="outline"
                           className="text-xs bg-primary/5 hover:bg-primary/10 transition-colors"
                         >
                           {group}
@@ -719,20 +760,20 @@ export default function ExercisesPage() {
                       ))}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      Equipment: {exercise.equipment.join(", ")}
+                      Equipamento: <span className="text-foreground">{exercise.equipment.join(", ")}</span>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {filteredExercises.map((exercise) => (
-                <div 
-                  key={exercise.id} 
-                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-all duration-300 hover:border-primary/20 bg-card"
+                <div
+                  key={exercise.id}
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-all duration-300 hover:border-primary/20 bg-background/50 backdrop-blur-sm"
                 >
-                  <div className="w-40 h-24 relative rounded-md overflow-hidden bg-muted">
+                  <div className="w-40 h-24 relative rounded-md overflow-hidden bg-muted/50">
                     {exercise.video_url ? (
                       <video
                         src={exercise.video_url}
@@ -745,17 +786,17 @@ export default function ExercisesPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg">{exercise.name}</h3>
+                    <h3 className="font-semibold text-lg line-clamp-1">{exercise.name}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
                       {exercise.description}
                     </p>
                     <div className="flex flex-wrap gap-1">
                       {exercise.muscle_group.map((group) => (
-                        <Badge 
-                          key={group} 
-                          variant="outline" 
+                        <Badge
+                          key={group}
+                          variant="outline"
                           className="text-xs bg-primary/5"
                         >
                           {group}
@@ -763,29 +804,47 @@ export default function ExercisesPage() {
                       ))}
                     </div>
                   </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditClick(exercise)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleCloneClick(exercise)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteExercise(exercise)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+
+                  <div className="flex gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 bg-background/70 backdrop-blur-sm"
+                          onClick={() => handleEditClick(exercise)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Editar exercício</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 bg-background/70 backdrop-blur-sm"
+                          onClick={() => handleCloneClick(exercise)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Clonar exercício</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 bg-background/70 backdrop-blur-sm"
+                          onClick={() => handleDeleteExercise(exercise)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Excluir exercício</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
