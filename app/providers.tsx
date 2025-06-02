@@ -6,6 +6,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Database } from "@/lib/database.types";
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 type SupabaseContext = {
   supabase: SupabaseClient<Database>;
@@ -54,10 +55,14 @@ export function useSupabase() {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <TooltipProvider> {/* Adicione este wrapper */}
       <SupabaseProvider>
         {children}
         <Toaster />
       </SupabaseProvider>
+      </TooltipProvider>
     </ThemeProvider>
+      
+
   );
 }
