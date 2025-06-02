@@ -1,3 +1,4 @@
+// app/dashboard/students/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,39 +6,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Plus, MoreHorizontal, Search, Filter, Eye, Activity, Mail, Calendar, Users, Loader2, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationNext } from "@/components/ui/pagination";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { AddStudentForm } from "@/app/(dashboard)/dashboard/students/[id]/new/page";
 
 type Student = {
   id: string;
@@ -56,59 +36,17 @@ type Student = {
   experience_level: string | null;
   notes: string | null;
   avatar?: string | null;
-  createdAt: string; // Added property for student creation date
+  createdAt: string;
 };
-
-const EXPERIENCE_LEVELS = [
-  "Iniciante",
-  "Intermediário",
-  "Avançado"
-];
-
-const TRAINING_TIMES = [
-  "Madrugada",
-  "Morning",
-  "Tarde",
-  "Noite",
-  "Madrugada"
-];
-
-const GOALS = [
-  "Perda de Peso",
-  "Ganho de Massa",
-  "Força",
-  "Resistência",
-  "Flexibilidade",
-  "Condicionamento Geral",
-  "Performance Esportiva",
-  "Reabilitação"
-];
 
 export default function StudentsPage() {
   const { supabase } = useSupabase();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-
-  const [newStudent, setNewStudent] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    birthDate: "",
-    gender: "",
-    height: "",
-    weight: "",
-    goals: [] as string[],
-    medicalConditions: "",
-    emergencyContact: "",
-    preferredTime: "",
-    experienceLevel: "",
-    notes: ""
-  });
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -132,72 +70,13 @@ export default function StudentsPage() {
     }
   };
 
-  const handleAddStudent = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/students', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newStudent),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      toast({
-        title: "Aluno convidado com sucesso",
-        description: "Um email de convite foi enviado para o endereço do aluno.",
-      });
-
-      fetchStudents();
-      handleDialogClose();
-
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao adicionar aluno",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDialogClose = () => {
-    setIsAddStudentOpen(false);
-    setNewStudent({
-      name: "",
-      email: "",
-      phone: "",
-      birthDate: "",
-      gender: "",
-      height: "",
-      weight: "",
-      goals: [],
-      medicalConditions: "",
-      emergencyContact: "",
-      preferredTime: "",
-      experienceLevel: "",
-      notes: ""
+  const handleAddSuccess = () => {
+    toast({
+      title: "Aluno convidado com sucesso",
+      description: "Um email de convite foi enviado para o endereço do aluno.",
     });
-    setCurrentStep(1);
-  };
-
-  const nextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    fetchStudents();
+    setShowForm(false);
   };
 
   // Filter students based on search query and status filter
@@ -208,188 +87,6 @@ export default function StudentsPage() {
 
     return matchesQuery && matchesStatus;
   });
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome Completo *</Label>
-              <Input
-                id="name"
-                placeholder="Full name"
-                value={newStudent.name}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Email address"
-                value={newStudent.email}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Número de Telefone</Label>
-              <Input
-                id="phone"
-                placeholder="Phone number"
-                value={newStudent.phone}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, phone: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="birthDate">Data de Nascimento</Label>
-              <Input
-                id="birthDate"
-                type="date"
-                value={newStudent.birthDate}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, birthDate: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gênero</Label>
-              <Select
-                value={newStudent.gender}
-                onValueChange={(value) => setNewStudent(prev => ({ ...prev, gender: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o gênero" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Masculino</SelectItem>
-                  <SelectItem value="female">Feminino</SelectItem>
-                  <SelectItem value="other">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="height">Altura (cm)</Label>
-              <Input
-                id="height"
-                type="number"
-                placeholder="Height in centimeters"
-                value={newStudent.height}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, height: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="weight">Peso (kg)</Label>
-              <Input
-                id="weight"
-                type="number"
-                placeholder="Weight in kilograms"
-                value={newStudent.weight}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, weight: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Objetivos</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {GOALS.map((goal) => (
-                  <div key={goal} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={goal}
-                      checked={newStudent.goals.includes(goal)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setNewStudent(prev => ({
-                            ...prev,
-                            goals: [...prev.goals, goal]
-                          }));
-                        } else {
-                          setNewStudent(prev => ({
-                            ...prev,
-                            goals: prev.goals.filter(g => g !== goal)
-                          }));
-                        }
-                      }}
-                    />
-                    <label htmlFor={goal}>{goal}</label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="experienceLevel">Experience Level</Label>
-              <Select
-                value={newStudent.experienceLevel}
-                onValueChange={(value) => setNewStudent(prev => ({ ...prev, experienceLevel: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o nível de experiência" />
-                </SelectTrigger>
-                <SelectContent>
-                  {EXPERIENCE_LEVELS.map((level) => (
-                    <SelectItem key={level} value={level.toLowerCase()}>{level}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="medicalConditions">Condições Médicas</Label>
-              <Textarea
-                id="medicalConditions"
-                placeholder="Liste quaisquer condições médicas, lesões ou limitações"
-                value={newStudent.medicalConditions}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, medicalConditions: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="emergencyContact">Contato de Emergência</Label>
-              <Input
-                id="emergencyContact"
-                placeholder="Nome e número de telefone"
-                value={newStudent.emergencyContact}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, emergencyContact: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="preferredTime">Horário Preferido de Treino</Label>
-              <Select
-                value={newStudent.preferredTime}
-                onValueChange={(value) => setNewStudent(prev => ({ ...prev, preferredTime: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o horário preferido" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRAINING_TIMES.map((time) => (
-                    <SelectItem key={time} value={time.toLowerCase()}>{time}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notas Adicionais</Label>
-              <Textarea
-                id="notes"
-                placeholder="Qualquer informação adicional"
-                value={newStudent.notes}
-                onChange={(e) => setNewStudent(prev => ({ ...prev, notes: e.target.value }))}
-              />
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -420,80 +117,31 @@ export default function StudentsPage() {
                 <div className="text-xl font-bold">{students.length}</div>
                 <div className="text-xs text-muted-foreground">Total</div>
               </div>
-
-
-              <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
-                <DialogTrigger asChild>
-                  <Button className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground">
-                    <Plus className="h-6 w-6" />
-                    <span className="text-xs">Adicionar</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar Novo Aluno</DialogTitle>
-                    <DialogDescription>
-                      {currentStep === 1 && "Insira as informações básicas do aluno."}
-                      {currentStep === 2 && "Insira detalhes físicos e objetivos."}
-                      {currentStep === 3 && "Insira informações médicas e preferências."}
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  {/* Progress Steps Indicator */}
-                  <div className="px-6 pt-2">
-                    <div className="flex justify-between relative">
-                      <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-border -translate-y-1/2 z-0" />
-                      {[1, 2, 3].map((step) => (
-                        <div key={step} className="flex flex-col items-center z-10">
-                          <div className={`h-6 w-6 rounded-full flex items-center justify-center ${currentStep >= step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                            {step}
-                          </div>
-                          <span className={`text-xs mt-1 ${currentStep === step ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
-                            Passo {step}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="py-4">
-                    {renderStepContent()}
-                  </div>
-
-                  <DialogFooter className="flex justify-between">
-                    <div>
-                      {currentStep > 1 && (
-                        <Button variant="outline" onClick={prevStep}>
-                          Anterior
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={handleDialogClose}>
-                        Cancelar
-                      </Button>
-                      {currentStep < 3 ? (
-                        <Button onClick={nextStep}>Próximo</Button>
-                      ) : (
-                        <Button onClick={handleAddStudent} disabled={isLoading}>
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Enviando...
-                            </>
-                          ) : "Enviar Convite"}
-                        </Button>
-                      )}
-                    </div>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={() => setShowForm(!showForm)}
+              >
+                <Plus className="h-6 w-6" />
+                <span className="text-xs">Adicionar</span>
+              </Button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Mostrar o formulário quando showForm for true */}
+      {showForm && (
+        <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
+          <CardContent className="pt-6">
+            <AddStudentForm 
+              onSuccess={handleAddSuccess} 
+              onCancel={() => setShowForm(false)} 
+            />
+          </CardContent>
+        </Card>
+      )}
+
       <div className="space-y-6">
-        
         <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex justify-between items-center">
@@ -543,18 +191,18 @@ export default function StudentsPage() {
                 </p>
                 {!searchQuery && statusFilter === 'all' && (
                   <Button
-                    variant="ghost"
-                    className="mt-4 bg-background/70 backdrop-blur-sm"
-                    onClick={() => setIsAddStudentOpen(true)}
+                    className="mt-4"
+                    onClick={() => setShowForm(true)}
                   >
-                    <Plus className="mr-2 h-4 w-4" /> Adicionar Aluno
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Aluno
                   </Button>
                 )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredStudents.map((student) => (
-                  <Card
+                   <Card
                     key={student.id}
                     className="bg-background/40 backdrop-blur-sm hover:bg-background/60 transition-all border border-primary/20 hover:border-primary/30 group overflow-hidden"
                   >
@@ -568,7 +216,7 @@ export default function StudentsPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="overflow-hidden">
-                            
+
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <h4 className="font-semibold truncate max-w-[120px]">{student.full_name}</h4>
