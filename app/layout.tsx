@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'FitConnect Pro | Personal Trainer Management Platform',
+  title: 'FLVXUS | Personal Trainer Management Platform',
   description: 'Complete solution for personal trainers to manage students, workouts, and evaluations',
 };
 
