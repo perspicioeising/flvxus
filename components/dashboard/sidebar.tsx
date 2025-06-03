@@ -4,12 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { 
-  BarChart4, 
-  Calendar, 
-  Dumbbell, 
-  LayoutDashboard, 
-  Settings, 
+import {
+  BarChart4,
+  Calendar,
+  Dumbbell,
+  LayoutDashboard,
+  Settings,
   Users,
   Activity,
   Heart,
@@ -43,9 +43,9 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           href: "/dashboard",
           icon: LayoutDashboard,
           isActive: pathname === "/dashboard",
-          color: "text-blue-600 dark:text-blue-400",
-          bgColor: "bg-blue-100 dark:bg-blue-900/30",
-          hoverColor: "hover:bg-blue-50 dark:hover:bg-blue-900/20",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
           name: "Alunos",
@@ -53,72 +53,72 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           icon: Users,
           isActive: pathname.startsWith("/dashboard/students"),
           color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-green-100 dark:bg-green-900/30",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
-          badge: "12"
+        //  badge: "12"
         },
         {
           name: "Avaliação Física",
           href: "/dashboard/physical-assessments",
           icon: BookOpen,
           isActive: pathname.startsWith("/dashboard/physical-assessments"),
-          color: "text-purple-600 dark:text-purple-400",
-          bgColor: "bg-purple-100 dark:bg-purple-900/30",
-          hoverColor: "hover:bg-purple-50 dark:hover:bg-purple-900/20",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
           name: "Avaliação Postural",
           href: "/dashboard/posture-assessments",
           icon: Camera,
           isActive: pathname.startsWith("/dashboard/posture-assessments"),
-          color: "text-pink-600 dark:text-pink-400",
-          bgColor: "bg-pink-100 dark:bg-pink-900/30",
-          hoverColor: "hover:bg-pink-50 dark:hover:bg-pink-900/20",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
           name: "Calendário",
           href: "/dashboard/calendar",
           icon: Calendar,
           isActive: pathname.startsWith("/dashboard/calendar"),
-          color: "text-orange-600 dark:text-orange-400",
-          bgColor: "bg-orange-100 dark:bg-orange-900/30",
-          hoverColor: "hover:bg-orange-50 dark:hover:bg-orange-900/20",
-        },     
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+        },
         {
           name: "Conquistas",
           href: "/dashboard/achievements",
           icon: Trophy,
           isActive: pathname.startsWith("/dashboard/achievements"),
-          color: "text-yellow-600 dark:text-yellow-400",
-          bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
-          hoverColor: "hover:bg-yellow-50 dark:hover:bg-yellow-900/20",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
           name: "Exercícios",
           href: "/dashboard/exercises",
           icon: Dumbbell,
           isActive: pathname.startsWith("/dashboard/exercises"),
-          color: "text-red-600 dark:text-red-400",
-          bgColor: "bg-red-100 dark:bg-red-900/30",
-          hoverColor: "hover:bg-red-50 dark:hover:bg-red-900/20",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
           name: "Treinos",
           href: "/dashboard/workouts",
           icon: Activity,
           isActive: pathname.startsWith("/dashboard/workouts"),
-          color: "text-cyan-600 dark:text-cyan-400",
-          bgColor: "bg-cyan-100 dark:bg-cyan-900/30",
-          hoverColor: "hover:bg-cyan-50 dark:hover:bg-cyan-900/20",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
           name: "Planos de Treino",
           href: "/dashboard/workout-plans",
           icon: ClipboardList,
           isActive: pathname.startsWith("/dashboard/workout-plans"),
-          color: "text-indigo-600 dark:text-indigo-400",
-          bgColor: "bg-indigo-100 dark:bg-indigo-900/30",
-          hoverColor: "hover:bg-indigo-50 dark:hover:bg-indigo-900/20",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
       ];
     } else {
@@ -137,7 +137,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           href: "/dashboard/my-progress",
           icon: BarChart4,
           isActive: pathname.startsWith("/dashboard/my-progress"),
-          color: "text-blue-600 dark:text-blue-400",
+          color: "text-green-600 dark:text-green-400",
           bgColor: "bg-blue-100 dark:bg-blue-900/30",
           hoverColor: "hover:bg-blue-50 dark:hover:bg-blue-900/20",
         },
@@ -146,7 +146,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           href: "/dashboard/my-achievements",
           icon: Trophy,
           isActive: pathname.startsWith("/dashboard/my-achievements"),
-          color: "text-yellow-600 dark:text-yellow-400",
+          color: "text-green-600 dark:text-green-400",
           bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
           hoverColor: "hover:bg-yellow-50 dark:hover:bg-yellow-900/20",
         },
@@ -155,7 +155,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           href: "/dashboard/progress",
           icon: Heart,
           isActive: pathname.startsWith("/dashboard/progress"),
-          color: "text-red-600 dark:text-red-400",
+          color: "text-green-600 dark:text-green-400",
           bgColor: "bg-red-100 dark:bg-red-900/30",
           hoverColor: "hover:bg-red-50 dark:hover:bg-red-900/20",
         }
@@ -187,7 +187,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
   ];
 
   return (
-    <aside 
+    <aside
       className={cn(
         "relative flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 ease-in-out",
         isCollapsed ? "w-[70px]" : "w-64",
@@ -256,7 +256,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
               className={cn(
                 "group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200 relative overflow-hidden",
                 isCollapsed && "justify-center px-2",
-                route.isActive 
+                route.isActive
                   ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
                   : `text-gray-700 dark:text-gray-200 ${route.hoverColor}`
               )}
@@ -266,12 +266,12 @@ export function Sidebar({ className, userRole }: SidebarProps) {
               {route.isActive && (
                 <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 blur-xl -z-10"></div>
               )}
-              
+
               {/* Icon container */}
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200",
-                route.isActive 
-                  ? "bg-white/20 shadow-sm" 
+                route.isActive
+                  ? "bg-white/20 shadow-sm"
                   : route.bgColor
               )}>
                 <route.icon className={cn(
@@ -279,30 +279,22 @@ export function Sidebar({ className, userRole }: SidebarProps) {
                   route.isActive ? "text-white" : route.color
                 )} />
               </div>
-              
+
               {/* Text and badge */}
               {!isCollapsed && (
                 <div className="flex items-center justify-between flex-1">
                   <span className="truncate">{route.name}</span>
-                  {route.badge && (
-                    <Badge className="ml-2 bg-white/20 text-white border-0 px-2 py-0.5 text-xs">
-                      {route.badge}
-                    </Badge>
-                  )}
+             
                 </div>
               )}
-              
+
               {/* Collapsed badge indicator */}
-              {isCollapsed && route.badge && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">{route.badge}</span>
-                </div>
-              )}
+         
             </Link>
           ))}
         </div>
       </div>
-      
+
       {/* Premium Upgrade Card (only for non-collapsed) */}
       {!isCollapsed && userRole === 'trainer' && (
         <div className="px-3 mb-4">
@@ -316,8 +308,8 @@ export function Sidebar({ className, userRole }: SidebarProps) {
               <p className="text-xs opacity-90 mb-3">
                 Desbloqueie recursos avançados e impulsione seu negócio!
               </p>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs font-semibold"
               >
                 Fazer Upgrade
@@ -326,7 +318,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           </div>
         </div>
       )}
-      
+
       {/* Bottom Navigation */}
       <div className="border-t border-gray-200 dark:border-gray-800 p-3">
         <div className="space-y-2">
@@ -337,7 +329,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
               className={cn(
                 "group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
                 isCollapsed && "justify-center px-2",
-                route.isActive 
+                route.isActive
                   ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
                   : `text-gray-700 dark:text-gray-200 ${route.hoverColor}`
               )}
@@ -345,8 +337,8 @@ export function Sidebar({ className, userRole }: SidebarProps) {
             >
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200",
-                route.isActive 
-                  ? "bg-white/20 shadow-sm" 
+                route.isActive
+                  ? "bg-white/20 shadow-sm"
                   : route.bgColor
               )}>
                 <route.icon className={cn(
@@ -354,7 +346,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
                   route.isActive ? "text-white" : route.color
                 )} />
               </div>
-              
+
               {!isCollapsed && (
                 <span className="truncate">{route.name}</span>
               )}
