@@ -112,7 +112,7 @@ export default function StudentDetailsPage() {
 
   const fetchPhysicalAssessments = useCallback(async () => {
     if (!params.id) return;
-    
+
     try {
       setLoadingStates(prev => ({ ...prev, physical: true }));
       const response = await fetch(`/api/students/${params.id}/assessments?type=physical`);
@@ -136,7 +136,7 @@ export default function StudentDetailsPage() {
 
   const fetchPosturalAssessments = useCallback(async () => {
     if (!params.id) return;
-    
+
     try {
       setLoadingStates(prev => ({ ...prev, postural: true }));
       const response = await fetch(`/api/students/${params.id}/assessments?type=postural`);
@@ -217,8 +217,8 @@ export default function StudentDetailsPage() {
         title: "Alterações salvas",
         description: "O perfil do aluno foi atualizado.",
       });
-      
-      // Removed the router.push to stay on the page after saving
+
+      router.push('/dashboard/students')
     } catch (error: any) {
       toast({
         variant: "destructive",
