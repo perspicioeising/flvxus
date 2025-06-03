@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MoreHorizontal, Search, Filter, Eye, Activity, Mail, Calendar, Users, Loader2, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Filter, Eye, Activity, Mail, Calendar, Users, Loader2, Trash2, Phone, Star } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
@@ -79,6 +79,21 @@ export default function StudentsPage() {
     setShowForm(false);
   };
 
+  const getExperienceColor = (level: string | null) => {
+    switch (level?.toLowerCase()) {
+      case 'iniciante': return 'bg-green-100 text-green-800 border-green-200';
+      case 'intermediário': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'avançado': return 'bg-purple-100 text-purple-800 border-purple-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    return status === 'active'
+      ? 'bg-green-500 text-green-800 border-green-200'
+      : 'bg-gray-100 text-gray-600 border-gray-200';
+  };
+
   // Filter students based on search query and status filter
   const filteredStudents = students.filter((student) => {
     const matchesQuery = student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -89,13 +104,13 @@ export default function StudentsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-green-50 to-indigo-50">
+      <div className="bg-gradient-to-r from-primary/40 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full">
+        <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
                 <div>
@@ -109,17 +124,17 @@ export default function StudentsPage() {
 
             {/* Quick Stats */}
             <div className="flex gap-3">
-              <div className="bg-background border border-primary/20 rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
+              <div className="bg-background border backdrop-blur-sm border-primary/20 rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
                 <div className="text-xl font-bold text-primary">{students.filter(s => s.status === 'active').length}</div>
                 <div className="text-xs text-muted-foreground">Ativos</div>
               </div>
-              <div className="bg-background border border-border rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
+              <div className="bg-background border border-border backdrop-blur-sm rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
                 <div className="text-xl font-bold">{students.length}</div>
                 <div className="text-xs text-muted-foreground">Total</div>
               </div>
-              <Button 
+              <Button
                 className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={() => setShowForm(true)}
+                onClick={() => setShowForm(true)}
               >
                 <Plus className="h-6 w-6" />
                 <span className="text-xs">Adicionar</span>
@@ -133,9 +148,9 @@ export default function StudentsPage() {
       {showForm && (
         <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
           <CardContent className="pt-6">
-            <AddStudentForm 
-              onSuccess={handleAddSuccess} 
-              onCancel={() => setShowForm(false)} 
+            <AddStudentForm
+              onSuccess={handleAddSuccess}
+              onCancel={() => setShowForm(false)}
             />
           </CardContent>
         </Card>
@@ -145,7 +160,6 @@ export default function StudentsPage() {
         <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-lg">Lista de Alunos</h3>
               <div className="text-sm text-muted-foreground">
                 {filteredStudents.length} {filteredStudents.length === 1 ? 'aluno' : 'alunos'} encontrados
               </div>
@@ -189,107 +203,105 @@ export default function StudentsPage() {
                     ? "Tente ajustar os filtros de busca"
                     : "Adicione novos alunos para começar"}
                 </p>
-             
+
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredStudents.map((student) => (
-                   <Card
-                    key={student.id}
-                    className="bg-background/40 backdrop-blur-sm hover:bg-background/60 transition-all border border-primary/20 hover:border-primary/30 group overflow-hidden"
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 border border-primary/20">
-                            <AvatarImage alt={student.full_name} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                              {student.full_name?.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="overflow-hidden">
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <h4 className="font-semibold truncate max-w-[120px]">{student.full_name}</h4>
-                              </TooltipTrigger>
-                              <TooltipContent>{student.full_name}</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <p className="text-sm text-muted-foreground truncate max-w-[120px]">
-                                  {student.email}
-                                </p>
-                              </TooltipTrigger>
-                              <TooltipContent>{student.email}</TooltipContent>
-                            </Tooltip>
+                  <Card key={student.id} className="group hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 bg-transparent backdrop-blur-sm overflow-hidden">
+                    <CardContent className="p-0">
+                      {/* Card Header */}
+                      <div className="bg-gradient-to-r from-primary/40 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
+                        <div className="relative z-10">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-xl font-bold backdrop-blur-sm">
+                              {student.full_name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(student.status)}`}>
+                              {student.status === 'active' ? 'Ativo' : 'Inativo'}
+                            </div>
                           </div>
+                          <h3 className="text-xl  mb-1">{student.full_name} </h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail className="h-4 w-4" color="green" />
+                            <span className=" text-sm">{student.email}</span>
+
+                          </div>
+
                         </div>
-                        <Badge
-                          variant={student.status === 'active' ? 'default' : 'secondary'}
-                          className="capitalize backdrop-blur-sm"
-                        >
-                          {student.status === 'active' ? 'Ativo' : 'Inativo'}
-                        </Badge>
+                        <div className="grid grid-cols-2 gap-4">
+                          {student.phone && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Phone className="h-4 w-4"  color="green" />
+                              <span className="truncate">{student.phone}</span>
+                            </div>
+                          )}
+                          {student.experience_level && (
+                            <div className="flex items-center gap-2">
+                              <Star className="h-4 w-4 text-yellow-500" />
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getExperienceColor(student.experience_level)}`}>
+                                {student.experience_level}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </CardHeader>
 
-                    <CardContent className="pt-0">
-                      <div className="flex justify-between items-center">
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">
-                            Nível: <span className="text-foreground font-medium">{student.experience_level || '-'}</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Desde: <span className="text-foreground">{new Date(student.createdAt).toLocaleDateString()}</span>
-                          </p>
-                        </div>
+                      {/* Card Body */}
+                      <div className="p-6 space-y-4">
+                        {/* Goals */}
+                        {student.goals && student.goals.length > 0 && (
+                          <div>
+                            <div className="text-sm font-medium font-semibold mb-2">Objetivos:</div>
+                            <div className="flex flex-wrap gap-1">
+                              {student.goals.slice(0, 3).map((goal) => (
+                                <Badge key={goal} variant="secondary" className="text-xs">
+                                  {goal}
+                                </Badge>
+                              ))}
+                              {student.goals.length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{student.goals.length - 3}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm border border-primary/20"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            className="w-48 bg-background/90 backdrop-blur-sm border border-primary/20"
-                          >
-                            <DropdownMenuItem asChild className="hover:bg-primary/5">
-                              <Link href={`/dashboard/students/${student.id}`} className="flex items-center">
-                                <Eye className="mr-2 h-4 w-4" />
-                                Ver Perfil
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="hover:bg-primary/5">
-                              <Link href={`/dashboard/students/${student.id}/workouts`} className="flex items-center">
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-4 border-t">
+                          <Button variant="outline" size="sm" className="flex-1 hover:bg-primary-50 hover:border-green-500 transition-colors">
+                            <Eye className="mr-2 h-4 w-4" />
+                            Perfil
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="hover:bg-gray-50 transition-colors">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem>
                                 <Activity className="mr-2 h-4 w-4" />
-                                Treinos
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="hover:bg-primary/5">
-                              <Link href={`/dashboard/students/${student.id}/assessments`} className="flex items-center">
+                                Ver Treinos
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
                                 <Calendar className="mr-2 h-4 w-4" />
                                 Avaliações
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-primary/20" />
-                            <DropdownMenuItem className="flex items-center hover:bg-primary/5">
-                              <Mail className="mr-2 h-4 w-4" />
-                              Enviar Mensagem
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-primary/20" />
-                            <DropdownMenuItem className="text-destructive flex items-center hover:bg-destructive/5">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Remover Aluno
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Mail className="mr-2 h-4 w-4" />
+                                Enviar Mensagem
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600">
+                                Remover Aluno
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
