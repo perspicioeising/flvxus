@@ -15,8 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Camera, Eye, FileText, Send, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@radix-ui/react-tabs";
+import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
 
 const EXPERIENCE_LEVELS = ["Iniciante", "Intermediário", "Avançado"];
 const TRAINING_TIMES = ["Madrugada", "Morning", "Tarde", "Noite", "Madrugada"];
@@ -41,7 +44,7 @@ export default function StudentDetailsPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [physicalAssessments, setPhysicalAssessments] = useState([]);
   const [posturalAssessments, setPosturalAssessments] = useState([]);
-  
+
   const [mediaFiles, setMediaFiles] = useState([]);
   const [student, setStudent] = useState({
     name: "",
@@ -66,7 +69,7 @@ export default function StudentDetailsPage() {
       setIsLoading(true);
       const response = await fetch(`/api/students/${params.id}`);
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
@@ -107,11 +110,11 @@ export default function StudentDetailsPage() {
     try {
       const response = await fetch(`/api/physical-assessments?student_id=${params.id}`);
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       setPhysicalAssessments(data.assessments || []);
     } catch (error: any) {
       toast({
@@ -126,11 +129,11 @@ export default function StudentDetailsPage() {
     try {
       const response = await fetch(`/api/posture-assessments?student_id=${params.id}`);
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       setPosturalAssessments(data.assessments || []);
     } catch (error: any) {
       toast({
@@ -155,7 +158,7 @@ export default function StudentDetailsPage() {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      
+
       const response = await fetch(`/api/students/${params.id}`, {
         method: 'PUT',
         headers: {
@@ -179,7 +182,7 @@ export default function StudentDetailsPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
@@ -208,7 +211,7 @@ export default function StudentDetailsPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
@@ -264,245 +267,245 @@ export default function StudentDetailsPage() {
           <TabsTrigger value="media">Arquivos de Mídia</TabsTrigger>
         </TabsList>
 
-         {/* Profile Tab */}
+        {/* Profile Tab */}
         <TabsContent value="profile">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleResendInvite}
-            disabled={isResendingInvite}
-          >
-            <Send className="h-4 w-4 mr-2" />
-            {isResendingInvite ? "Reenviando..." : "Reenviar Convite"}
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? "Salvando..." : "Salvar Alterações"}
-          </Button>
-        </div>
-      </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleResendInvite}
+              disabled={isResendingInvite}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {isResendingInvite ? "Reenviando..." : "Reenviar Convite"}
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+          </div>
 
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações Básicas</CardTitle>
-            <CardDescription>
-              Atualize os dados básicos e informações de contato do aluno.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome Completo</Label>
-                <Input
-                  id="name"
-                  value={student.name}
-                  onChange={(e) => setStudent(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  value={student.email}
-                  disabled
-                  className="bg-muted/50 text-muted-foreground"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Número de Telefone</Label>
-                <Input
-                  id="phone"
-                  value={student.phone}
-                  onChange={(e) => setStudent(prev => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="birthDate">Data de Nascimento</Label>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={student.birthDate}
-                  onChange={(e) => setStudent(prev => ({ ...prev, birthDate: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="gender">Gênero</Label>
-                <Select
-                  value={student.gender}
-                  onValueChange={(value) => setStudent(prev => ({ ...prev, gender: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o gênero" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Masculino</SelectItem>
-                    <SelectItem value="female">Feminino</SelectItem>
-                    <SelectItem value="other">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={student.status}
-                  onValueChange={(value) => setStudent(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações Físicas</CardTitle>
-            <CardDescription>
-              Atualize as medidas físicas e objetivos de fitness do aluno.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="height">Altura (cm)</Label>
-                <Input
-                  id="height"
-                  type="number"
-                  value={student.height}
-                  onChange={(e) => setStudent(prev => ({ ...prev, height: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="weight">Peso (kg)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  value={student.weight}
-                  onChange={(e) => setStudent(prev => ({ ...prev, weight: e.target.value }))}
-                />
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Objetivos de Fitness</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {GOALS.map((goal) => (
-                  <div key={goal} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={goal}
-                      checked={student.goals.includes(goal)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setStudent(prev => ({
-                            ...prev,
-                            goals: [...prev.goals, goal]
-                          }));
-                        } else {
-                          setStudent(prev => ({
-                            ...prev,
-                            goals: prev.goals.filter(g => g !== goal)
-                          }));
-                        }
-                      }}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Básicas</CardTitle>
+                <CardDescription>
+                  Atualize os dados básicos e informações de contato do aluno.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome Completo</Label>
+                    <Input
+                      id="name"
+                      value={student.name}
+                      onChange={(e) => setStudent(prev => ({ ...prev, name: e.target.value }))}
                     />
-                    <label htmlFor={goal}>{goal}</label>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-mail</Label>
+                    <Input
+                      id="email"
+                      value={student.email}
+                      disabled
+                      className="bg-muted/50 text-muted-foreground"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Número de Telefone</Label>
+                    <Input
+                      id="phone"
+                      value={student.phone}
+                      onChange={(e) => setStudent(prev => ({ ...prev, phone: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="birthDate">Data de Nascimento</Label>
+                    <Input
+                      id="birthDate"
+                      type="date"
+                      value={student.birthDate}
+                      onChange={(e) => setStudent(prev => ({ ...prev, birthDate: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gênero</Label>
+                    <Select
+                      value={student.gender}
+                      onValueChange={(value) => setStudent(prev => ({ ...prev, gender: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o gênero" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Masculino</SelectItem>
+                        <SelectItem value="female">Feminino</SelectItem>
+                        <SelectItem value="other">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select
+                      value={student.status}
+                      onValueChange={(value) => setStudent(prev => ({ ...prev, status: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Ativo</SelectItem>
+                        <SelectItem value="inactive">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="experienceLevel">Nível de Experiência</Label>
-                <Select
-                  value={student.experienceLevel}
-                  onValueChange={(value) => setStudent(prev => ({ ...prev, experienceLevel: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o nível de experiência" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EXPERIENCE_LEVELS.map((level) => (
-                      <SelectItem key={level} value={level.toLowerCase()}>{level}</SelectItem>
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Físicas</CardTitle>
+                <CardDescription>
+                  Atualize as medidas físicas e objetivos de fitness do aluno.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Altura (cm)</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      value={student.height}
+                      onChange={(e) => setStudent(prev => ({ ...prev, height: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Peso (kg)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      value={student.weight}
+                      onChange={(e) => setStudent(prev => ({ ...prev, weight: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Objetivos de Fitness</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {GOALS.map((goal) => (
+                      <div key={goal} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={goal}
+                          checked={student.goals.includes(goal)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setStudent(prev => ({
+                                ...prev,
+                                goals: [...prev.goals, goal]
+                              }));
+                            } else {
+                              setStudent(prev => ({
+                                ...prev,
+                                goals: prev.goals.filter(g => g !== goal)
+                              }));
+                            }
+                          }}
+                        />
+                        <label htmlFor={goal}>{goal}</label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="preferredTime">Horário Preferido</Label>
-                <Select
-                  value={student.preferredTime}
-                  onValueChange={(value) => setStudent(prev => ({ ...prev, preferredTime: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o horário preferido" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TRAINING_TIMES.map((time) => (
-                      <SelectItem key={time} value={time.toLowerCase()}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  </div>
+                </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações Médicas e de Emergência</CardTitle>
-            <CardDescription>
-              Atualize as condições médicas e informações de contato de emergência do aluno.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="medicalConditions">Condições Médicas</Label>
-              <Textarea
-                id="medicalConditions"
-                placeholder="Liste quaisquer condições médicas, lesões ou limitações"
-                value={student.medicalConditions}
-                onChange={(e) => setStudent(prev => ({ ...prev, medicalConditions: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="emergencyContact">Contato de Emergência</Label>
-              <Input
-                id="emergencyContact"
-                placeholder="Nome e número de telefone"
-                value={student.emergencyContact}
-                onChange={(e) => setStudent(prev => ({ ...prev, emergencyContact: e.target.value }))}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="experienceLevel">Nível de Experiência</Label>
+                    <Select
+                      value={student.experienceLevel}
+                      onValueChange={(value) => setStudent(prev => ({ ...prev, experienceLevel: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o nível de experiência" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXPERIENCE_LEVELS.map((level) => (
+                          <SelectItem key={level} value={level.toLowerCase()}>{level}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="preferredTime">Horário Preferido</Label>
+                    <Select
+                      value={student.preferredTime}
+                      onValueChange={(value) => setStudent(prev => ({ ...prev, preferredTime: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o horário preferido" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TRAINING_TIMES.map((time) => (
+                          <SelectItem key={time} value={time.toLowerCase()}>{time}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Additional Notes</CardTitle>
-            <CardDescription>
-              Add any additional notes or observations about the student.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Add any additional notes here..."
-              value={student.notes}
-              onChange={(e) => setStudent(prev => ({ ...prev, notes: e.target.value }))}
-              className="min-h-[100px]"
-            />
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Médicas e de Emergência</CardTitle>
+                <CardDescription>
+                  Atualize as condições médicas e informações de contato de emergência do aluno.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="medicalConditions">Condições Médicas</Label>
+                  <Textarea
+                    id="medicalConditions"
+                    placeholder="Liste quaisquer condições médicas, lesões ou limitações"
+                    value={student.medicalConditions}
+                    onChange={(e) => setStudent(prev => ({ ...prev, medicalConditions: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyContact">Contato de Emergência</Label>
+                  <Input
+                    id="emergencyContact"
+                    placeholder="Nome e número de telefone"
+                    value={student.emergencyContact}
+                    onChange={(e) => setStudent(prev => ({ ...prev, emergencyContact: e.target.value }))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Additional Notes</CardTitle>
+                <CardDescription>
+                  Add any additional notes or observations about the student.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="Add any additional notes here..."
+                  value={student.notes}
+                  onChange={(e) => setStudent(prev => ({ ...prev, notes: e.target.value }))}
+                  className="min-h-[100px]"
+                />
+              </CardContent>
+            </Card>
         </TabsContent>
 
         <TabsContent value="physical">
@@ -539,7 +542,7 @@ export default function StudentDetailsPage() {
                     </div>
                   </Card>
                 ))}
-                
+
                 {physicalAssessments.length === 0 && (
                   <div className="text-center py-12">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -587,7 +590,7 @@ export default function StudentDetailsPage() {
                     </div>
                   </Card>
                 ))}
-                
+
                 {posturalAssessments.length === 0 && (
                   <div className="text-center py-12">
                     <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -616,7 +619,7 @@ export default function StudentDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-12">
-                <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Nenhum arquivo de mídia encontrado</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Os arquivos compartilhados pelo aluno aparecerão aqui
@@ -627,7 +630,6 @@ export default function StudentDetailsPage() {
         </TabsContent>
       </Tabs>
     </div>
-      </div>
-    </div>
+   
   );
 }
