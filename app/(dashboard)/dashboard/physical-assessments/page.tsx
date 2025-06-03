@@ -41,8 +41,8 @@ export default function NewPhysicalAssessmentPage() {
     total: 0,
     totalPages: 1
   });
-  type Student = { id: string; full_name: string };
-  const [students, setStudents] = useState<Student[]>([]);
+  // type Student = { id: string; full_name: string };
+  // const [students, setStudents] = useState<Student[]>([]);
   type CalculatedResults = {
     body_density: string;
     fat_percentage: string;
@@ -84,27 +84,6 @@ export default function NewPhysicalAssessmentPage() {
   useEffect(() => {
     fetchStudents();
   }, []);
-
-  const fetchStudents = async () => {
-    try {
-      // Request all students by setting a large limit
-      const response = await fetch('/api/students?limit=1000');
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      // Access the students array from the response
-      setStudents(data.students || []);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao buscar alunos",
-        description: error instanceof Error ? error.message : String(error),
-      });
-    }
-  };
 
   const calculateResults = () => {
     const {
@@ -254,6 +233,29 @@ export default function NewPhysicalAssessmentPage() {
       });
     }
   };
+
+  const fetchAssessments = async () => {
+    try {
+      const response = await fetch('/api/physical-assessments');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      setAssessments(data);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar avaliações",
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchAssessments();
+  }, []);
 
   interface Student {
     id: string;
