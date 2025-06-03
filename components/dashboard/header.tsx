@@ -66,8 +66,8 @@ export function Header({ userRole }: HeaderProps) {
         { name: "Alunos", href: "/dashboard/students", current: pathname.startsWith("/dashboard/students") },
         { name: "Treinos", href: "/dashboard/workouts", current: pathname.startsWith("/dashboard/workouts") },
         { name: "Exercícios", href: "/dashboard/exercises", current: pathname.startsWith("/dashboard/exercises") },
-        { name: "Calendário", href: "/dashboard/calendar", current: pathname.startsWith("/dashboard/calendar") },
-        { name: "Análises", href: "/dashboard/analytics", current: pathname.startsWith("/dashboard/analytics") },
+        { name: "Planos", href: "/dashboard/workout-plans", current: pathname.startsWith("/dashboard/workout-plans") },
+        { name: "Conquistas", href: "/dashboard/achievements", current: pathname.startsWith("/dashboard/achievements") },
       ];
     } else {
       return [
@@ -196,19 +196,7 @@ export function Header({ userRole }: HeaderProps) {
           {/* Right Side Actions */}
           <div className="flex items-center gap-2 lg:gap-3">
             
-            {/* Search Bar - Hidden on small screens */}
-            <div className="hidden lg:block relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-xl blur opacity-50"></div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-64 h-10 bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all"
-                />
-              </div>
-            </div>
+        
 
             {/* Theme Toggle */}
             <div className="p-2">
