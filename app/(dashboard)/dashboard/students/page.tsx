@@ -240,7 +240,6 @@ export default function StudentsPage() {
                           )}
                           {student.experience_level && (
                             <div className="flex items-center gap-2">
-                              <Star className="h-4 w-4 text-yellow-500" />
                               <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getExperienceColor(student.experience_level)}`}>
                                 {student.experience_level}
                               </span>
