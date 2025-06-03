@@ -135,7 +135,7 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-green-50/40 to-primary-100 dark:from-primary-950 dark:via-primary-900 dark:to-black">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         
         {/* Ultra Modern Header */}
