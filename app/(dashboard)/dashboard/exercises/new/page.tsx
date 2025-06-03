@@ -542,231 +542,287 @@ export default function NewExercisePage() {
 
           <TabsContent value="media" className="space-y-6">
             {/* Video Card */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
-  
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-  
-                  <CardHeader className="relative pb-4">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+
+                <CardHeader className="relative pb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
+                      <Video className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                        Vídeo Demonstrativo
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 dark:text-gray-400">
+                        Faça upload de um vídeo ou informe a URL do vídeo demonstrativo
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="relative space-y-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="video_url" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      URL do Vídeo
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl blur opacity-50"></div>
+                      <Input
+                        id="video_url"
+                        placeholder="ex.: https://example.com/video.mp4"
+                        value={exercise.video_url}
+                        onChange={(e) => setExercise(prev => ({ ...prev, video_url: e.target.value }))}
+                        className="relative h-14 text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Informe a URL de um vídeo existente ou faça upload abaixo
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Ou faça upload de um vídeo
+                    </Label>
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
-                        <Video className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
-                          Vídeo Demonstrativo
-                        </CardTitle>
-                        <CardDescription className="text-gray-600 dark:text-gray-400">
-                          Faça upload de um vídeo ou informe a URL do vídeo demonstrativo
-                        </CardDescription>
-                      </div>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleVideoUpload(file);
+                        }}
+                        className="hidden"
+                        id="video-upload"
+                      />
+                      <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-2xl h-14 px-6 font-bold shadow-xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 border-0">
+                        <label htmlFor="video-upload" className="cursor-pointer flex items-center">
+                          <Upload className="h-5 w-5 mr-3" />
+                          Upload Vídeo
+                        </label>
+                      </Button>
+                      {videoFile && (
+                        <Badge className="px-4 py-2 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-300 dark:from-blue-900/30 dark:to-cyan-900/30 dark:text-blue-300 dark:border-blue-600 rounded-full font-semibold">
+                          {videoFile.name}
+                        </Badge>
+                      )}
                     </div>
-                  </CardHeader>
-  
-                  <CardContent className="relative space-y-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="video_url" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        URL do Vídeo
-                      </Label>
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl blur opacity-50"></div>
-                        <Input
-                          id="video_url"
-                          placeholder="ex.: https://example.com/video.mp4"
-                          value={exercise.video_url}
-                          onChange={(e) => setExercise(prev => ({ ...prev, video_url: e.target.value }))}
-                          className="relative h-14 text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
-                        />
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Informe a URL de um vídeo existente ou faça upload abaixo
-                      </p>
-                    </div>
-  
-                    <div className="space-y-4">
-                      <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Ou faça upload de um vídeo
-                      </Label>
-                      <div className="flex items-center gap-4">
-                        <input
-                          type="file"
-                          accept="video/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleVideoUpload(file);
-                          }}
-                          className="hidden"
-                          id="video-upload"
-                        />
-                        <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-2xl h-14 px-6 font-bold shadow-xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 border-0">
-                          <label htmlFor="video-upload" className="cursor-pointer flex items-center">
-                            <Upload className="h-5 w-5 mr-3" />
-                            Upload Vídeo
-                          </label>
-                        </Button>
-                        {videoFile && (
-                          <Badge className="px-4 py-2 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-300 dark:from-blue-900/30 dark:to-cyan-900/30 dark:text-blue-300 dark:border-blue-600 rounded-full font-semibold">
-                            {videoFile.name}
-                          </Badge>
-                        )}
-                      </div>
                     {uploadProgress > 0 && (
-                      <div className="w-full bg-muted rounded-full h-2">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
                         <div
-                          className="bg-primary h-2 rounded-full transition-all"
+                          className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
                     )}
                     {videoUrl && (
-                      <div className="text-sm text-green-600">
-                        Vídeo enviado com sucesso!
+                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200/50 dark:border-green-700/50">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <span className="text-green-800 dark:text-green-300 font-semibold">
+                            Vídeo enviado com sucesso!
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
-              </CardContent>
-            </Card>
-          </div>
-    
+                </CardContent>
+              </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Áudio de Instruções</CardTitle>
-                  <CardDescription>
-                    Faça upload de um áudio ou gere automaticamente com IA
-                  </CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={generateAudioWithAI} 
-                  disabled={isGeneratingAudio || !exercise.description}
-                  className="bg-primary/5 hover:bg-primary/10 border-primary/20"
-                >
-                  {isGeneratingAudio ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="mr-2 h-4 w-4" />
-                      Gerar Áudio com IA
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <Label>Faça upload de um arquivo de áudio</Label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleAudioUpload(file);
-                      }}
-                      className="hidden"
-                      id="audio-upload"
-                    />
-                    <Button asChild>
-                      <label htmlFor="audio-upload" className="cursor-pointer">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Áudio
-                      </label>
+            {/* Audio Card */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-orange-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+
+                <CardHeader className="relative pb-4">
+                  <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
+                        <Mic className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                          Áudio de Instruções
+                        </CardTitle>
+                        <CardDescription className="text-gray-600 dark:text-gray-400">
+                          Faça upload de um áudio ou gere automaticamente com IA
+                        </CardDescription>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      onClick={generateAudioWithAI} 
+                      disabled={isGeneratingAudio || !exercise.description}
+                      className="group bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border-orange-300 dark:border-orange-600 hover:from-orange-200 hover:to-red-200 dark:hover:from-orange-800/50 dark:hover:to-red-800/50 rounded-2xl h-14 px-6 font-semibold transition-all duration-300 transform hover:scale-105"
+                    >
+                      {isGeneratingAudio ? (
+                        <>
+                          <Loader2 className="mr-3 h-5 w-5 animate-spin text-orange-600 dark:text-orange-400" />
+                          <span className="text-orange-800 dark:text-orange-300">Gerando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="mr-3 h-5 w-5 text-orange-600 dark:text-orange-400 group-hover:animate-pulse" />
+                          <span className="text-orange-800 dark:text-orange-300">Gerar Áudio com IA</span>
+                        </>
+                      )}
                     </Button>
-                    {audioFile && (
-                      <span className="text-sm text-muted-foreground">
-                        {audioFile.name}
-                      </span>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="relative space-y-6">
+                  <div className="space-y-4">
+                    <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Faça upload de um arquivo de áudio
+                    </Label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAudioUpload(file);
+                        }}
+                        className="hidden"
+                        id="audio-upload"
+                      />
+                      <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-2xl h-14 px-6 font-bold shadow-xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 border-0">
+                        <label htmlFor="audio-upload" className="cursor-pointer flex items-center">
+                          <Upload className="h-5 w-5 mr-3" />
+                          Upload Áudio
+                        </label>
+                      </Button>
+                      {audioFile && (
+                        <Badge className="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-purple-300 dark:from-purple-900/30 dark:to-pink-900/30 dark:text-purple-300 dark:border-purple-600 rounded-full font-semibold">
+                          {audioFile.name}
+                        </Badge>
+                      )}
+                    </div>
+                    {audioUploadProgress > 0 && (
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                          style={{ width: `${audioUploadProgress}%` }}
+                        />
+                      </div>
+                    )}
+                    {audioUrl && (
+                      <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50">
+                        <div className="flex items-center gap-3 mb-4">
+                          <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          <span className="text-purple-800 dark:text-purple-300 font-semibold">
+                            Áudio disponível:
+                          </span>
+                        </div>
+                        <audio controls className="w-full h-12 rounded-xl">
+                          <source src={audioUrl} type="audio/mpeg" />
+                          Seu navegador não suporta o elemento de áudio.
+                        </audio>
+                      </div>
                     )}
                   </div>
-                  {audioUploadProgress > 0 && (
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${audioUploadProgress}%` }}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="advanced" className="space-y-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-indigo-500/20 to-blue-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+
+                <CardHeader className="relative pb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl shadow-lg">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                        Detalhes Adicionais
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 dark:text-gray-400">
+                        Forneça informações detalhadas sobre o exercício
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="relative space-y-8">
+                  <div className="space-y-3">
+                    <Label htmlFor="variations" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Variações
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 rounded-xl blur opacity-50"></div>
+                      <Textarea
+                        id="variations"
+                        value={exercise.variations}
+                        onChange={(e) => setExercise(prev => ({ ...prev, variations: e.target.value }))}
+                        placeholder="Liste as variações do exercício (uma por linha)"
+                        className="relative min-h-[120px] text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
                       />
                     </div>
-                  )}
-                  {audioUrl && (
-                    <div className="mt-4">
-                      <p className="text-sm text-green-600 mb-2">
-                        Áudio disponível:
-                      </p>
-                      <audio controls className="w-full">
-                        <source src={audioUrl} type="audio/mpeg" />
-                        Seu navegador não suporta o elemento de áudio.
-                      </audio>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Adicione cada variação em uma nova linha
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="tips" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Dicas de Execução
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl blur opacity-50"></div>
+                      <Textarea
+                        id="tips"
+                        value={exercise.tips}
+                        onChange={(e) => setExercise(prev => ({ ...prev, tips: e.target.value }))}
+                        placeholder="Liste as dicas importantes (uma por linha)"
+                        className="relative min-h-[120px] text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Adicione cada dica em uma nova linha
+                    </p>
+                  </div>
 
-        <TabsContent value="advanced" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Detalhes Adicionais</CardTitle>
-              <CardDescription>
-                Forneça informações detalhadas sobre o exercício
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="variations">Variações</Label>
-                <Textarea
-                  id="variations"
-                  value={exercise.variations}
-                  onChange={(e) => setExercise(prev => ({ ...prev, variations: e.target.value }))}
-                  placeholder="Liste as variações do exercício (uma por linha)"
-                  className="min-h-[100px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Adicione cada variação em uma nova linha
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tips">Dicas de Execução</Label>
-                <Textarea
-                  id="tips"
-                  value={exercise.tips}
-                  onChange={(e) => setExercise(prev => ({ ...prev, tips: e.target.value }))}
-                  placeholder="Liste as dicas importantes (uma por linha)"
-                  className="min-h-[100px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Adicione cada dica em uma nova linha
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="common_errors">Erros Comuns</Label>
-                <Textarea
-                  id="common_errors"
-                  value={exercise.common_errors}
-                  onChange={(e) => setExercise(prev => ({ ...prev, common_errors: e.target.value }))}
-                  placeholder="Liste os erros comuns a serem evitados (um por linha)"
-                  className="min-h-[100px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Adicione cada erro em uma nova linha
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  <div className="space-y-3">
+                    <Label htmlFor="common_errors" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Erros Comuns
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl blur opacity-50"></div>
+                      <Textarea
+                        id="common_errors"
+                        value={exercise.common_errors}
+                        onChange={(e) => setExercise(prev => ({ ...prev, common_errors: e.target.value }))}
+                        placeholder="Liste os erros comuns a serem evitados (um por linha)"
+                        className="relative min-h-[120px] text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Adicione cada erro em uma nova linha
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
-  </div>
   );
 }
