@@ -119,6 +119,7 @@ export default function StudentDetailsPage() {
         title: "Alterações salvas com sucesso",
         description: "O perfil do aluno foi atualizado.",
       });
+      router.push('/dashboard/students');
     } catch (error: any) {
       toast({
         variant: "destructive",
