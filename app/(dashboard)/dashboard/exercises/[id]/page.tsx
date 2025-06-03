@@ -123,6 +123,8 @@ export default function ExerciseDetailsPage() {
         title: "Exercício atualizado",
         description: "As alterações foram salvas com sucesso",
       });
+
+      router.push(`/dashboard/exercises`);
     } catch (error: any) {
       toast({
         variant: "destructive",
