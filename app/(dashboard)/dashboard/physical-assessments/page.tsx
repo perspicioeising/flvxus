@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter, ArrowRight, Trash2, CalendarDays, Eye, User } from "lucide-react";
+import { Plus, Search, Filter, ArrowRight, Trash2, CalendarDays, Eye, User, ClipboardList, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
