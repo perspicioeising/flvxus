@@ -141,7 +141,7 @@ export default function StudentsPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <div className="w-16 h-16 bg-gradient-to-br from-gray-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
                       <User className="h-8 w-8 text-white" />
                     </div>
                     <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
@@ -149,7 +149,7 @@ export default function StudentsPage() {
                     </div>
                   </div>
                   <div>
-                    <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-green-600 via-green-600 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent">
+                    <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent">
                       Meus Alunos
                     </h1>
                     <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
@@ -161,10 +161,10 @@ export default function StudentsPage() {
 
               <Button
                 onClick={() => router.push('/dashboard/students/new')}
-                className="group bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 hover:from-green-700 hover:via-green-600 hover:to-emerald-700 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 min-w-[200px] border-0"
+                className="group bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 hover:from-green-700 hover:via-green-600 hover:to-emerald-700 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105  border-0"
               >
                 <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                Adicionar Aluno
+                Novo
               </Button>
             </div>
           </div>
@@ -221,7 +221,7 @@ export default function StudentsPage() {
                 <CardContent className="p-6 text-center">
                   <div className="flex items-center justify-between mb-4">
                     <div className="space-y-1">
-                      <p className="text-purple-600 dark:text-purple-400 text-sm font-bold uppercase tracking-wider">Novos</p>
+                     <p className="text-blue-600 dark:text-blue-400 text-sm font-bold uppercase tracking-wider">Novos</p>
                       <p className="text-4xl font-black text-gray-900 dark:text-white">
                         {students.filter(s => {
                           const createdDate = new Date(s.created_at);
@@ -231,13 +231,13 @@ export default function StudentsPage() {
                         }).length}
                       </p>
                     </div>
-                    <div className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
+                    <div className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
                       <CalendarDays className="h-8 w-8 text-white" />
                     </div>
                   </div>
                   <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-1000"
+                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-1000"
                       style={{
                         width: `${Math.min((students.filter(s => {
                           const createdDate = new Date(s.created_at);
