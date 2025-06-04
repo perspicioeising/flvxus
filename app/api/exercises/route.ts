@@ -111,7 +111,15 @@ export async function POST(request: Request) {
     const { data: exercise, error } = await supabase
       .from('exercises')
       .insert({
-        ...data,
+        name: data.name,
+        description: data.description,
+        muscle_group: data.muscle_group,
+        equipment: data.equipment,
+        variations: data.variations,
+        video_url: data.video_url,
+        audio_url: data.audio_url,
+        tips: data.tips,
+        common_errors: data.common_errors,
         tenant_id: profile.tenant_id
       })
       .select()
