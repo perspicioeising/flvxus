@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -15,8 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { Plus, Search, Filter, ArrowRight, Edit, Copy, Trash2, ClipboardList, CalendarDays, Eye, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip";
+import { DataPagination } from "@/components/ui/data-pagination";
+
 
 const PROTOCOLS = [
   "McArdle 1992",
@@ -26,7 +30,17 @@ const PROTOCOLS = [
 export default function NewPhysicalAssessmentPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [studentFilter, setStudentFilter] = useState("all");
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  });
   type Student = { id: string; full_name: string };
   const [students, setStudents] = useState<Student[]>([]);
   type CalculatedResults = {
