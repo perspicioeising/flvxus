@@ -1,4 +1,3 @@
-// components/ui/data-pagination.tsx
 import React from 'react';
 import {
   Pagination,
