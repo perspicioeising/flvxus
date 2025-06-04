@@ -1,48 +1,40 @@
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 interface DataPaginationProps {
-  currentPage: number;
+  page: number;
   pageSize: number;
-  totalItems: number;
+  total: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }
 
 export function DataPagination({
-  currentPage,
+  page,
   pageSize,
-  totalItems,
+  total,
   totalPages,
   onPageChange,
   onPageSizeChange,
 }: DataPaginationProps) {
   const pageSizeOptions = [5, 25, 50, 100];
+  const startItem = (page - 1) * pageSize + 1;
+  const endItem = Math.min(page * pageSize, total);
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <div>Itens por página:</div>
+        <div>
+          Mostrando {startItem}-{endItem} de {total} registros
+        </div>
         <Select
           value={pageSize.toString()}
           onValueChange={(value) => onPageSizeChange(parseInt(value))}
         >
           <SelectTrigger className="h-8 w-[70px]">
-            <SelectValue placeholder={pageSize} />
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {pageSizeOptions.map((size) => (
@@ -52,58 +44,54 @@ export function DataPagination({
             ))}
           </SelectContent>
         </Select>
-        <div>
-          {totalItems === 0
-            ? "Nenhum item encontrado"
-            : `${(currentPage - 1) * pageSize + 1}-${Math.min(
-                currentPage * pageSize,
-                totalItems
-              )} de ${totalItems} itens`}
-        </div>
+        <span>por página</span>
       </div>
 
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (currentPage > 1) onPageChange(currentPage - 1);
-              }}
-              className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-            />
-          </PaginationItem>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onPageChange(1)}
+          disabled={page === 1}
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <PaginationItem key={page}>
-              <PaginationLink
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onPageChange(page);
-                }}
-                isActive={page === currentPage}
-              >
-                {page}
-              </PaginationLink>
-            </PaginationItem>
-          ))}
+        <div className="flex items-center gap-1 mx-2">
+          <span className="text-sm font-medium">{page}</span>
+          <span className="text-sm text-muted-foreground">de</span>
+          <span className="text-sm font-medium">{totalPages}</span>
+        </div>
 
-          <PaginationItem>
-            <PaginationNext
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (currentPage < totalPages) onPageChange(currentPage + 1);
-              }}
-              className={
-                currentPage >= totalPages ? "pointer-events-none opacity-50" : ""
-              }
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onPageChange(totalPages)}
+          disabled={page === totalPages}
+        >
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
