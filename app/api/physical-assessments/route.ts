@@ -85,3 +85,62 @@ export async function GET(request: Request) {
     );
   }
 }
+
+
+export async function POST(request: Request) {
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+
+  try {
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, tenant_id')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (profileError || profile?.role !== 'trainer') {
+      return NextResponse.json(
+        { error: 'Access restricted to trainers' },
+        { status: 403 }
+      );
+    }
+
+    const data = await request.json();
+
+    // Create the assessment
+    const { data: assessment, error } = await supabase
+      .from('physical_assessments')
+      .insert({
+        ...data,
+        body_density: data.body_density,
+        fat_percentage: data.fat_percentage,
+        fat_mass: data.fat_mass,
+        lean_mass: data.lean_mass,
+        tenant_id: profile.tenant_id
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(assessment);
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'An error occurred while creating the assessment' },
+      { status: 500 }
+    );
+  }
+}
