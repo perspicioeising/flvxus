@@ -232,7 +232,7 @@ export default function StudentsPage() {
                         <div className="grid grid-cols-2 gap-4">
                           {student.phone && (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-4 w-4"  color="green" />
+                              <Phone className="h-4 w-4\"  color="green" />
                               <span className="truncate">{student.phone}</span>
                             </div>
                           )}
