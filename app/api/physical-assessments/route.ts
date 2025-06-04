@@ -1,3 +1,4 @@
+// app/api/physical-assessments/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -11,6 +12,9 @@ export async function GET(request: Request) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '10');
   const offset = (page - 1) * limit;
+  
+  // Get student_id filter if provided
+  const studentId = searchParams.get('student_id');
 
   try {
     const { data: { session }, error: authError } = await supabase.auth.getSession();
@@ -34,21 +38,8 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get total count
-    const { count: totalCount, error: countError } = await supabase
-      .from('physical_assessments')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', profile.tenant_id);
-
-    if (countError) {
-      return NextResponse.json(
-        { error: countError.message },
-        { status: 500 }
-      );
-    }
-
-    // Get paginated assessments
-    const { data: assessments, error } = await supabase
+    // Build query
+    let query = supabase
       .from('physical_assessments')
       .select(`
         *,
@@ -58,7 +49,25 @@ export async function GET(request: Request) {
           email
         )
       `)
-      .eq('tenant_id', profile.tenant_id)
+      .eq('tenant_id', profile.tenant_id);
+    
+    // Add student_id filter if provided
+    if (studentId) {
+      query = query.eq('student_id', studentId);
+    }
+
+    // Get total count with filters
+    const { count: totalCount, error: countError } = await query.count();
+
+    if (countError) {
+      return NextResponse.json(
+        { error: countError.message },
+        { status: 500 }
+      );
+    }
+
+    // Get paginated assessments with filters
+    const { data: assessments, error } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -85,7 +94,6 @@ export async function GET(request: Request) {
     );
   }
 }
-
 
 export async function POST(request: Request) {
   const cookieStore = cookies();
