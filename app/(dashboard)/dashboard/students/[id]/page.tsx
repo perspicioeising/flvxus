@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -14,9 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Send } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const EXPERIENCE_LEVELS = ["Iniciante", "Intermediário", "Avançado"];
 const TRAINING_TIMES = ["Madrugada", "Morning", "Tarde", "Noite", "Madrugada"];
@@ -56,7 +56,7 @@ export default function StudentDetailsPage() {
     status: ""
   });
 
-  const fetchStudentDetails = async () => {
+  const fetchStudentDetails = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/students/${params.id}`);
@@ -74,7 +74,7 @@ export default function StudentDetailsPage() {
         gender: data.gender || "",
         height: data.height?.toString() || "",
         weight: data.weight?.toString() || "",
-        goals: data.goals || [],
+        goals: Array.isArray(data.goals) ? data.goals : [],
         medicalConditions: data.medical_conditions || "",
         emergencyContact: data.emergency_contact || "",
         preferredTime: data.preferred_training_time || "",
@@ -91,7 +91,7 @@ export default function StudentDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id, toast]);
 
   useEffect(() => {
     fetchStudentDetails();
@@ -100,6 +100,7 @@ export default function StudentDetailsPage() {
   const handleSave = async () => {
     try {
       setIsSaving(true);
+      
       const response = await fetch(`/api/students/${params.id}`, {
         method: 'PUT',
         headers: {
