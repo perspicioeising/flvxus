@@ -29,17 +29,18 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
-    const { exerciseId, workoutId, weight, notes } = data;
+    const { exerciseId, workoutId, weight, notes, setWeights } = data;
 
-    // Record exercise progress
+    // Record exercise progress with set weights
     const { error } = await supabase
       .from('exercise_progress')
       .insert({
         student_id: profile.id,
         workout_id: workoutId,
         exercise_id: exerciseId,
-        weight,
-        notes,
+        weight: weight,
+        notes: notes,
+        set_weights: setWeights, // Store the weights for each set
         tenant_id: profile.tenant_id
       });
 

@@ -1,4 +1,3 @@
-// app/api/posture-assessments/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -56,8 +55,17 @@ export async function GET(request: Request) {
       query = query.eq('student_id', studentId);
     }
 
-    // Get total count with filters
-    const { count: totalCount, error: countError } = await query.count();
+    // Get total count with filters - using a separate query for count
+    const countQuery = supabase
+      .from('posture_assessments')
+      .select('id', { count: 'exact' })
+      .eq('tenant_id', profile.tenant_id);
+    
+    if (studentId) {
+      countQuery.eq('student_id', studentId);
+    }
+    
+    const { count, error: countError } = await countQuery;
 
     if (countError) {
       return NextResponse.json(
@@ -83,8 +91,8 @@ export async function GET(request: Request) {
       pagination: {
         page,
         limit,
-        total: totalCount,
-        totalPages: Math.ceil((totalCount || 0) / limit)
+        total: count,
+        totalPages: Math.ceil((count || 0) / limit)
       }
     });
   } catch (error: any) {
