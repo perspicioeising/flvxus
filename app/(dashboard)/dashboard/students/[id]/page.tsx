@@ -44,7 +44,12 @@ export default function StudentDetailsPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [physicalAssessments, setPhysicalAssessments] = useState([]);
   const [posturalAssessments, setPosturalAssessments] = useState([]);
-
+  const [loadingStates, setLoadingStates] = useState({
+    profile: true,
+    physical: false,
+    postural: false,
+    media: false
+  });
   const [mediaFiles, setMediaFiles] = useState([]);
   const [student, setStudent] = useState({
     name: "",
@@ -63,10 +68,9 @@ export default function StudentDetailsPage() {
     status: ""
   });
 
-  const fetchStudentDetails = useCallback(async () => {
-    console.log('fetchStudentDetails called with id:', params.id); // Log function call
+ const fetchStudentDetails = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setLoadingStates(prev => ({ ...prev, profile: true }));
       const response = await fetch(`/api/students/${params.id}`);
       const data = await response.json();
 
@@ -96,8 +100,8 @@ export default function StudentDetailsPage() {
         title: "Erro ao buscar detalhes do aluno",
         description: error.message,
       });
-    } finally {
-      setIsLoading(false);
+   } finally {
+      setLoadingStates(prev => ({ ...prev, profile: false }));
     }
   }, [params.id, toast]);
 
@@ -108,6 +112,7 @@ export default function StudentDetailsPage() {
 
   const fetchPhysicalAssessments = useCallback(async () => {
     try {
+      setLoadingStates(prev => ({ ...prev, physical: true }));
       const response = await fetch(`/api/physical-assessments?student_id=${params.id}`);
       const data = await response.json();
 
@@ -122,11 +127,14 @@ export default function StudentDetailsPage() {
         title: "Erro ao buscar avaliações físicas",
         description: error.message,
       });
+    } finally {
+      setLoadingStates(prev => ({ ...prev, physical: false }));
     }
   }, [params.id, toast]);
 
   const fetchPosturalAssessments = useCallback(async () => {
     try {
+      setLoadingStates(prev => ({ ...prev, postural: true }));
       const response = await fetch(`/api/posture-assessments?student_id=${params.id}`);
       const data = await response.json();
 
@@ -141,18 +149,37 @@ export default function StudentDetailsPage() {
         title: "Erro ao buscar avaliações posturais",
         description: error.message,
       });
+    } finally {
+      setLoadingStates(prev => ({ ...prev, postural: false }));
     }
   }, [params.id, toast]);
 
-  // Modify useEffect to fetch all data
-  useEffect(() => {
-    const fetchAllData = async () => {
-      await fetchStudentDetails();
-      if (activeTab === "physical") await fetchPhysicalAssessments();
-      if (activeTab === "postural") await fetchPosturalAssessments();
+ useEffect(() => {
+    const fetchTabData = async () => {
+      switch (activeTab) {
+        case 'profile':
+          if (!student.name) await fetchStudentDetails();
+          break;
+        case 'physical':
+          if (physicalAssessments.length === 0) await fetchPhysicalAssessments();
+          break;
+        case 'postural':
+          if (posturalAssessments.length === 0) await fetchPosturalAssessments();
+          break;
+        // No need to fetch anything for media tab yet
+      }
     };
-    fetchAllData();
-  }, [fetchStudentDetails, fetchPhysicalAssessments, fetchPosturalAssessments, activeTab]);
+    fetchTabData();
+  }, [activeTab]);
+
+   const TabLoading = () => (
+    <div className="flex items-center justify-center p-8">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4" />
+        <p className="text-sm text-muted-foreground">Carregando...</p>
+      </div>
+    </div>
+  );
 
 
   const handleSave = async () => {
@@ -259,7 +286,7 @@ export default function StudentDetailsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
+     <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="physical">Avaliações Físicas</TabsTrigger>
@@ -269,6 +296,7 @@ export default function StudentDetailsPage() {
 
         {/* Profile Tab */}
         <TabsContent value="profile">
+    {loadingStates.profile ? <TabLoading /> : (
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -556,6 +584,8 @@ export default function StudentDetailsPage() {
 
         {/* Postural Assessments Tab */}
         <TabsContent value="postural">
+                    {loadingStates.physical ? <TabLoading /> : (
+
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -600,10 +630,13 @@ export default function StudentDetailsPage() {
               </div>
             </CardContent>
           </Card>
+          )}
         </TabsContent>
 
         {/* Media Files Tab */}
         <TabsContent value="media">
+                    {loadingStates.postural ? <TabLoading /> : (
+
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -627,6 +660,7 @@ export default function StudentDetailsPage() {
               </div>
             </CardContent>
           </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
