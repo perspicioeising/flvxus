@@ -102,15 +102,17 @@ export default function StudentDetailsPage() {
       });
     } finally {
       setLoadingStates(prev => ({ ...prev, profile: false }));
+      setIsLoading(false); // Set main loading state to false after initial fetch
     }
   }, [params.id, toast]);
 
   useEffect(() => {
-    console.log('useEffect running'); // Log effect execution
     fetchStudentDetails();
   }, [fetchStudentDetails]);
 
   const fetchPhysicalAssessments = useCallback(async () => {
+    if (!params.id) return;
+    
     try {
       setLoadingStates(prev => ({ ...prev, physical: true }));
       const response = await fetch(`/api/physical-assessments?student_id=${params.id}`);
@@ -133,6 +135,8 @@ export default function StudentDetailsPage() {
   }, [params.id, toast]);
 
   const fetchPosturalAssessments = useCallback(async () => {
+    if (!params.id) return;
+    
     try {
       setLoadingStates(prev => ({ ...prev, postural: true }));
       const response = await fetch(`/api/posture-assessments?student_id=${params.id}`);
@@ -157,20 +161,16 @@ export default function StudentDetailsPage() {
   useEffect(() => {
     const fetchTabData = async () => {
       switch (activeTab) {
-        case 'profile':
-          if (!student.name) await fetchStudentDetails();
-          break;
         case 'physical':
           if (physicalAssessments.length === 0) await fetchPhysicalAssessments();
           break;
         case 'postural':
           if (posturalAssessments.length === 0) await fetchPosturalAssessments();
           break;
-        // No need to fetch anything for media tab yet
       }
     };
     fetchTabData();
-  }, [activeTab]);
+  }, [activeTab, fetchPhysicalAssessments, fetchPosturalAssessments]);
 
   const TabLoading = () => (
     <div className="flex items-center justify-center p-8">
@@ -180,7 +180,6 @@ export default function StudentDetailsPage() {
       </div>
     </div>
   );
-
 
   const handleSave = async () => {
     try {
@@ -218,7 +217,8 @@ export default function StudentDetailsPage() {
         title: "Alterações salvas",
         description: "O perfil do aluno foi atualizado.",
       });
-      router.push('/dashboard/students');
+      
+      // Removed the router.push to stay on the page after saving
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -299,7 +299,7 @@ export default function StudentDetailsPage() {
           {loadingStates.profile ? (
             <TabLoading />
           ) : (
-            <div>
+            <div className="space-y-6">
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -540,55 +540,60 @@ export default function StudentDetailsPage() {
         </TabsContent>
 
         <TabsContent value="physical">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Avaliações Físicas</CardTitle>
-                  <CardDescription>Histórico de avaliações físicas do aluno</CardDescription>
-                </div>
-                <Button onClick={() => router.push(`/dashboard/physical-assessments/new?student=${params.id}`)}>
-                  Nova Avaliação
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {physicalAssessments.map((assessment: any) => (
-                  <Card key={assessment.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">{format(new Date(assessment.date), 'PPP', { locale: ptBR })}</h3>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          <div>Peso: {assessment.weight}kg</div>
-                          <div>Gordura Corporal: {assessment.fat_percentage}%</div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/physical-assessments/${assessment.id}`)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Detalhes
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-
-                {physicalAssessments.length === 0 && (
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Nenhuma avaliação física encontrada</p>
+          {loadingStates.physical ? (
+            <TabLoading />
+          ) : (
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Avaliações Físicas</CardTitle>
+                    <CardDescription>Histórico de avaliações físicas do aluno</CardDescription>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  <Button onClick={() => router.push(`/dashboard/physical-assessments/new?student=${params.id}`)}>
+                    Nova Avaliação
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {physicalAssessments.length > 0 ? (
+                    physicalAssessments.map((assessment: any) => (
+                      <Card key={assessment.id} className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium">{format(new Date(assessment.date), 'PPP', { locale: ptBR })}</h3>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              <div>Peso: {assessment.weight}kg</div>
+                              <div>Gordura Corporal: {assessment.fat_percentage}%</div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/physical-assessments/${assessment.id}`)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Detalhes
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Nenhuma avaliação física encontrada</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Postural Assessments Tab */}
         <TabsContent value="postural">
-          {loadingStates.physical ? <TabLoading /> : (
-
+          {loadingStates.postural ? (
+            <TabLoading />
+          ) : (
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
@@ -603,28 +608,28 @@ export default function StudentDetailsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {posturalAssessments.map((assessment: any) => (
-                    <Card key={assessment.id} className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium">{format(new Date(assessment.created_at), 'PPP', { locale: ptBR })}</h3>
-                          <div className="flex gap-2 mt-2">
-                            {assessment.front_image_url && <Badge variant="outline">Frontal</Badge>}
-                            {assessment.side_image_url && <Badge variant="outline">Lateral</Badge>}
-                            {assessment.back_image_url && <Badge variant="outline">Posterior</Badge>}
+                  {posturalAssessments.length > 0 ? (
+                    posturalAssessments.map((assessment: any) => (
+                      <Card key={assessment.id} className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium">{format(new Date(assessment.created_at), 'PPP', { locale: ptBR })}</h3>
+                            <div className="flex gap-2 mt-2">
+                              {assessment.front_image_url && <Badge variant="outline">Frontal</Badge>}
+                              {assessment.side_image_url && <Badge variant="outline">Lateral</Badge>}
+                              {assessment.back_image_url && <Badge variant="outline">Posterior</Badge>}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/posture-assessments/${assessment.id}`)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Detalhes
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/posture-assessments/${assessment.id}`)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Ver Detalhes
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-
-                  {posturalAssessments.length === 0 && (
+                      </Card>
+                    ))
+                  ) : (
                     <div className="text-center py-12">
                       <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">Nenhuma avaliação postural encontrada</p>
@@ -638,8 +643,9 @@ export default function StudentDetailsPage() {
 
         {/* Media Files Tab */}
         <TabsContent value="media">
-          {loadingStates.postural ? <TabLoading /> : (
-
+          {loadingStates.media ? (
+            <TabLoading />
+          ) : (
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
@@ -667,6 +673,5 @@ export default function StudentDetailsPage() {
         </TabsContent>
       </Tabs>
     </div>
-
   );
 }
