@@ -462,7 +462,7 @@ export default function MyProgressPage() {
             <CardContent>
               {physicalAssessments.length > 0 ? (
                 <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%\" height="100%">
                     <LineChart data={getProgressData()}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="date" />
