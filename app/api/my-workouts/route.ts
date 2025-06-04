@@ -28,14 +28,41 @@ export async function GET() {
       );
     }
 
-    // Get today's workouts from workout plans
+    // Get all workouts from active workout plans for this student
     const today = new Date();
-    const dayOfWeek = today.getDay() + 1; // 1 for Monday, 7 for Sunday
+    
+    const { data: workoutPlans, error: plansError } = await supabase
+      .from('workout_plans')
+      .select(`
+        id,
+        name,
+        description,
+        start_date,
+        end_date
+      `)
+      .eq('student_id', profile.id)
+      .lte('start_date', today.toISOString())
+      .gte('end_date', today.toISOString());
 
-    const { data: workouts, error } = await supabase
+    if (plansError) {
+      return NextResponse.json(
+        { error: plansError.message },
+        { status: 500 }
+      );
+    }
+
+    // Get all workouts for these plans
+    const planIds = workoutPlans.map(plan => plan.id);
+    
+    if (planIds.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    const { data: workoutItems, error: itemsError } = await supabase
       .from('workout_plan_items')
       .select(`
-        workout_id,
+        workout_plan_id,
+        day_of_week,
         workout:workouts (
           id,
           name,
@@ -49,8 +76,11 @@ export async function GET() {
               name,
               description,
               video_url,
+              audio_url,
               muscle_group,
-              equipment
+              equipment,
+              tips,
+              common_errors
             ),
             sets,
             reps,
@@ -60,65 +90,69 @@ export async function GET() {
           )
         )
       `)
-      .eq('tenant_id', profile.tenant_id)
-      .eq('day_of_week', dayOfWeek);
+      .in('workout_plan_id', planIds);
 
-    if (error) {
+    if (itemsError) {
       return NextResponse.json(
-        { error: error.message },
+        { error: itemsError.message },
         { status: 500 }
       );
     }
 
-    // Define types for workout_exercises and exercise
-    type Exercise = {
-      id: string;
-      name: string;
-      description: string;
-      video_url: string;
-      muscle_group: string;
-      equipment: string;
-    };
-
-    type WorkoutExercise = {
-      id: string;
-      exercise: Exercise;
-      sets: number;
-      reps: number;
-      rest: number;
-      notes: string;
-      order: number;
-    };
+    // Group workouts by plan
+    const workoutsByPlan = workoutItems.reduce((acc, item) => {
+      const planId = item.workout_plan_id;
+      if (!acc[planId]) {
+        acc[planId] = [];
+      }
+      acc[planId].push(item);
+      return acc;
+    }, {});
 
     // Transform the data for the frontend
-    const transformedWorkouts = workouts.map((item: any) => {
-      const workout = Array.isArray(item.workout) ? item.workout[0] : item.workout;
-      return {
-        id: workout.id,
-        name: workout.name,
-        description: workout.description,
-        level: workout.level,
-        goal: workout.goal,
-        exercises: (workout.workout_exercises as WorkoutExercise[])
-          .sort((a, b) => a.order - b.order)
-          .map(we => ({
-            id: we.exercise.id,
-            name: we.exercise.name,
-            description: we.exercise.description,
-            videoUrl: we.exercise.video_url,
-            muscleGroup: we.exercise.muscle_group,
-            equipment: we.exercise.equipment,
-            sets: we.sets,
-            reps: we.reps,
-            rest: we.rest,
-            notes: we.notes,
-            completed: false,
-            completedSets: 0,
-            weight: null
-          })),
-        duration: workout.workout_exercises.length * 5 // Rough estimate
-      };
-    });
+    const transformedWorkouts = [];
+
+    for (const plan of workoutPlans) {
+      const planWorkouts = workoutsByPlan[plan.id] || [];
+      
+      for (const item of planWorkouts) {
+        const workout = item.workout;
+        if (!workout) continue;
+        
+        transformedWorkouts.push({
+          id: workout.id,
+          name: workout.name,
+          description: workout.description,
+          level: workout.level,
+          goal: workout.goal,
+          planId: plan.id,
+          planName: plan.name,
+          dayOfWeek: item.day_of_week,
+          exercises: workout.workout_exercises
+            .sort((a, b) => a.order - b.order)
+            .map(we => ({
+              id: we.id,
+              exerciseId: we.exercise.id,
+              name: we.exercise.name,
+              description: we.exercise.description,
+              videoUrl: we.exercise.video_url,
+              audioUrl: we.exercise.audio_url,
+              muscleGroup: we.exercise.muscle_group,
+              equipment: we.exercise.equipment,
+              sets: we.sets,
+              reps: we.reps,
+              rest: we.rest,
+              notes: we.notes,
+              tips: we.exercise.tips,
+              commonErrors: we.exercise.common_errors,
+              completed: false,
+              completedSets: 0,
+              weight: null
+            })),
+          duration: workout.workout_exercises.length * 5 // Rough estimate
+        });
+      }
+    }
 
     return NextResponse.json(transformedWorkouts);
   } catch (error: any) {

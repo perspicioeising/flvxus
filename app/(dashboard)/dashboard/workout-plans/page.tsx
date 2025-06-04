@@ -134,7 +134,8 @@ export default function WorkoutPlansPage() {
         throw new Error(data.error);
       }
 
-      setStudents(data);
+      // Make sure we're setting an array of students
+      setStudents(Array.isArray(data.students) ? data.students : []);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -314,7 +315,8 @@ export default function WorkoutPlansPage() {
               className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Plus className="h-6 w-6" />
-              <span className="text-xs">Adicionar</span>        </Button>
+              <span className="text-xs">Adicionar</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -366,7 +368,7 @@ export default function WorkoutPlansPage() {
                         <SelectValue placeholder="Selecione aluno" />
                       </SelectTrigger>
                       <SelectContent className="bg-background/90 backdrop-blur-sm border border-primary/20">
-                        {students.map((student) => (
+                        {Array.isArray(students) && students.map((student) => (
                           <SelectItem key={student.id} value={student.id}>
                             {student.full_name}
                           </SelectItem>
