@@ -1,8 +1,8 @@
-// app/dashboard/students/page.tsx
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -227,9 +227,7 @@ export default function StudentsPage() {
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Mail className="h-4 w-4" color="green" />
                             <span className=" text-sm">{student.email}</span>
-
                           </div>
-
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           {student.phone && (
@@ -271,9 +269,11 @@ export default function StudentsPage() {
 
                         {/* Actions */}
                         <div className="flex gap-2 pt-4 border-t">
-                          <Button variant="outline" size="sm" className="flex-1 hover:bg-primary-50 hover:border-green-500 transition-colors">
-                            <Eye className="mr-2 h-4 w-4" />
-                            Perfil
+                          <Button variant="outline" size="sm" className="flex-1 hover:bg-primary-50 hover:border-green-500 transition-colors" asChild>
+                            <Link href={`/dashboard/students/${student.id}`}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              Perfil
+                            </Link>
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
