@@ -1,3 +1,4 @@
+// app/api/exercises/[id]/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -87,7 +88,17 @@ export async function PUT(
 
     const { data: exercise, error } = await supabase
       .from('exercises')
-      .update(data)
+      .update({
+        name: data.name,
+        description: data.description,
+        muscle_group: data.muscle_group,
+        equipment: data.equipment,
+        variations: data.variations,
+        video_url: data.video_url,
+        audio_url: data.audio_url,
+        tips: data.tips,
+        common_errors: data.common_errors
+      })
       .eq('id', params.id)
       .eq('tenant_id', profile.tenant_id)
       .select()
@@ -136,48 +147,6 @@ export async function DELETE(
         { error: 'Access restricted to trainers' },
         { status: 403 }
       );
-    }
-
-    // Check for dependencies in workout_exercises
-    const { data: dependencies, error: dependenciesError } = await supabase
-      .from('workout_exercises')
-      .select('id')
-      .eq('exercise_id', params.id)
-      .limit(1);
-
-    if (dependenciesError) {
-      return NextResponse.json(
-        { error: dependenciesError.message },
-        { status: 500 }
-      );
-    }
-
-    // If dependencies exist, return a conflict error
-    if (dependencies && dependencies.length > 0) {
-      return NextResponse.json(
-        { 
-          error: 'Este exercício não pode ser excluído pois está sendo usado em um ou mais treinos.',
-          code: 'DEPENDENCY_ERROR'
-        },
-        { status: 409 }
-      );
-    }
-
-    // Get exercise to delete associated video if exists
-    const { data: exercise } = await supabase
-      .from('exercises')
-      .select('video_url')
-      .eq('id', params.id)
-      .eq('tenant_id', profile.tenant_id)
-      .single();
-
-    if (exercise?.video_url) {
-      const videoPath = new URL(exercise.video_url).pathname.split('/').pop();
-      if (videoPath) {
-        await supabase.storage
-          .from('exercise-videos')
-          .remove([`videos/${videoPath}`]);
-      }
     }
 
     const { error } = await supabase
