@@ -1,3 +1,4 @@
+// app/(dashboard)/dashboard/exercises/new/page.tsx
 'use client';
 
 import { useState, useEffect } from "react";
@@ -15,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, Sparkles, Volume2, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const MUSCLE_GROUPS = [
   "Peito", "Costas", "Pernas", "Ombros", "Braços", "Core", "Corpo Inteiro", "Cardio"
@@ -37,9 +39,15 @@ export default function NewExercisePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [audioUploadProgress, setAudioUploadProgress] = useState(0);
   const [videoUrl, setVideoUrl] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [activeTab, setActiveTab] = useState("details");
 
   const [exercise, setExercise] = useState({
     name: "",
@@ -48,19 +56,30 @@ export default function NewExercisePage() {
     equipment: [] as string[],
     variations: "",
     video_url: "",
+    audio_url: "",
     tips: "",
     common_errors: "",
   });
 
   // Function to fetch AI suggestions
-  const fetchAISuggestions = async (exerciseName: string) => {
+  const generateWithAI = async () => {
+    if (!exercise.name || exercise.name.trim() === "") {
+      toast({
+        variant: "destructive",
+        title: "Nome do exercício necessário",
+        description: "Por favor, informe o nome do exercício para gerar sugestões",
+      });
+      return;
+    }
+
     try {
+      setIsGeneratingAI(true);
       const response = await fetch('/api/ai/exercise-suggestions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ exerciseName }),
+        body: JSON.stringify({ exerciseName: exercise.name }),
       });
 
       const data = await response.json();
@@ -91,17 +110,56 @@ export default function NewExercisePage() {
         title: "Erro ao gerar sugestões",
         description: error.message,
       });
+    } finally {
+      setIsGeneratingAI(false);
     }
   };
 
-  // Handle exercise name change with AI suggestions
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    setExercise(prev => ({ ...prev, name }));
-    
-    // Only fetch suggestions if name has at least 3 characters
-    if (name.length >= 3) {
-      fetchAISuggestions(name);
+  const generateAudioWithAI = async () => {
+    if (!exercise.description || exercise.description.trim() === "") {
+      toast({
+        variant: "destructive",
+        title: "Descrição necessária",
+        description: "Por favor, informe a descrição do exercício para gerar o áudio",
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingAudio(true);
+      const response = await fetch('/api/ai/generate-audio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: exercise.description }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      setAudioUrl(data.url);
+      setExercise(prev => ({
+        ...prev,
+        audio_url: data.url
+      }));
+
+      toast({
+        title: "Áudio gerado",
+        description: "O áudio foi gerado com sucesso",
+      });
+
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar áudio",
+        description: error.message,
+      });
+    } finally {
+      setIsGeneratingAudio(false);
     }
   };
 
@@ -116,6 +174,7 @@ export default function NewExercisePage() {
         equipment: exercise.equipment,
         variations: exercise.variations.split('\n').filter(v => v.trim()),
         video_url: videoUrl || exercise.video_url,
+        audio_url: audioUrl || exercise.audio_url,
         tips: exercise.tips.split('\n').filter(t => t.trim()),
         common_errors: exercise.common_errors.split('\n').filter(e => e.trim()),
       };
@@ -191,6 +250,45 @@ export default function NewExercisePage() {
     }
   };
 
+  const handleAudioUpload = async (file: File) => {
+    try {
+      setAudioFile(file);
+      setAudioUploadProgress(10);
+      
+      const formData = new FormData();
+      formData.append('audio', file);
+
+      const response = await fetch('/api/exercises/upload-audio', {
+        method: 'POST',
+        body: formData,
+      });
+
+      setAudioUploadProgress(90);
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      setAudioUrl(data.url);
+      setAudioUploadProgress(100);
+
+      toast({
+        title: "Áudio enviado",
+        description: "O áudio foi enviado com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao enviar áudio",
+        description: error.message,
+      });
+    } finally {
+      setTimeout(() => setAudioUploadProgress(0), 1000);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -224,213 +322,329 @@ export default function NewExercisePage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações Básicas</CardTitle>
-          <CardDescription>
-            Preencha as informações básicas do exercício
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome do Exercício *</Label>
-              <Input
-                id="name"
-                value={exercise.name}
-                onChange={handleNameChange}
-                placeholder="ex.: Supino Reto"
-              />
-            </div>
+      <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="details">Detalhes</TabsTrigger>
+          <TabsTrigger value="media">Mídia</TabsTrigger>
+          <TabsTrigger value="advanced">Avançado</TabsTrigger>
+        </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
-              <Textarea
-                id="description"
-                value={exercise.description}
-                onChange={(e) => setExercise(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Descreva o exercício..."
-                className="min-h-[100px]"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Grupos Musculares *</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {MUSCLE_GROUPS.map((group) => (
-                  <div key={group} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={group}
-                      checked={exercise.muscle_group.includes(group)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setExercise(prev => ({
-                            ...prev,
-                            muscle_group: [...prev.muscle_group, group]
-                          }));
-                        } else {
-                          setExercise(prev => ({
-                            ...prev,
-                            muscle_group: prev.muscle_group.filter(g => g !== group)
-                          }));
-                        }
-                      }}
-                    />
-                    <label htmlFor={group}>{group}</label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Equipamentos *</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {EQUIPMENT_TYPES.map((type) => (
-                  <div key={type} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={type}
-                      checked={exercise.equipment.includes(type)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setExercise(prev => ({
-                            ...prev,
-                            equipment: [...prev.equipment, type]
-                          }));
-                        } else {
-                          setExercise(prev => ({
-                            ...prev,
-                            equipment: prev.equipment.filter(eq => eq !== type)
-                          }));
-                        }
-                      }}
-                    />
-                    <label htmlFor={type}>{type}</label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Vídeo Demonstrativo</CardTitle>
-          <CardDescription>
-            Faça upload de um vídeo ou informe a URL do vídeo demonstrativo
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="video_url">URL do Vídeo</Label>
-              <Input
-                id="video_url"
-                placeholder="ex.: https://example.com/video.mp4"
-                value={exercise.video_url}
-                onChange={(e) => setExercise(prev => ({ ...prev, video_url: e.target.value }))}
-              />
-              <p className="text-sm text-muted-foreground">
-                Informe a URL de um vídeo existente ou faça upload abaixo
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <Label>Ou faça upload de um vídeo</Label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleVideoUpload(file);
-                  }}
-                  className="hidden"
-                  id="video-upload"
-                />
-                <Button asChild>
-                  <label htmlFor="video-upload" className="cursor-pointer">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Vídeo
-                  </label>
+        <TabsContent value="details" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Informações Básicas</CardTitle>
+                  <CardDescription>
+                    Preencha as informações básicas do exercício
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={generateWithAI} 
+                  disabled={isGeneratingAI || !exercise.name}
+                  className="bg-primary/5 hover:bg-primary/10 border-primary/20"
+                >
+                  {isGeneratingAI ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Gerar com IA
+                    </>
+                  )}
                 </Button>
-                {videoFile && (
-                  <span className="text-sm text-muted-foreground">
-                    {videoFile.name}
-                  </span>
-                )}
               </div>
-              {uploadProgress > 0 && (
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full transition-all"
-                    style={{ width: `${uploadProgress}%` }}
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome do Exercício *</Label>
+                  <Input
+                    id="name"
+                    value={exercise.name}
+                    onChange={(e) => setExercise(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="ex.: Supino Reto"
                   />
                 </div>
-              )}
-              {videoUrl && (
-                <div className="text-sm text-green-600">
-                  Vídeo enviado com sucesso!
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição *</Label>
+                  <Textarea
+                    id="description"
+                    value={exercise.description}
+                    onChange={(e) => setExercise(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Descreva o exercício..."
+                    className="min-h-[100px]"
+                  />
                 </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalhes Adicionais</CardTitle>
-          <CardDescription>
-            Forneça informações detalhadas sobre o exercício
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="variations">Variações</Label>
-            <Textarea
-              id="variations"
-              value={exercise.variations}
-              onChange={(e) => setExercise(prev => ({ ...prev, variations: e.target.value }))}
-              placeholder="Liste as variações do exercício (uma por linha)"
-              className="min-h-[100px]"
-            />
-            <p className="text-sm text-muted-foreground">
-              Adicione cada variação em uma nova linha
-            </p>
-          </div>
+                <div className="space-y-2">
+                  <Label>Grupos Musculares *</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {MUSCLE_GROUPS.map((group) => (
+                      <div key={group} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={group}
+                          checked={exercise.muscle_group.includes(group)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setExercise(prev => ({
+                                ...prev,
+                                muscle_group: [...prev.muscle_group, group]
+                              }));
+                            } else {
+                              setExercise(prev => ({
+                                ...prev,
+                                muscle_group: prev.muscle_group.filter(g => g !== group)
+                              }));
+                            }
+                          }}
+                        />
+                        <label htmlFor={group}>{group}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tips">Dicas de Execução</Label>
-            <Textarea
-              id="tips"
-              value={exercise.tips}
-              onChange={(e) => setExercise(prev => ({ ...prev, tips: e.target.value }))}
-              placeholder="Liste as dicas importantes (uma por linha)"
-              className="min-h-[100px]"
-            />
-            <p className="text-sm text-muted-foreground">
-              Adicione cada dica em uma nova linha
-            </p>
-          </div>
+                <div className="space-y-2">
+                  <Label>Equipamentos *</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {EQUIPMENT_TYPES.map((type) => (
+                      <div key={type} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={type}
+                          checked={exercise.equipment.includes(type)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setExercise(prev => ({
+                                ...prev,
+                                equipment: [...prev.equipment, type]
+                              }));
+                            } else {
+                              setExercise(prev => ({
+                                ...prev,
+                                equipment: prev.equipment.filter(eq => eq !== type)
+                              }));
+                            }
+                          }}
+                        />
+                        <label htmlFor={type}>{type}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <div className="space-y-2">
-            <Label htmlFor="common_errors">Erros Comuns</Label>
-            <Textarea
-              id="common_errors"
-              value={exercise.common_errors}
-              onChange={(e) => setExercise(prev => ({ ...prev, common_errors: e.target.value }))}
-              placeholder="Liste os erros comuns a serem evitados (um por linha)"
-              className="min-h-[100px]"
-            />
-            <p className="text-sm text-muted-foreground">
-              Adicione cada erro em uma nova linha
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="media" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Vídeo Demonstrativo</CardTitle>
+              <CardDescription>
+                Faça upload de um vídeo ou informe a URL do vídeo demonstrativo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="video_url">URL do Vídeo</Label>
+                  <Input
+                    id="video_url"
+                    placeholder="ex.: https://example.com/video.mp4"
+                    value={exercise.video_url}
+                    onChange={(e) => setExercise(prev => ({ ...prev, video_url: e.target.value }))}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Informe a URL de um vídeo existente ou faça upload abaixo
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Ou faça upload de um vídeo</Label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleVideoUpload(file);
+                      }}
+                      className="hidden"
+                      id="video-upload"
+                    />
+                    <Button asChild>
+                      <label htmlFor="video-upload" className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Vídeo
+                      </label>
+                    </Button>
+                    {videoFile && (
+                      <span className="text-sm text-muted-foreground">
+                        {videoFile.name}
+                      </span>
+                    )}
+                  </div>
+                  {uploadProgress > 0 && (
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                  {videoUrl && (
+                    <div className="text-sm text-green-600">
+                      Vídeo enviado com sucesso!
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Áudio de Instruções</CardTitle>
+                  <CardDescription>
+                    Faça upload de um áudio ou gere automaticamente com IA
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={generateAudioWithAI} 
+                  disabled={isGeneratingAudio || !exercise.description}
+                  className="bg-primary/5 hover:bg-primary/10 border-primary/20"
+                >
+                  {isGeneratingAudio ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="mr-2 h-4 w-4" />
+                      Gerar Áudio com IA
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Label>Faça upload de um arquivo de áudio</Label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleAudioUpload(file);
+                      }}
+                      className="hidden"
+                      id="audio-upload"
+                    />
+                    <Button asChild>
+                      <label htmlFor="audio-upload" className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Áudio
+                      </label>
+                    </Button>
+                    {audioFile && (
+                      <span className="text-sm text-muted-foreground">
+                        {audioFile.name}
+                      </span>
+                    )}
+                  </div>
+                  {audioUploadProgress > 0 && (
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all"
+                        style={{ width: `${audioUploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                  {audioUrl && (
+                    <div className="mt-4">
+                      <p className="text-sm text-green-600 mb-2">
+                        Áudio disponível:
+                      </p>
+                      <audio controls className="w-full">
+                        <source src={audioUrl} type="audio/mpeg" />
+                        Seu navegador não suporta o elemento de áudio.
+                      </audio>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="advanced" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Detalhes Adicionais</CardTitle>
+              <CardDescription>
+                Forneça informações detalhadas sobre o exercício
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="variations">Variações</Label>
+                <Textarea
+                  id="variations"
+                  value={exercise.variations}
+                  onChange={(e) => setExercise(prev => ({ ...prev, variations: e.target.value }))}
+                  placeholder="Liste as variações do exercício (uma por linha)"
+                  className="min-h-[100px]"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Adicione cada variação em uma nova linha
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tips">Dicas de Execução</Label>
+                <Textarea
+                  id="tips"
+                  value={exercise.tips}
+                  onChange={(e) => setExercise(prev => ({ ...prev, tips: e.target.value }))}
+                  placeholder="Liste as dicas importantes (uma por linha)"
+                  className="min-h-[100px]"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Adicione cada dica em uma nova linha
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="common_errors">Erros Comuns</Label>
+                <Textarea
+                  id="common_errors"
+                  value={exercise.common_errors}
+                  onChange={(e) => setExercise(prev => ({ ...prev, common_errors: e.target.value }))}
+                  placeholder="Liste os erros comuns a serem evitados (um por linha)"
+                  className="min-h-[100px]"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Adicione cada erro em uma nova linha
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
