@@ -1,3 +1,4 @@
+// components/ui/data-pagination.tsx
 import React from 'react';
 import {
   Pagination,
@@ -39,7 +40,7 @@ export function DataPagination({
     const maxPagesToShow = 5;
     
     if (totalPages <= maxPagesToShow) {
-      // Show all pages if there are fewer than maxPagesToShow
+      // Show all pages if there are few
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
@@ -47,30 +48,33 @@ export function DataPagination({
       // Always show first page
       pages.push(1);
       
-      // Calculate start and end of page range around current page
+      // Calculate start and end of middle pages
       let start = Math.max(2, page - 1);
       let end = Math.min(totalPages - 1, page + 1);
       
-      // Adjust if we're at the beginning or end
-      if (page <= 2) {
-        end = Math.min(totalPages - 1, 4);
-      } else if (page >= totalPages - 1) {
+      // Adjust if we're near the beginning
+      if (page <= 3) {
+        end = Math.min(4, totalPages - 1);
+      }
+      
+      // Adjust if we're near the end
+      if (page >= totalPages - 2) {
         start = Math.max(2, totalPages - 3);
       }
       
-      // Add ellipsis if needed
+      // Add ellipsis after first page if needed
       if (start > 2) {
-        pages.push(-1); // -1 represents ellipsis
+        pages.push('ellipsis1');
       }
       
-      // Add pages in range
+      // Add middle pages
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
       
-      // Add ellipsis if needed
+      // Add ellipsis before last page if needed
       if (end < totalPages - 1) {
-        pages.push(-2); // -2 represents ellipsis
+        pages.push('ellipsis2');
       }
       
       // Always show last page
@@ -82,8 +86,10 @@ export function DataPagination({
     return pages;
   };
 
+  const pageNumbers = getPageNumbers();
+
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
       <div className="text-sm text-muted-foreground">
         Mostrando {Math.min((page - 1) * pageSize + 1, total)} a {Math.min(page * pageSize, total)} de {total} resultados
       </div>
@@ -113,16 +119,16 @@ export function DataPagination({
               />
             </PaginationItem>
             
-            {getPageNumbers().map((pageNum, index) => (
-              <PaginationItem key={index}>
-                {pageNum === -1 || pageNum === -2 ? (
+            {pageNumbers.map((pageNumber, index) => (
+              <PaginationItem key={`${pageNumber}-${index}`}>
+                {pageNumber === 'ellipsis1' || pageNumber === 'ellipsis2' ? (
                   <PaginationEllipsis />
                 ) : (
                   <PaginationLink
-                    isActive={pageNum === page}
-                    onClick={() => onPageChange(pageNum)}
+                    isActive={page === pageNumber}
+                    onClick={() => typeof pageNumber === 'number' && onPageChange(pageNumber)}
                   >
-                    {pageNum}
+                    {pageNumber}
                   </PaginationLink>
                 )}
               </PaginationItem>
