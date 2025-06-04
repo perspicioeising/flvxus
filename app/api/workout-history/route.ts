@@ -35,6 +35,7 @@ export async function GET() {
         id,
         workout_id,
         workout:workouts (
+          id,
           name,
           description
         ),
