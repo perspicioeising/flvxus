@@ -32,15 +32,17 @@ const GOALS = [
 ];
 
 export default function StudentDetailsPage() {
-  console.log('StudentDetailsPage render'); // Log component render
-
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isResendingInvite, setIsResendingInvite] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [physicalAssessments, setPhysicalAssessments] = useState([]);
+  const [posturalAssessments, setPosturalAssessments] = useState([]);
   
+  const [mediaFiles, setMediaFiles] = useState([]);
   const [student, setStudent] = useState({
     name: "",
     email: "",
@@ -100,6 +102,55 @@ export default function StudentDetailsPage() {
     console.log('useEffect running'); // Log effect execution
     fetchStudentDetails();
   }, [fetchStudentDetails]);
+
+  const fetchPhysicalAssessments = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/physical-assessments?student_id=${params.id}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      setPhysicalAssessments(data.assessments || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar avaliações físicas",
+        description: error.message,
+      });
+    }
+  }, [params.id, toast]);
+
+  const fetchPosturalAssessments = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/posture-assessments?student_id=${params.id}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      setPosturalAssessments(data.assessments || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar avaliações posturais",
+        description: error.message,
+      });
+    }
+  }, [params.id, toast]);
+
+  // Modify useEffect to fetch all data
+  useEffect(() => {
+    const fetchAllData = async () => {
+      await fetchStudentDetails();
+      if (activeTab === "physical") await fetchPhysicalAssessments();
+      if (activeTab === "postural") await fetchPosturalAssessments();
+    };
+    fetchAllData();
+  }, [fetchStudentDetails, fetchPhysicalAssessments, fetchPosturalAssessments, activeTab]);
+
 
   const handleSave = async () => {
     try {
