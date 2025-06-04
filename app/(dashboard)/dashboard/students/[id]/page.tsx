@@ -115,14 +115,14 @@ export default function StudentDetailsPage() {
     
     try {
       setLoadingStates(prev => ({ ...prev, physical: true }));
-      const response = await fetch(`/api/physical-assessments?student_id=${params.id}`);
+      const response = await fetch(`/api/students/${params.id}/assessments?type=physical`);
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error);
       }
 
-      setPhysicalAssessments(data.assessments || []);
+      setPhysicalAssessments(data || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -139,14 +139,14 @@ export default function StudentDetailsPage() {
     
     try {
       setLoadingStates(prev => ({ ...prev, postural: true }));
-      const response = await fetch(`/api/posture-assessments?student_id=${params.id}`);
+      const response = await fetch(`/api/students/${params.id}/assessments?type=postural`);
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error);
       }
 
-      setPosturalAssessments(data.assessments || []);
+      setPosturalAssessments(data || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
