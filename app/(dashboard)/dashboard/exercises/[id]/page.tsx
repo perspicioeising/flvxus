@@ -1,8 +1,8 @@
-// app/(dashboard)/dashboard/exercises/new/page.tsx
+// app/(dashboard)/dashboard/exercises/[id]/page.tsx
 'use client';
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Upload, Loader2, Sparkles, Volume2, Play } from "lucide-react";
+import { ArrowLeft, Trash2, Upload, Loader2, Play, Sparkles, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -35,19 +35,21 @@ const EQUIPMENT_TYPES = [
   "Outros"
 ];
 
-export default function NewExercisePage() {
+export default function ExerciseDetailsPage() {
+  const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [audioUploadProgress, setAudioUploadProgress] = useState(0);
+  const [activeTab, setActiveTab] = useState("details");
   const [videoUrl, setVideoUrl] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
-  const [activeTab, setActiveTab] = useState("details");
 
   const [exercise, setExercise] = useState({
     name: "",
@@ -60,6 +62,41 @@ export default function NewExercisePage() {
     tips: "",
     common_errors: "",
   });
+
+  useEffect(() => {
+    fetchExerciseDetails();
+  }, []);
+
+  const fetchExerciseDetails = async () => {
+    try {
+      const response = await fetch(`/api/exercises/${params.id}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      setExercise({
+        name: data.name,
+        description: data.description,
+        muscle_group: data.muscle_group || [],
+        equipment: data.equipment || [],
+        variations: (data.variations || []).join('\n'),
+        video_url: data.video_url || '',
+        audio_url: data.audio_url || '',
+        tips: (data.tips || []).join('\n'),
+        common_errors: (data.common_errors || []).join('\n'),
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar detalhes do exercício",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Function to fetch AI suggestions
   const generateWithAI = async () => {
@@ -165,7 +202,7 @@ export default function NewExercisePage() {
 
   const handleSave = async () => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
 
       const exerciseData = {
         name: exercise.name,
@@ -173,14 +210,14 @@ export default function NewExercisePage() {
         muscle_group: exercise.muscle_group,
         equipment: exercise.equipment,
         variations: exercise.variations.split('\n').filter(v => v.trim()),
-        video_url: videoUrl || exercise.video_url,
-        audio_url: audioUrl || exercise.audio_url,
+        video_url: videoUrl || exercise.video_url || null,
+        audio_url: audioUrl || exercise.audio_url || null,
         tips: exercise.tips.split('\n').filter(t => t.trim()),
         common_errors: exercise.common_errors.split('\n').filter(e => e.trim()),
       };
 
-      const response = await fetch('/api/exercises', {
-        method: 'POST',
+      const response = await fetch(`/api/exercises/${params.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -194,16 +231,50 @@ export default function NewExercisePage() {
       }
 
       toast({
-        title: "Exercício criado",
-        description: "O exercício foi adicionado com sucesso",
+        title: "Exercício atualizado",
+        description: "As alterações foram salvas com sucesso",
       });
 
-      router.push('/dashboard/exercises');
-
+      router.push(`/dashboard/exercises`);
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar exercício",
+        title: "Erro ao atualizar exercício",
+        description: error.message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Tem certeza que deseja excluir este exercício?")) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const response = await fetch(`/api/exercises/${params.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Exercício excluído",
+        description: "O exercício foi removido com sucesso",
+      });
+      
+      router.push('/dashboard/exercises');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir exercício",
         description: error.message,
       });
     } finally {
@@ -233,6 +304,11 @@ export default function NewExercisePage() {
       }
 
       setVideoUrl(data.url);
+      setExercise(prev => ({
+        ...prev,
+        video_url: data.url
+      }));
+
       setUploadProgress(100);
 
       toast({
@@ -272,6 +348,11 @@ export default function NewExercisePage() {
       }
 
       setAudioUrl(data.url);
+      setExercise(prev => ({
+        ...prev,
+        audio_url: data.url
+      }));
+
       setAudioUploadProgress(100);
 
       toast({
@@ -289,6 +370,17 @@ export default function NewExercisePage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-2">Carregando detalhes do exercício...</h2>
+          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos as informações.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -301,23 +393,30 @@ export default function NewExercisePage() {
             Voltar
           </Button>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Novo Exercício</h2>
+            <h2 className="text-3xl font-bold tracking-tight">{exercise.name}</h2>
             <p className="text-muted-foreground">
-              Adicione um novo exercício à biblioteca
+              Detalhes do Exercício
             </p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.back()}>
-            Cancelar
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Excluir
           </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? (
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Salvando...
               </>
-            ) : "Salvar Exercício"}
+            ) : "Salvar Alterações"}
           </Button>
         </div>
       </div>
@@ -336,7 +435,7 @@ export default function NewExercisePage() {
                 <div>
                   <CardTitle>Informações Básicas</CardTitle>
                   <CardDescription>
-                    Preencha as informações básicas do exercício
+                    Edite as informações básicas do exercício
                   </CardDescription>
                 </div>
                 <Button 
@@ -467,6 +566,30 @@ export default function NewExercisePage() {
                   </p>
                 </div>
 
+                {exercise.video_url && (
+                  <div className="space-y-4">
+                    <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                      <video
+                        src={exercise.video_url}
+                        controls
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-muted-foreground">
+                        Vídeo atual
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExercise(prev => ({ ...prev, video_url: '' }))}
+                      >
+                        Remover Vídeo
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <Label>Ou faça upload de um vídeo</Label>
                   <div className="flex items-center gap-4">
@@ -483,7 +606,7 @@ export default function NewExercisePage() {
                     <Button asChild>
                       <label htmlFor="video-upload" className="cursor-pointer">
                         <Upload className="h-4 w-4 mr-2" />
-                        Upload Vídeo
+                        {exercise.video_url ? 'Substituir Vídeo' : 'Upload Vídeo'}
                       </label>
                     </Button>
                     {videoFile && (
@@ -541,6 +664,29 @@ export default function NewExercisePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
+                {exercise.audio_url && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted/20 rounded-lg">
+                      <audio controls className="w-full">
+                        <source src={exercise.audio_url} type="audio/mpeg" />
+                        Seu navegador não suporta o elemento de áudio.
+                      </audio>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-muted-foreground">
+                        Áudio atual
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExercise(prev => ({ ...prev, audio_url: '' }))}
+                      >
+                        Remover Áudio
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <Label>Faça upload de um arquivo de áudio</Label>
                   <div className="flex items-center gap-4">
@@ -557,7 +703,7 @@ export default function NewExercisePage() {
                     <Button asChild>
                       <label htmlFor="audio-upload" className="cursor-pointer">
                         <Upload className="h-4 w-4 mr-2" />
-                        Upload Áudio
+                        {exercise.audio_url ? 'Substituir Áudio' : 'Upload Áudio'}
                       </label>
                     </Button>
                     {audioFile && (
@@ -574,10 +720,10 @@ export default function NewExercisePage() {
                       />
                     </div>
                   )}
-                  {audioUrl && (
+                  {audioUrl && !exercise.audio_url && (
                     <div className="mt-4">
                       <p className="text-sm text-green-600 mb-2">
-                        Áudio disponível:
+                        Áudio enviado com sucesso:
                       </p>
                       <audio controls className="w-full">
                         <source src={audioUrl} type="audio/mpeg" />
