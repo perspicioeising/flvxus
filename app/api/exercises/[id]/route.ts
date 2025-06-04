@@ -76,7 +76,7 @@ export async function PUT(
       .eq('user_id', session.user.id)
       .single();
 
-    if (profileError || profile.role !== 'trainer') {
+    if (profileError || profile?.role !== 'trainer') {
       return NextResponse.json(
         { error: 'Access restricted to trainers' },
         { status: 403 }
@@ -131,10 +131,35 @@ export async function DELETE(
       .eq('user_id', session.user.id)
       .single();
 
-    if (profileError || profile.role !== 'trainer') {
+    if (profileError || profile?.role !== 'trainer') {
       return NextResponse.json(
         { error: 'Access restricted to trainers' },
         { status: 403 }
+      );
+    }
+
+    // Check for dependencies in workout_exercises
+    const { data: dependencies, error: dependenciesError } = await supabase
+      .from('workout_exercises')
+      .select('id')
+      .eq('exercise_id', params.id)
+      .limit(1);
+
+    if (dependenciesError) {
+      return NextResponse.json(
+        { error: dependenciesError.message },
+        { status: 500 }
+      );
+    }
+
+    // If dependencies exist, return a conflict error
+    if (dependencies && dependencies.length > 0) {
+      return NextResponse.json(
+        { 
+          error: 'Este exercício não pode ser excluído pois está sendo usado em um ou mais treinos.',
+          code: 'DEPENDENCY_ERROR'
+        },
+        { status: 409 }
       );
     }
 
