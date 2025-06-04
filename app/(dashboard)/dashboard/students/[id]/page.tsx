@@ -241,22 +241,31 @@ export default function StudentDetailsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-          >
+          <Button variant="ghost" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{student.name}</h2>
-            <p className="text-muted-foreground">
-              Perfil do Aluno
-            </p>
+            <p className="text-muted-foreground">Perfil do Aluno</p>
           </div>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="profile">Perfil</TabsTrigger>
+          <TabsTrigger value="physical">Avaliações Físicas</TabsTrigger>
+          <TabsTrigger value="postural">Avaliações Posturais</TabsTrigger>
+          <TabsTrigger value="media">Arquivos de Mídia</TabsTrigger>
+        </TabsList>
+
+         {/* Profile Tab */}
+        <TabsContent value="profile">
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -494,6 +503,130 @@ export default function StudentDetailsPage() {
             />
           </CardContent>
         </Card>
+        </TabsContent>
+
+        <TabsContent value="physical">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Avaliações Físicas</CardTitle>
+                  <CardDescription>Histórico de avaliações físicas do aluno</CardDescription>
+                </div>
+                <Button onClick={() => router.push(`/dashboard/physical-assessments/new?student=${params.id}`)}>
+                  Nova Avaliação
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {physicalAssessments.map((assessment: any) => (
+                  <Card key={assessment.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{format(new Date(assessment.date), 'PPP', { locale: ptBR })}</h3>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          <div>Peso: {assessment.weight}kg</div>
+                          <div>Gordura Corporal: {assessment.fat_percentage}%</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/physical-assessments/${assessment.id}`)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Detalhes
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+                
+                {physicalAssessments.length === 0 && (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Nenhuma avaliação física encontrada</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Postural Assessments Tab */}
+        <TabsContent value="postural">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Avaliações Posturais</CardTitle>
+                  <CardDescription>Histórico de avaliações posturais do aluno</CardDescription>
+                </div>
+                <Button onClick={() => router.push(`/dashboard/posture-assessments/new?student=${params.id}`)}>
+                  Nova Avaliação
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {posturalAssessments.map((assessment: any) => (
+                  <Card key={assessment.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{format(new Date(assessment.created_at), 'PPP', { locale: ptBR })}</h3>
+                        <div className="flex gap-2 mt-2">
+                          {assessment.front_image_url && <Badge variant="outline">Frontal</Badge>}
+                          {assessment.side_image_url && <Badge variant="outline">Lateral</Badge>}
+                          {assessment.back_image_url && <Badge variant="outline">Posterior</Badge>}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/posture-assessments/${assessment.id}`)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Detalhes
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+                
+                {posturalAssessments.length === 0 && (
+                  <div className="text-center py-12">
+                    <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Nenhuma avaliação postural encontrada</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Media Files Tab */}
+        <TabsContent value="media">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Arquivos de Mídia</CardTitle>
+                  <CardDescription>Fotos e vídeos compartilhados pelo aluno</CardDescription>
+                </div>
+                <Button>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Nenhum arquivo de mídia encontrado</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Os arquivos compartilhados pelo aluno aparecerão aqui
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
       </div>
     </div>
   );
