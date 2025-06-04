@@ -336,7 +336,7 @@ export default function NewStudentPage() {
           <div className="flex justify-between">
             <div>
               {currentStep > 1 && (
-                <Button variant="outline" onClick={prevStep}>
+                <Button variant="outline\" onClick={prevStep}>
                   Anterior
                 </Button>
               )}
