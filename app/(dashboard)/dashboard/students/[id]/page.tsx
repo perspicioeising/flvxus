@@ -32,10 +32,12 @@ const GOALS = [
 ];
 
 export default function StudentDetailsPage() {
+  console.log('StudentDetailsPage render'); // Log component render
+
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isResendingInvite, setIsResendingInvite] = useState(false);
   
@@ -57,6 +59,7 @@ export default function StudentDetailsPage() {
   });
 
   const fetchStudentDetails = useCallback(async () => {
+    console.log('fetchStudentDetails called with id:', params.id); // Log function call
     try {
       setIsLoading(true);
       const response = await fetch(`/api/students/${params.id}`);
@@ -94,6 +97,7 @@ export default function StudentDetailsPage() {
   }, [params.id, toast]);
 
   useEffect(() => {
+    console.log('useEffect running'); // Log effect execution
     fetchStudentDetails();
   }, [fetchStudentDetails]);
 
@@ -106,7 +110,21 @@ export default function StudentDetailsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(student),
+        body: JSON.stringify({
+          name: student.name,
+          phone: student.phone || null,
+          birthDate: student.birthDate || null,
+          gender: student.gender || null,
+          height: student.height ? parseFloat(student.height) : null,
+          weight: student.weight ? parseFloat(student.weight) : null,
+          goals: Array.isArray(student.goals) ? student.goals : [],
+          medicalConditions: student.medicalConditions || null,
+          emergencyContact: student.emergencyContact || null,
+          preferredTime: student.preferredTime || null,
+          experienceLevel: student.experienceLevel || null,
+          notes: student.notes || null,
+          status: student.status || 'active'
+        }),
       });
 
       const data = await response.json();
@@ -116,14 +134,14 @@ export default function StudentDetailsPage() {
       }
 
       toast({
-        title: "Alterações salvas com sucesso",
+        title: "Alterações salvas",
         description: "O perfil do aluno foi atualizado.",
       });
       router.push('/dashboard/students');
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao salvar alterações",
+        title: "Erro ao atualizar aluno",
         description: error.message,
       });
     } finally {
@@ -145,8 +163,8 @@ export default function StudentDetailsPage() {
       }
 
       toast({
-        title: "Convite reenviado com sucesso",
-        description: "Um novo email de convite foi enviado para o aluno.",
+        title: "Convite reenviado",
+        description: "Um novo email foi enviado para o aluno.",
       });
     } catch (error: any) {
       toast({
@@ -230,6 +248,7 @@ export default function StudentDetailsPage() {
                   id="email"
                   value={student.email}
                   disabled
+                  className="bg-muted/50 text-muted-foreground"
                 />
               </div>
               <div className="space-y-2">
