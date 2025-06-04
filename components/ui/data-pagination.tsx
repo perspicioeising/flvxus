@@ -1,4 +1,3 @@
-// components/ui/data-pagination.tsx
 import React from 'react';
 import {
   Pagination,
@@ -8,14 +7,14 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
+} from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 interface DataPaginationProps {
   page: number;
@@ -23,7 +22,9 @@ interface DataPaginationProps {
   total: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  pageSizeOptions?: number[];
+  showPageSizeSelector?: boolean;
 }
 
 export function DataPagination({
@@ -33,6 +34,8 @@ export function DataPagination({
   totalPages,
   onPageChange,
   onPageSizeChange,
+  pageSizeOptions = [10, 25, 50, 100],
+  showPageSizeSelector = true,
 }: DataPaginationProps) {
   // Generate page numbers to display
   const getPageNumbers = () => {
@@ -45,42 +48,25 @@ export function DataPagination({
         pages.push(i);
       }
     } else {
-      // Always show first page
+      // Show first page, current page, last page, and pages around current
       pages.push(1);
       
-      // Calculate start and end of middle pages
-      let start = Math.max(2, page - 1);
-      let end = Math.min(totalPages - 1, page + 1);
+      const startPage = Math.max(2, page - 1);
+      const endPage = Math.min(totalPages - 1, page + 1);
       
-      // Adjust if we're near the beginning
-      if (page <= 3) {
-        end = Math.min(4, totalPages - 1);
+      if (startPage > 2) {
+        pages.push(null); // ellipsis
       }
       
-      // Adjust if we're near the end
-      if (page >= totalPages - 2) {
-        start = Math.max(2, totalPages - 3);
-      }
-      
-      // Add ellipsis after first page if needed
-      if (start > 2) {
-        pages.push('ellipsis1');
-      }
-      
-      // Add middle pages
-      for (let i = start; i <= end; i++) {
+      for (let i = startPage; i <= endPage; i++) {
         pages.push(i);
       }
       
-      // Add ellipsis before last page if needed
-      if (end < totalPages - 1) {
-        pages.push('ellipsis2');
+      if (endPage < totalPages - 1) {
+        pages.push(null); // ellipsis
       }
       
-      // Always show last page
-      if (totalPages > 1) {
-        pages.push(totalPages);
-      }
+      pages.push(totalPages);
     }
     
     return pages;
@@ -89,55 +75,66 @@ export function DataPagination({
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
       <div className="text-sm text-muted-foreground">
-        Mostrando {Math.min((page - 1) * pageSize + 1, total)} a {Math.min(page * pageSize, total)} de {total} resultados
+        Mostrando <span className="font-medium">{Math.min((page - 1) * pageSize + 1, total)}</span> a{" "}
+        <span className="font-medium">{Math.min(page * pageSize, total)}</span> de{" "}
+        <span className="font-medium">{total}</span> resultados
       </div>
       
       <div className="flex items-center gap-4">
-        <Select
-          value={pageSize.toString()}
-          onValueChange={(value) => onPageSizeChange(parseInt(value))}
-        >
-          <SelectTrigger className="w-[120px] h-8">
-            <SelectValue placeholder="Itens por página" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="10">10 por página</SelectItem>
-            <SelectItem value="25">25 por página</SelectItem>
-            <SelectItem value="50">50 por página</SelectItem>
-            <SelectItem value="100">100 por página</SelectItem>
-          </SelectContent>
-        </Select>
+        {showPageSizeSelector && onPageSizeChange && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Mostrar</span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => onPageSizeChange(parseInt(value))}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={pageSize.toString()} />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((size) => (
+                  <SelectItem key={size} value={size.toString()}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious 
+              <PaginationPrevious
                 onClick={() => page > 1 && onPageChange(page - 1)}
-                className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
+                className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
               />
             </PaginationItem>
             
             {pageNumbers.map((pageNumber, index) => (
-              <PaginationItem key={`${pageNumber}-${index}`}>
-                {pageNumber === 'ellipsis1' || pageNumber === 'ellipsis2' ? (
+              pageNumber === null ? (
+                <PaginationItem key={`ellipsis-${index}`}>
                   <PaginationEllipsis />
-                ) : (
+                </PaginationItem>
+              ) : (
+                <PaginationItem key={pageNumber}>
                   <PaginationLink
-                    isActive={page === pageNumber}
-                    onClick={() => typeof pageNumber === 'number' && onPageChange(pageNumber)}
+                    isActive={pageNumber === page}
+                    onClick={() => onPageChange(pageNumber)}
+                    className="cursor-pointer"
                   >
                     {pageNumber}
                   </PaginationLink>
-                )}
-              </PaginationItem>
+                </PaginationItem>
+              )
             ))}
             
             <PaginationItem>
-              <PaginationNext 
+              <PaginationNext
                 onClick={() => page < totalPages && onPageChange(page + 1)}
-                className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}
+                className={page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
               />
             </PaginationItem>
           </PaginationContent>

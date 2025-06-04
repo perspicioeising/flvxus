@@ -8,6 +8,7 @@ export type Exercise = {
   name: string;
   description: string;
   video_url: string | null;
+  audio_url: string | null;
   muscle_group: string[];
   equipment: string[];
   variations: string[];
@@ -188,6 +189,33 @@ export function useExercises() {
     }
   };
 
+  const uploadAudio = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', file);
+
+      const response = await fetch('/api/exercises/upload-audio', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      return data.url;
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao fazer upload do áudio",
+        description: error.message,
+      });
+      throw error;
+    }
+  };
+
   const changePage = (page: number) => {
     fetchExercises(page, pagination.limit);
   };
@@ -204,6 +232,7 @@ export function useExercises() {
     updateExercise,
     deleteExercise,
     uploadVideo,
+    uploadAudio,
     changePage,
     changePageSize,
     refresh: fetchExercises,
