@@ -107,12 +107,6 @@ export default function NewPostureAssessmentPage() {
               <Camera className="h-8 w-8 text-green-600 dark:text-green-400 animate-pulse" />
             </div>
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-green-600 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent">
-              Carregando Alunos
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">Preparando a lista de alunos disponíveis...</p>
-          </div>
         </div>
       </div>
     );
