@@ -1,13 +1,50 @@
 // hooks/use-diets.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useSupabase } from '@/app/providers';
 import { useToast } from '@/hooks/use-toast';
+
+interface DietParams {
+  student_id: string;
+  age: number;
+  weight: number;
+  height?: number;
+  gender: string;
+  activity_level: string;
+  goal: string;
+  goal_description?: string;
+  budget_profile: string;
+  meals_per_day: number;
+  dietary_style: string[];
+  food_preferences: string[];
+  restrictions: string[];
+  custom_restrictions?: string;
+  physical_assessment?: any;
+}
+
+interface CreateDietParams extends DietParams {
+  name: string;
+  description: string;
+  target_calories: number;
+  target_protein: number;
+  target_carbs: number;
+  target_fat: number;
+  used_physical_assessment: boolean;
+  physical_assessment_id?: string;
+  generatedMeals: any[];
+  generatedShoppingList: any[];
+  generatedRecommendations: string[];
+}
 
 interface Diet {
   id: string;
-  student_id: string;
-  created_by: string;
   name: string;
   description: string;
+  student_id: string;
+  student: {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+  };
   age: number;
   weight: number;
   height?: number;
@@ -23,26 +60,13 @@ interface Diet {
   custom_restrictions?: string;
   used_physical_assessment: boolean;
   physical_assessment_id?: string;
-  target_calories?: number;
-  target_protein?: number;
-  target_carbs?: number;
-  target_fat?: number;
+  target_calories: number;
+  target_protein: number;
+  target_carbs: number;
+  target_fat: number;
   status: string;
   created_at: string;
   updated_at: string;
-  student?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-  };
-  creator?: {
-    id: string;
-    full_name: string;
-    role: string;
-  };
-  physical_assessment?: any;
-  meals?: any[];
-  shopping_list?: any[];
 }
 
 interface Pagination {
@@ -53,112 +77,261 @@ interface Pagination {
 }
 
 export function useDiets(studentId?: string) {
+  const { supabase } = useSupabase();
+  const { toast } = useToast();
   const [diets, setDiets] = useState<Diet[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
-    limit: 10,
+    limit: 12,
     total: 0,
     totalPages: 0
   });
-  const { toast } = useToast();
 
-  const fetchDiets = useCallback(async () => {
+  useEffect(() => {
+    fetchDiets();
+  }, [studentId, pagination.page, pagination.limit]);
+
+  const fetchDiets = async () => {
     try {
       setLoading(true);
-      
-      const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString()
-      });
-      
+
+      let query = supabase
+        .from('diets')
+        .select(`
+          *,
+          student:student_id (
+            id,
+            full_name,
+            avatar_url
+          )
+        `, { count: 'exact' });
+
       if (studentId) {
-        params.append('studentId', studentId);
+        query = query.eq('student_id', studentId);
       }
 
-      const response = await fetch(`/api/diets?${params}`);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
+      const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(
+          (pagination.page - 1) * pagination.limit,
+          pagination.page * pagination.limit - 1
+        );
 
-      setDiets(data.diets);
-      setPagination(data.pagination);
+      if (error) throw error;
+
+      setDiets(data || []);
+      setPagination(prev => ({
+        ...prev,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / prev.limit)
+      }));
+
     } catch (error: any) {
+      console.error('Error fetching diets:', error);
       toast({
         variant: "destructive",
-        title: "Erro ao buscar dietas",
+        title: "Erro ao carregar dietas",
         description: error.message
       });
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, studentId, toast]);
+  };
 
-  useEffect(() => {
-    fetchDiets();
-  }, [fetchDiets]);
-
-  const createDiet = async (dietData: Partial<Diet>) => {
+  const generateDietWithAI = async (params: DietParams) => {
     try {
-      const response = await fetch('/api/diets', {
+      const response = await fetch('/api/ai/generate-diet', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(dietData)
+        body: JSON.stringify(params),
       });
 
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.error);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao gerar dieta');
       }
 
-      toast({
-        title: "Dieta criada com sucesso",
-        description: "A dieta foi salva e está disponível para consulta"
-      });
-
-      await fetchDiets();
-      
+      const data = await response.json();
       return data;
+
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar dieta",
-        description: error.message
-      });
+      console.error('Error generating diet:', error);
       throw error;
     }
   };
 
-  const updateDiet = async (id: string, dietData: Partial<Diet>) => {
+  const createDiet = async (dietData: CreateDietParams) => {
     try {
-      const response = await fetch(`/api/diets/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dietData)
-      });
+      // 1. Obter sessão do usuário
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Usuário não autenticado');
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error);
+      // 2. Obter perfil do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, tenant_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!profile) throw new Error('Perfil não encontrado');
+
+      // 3. Verificar se o student_id existe
+      const { data: student } = await supabase
+        .from('profiles')
+        .select('id, tenant_id')
+        .eq('id', dietData.student_id)
+        .single();
+
+      if (!student) throw new Error('Aluno não encontrado');
+
+      // 4. Verificar se o student pertence ao mesmo tenant
+      if (student.tenant_id !== profile.tenant_id) {
+        throw new Error('Aluno não pertence ao mesmo tenant');
       }
 
-      toast({
-        title: "Dieta atualizada",
-        description: "As alterações foram salvas com sucesso"
-      });
+      // 5. Preparar dados da dieta principal (sem meals, shopping_list, etc.)
+      const mainDietData = {
+        student_id: dietData.student_id,
+        created_by: profile.id,
+        name: dietData.name,
+        description: dietData.description,
+        age: dietData.age,
+        weight: dietData.weight,
+        height: dietData.height || null, // Converter undefined para null para o banco
+        gender: dietData.gender,
+        activity_level: dietData.activity_level,
+        goal: dietData.goal,
+        goal_description: dietData.goal_description,
+        budget_profile: dietData.budget_profile,
+        meals_per_day: dietData.meals_per_day,
+        dietary_style: dietData.dietary_style,
+        food_preferences: dietData.food_preferences,
+        restrictions: dietData.restrictions,
+        custom_restrictions: dietData.custom_restrictions,
+        used_physical_assessment: dietData.used_physical_assessment,
+        physical_assessment_id: dietData.physical_assessment_id || null, // Converter undefined para null para o banco
+        target_calories: dietData.target_calories,
+        target_protein: dietData.target_protein,
+        target_carbs: dietData.target_carbs,
+        target_fat: dietData.target_fat,
+        status: 'active',
+        tenant_id: profile.tenant_id
+      };
+
+      // 6. Criar dieta principal
+      const { data: createdDiet, error: dietError } = await supabase
+        .from('diets')
+        .insert(mainDietData)
+        .select()
+        .single();
+
+      if (dietError) {
+        console.error('Erro ao criar dieta:', dietError);
+        throw dietError;
+      }
+
+      // 7. Criar refeições
+      if (dietData.generatedMeals && dietData.generatedMeals.length > 0) {
+        const mealsToInsert = dietData.generatedMeals.map((meal, index) => ({
+          diet_id: createdDiet.id,
+          meal_type: meal.meal_type,
+          meal_time: meal.meal_time,
+          name: meal.name,
+          description: meal.description,
+          calories: meal.calories,
+          protein: meal.protein,
+          carbs: meal.carbs,
+          fat: meal.fat,
+          order_index: index,
+          tenant_id: profile.tenant_id
+        }));
+
+        const { data: createdMeals, error: mealsError } = await supabase
+          .from('diet_meals')
+          .insert(mealsToInsert)
+          .select();
+
+        if (mealsError) throw mealsError;
+
+        // 8. Criar alimentos para cada refeição
+        for (let i = 0; i < dietData.generatedMeals.length; i++) {
+          const meal = dietData.generatedMeals[i];
+          const createdMeal = createdMeals[i];
+
+          if (meal.foods && meal.foods.length > 0) {
+            const foodsToInsert = meal.foods.map((food: any, foodIndex: number) => ({
+              meal_id: createdMeal.id,
+              food_name: food.food_name,
+              quantity: food.quantity,
+              unit: food.unit,
+              calories: food.calories,
+              protein: food.protein,
+              carbs: food.carbs,
+              fat: food.fat,
+              substitutions: food.substitutions || [],
+              notes: food.notes || '',
+              order_index: foodIndex,
+              tenant_id: profile.tenant_id
+            }));
+
+            const { error: foodsError } = await supabase
+              .from('diet_meal_foods')
+              .insert(foodsToInsert);
+
+            if (foodsError) throw foodsError;
+          }
+        }
+      }
+
+      // 9. Criar lista de compras
+      if (dietData.generatedShoppingList && dietData.generatedShoppingList.length > 0) {
+        const shoppingToInsert = dietData.generatedShoppingList.map((item, index) => ({
+          diet_id: createdDiet.id,
+          category: item.category,
+          item_name: item.item_name,
+          quantity: item.quantity,
+          notes: item.notes || '',
+          order_index: item.order_index || index,
+          tenant_id: profile.tenant_id
+        }));
+
+        const { error: shoppingError } = await supabase
+          .from('diet_shopping_lists')
+          .insert(shoppingToInsert);
+
+        if (shoppingError) throw shoppingError;
+      }
+
+      // 10. Atualizar lista local
+      await fetchDiets();
+
+      return createdDiet;
+
+    } catch (error: any) {
+      console.error('Error creating diet:', error);
+      throw error;
+    }
+  };
+
+  const updateDiet = async (id: string, updateData: Partial<CreateDietParams>) => {
+    try {
+      const { data, error } = await supabase
+        .from('diets')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
 
       await fetchDiets();
-      
       return data;
+
     } catch (error: any) {
+      console.error('Error updating diet:', error);
       toast({
         variant: "destructive",
         title: "Erro ao atualizar dieta",
@@ -170,23 +343,22 @@ export function useDiets(studentId?: string) {
 
   const deleteDiet = async (id: string) => {
     try {
-      const response = await fetch(`/api/diets/${id}`, {
-        method: 'DELETE'
-      });
+      const { error } = await supabase
+        .from('diets')
+        .delete()
+        .eq('id', id);
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
+      if (error) throw error;
 
       toast({
         title: "Dieta excluída",
-        description: "A dieta foi removida com sucesso"
+        description: "A dieta foi excluída com sucesso"
       });
 
       await fetchDiets();
+
     } catch (error: any) {
+      console.error('Error deleting diet:', error);
       toast({
         variant: "destructive",
         title: "Erro ao excluir dieta",
@@ -196,51 +368,25 @@ export function useDiets(studentId?: string) {
     }
   };
 
-  const generateDietWithAI = async (params: any) => {
-    try {
-      const response = await fetch('/api/ai/generate-diet', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(params)
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      return data;
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao gerar dieta",
-        description: error.message
-      });
-      throw error;
-    }
+  const changePage = (page: number) => {
+    setPagination(prev => ({ ...prev, page }));
   };
 
-  const changePage = (newPage: number) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
-
-  const changePageSize = (newLimit: number) => {
-    setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+  const changePageSize = (limit: number) => {
+    setPagination(prev => ({ ...prev, limit, page: 1 }));
   };
 
   return {
     diets,
     loading,
     pagination,
+    generateDietWithAI,
     createDiet,
     updateDiet,
     deleteDiet,
-    generateDietWithAI,
     changePage,
     changePageSize,
-    refetch: fetchDiets
+    fetchDiets
   };
 }
+
