@@ -1,7 +1,6 @@
-// app/(dashboard)/dashboard/exercises/page.tsx
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,6 +197,10 @@ export default function ExercisesPage() {
     router.push('/dashboard/exercises/new');
   };
 
+  const handleViewExerciseDetails = (id: string) => {
+    router.push(`/dashboard/exercises/${id}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -337,7 +340,8 @@ export default function ExercisesPage() {
               {filteredExercises.map((exercise) => (
                 <Card
                   key={exercise.id}
-                  className="bg-background/40 backdrop-blur-sm hover:bg-background/60 transition-all border border-primary/20 hover:border-primary/30 group overflow-hidden"
+                  className="bg-background/40 backdrop-blur-sm hover:bg-background/60 transition-all border border-primary/20 hover:border-primary/30 group overflow-hidden cursor-pointer"
+                  onClick={() => handleViewExerciseDetails(exercise.id)}
                 >
                   <div className="relative aspect-video bg-muted/50">
                     {exercise.video_url ? (
@@ -358,20 +362,9 @@ export default function ExercisesPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                            onClick={() => {
-                              setIsEditing(true);
-                              setCurrentExerciseId(exercise.id);
-                              setNewExercise({
-                                name: exercise.name,
-                                description: exercise.description,
-                                muscleGroups: exercise.muscle_group,
-                                equipment: exercise.equipment,
-                                variations: (exercise.variations || []).join('\n'),
-                                videoUrl: exercise.video_url || '',
-                                tips: (exercise.tips || []).join('\n'),
-                                commonErrors: (exercise.common_errors || []).join('\n'),
-                              });
-                              setIsAddingExercise(true);
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/dashboard/exercises/${exercise.id}`);
                             }}
                           >
                             <Edit className="h-4 w-4" />
@@ -385,7 +378,8 @@ export default function ExercisesPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setIsCloning(true);
                               setNewExercise({
                                 name: `${exercise.name} (Cópia)`,
@@ -411,7 +405,10 @@ export default function ExercisesPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                            onClick={() => handleDeleteExercise(exercise.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteExercise(exercise.id);
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -448,7 +445,8 @@ export default function ExercisesPage() {
               {filteredExercises.map((exercise) => (
                 <div
                   key={exercise.id}
-                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-all duration-300 hover:border-primary/20 bg-background/50 backdrop-blur-sm"
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-all duration-300 hover:border-primary/20 bg-background/50 backdrop-blur-sm cursor-pointer"
+                  onClick={() => handleViewExerciseDetails(exercise.id)}
                 >
                   <div className="w-40 h-24 relative rounded-md overflow-hidden bg-muted/50">
                     {exercise.video_url ? (
@@ -489,20 +487,9 @@ export default function ExercisesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 bg-background/70 backdrop-blur-sm"
-                          onClick={() => {
-                            setIsEditing(true);
-                            setCurrentExerciseId(exercise.id);
-                            setNewExercise({
-                              name: exercise.name,
-                              description: exercise.description,
-                              muscleGroups: exercise.muscle_group,
-                              equipment: exercise.equipment,
-                              variations: (exercise.variations || []).join('\n'),
-                              videoUrl: exercise.video_url || '',
-                              tips: (exercise.tips || []).join('\n'),
-                              commonErrors: (exercise.common_errors || []).join('\n'),
-                            });
-                            setIsAddingExercise(true);
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/exercises/${exercise.id}`);
                           }}
                         >
                           <Edit className="h-4 w-4" />
@@ -516,7 +503,8 @@ export default function ExercisesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 bg-background/70 backdrop-blur-sm"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setIsCloning(true);
                             setNewExercise({
                               name: `${exercise.name} (Cópia)`,
@@ -542,7 +530,10 @@ export default function ExercisesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 bg-background/70 backdrop-blur-sm hover:text-destructive"
-                          onClick={() => handleDeleteExercise(exercise.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteExercise(exercise.id);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

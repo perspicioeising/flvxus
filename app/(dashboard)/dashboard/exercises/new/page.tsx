@@ -39,6 +39,7 @@ export default function NewExercisePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [videoUrl, setVideoUrl] = useState("");
 
   const [exercise, setExercise] = useState({
     name: "",
@@ -114,7 +115,7 @@ export default function NewExercisePage() {
         muscle_group: exercise.muscle_group,
         equipment: exercise.equipment,
         variations: exercise.variations.split('\n').filter(v => v.trim()),
-        video_url: exercise.video_url,
+        video_url: videoUrl || exercise.video_url,
         tips: exercise.tips.split('\n').filter(t => t.trim()),
         common_errors: exercise.common_errors.split('\n').filter(e => e.trim()),
       };
@@ -154,6 +155,8 @@ export default function NewExercisePage() {
   const handleVideoUpload = async (file: File) => {
     try {
       setVideoFile(file);
+      setUploadProgress(10);
+      
       const formData = new FormData();
       formData.append('video', file);
 
@@ -162,16 +165,16 @@ export default function NewExercisePage() {
         body: formData,
       });
 
+      setUploadProgress(90);
+      
       const data = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error);
       }
 
-      setExercise(prev => ({
-        ...prev,
-        video_url: data.url
-      }));
+      setVideoUrl(data.url);
+      setUploadProgress(100);
 
       toast({
         title: "Vídeo enviado",
@@ -184,7 +187,7 @@ export default function NewExercisePage() {
         description: error.message,
       });
     } finally {
-      setUploadProgress(0);
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -316,42 +319,63 @@ export default function NewExercisePage() {
         <CardHeader>
           <CardTitle>Vídeo Demonstrativo</CardTitle>
           <CardDescription>
-            Faça upload de um vídeo demonstrando a execução correta
+            Faça upload de um vídeo ou informe a URL do vídeo demonstrativo
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleVideoUpload(file);
-                }}
-                className="hidden"
-                id="video-upload"
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="video_url">URL do Vídeo</Label>
+              <Input
+                id="video_url"
+                placeholder="ex.: https://example.com/video.mp4"
+                value={exercise.video_url}
+                onChange={(e) => setExercise(prev => ({ ...prev, video_url: e.target.value }))}
               />
-              <Button asChild>
-                <label htmlFor="video-upload" className="cursor-pointer">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Vídeo
-                </label>
-              </Button>
-              {videoFile && (
-                <span className="text-sm text-muted-foreground">
-                  {videoFile.name}
-                </span>
+              <p className="text-sm text-muted-foreground">
+                Informe a URL de um vídeo existente ou faça upload abaixo
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <Label>Ou faça upload de um vídeo</Label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleVideoUpload(file);
+                  }}
+                  className="hidden"
+                  id="video-upload"
+                />
+                <Button asChild>
+                  <label htmlFor="video-upload" className="cursor-pointer">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Vídeo
+                  </label>
+                </Button>
+                {videoFile && (
+                  <span className="text-sm text-muted-foreground">
+                    {videoFile.name}
+                  </span>
+                )}
+              </div>
+              {uploadProgress > 0 && (
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
+              {videoUrl && (
+                <div className="text-sm text-green-600">
+                  Vídeo enviado com sucesso!
+                </div>
               )}
             </div>
-            {uploadProgress > 0 && (
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-primary h-2 rounded-full transition-all"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>

@@ -43,6 +43,7 @@ export default function ExerciseDetailsPage() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeTab, setActiveTab] = useState("details");
+  const [videoUrl, setVideoUrl] = useState("");
 
   const [exercise, setExercise] = useState({
     name: "",
@@ -99,7 +100,7 @@ export default function ExerciseDetailsPage() {
         muscle_group: exercise.muscle_group,
         equipment: exercise.equipment,
         variations: exercise.variations.split('\n').filter(v => v.trim()),
-        video_url: exercise.video_url || null,
+        video_url: videoUrl || exercise.video_url || null,
         tips: exercise.tips.split('\n').filter(t => t.trim()),
         common_errors: exercise.common_errors.split('\n').filter(e => e.trim()),
       };
@@ -189,6 +190,7 @@ export default function ExerciseDetailsPage() {
         throw new Error(data.error);
       }
 
+      setVideoUrl(data.url);
       setExercise(prev => ({
         ...prev,
         video_url: data.url
@@ -367,12 +369,25 @@ export default function ExerciseDetailsPage() {
             <CardHeader>
               <CardTitle>Vídeo Demonstrativo</CardTitle>
               <CardDescription>
-                Faça upload de um vídeo demonstrando a execução correta
+                Faça upload de um vídeo ou informe a URL do vídeo demonstrativo
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {exercise.video_url ? (
+                <div className="space-y-2">
+                  <Label htmlFor="video_url">URL do Vídeo</Label>
+                  <Input
+                    id="video_url"
+                    placeholder="ex.: https://example.com/video.mp4"
+                    value={exercise.video_url}
+                    onChange={(e) => setExercise(prev => ({ ...prev, video_url: e.target.value }))}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Informe a URL de um vídeo existente ou faça upload abaixo
+                  </p>
+                </div>
+
+                {exercise.video_url && (
                   <div className="space-y-4">
                     <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                       <video
@@ -394,14 +409,10 @@ export default function ExerciseDetailsPage() {
                       </Button>
                     </div>
                   </div>
-                ) : (
-                  <div className="aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors">
-                    <Play className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-muted-foreground">Nenhum vídeo enviado</p>
-                  </div>
                 )}
 
                 <div className="space-y-4">
+                  <Label>Ou faça upload de um vídeo</Label>
                   <div className="flex items-center gap-4">
                     <input
                       type="file"
@@ -431,6 +442,11 @@ export default function ExerciseDetailsPage() {
                         className="bg-primary h-2 rounded-full transition-all"
                         style={{ width: `${uploadProgress}%` }}
                       />
+                    </div>
+                  )}
+                  {videoUrl && (
+                    <div className="text-sm text-green-600">
+                      Vídeo enviado com sucesso!
                     </div>
                   )}
                 </div>

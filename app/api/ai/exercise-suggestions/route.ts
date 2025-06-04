@@ -1,4 +1,3 @@
-// app/api/ai/exercise-suggestions/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -36,7 +35,7 @@ function generateExerciseSuggestions(exerciseName: string) {
     'supino': {
       description: 'Exercício multiarticular para desenvolvimento do peitoral',
       muscle_group: ['Peito', 'Ombros', 'Tríceps'],
-      equipment: ['Barra', 'Banco'],
+      equipment: ['Peso Livre'],
       variations: [
         'Supino inclinado',
         'Supino declinado',
@@ -55,8 +54,8 @@ function generateExerciseSuggestions(exerciseName: string) {
     },
     'agachamento': {
       description: 'Exercício fundamental para desenvolvimento dos membros inferiores',
-      muscle_group: ['Pernas', 'Glúteos', 'Core'],
-      equipment: ['Barra', 'Rack'],
+      muscle_group: ['Pernas', 'Core'],
+      equipment: ['Peso Livre', 'Peso Corporal'],
       variations: [
         'Agachamento frontal',
         'Agachamento búlgaro',
@@ -71,6 +70,46 @@ function generateExerciseSuggestions(exerciseName: string) {
         'Joelhos para dentro',
         'Levantar os calcanhares',
         'Curvar a coluna'
+      ]
+    },
+    'rosca': {
+      description: 'Exercício de isolamento para desenvolvimento do bíceps',
+      muscle_group: ['Braços'],
+      equipment: ['Peso Livre', 'Cabo'],
+      variations: [
+        'Rosca direta',
+        'Rosca alternada',
+        'Rosca martelo'
+      ],
+      tips: [
+        'Mantenha os cotovelos junto ao corpo',
+        'Controle o movimento na fase excêntrica',
+        'Evite balançar o corpo'
+      ],
+      common_errors: [
+        'Usar impulso do corpo',
+        'Movimentar os cotovelos para frente',
+        'Não completar a amplitude do movimento'
+      ]
+    },
+    'puxada': {
+      description: 'Exercício para desenvolvimento das costas',
+      muscle_group: ['Costas', 'Braços'],
+      equipment: ['Máquina', 'Cabo'],
+      variations: [
+        'Puxada aberta',
+        'Puxada fechada',
+        'Puxada com pegada neutra'
+      ],
+      tips: [
+        'Mantenha o peito aberto',
+        'Puxe com os cotovelos, não com as mãos',
+        'Controle o movimento na subida'
+      ],
+      common_errors: [
+        'Puxar com os braços em vez das costas',
+        'Balançar o corpo',
+        'Não completar a amplitude do movimento'
       ]
     }
   };
