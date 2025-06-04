@@ -1,6 +1,7 @@
+// app/(dashboard)/dashboard/exercises/page.tsx
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -193,6 +194,10 @@ export default function ExercisesPage() {
     }
   };
 
+  const handleAddExerciseClick = () => {
+    router.push('/dashboard/exercises/new');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -225,7 +230,7 @@ export default function ExercisesPage() {
             </div>
 
             <Button
-              onClick={() => setIsAddingExercise(true)}
+              onClick={handleAddExerciseClick}
               className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Plus className="h-6 w-6" />
