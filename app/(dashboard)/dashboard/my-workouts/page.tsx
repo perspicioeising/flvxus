@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,21 +21,33 @@ import {
   Trophy,
   BarChart,
   Info,
-  Video
+  Video,
+  Award,
+  Star,
+  Zap
 } from "lucide-react";
+import { useSupabase } from "@/app/providers";
 
 export default function MyWorkoutsPage() {
   const router = useRouter();
+  const { supabase, session } = useSupabase();
   const { toast } = useToast();
-  const [activeWorkout, setActiveWorkout] = useState<WorkoutPlan | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<any | null>(null);
   const [workoutTime, setWorkoutTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
-  const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryItem[]>([]);
-  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
+  const [currentExercise, setCurrentExercise] = useState<any | null>(null);
+  const [workoutHistory, setWorkoutHistory] = useState<any[]>([]);
+  const [workoutPlans, setWorkoutPlans] = useState<any[]>([]);
   const [showExerciseDetails, setShowExerciseDetails] = useState(false);
+  const [userStats, setUserStats] = useState({
+    totalPoints: 0,
+    level: 1,
+    streak: 0,
+    nextLevelProgress: 0
+  });
+  const [recentAchievements, setRecentAchievements] = useState<any[]>([]);
 
-  const fetchWorkoutPlans = async () => {
+  const fetchWorkoutPlans = useCallback(async () => {
     try {
       const response = await fetch('/api/my-workouts');
       const data = await response.json();
@@ -49,12 +61,12 @@ export default function MyWorkoutsPage() {
       toast({
         variant: "destructive",
         title: "Erro ao buscar treinos",
-        description: (error as Error).message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
-  };
+  }, [toast]);
 
-  const fetchWorkoutHistory = async () => {
+  const fetchWorkoutHistory = useCallback(async () => {
     try {
       const response = await fetch('/api/workout-history');
       const data = await response.json();
@@ -68,18 +80,61 @@ export default function MyWorkoutsPage() {
       toast({
         variant: "destructive",
         title: "Erro ao buscar histórico de treinos",
-        description: (error as Error).message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
-  };
+  }, [toast]);
+
+  const fetchUserStats = useCallback(async () => {
+    try {
+      const response = await fetch('/api/user/stats');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      setUserStats({
+        totalPoints: data.totalPoints,
+        level: data.level,
+        streak: data.streak,
+        nextLevelProgress: data.nextLevel.progressPercentage
+      });
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+    }
+  }, []);
+
+  const fetchRecentAchievements = useCallback(async () => {
+    try {
+      const response = await fetch('/api/user/achievements');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      // Get only earned achievements and sort by most recent
+      const earned = data.userAchievements
+        .filter((ua: any) => ua.achievement)
+        .sort((a: any, b: any) => new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime())
+        .slice(0, 3);
+      
+      setRecentAchievements(earned);
+    } catch (error) {
+      console.error("Error fetching recent achievements:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const init = async () => {
       await fetchWorkoutPlans();
       await fetchWorkoutHistory();
+      await fetchUserStats();
+      await fetchRecentAchievements();
     };
     init();
-  }, [fetchWorkoutPlans, fetchWorkoutHistory]);
+  }, [fetchWorkoutPlans, fetchWorkoutHistory, fetchUserStats, fetchRecentAchievements]);
 
   // Timer effect
   useEffect(() => {
@@ -92,51 +147,13 @@ export default function MyWorkoutsPage() {
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
-  interface Exercise {
-    id: string;
-    name: string;
-    description: string;
-    videoUrl?: string;
-    muscleGroup?: string[];
-    equipment?: string[];
-    sets: number;
-    reps: number;
-    rest: number;
-    notes?: string;
-    tips?: string[];
-    commonErrors?: string[];
-    completed?: boolean;
-    completedSets?: number;
-    weight?: number;
-  }
-
-  interface WorkoutPlan {
-    id: string;
-    name: string;
-    description: string;
-    exercises: Exercise[];
-    duration: number;
-  }
-
-  interface WorkoutHistoryItem {
-    id: string;
-    name: string;
-    exercises_completed: number;
-    completed_at: string;
-    duration: number;
-  }
-
-  const startWorkout = (workout: WorkoutPlan) => {
+  const startWorkout = (workout: any) => {
     setActiveWorkout(workout);
     setIsTimerRunning(true);
     setCurrentExercise(workout.exercises[0]);
   };
 
-  interface CompleteExerciseParams {
-    exerciseId: string;
-  }
-
-  const completeExercise = async ({ exerciseId }: CompleteExerciseParams): Promise<void> => {
+  const completeExercise = async ({ exerciseId }: { exerciseId: string }) => {
     try {
       const response = await fetch('/api/workout-progress', {
         method: 'POST',
@@ -156,7 +173,7 @@ export default function MyWorkoutsPage() {
       }
 
       // Move to next exercise
-      const currentIndex = activeWorkout?.exercises.findIndex((e: Exercise) => e.id === currentExercise?.id) ?? -1;
+      const currentIndex = activeWorkout?.exercises.findIndex((e: any) => e.id === currentExercise?.id) ?? -1;
       if (
         activeWorkout &&
         currentExercise &&
@@ -171,7 +188,7 @@ export default function MyWorkoutsPage() {
       toast({
         variant: "destructive",
         title: "Erro ao salvar progresso",
-        description: (error as Error).message,
+        description: error.message,
       });
     }
   };
@@ -203,23 +220,21 @@ export default function MyWorkoutsPage() {
         description: "Ótimo trabalho! Seu progresso foi salvo.",
       });
 
-      // Refresh workout history
-      fetchWorkoutHistory();
+      // Refresh data
+      await fetchWorkoutHistory();
+      await fetchUserStats();
+      await fetchRecentAchievements();
 
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro ao completar treino",
-        description: (error as Error).message,
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
 
-  interface FormatTime {
-    (seconds: number): string;
-  }
-
-  const formatTime: FormatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -353,7 +368,7 @@ export default function MyWorkoutsPage() {
                   <div>
                     <h4 className="font-medium mb-2">Músculos Alvo</h4>
                     <div className="flex flex-wrap gap-2">
-                      {currentExercise.muscleGroup.map((muscle) => (
+                      {currentExercise.muscleGroup.map((muscle: string) => (
                         <Badge key={muscle} variant="secondary">{muscle}</Badge>
                       ))}
                     </div>
@@ -364,7 +379,7 @@ export default function MyWorkoutsPage() {
                   <div>
                     <h4 className="font-medium mb-2">Equipamentos Necessários</h4>
                     <div className="flex flex-wrap gap-2">
-                      {currentExercise.equipment.map((item) => (
+                      {currentExercise.equipment.map((item: string) => (
                         <Badge key={item} variant="outline">{item}</Badge>
                       ))}
                     </div>
@@ -375,7 +390,7 @@ export default function MyWorkoutsPage() {
                   <div>
                     <h4 className="font-medium mb-2">Dicas de Execução</h4>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {currentExercise.tips.map((tip, index) => (
+                      {currentExercise.tips.map((tip: string, index: number) => (
                         <li key={index}>{tip}</li>
                       ))}
                     </ul>
@@ -386,7 +401,7 @@ export default function MyWorkoutsPage() {
                   <div>
                     <h4 className="font-medium mb-2">Erros Comuns a Evitar</h4>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {currentExercise.commonErrors.map((error, index) => (
+                      {currentExercise.commonErrors.map((error: string, index: number) => (
                         <li key={index}>{error}</li>
                       ))}
                     </ul>
@@ -402,7 +417,7 @@ export default function MyWorkoutsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {activeWorkout.exercises.map((exercise, index) => (
+                {activeWorkout.exercises.map((exercise: any, index: number) => (
                   <div 
                     key={exercise.id}
                     className={`flex items-center gap-4 p-4 rounded-lg ${
@@ -447,6 +462,34 @@ export default function MyWorkoutsPage() {
       </div>
 
       <div className="grid gap-6">
+        {/* User Stats */}
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Trophy className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Nível {userStats.level}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Award className="h-4 w-4 text-yellow-500" />
+                    <span className="text-sm">{userStats.totalPoints} pontos totais</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex-1 max-w-md">
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Progresso para Nível {userStats.level + 1}</span>
+                  <span>{Math.round(userStats.nextLevelProgress)}%</span>
+                </div>
+                <Progress value={userStats.nextLevelProgress} className="h-2" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Treinos de Hoje</CardTitle>
@@ -514,7 +557,7 @@ export default function MyWorkoutsPage() {
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{workout.name}</span>
+                        <span className="font-medium">{workout.workout?.name || "Treino"}</span>
                         <Badge variant="outline">
                           {workout.exercises_completed} exercises
                         </Badge>
@@ -523,7 +566,7 @@ export default function MyWorkoutsPage() {
                         <Calendar className="h-4 w-4" />
                         {format(new Date(workout.completed_at), 'MMM d, yyyy')}
                         <Clock className="h-4 w-4 ml-2" />
-                        {workout.duration} minutes
+                        {Math.round(workout.duration / 60)} minutos
                       </div>
                     </div>
                     <Button variant="ghost" size="icon">
@@ -531,6 +574,12 @@ export default function MyWorkoutsPage() {
                     </Button>
                   </div>
                 ))}
+
+                {workoutHistory.length === 0 && (
+                  <div className="text-center py-6 text-muted-foreground">
+                    Nenhum treino completado ainda
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -555,27 +604,43 @@ export default function MyWorkoutsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg bg-muted text-center">
                     <Trophy className="h-5 w-5 text-primary mx-auto mb-2" />
-                    <div className="font-medium">Level 5</div>
+                    <div className="font-medium">Level {userStats.level}</div>
                     <div className="text-sm text-muted-foreground">Rank de Fitness</div>
                   </div>
                   <div className="p-4 rounded-lg bg-muted text-center">
-                    <MessageSquare className="h-5 w-5 text-primary mx-auto mb-2" />
-                    <div className="font-medium">85%</div>
-                    <div className="text-sm text-muted-foreground">Taxa de Completude</div>
+                    <Zap className="h-5 w-5 text-primary mx-auto mb-2" />
+                    <div className="font-medium">{userStats.streak} dias</div>
+                    <div className="text-sm text-muted-foreground">Sequência Atual</div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Conquistas Recentes</h4>
                   <div className="grid grid-cols-3 gap-2">
-                    {['🏃‍♂️', '💪', '🎯'].map((emoji, i) => (
-                      <div key={i} className="p-2 text-center rounded-lg border">
-                        <div className="text-2xl mb-1">{emoji}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {['Primeira Milha', 'Potência', 'Definidor de Metas'][i]}
+                    {recentAchievements.length > 0 ? (
+                      recentAchievements.map((achievement: any) => (
+                        <div key={achievement.id} className="p-2 text-center rounded-lg border">
+                          <div className="text-2xl mb-1">
+                            {achievement.achievement.criteria_type === 'workouts_completed' && '💪'}
+                            {achievement.achievement.criteria_type === 'consecutive_days' && '🔥'}
+                            {achievement.achievement.criteria_type === 'total_weight' && '🏋️'}
+                            {achievement.achievement.criteria_type === 'exercises_completed' && '🎯'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {achievement.achievement.name}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      ['🏃‍♂️', '💪', '🎯'].map((emoji, i) => (
+                        <div key={i} className="p-2 text-center rounded-lg border">
+                          <div className="text-2xl mb-1">{emoji}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {['Primeira Milha', 'Potência', 'Definidor de Metas'][i]}
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
