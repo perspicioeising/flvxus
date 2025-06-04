@@ -1,3 +1,4 @@
+// hooks/use-exercises.ts
 import { useState, useEffect } from 'react';
 import { useSupabase } from '@/app/providers';
 import { useToast } from './use-toast';
@@ -38,6 +39,7 @@ export function useExercises() {
 
   const fetchExercises = async (page = pagination.page, limit = pagination.limit) => {
     try {
+      setLoading(true);
       const response = await fetch(`/api/exercises?page=${page}&limit=${limit}`);
       const data = await response.json();
       
@@ -45,8 +47,13 @@ export function useExercises() {
         throw new Error(data.error);
       }
       
-      setExercises(data.exercises);
-      setPagination(data.pagination);
+      setExercises(data.exercises || []);
+      setPagination({
+        page: data.pagination?.page || 1,
+        limit: data.pagination?.limit || 25,
+        total: data.pagination?.total || 0,
+        totalPages: data.pagination?.totalPages || 1
+      });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -138,6 +145,11 @@ export function useExercises() {
         throw new Error(data.error);
       }
 
+      toast({
+        title: "Exercício excluído",
+        description: "O exercício foi removido com sucesso",
+      });
+
       await fetchExercises(); // Refresh the list after deleting
     } catch (error: any) {
       toast({
@@ -151,21 +163,21 @@ export function useExercises() {
 
   const uploadVideo = async (file: File) => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `videos/${fileName}`;
+      const formData = new FormData();
+      formData.append('video', file);
 
-      const { data, error } = await supabase.storage
-        .from('exercise-videos')
-        .upload(filePath, file);
+      const response = await fetch('/api/exercises/upload-video', {
+        method: 'POST',
+        body: formData,
+      });
 
-      if (error) throw error;
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('exercise-videos')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
+      return data.url;
     } catch (error: any) {
       toast({
         variant: "destructive",
