@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList, Dumbbell, Eye, List, Library } from "lucide-react";
+import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList, Dumbbell, Eye, List, Library, Sparkles, Mic } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 import { useExercises } from "@/hooks/use-exercises";
@@ -44,6 +44,7 @@ interface NewExercise {
   equipment: string[];
   variations: string;
   videoUrl: string;
+  audioUrl?: string;
   tips: string;
   commonErrors: string;
 }
@@ -56,6 +57,7 @@ export default function ExercisesPage() {
   const [isAddingExercise, setIsAddingExercise] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
@@ -63,6 +65,8 @@ export default function ExercisesPage() {
   const [muscleFilter, setMuscleFilter] = useState("all");
   const [equipmentFilter, setEquipmentFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
 
   const { 
     exercises, 
@@ -72,6 +76,9 @@ export default function ExercisesPage() {
     updateExercise,
     deleteExercise,
     uploadVideo,
+    uploadAudio,
+    generateWithAI,
+    generateAudioWithAI,
     changePage,
     changePageSize
   } = useExercises();
@@ -83,9 +90,96 @@ export default function ExercisesPage() {
     equipment: [],
     variations: "",
     videoUrl: "",
+    audioUrl: "",
     tips: "",
     commonErrors: "",
   });
+
+  const handleGenerateWithAI = async () => {
+    if (!newExercise.name) {
+      toast({
+        variant: "destructive",
+        title: "Nome obrigatório",
+        description: "Por favor, insira o nome do exercício para gerar com IA.",
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingAI(true);
+      const data = await generateWithAI(newExercise.name);
+      
+      setNewExercise(prev => ({
+        ...prev,
+        description: data.description,
+        muscleGroups: data.muscle_group,
+        equipment: data.equipment,
+        variations: data.variations.join('\n'),
+        tips: data.tips.join('\n'),
+        commonErrors: data.common_errors.join('\n')
+      }));
+
+      toast({
+        title: "Conteúdo gerado com sucesso",
+        description: "As informações foram preenchidas automaticamente pela IA.",
+      });
+    } catch (error) {
+      // Error handling is done in the hook
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleGenerateAudio = async () => {
+    if (!newExercise.description || !newExercise.tips) {
+      toast({
+        variant: "destructive",
+        title: "Informações necessárias",
+        description: "Descrição e dicas são necessárias para gerar o áudio.",
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingAudio(true);
+      const audioUrl = await generateAudioWithAI(
+        newExercise.description,
+        newExercise.tips.split('\n').filter(t => t.trim())
+      );
+      
+      setNewExercise(prev => ({
+        ...prev,
+        audioUrl
+      }));
+
+      toast({
+        title: "Áudio gerado com sucesso",
+        description: "O áudio foi gerado e vinculado ao exercício.",
+      });
+    } catch (error) {
+      // Error handling is done in the hook
+    } finally {
+      setIsGeneratingAudio(false);
+    }
+  };
+
+  const handleAudioUpload = async (file: File) => {
+    try {
+      setAudioFile(file);
+      const url = await uploadAudio(file);
+      setNewExercise(prev => ({
+        ...prev,
+        audioUrl: url
+      }));
+
+      toast({
+        title: "Áudio enviado com sucesso",
+        description: "Seu áudio foi enviado e vinculado ao exercício.",
+      });
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
 
   // Filter exercises based on search query and filters
   const filteredExercises = exercises.filter((exercise) => {
@@ -139,6 +233,7 @@ export default function ExercisesPage() {
         equipment: newExercise.equipment,
         variations: newExercise.variations.split('\n').filter(v => v.trim()),
         video_url: newExercise.videoUrl || null,
+        audio_url: newExercise.audioUrl || null,
         tips: newExercise.tips.split('\n').filter(t => t.trim()),
         common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
       };
@@ -179,10 +274,12 @@ export default function ExercisesPage() {
       equipment: [],
       variations: "",
       videoUrl: "",
+      audioUrl: "",
       tips: "",
       commonErrors: "",
     });
     setVideoFile(null);
+    setAudioFile(null);
   };
 
   const handleDeleteExercise = async (id: string) => {
@@ -363,6 +460,7 @@ export default function ExercisesPage() {
                                 equipment: exercise.equipment,
                                 variations: (exercise.variations || []).join('\n'),
                                 videoUrl: exercise.video_url || '',
+                                audioUrl: exercise.audio_url || '',
                                 tips: (exercise.tips || []).join('\n'),
                                 commonErrors: (exercise.common_errors || []).join('\n'),
                               });
@@ -389,6 +487,7 @@ export default function ExercisesPage() {
                                 equipment: exercise.equipment,
                                 variations: (exercise.variations || []).join('\n'),
                                 videoUrl: exercise.video_url || '',
+                                audioUrl: exercise.audio_url || '',
                                 tips: (exercise.tips || []).join('\n'),
                                 commonErrors: (exercise.common_errors || []).join('\n'),
                               });
@@ -494,6 +593,7 @@ export default function ExercisesPage() {
                               equipment: exercise.equipment,
                               variations: (exercise.variations || []).join('\n'),
                               videoUrl: exercise.video_url || '',
+                              audioUrl: exercise.audio_url || '',
                               tips: (exercise.tips || []).join('\n'),
                               commonErrors: (exercise.common_errors || []).join('\n'),
                             });
@@ -520,6 +620,7 @@ export default function ExercisesPage() {
                               equipment: exercise.equipment,
                               variations: (exercise.variations || []).join('\n'),
                               videoUrl: exercise.video_url || '',
+                              audioUrl: exercise.audio_url || '',
                               tips: (exercise.tips || []).join('\n'),
                               commonErrors: (exercise.common_errors || []).join('\n'),
                             });
@@ -562,6 +663,95 @@ export default function ExercisesPage() {
           )}
         </CardContent>
       </Card>
+
+      {isAddingExercise && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{isCloning ? 'Clonar Exercício' : (isEditing ? 'Editar Exercício' : 'Novo Exercício')}</CardTitle>
+                <CardDescription>
+                  {isCloning ? 'Crie uma cópia de um exercício existente' : (isEditing ? 'Atualize os detalhes do exercício' : 'Adicione um novo exercício à sua biblioteca')}
+                </CardDescription>
+              </div>
+              {!isEditing && !isCloning && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleGenerateWithAI}
+                  disabled={isGeneratingAI || !newExercise.name}
+                  className="gap-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {isGeneratingAI ? "Gerando..." : "Gerar com IA"}
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Áudio de Instruções</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateAudio}
+                  disabled={isGeneratingAudio || !newExercise.description || !newExercise.tips}
+                  className="gap-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {isGeneratingAudio ? "Gerando..." : "Gerar Áudio com IA"}
+                </Button>
+              </div>
+
+              {!audioFile && !newExercise.audioUrl ? (
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    id="audio-upload"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleAudioUpload(file);
+                    }}
+                  />
+                  <label
+                    htmlFor="audio-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <Mic className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      Clique para fazer upload de áudio
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      MP3, WAV ou OGG (máx. 10MB)
+                    </span>
+                  </label>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+                  <Mic className="h-5 w-5 text-primary" />
+                  <div className="flex-1">
+                    <p className="font-medium">
+                      {audioFile?.name || "Áudio carregado"}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setAudioFile(null);
+                      setNewExercise(prev => ({ ...prev, audioUrl: "" }));
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
