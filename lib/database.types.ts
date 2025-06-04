@@ -129,7 +129,6 @@ export interface Database {
           name: string
           description: string
           video_url: string | null
-          audio_url: string | null
           muscle_group: string[]
           equipment: string[]
           variations: string[]
@@ -144,7 +143,6 @@ export interface Database {
           name: string
           description: string
           video_url?: string | null
-          audio_url?: string | null
           muscle_group: string[]
           equipment: string[]
           variations?: string[]
@@ -159,7 +157,6 @@ export interface Database {
           name?: string
           description?: string
           video_url?: string | null
-          audio_url?: string | null
           muscle_group?: string[]
           equipment?: string[]
           variations?: string[]

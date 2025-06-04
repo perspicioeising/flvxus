@@ -7,7 +7,6 @@ export type Exercise = {
   name: string;
   description: string;
   video_url: string | null;
-  audio_url: string | null;
   muscle_group: string[];
   equipment: string[];
   variations: string[];
@@ -18,12 +17,19 @@ export type Exercise = {
   tenant_id: string;
 };
 
+interface PaginationState {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export function useExercises() {
   const { supabase } = useSupabase();
   const { toast } = useToast();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationState>({
     page: 1,
     limit: 25,
     total: 0,
@@ -55,60 +61,6 @@ export function useExercises() {
   useEffect(() => {
     fetchExercises();
   }, []);
-
-  const generateWithAI = async (name: string) => {
-    try {
-      const response = await fetch('/api/ai/generate-exercise', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name }),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      return data;
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao gerar exercício com IA",
-        description: error.message,
-      });
-      throw error;
-    }
-  };
-
-  const generateAudioWithAI = async (description: string, tips: string[]) => {
-    try {
-      const response = await fetch('/api/ai/generate-audio', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ description, tips }),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      return data.audioUrl;
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao gerar áudio com IA",
-        description: error.message,
-      });
-      throw error;
-    }
-  };
 
   const addExercise = async (exerciseData: Partial<Exercise>) => {
     try {
@@ -224,33 +176,6 @@ export function useExercises() {
     }
   };
 
-  const uploadAudio = async (file: File) => {
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `audio/${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from('exercise-audio')
-        .upload(filePath, file);
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('exercise-audio')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao fazer upload do áudio",
-        description: error.message,
-      });
-      throw error;
-    }
-  };
-
   const changePage = (page: number) => {
     fetchExercises(page, pagination.limit);
   };
@@ -267,9 +192,6 @@ export function useExercises() {
     updateExercise,
     deleteExercise,
     uploadVideo,
-    uploadAudio,
-    generateWithAI,
-    generateAudioWithAI,
     changePage,
     changePageSize,
     refresh: fetchExercises,
