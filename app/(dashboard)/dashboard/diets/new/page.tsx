@@ -47,7 +47,9 @@ import {
     Timer,
     BarChart3,
     Shield,
-    ChefHat
+    ChefHat,
+    Edit3,
+    Save
 } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
@@ -139,6 +141,7 @@ interface GeneratedDiet {
         quantity: string;
         notes: string;
         order_index: number;
+        weekly_quantity?: string;
     }>;
     recommendations: string[];
 }
@@ -156,6 +159,8 @@ export default function NewDietPage() {
     const [physicalAssessment, setPhysicalAssessment] = useState<any>(null);
     const [generatedDiet, setGeneratedDiet] = useState<GeneratedDiet | null>(null);
     const [activeTab, setActiveTab] = useState("basic");
+    const [isEditing, setIsEditing] = useState(false);
+    const [dietNotes, setDietNotes] = useState("");
 
     // Form state
     const [formData, setFormData] = useState({
@@ -164,10 +169,10 @@ export default function NewDietPage() {
         weight: '',
         height: '',
         gender: 'male',
-        activity_level: 'moderate',
-        goal: 'maintenance',
+        activity_level: '',
+        goal: '',
         goal_description: '',
-        budget_profile: 'intermediate',
+        budget_profile: '',
         meals_per_day: 3,
         dietary_style: [] as string[],
         food_preferences: [] as string[],
@@ -202,6 +207,10 @@ export default function NewDietPage() {
     useEffect(() => {
         if (formData.student_id && formData.use_physical_assessment) {
             fetchPhysicalAssessment();
+        } else {
+            // Limpar avaliação física quando mudar de aluno ou desmarcar
+            setPhysicalAssessment(null);
+            setFormData(prev => ({ ...prev, physical_assessment_id: '' }));
         }
     }, [formData.student_id, formData.use_physical_assessment]);
 
@@ -258,6 +267,7 @@ export default function NewDietPage() {
             }
         } catch (error: any) {
             console.error('Error fetching physical assessment:', error);
+            setPhysicalAssessment(null);
         }
     };
 
@@ -282,8 +292,13 @@ export default function NewDietPage() {
                 age: calculateAge(student.birth_date),
                 weight: student.weight || '',
                 height: student.height || '',
-                gender: student.gender || 'male'
+                gender: student.gender || 'male',
+                // Resetar campos relacionados à avaliação física
+                use_physical_assessment: false,
+                physical_assessment_id: ''
             }));
+            // Limpar avaliação física ao mudar de aluno
+            setPhysicalAssessment(null);
         }
     };
 
@@ -292,7 +307,7 @@ export default function NewDietPage() {
             setIsGenerating(true);
 
             // Validar campos obrigatórios
-            if (!formData.student_id || !formData.age || !formData.weight) {
+            if (!formData.student_id || !formData.age || !formData.weight || !formData.goal || !formData.activity_level || !formData.budget_profile) {
                 toast({
                     variant: "destructive",
                     title: "Campos obrigatórios",
@@ -356,7 +371,7 @@ export default function NewDietPage() {
             const dietData: CreateDietParams = {
                 student_id: formData.student_id,
                 name: generatedDiet.name,
-                description: generatedDiet.description,
+                description: dietNotes ? `${generatedDiet.description}\n\nObservações: ${dietNotes}` : generatedDiet.description,
                 age: parseInt(formData.age),
                 weight: parseFloat(formData.weight),
                 height: formData.height ? parseFloat(formData.height) : undefined,
@@ -403,7 +418,7 @@ export default function NewDietPage() {
     };
 
     const isFormValid = () => {
-        return formData.student_id && formData.age && formData.weight && formData.goal;
+        return formData.student_id && formData.age && formData.weight && formData.goal && formData.activity_level && formData.budget_profile;
     };
 
     const getMealTypeLabel = (mealType: string) => {
@@ -839,6 +854,63 @@ export default function NewDietPage() {
                                         </div>
                                     </div>
 
+                                    {/* Budget Profile */}
+                                    <div className="space-y-4">
+                                        <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                            Perfil de Orçamento *
+                                        </Label>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {[
+                                                { value: 'economic', label: 'Econômico', description: 'Alimentos básicos e acessíveis', color: 'from-green-500 to-emerald-500' },
+                                                { value: 'intermediate', label: 'Intermediário', description: 'Equilíbrio entre preço e variedade', color: 'from-yellow-500 to-orange-500' },
+                                                { value: 'free', label: 'Livre', description: 'Sem restrições de orçamento', color: 'from-purple-500 to-pink-500' }
+                                            ].map((budget) => {
+                                                const isSelected = formData.budget_profile === budget.value;
+
+                                                return (
+                                                    <button
+                                                        key={budget.value}
+                                                        onClick={() => setFormData(prev => ({ ...prev, budget_profile: budget.value }))}
+                                                        className={cn(
+                                                            "relative p-4 rounded-xl border-2 transition-all duration-300 text-left",
+                                                            isSelected
+                                                                ? "border-transparent shadow-xl"
+                                                                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                        )}
+                                                    >
+                                                        {isSelected && (
+                                                            <div className={cn(
+                                                                "absolute inset-0 bg-gradient-to-r rounded-xl opacity-10",
+                                                                budget.color
+                                                            )} />
+                                                        )}
+                                                        <div className="relative">
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <div className={cn(
+                                                                    "p-2 rounded-lg bg-gradient-to-r",
+                                                                    budget.color
+                                                                )}>
+                                                                    <DollarSign className="h-4 w-4 text-white" />
+                                                                </div>
+                                                                <span className="font-semibold text-gray-900 dark:text-white">
+                                                                    {budget.label}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                                {budget.description}
+                                                            </p>
+                                                        </div>
+                                                        {isSelected && (
+                                                            <div className="absolute top-2 right-2">
+                                                                <CheckCircle className="h-5 w-5 text-green-500" />
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
                                     {/* Meals per Day */}
                                     <div className="space-y-4">
                                         <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
@@ -1041,63 +1113,6 @@ export default function NewDietPage() {
                                             className="min-h-[100px] bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm"
                                         />
                                     </div>
-
-                                    {/* Budget Profile */}
-                                    <div className="space-y-4">
-                                        <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                                            Perfil de Orçamento
-                                        </Label>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {[
-                                                { value: 'economic', label: 'Econômico', description: 'Alimentos básicos e acessíveis', color: 'from-green-500 to-emerald-500' },
-                                                { value: 'intermediate', label: 'Intermediário', description: 'Equilíbrio entre preço e variedade', color: 'from-yellow-500 to-orange-500' },
-                                                { value: 'free', label: 'Livre', description: 'Sem restrições de orçamento', color: 'from-purple-500 to-pink-500' }
-                                            ].map((budget) => {
-                                                const isSelected = formData.budget_profile === budget.value;
-
-                                                return (
-                                                    <button
-                                                        key={budget.value}
-                                                        onClick={() => setFormData(prev => ({ ...prev, budget_profile: budget.value }))}
-                                                        className={cn(
-                                                            "p-4 rounded-xl border-2 transition-all duration-300 text-left",
-                                                            isSelected
-                                                                ? "border-transparent shadow-xl"
-                                                                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                                                        )}
-                                                    >
-                                                        {isSelected && (
-                                                            <div className={cn(
-                                                                "absolute inset-0 bg-gradient-to-r rounded-xl opacity-10",
-                                                                budget.color
-                                                            )} />
-                                                        )}
-                                                        <div className="relative">
-                                                            <div className="flex items-center gap-3 mb-2">
-                                                                <div className={cn(
-                                                                    "p-2 rounded-lg bg-gradient-to-r",
-                                                                    budget.color
-                                                                )}>
-                                                                    <DollarSign className="h-4 w-4 text-white" />
-                                                                </div>
-                                                                <span className="font-semibold text-gray-900 dark:text-white">
-                                                                    {budget.label}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                                {budget.description}
-                                                            </p>
-                                                        </div>
-                                                        {isSelected && (
-                                                            <div className="absolute top-2 right-2">
-                                                                <CheckCircle className="h-5 w-5 text-green-500" />
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
@@ -1203,12 +1218,39 @@ export default function NewDietPage() {
                                                 </div>
                                             </div>
 
+                                            {/* Editable Notes Section */}
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Edit3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                                    <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                                        Observações Adicionais (Opcional)
+                                                    </Label>
+                                                </div>
+                                                <Textarea
+                                                    value={dietNotes}
+                                                    onChange={(e) => setDietNotes(e.target.value)}
+                                                    placeholder="Adicione observações personalizadas, instruções especiais ou modificações desejadas..."
+                                                    className="min-h-[120px] bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm"
+                                                />
+                                            </div>
+
                                             {/* Meals */}
                                             <div className="space-y-4">
-                                                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                                    <Utensils className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                                    Refeições ({generatedDiet.meals.length})
-                                                </h3>
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                        <Utensils className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                                        Refeições ({generatedDiet.meals.length})
+                                                    </h3>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setIsEditing(!isEditing)}
+                                                        className="text-blue-600 dark:text-blue-400 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                    >
+                                                        <Edit3 className="h-4 w-4 mr-2" />
+                                                        {isEditing ? 'Visualizar' : 'Editar'}
+                                                    </Button>
+                                                </div>
                                                 
                                                 <div className="grid gap-4">
                                                     {generatedDiet.meals.map((meal, index) => (
@@ -1262,7 +1304,7 @@ export default function NewDietPage() {
                                                 <div className="space-y-4">
                                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                                         <Apple className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                                        Lista de Compras
+                                                        Lista de Compras (Semanal)
                                                     </h3>
                                                     
                                                     <Card className="border-0 bg-white/80 dark:bg-gray-800/80 shadow-lg rounded-xl">
@@ -1283,8 +1325,11 @@ export default function NewDietPage() {
                                                                         </h4>
                                                                         <div className="space-y-1">
                                                                             {items.map((item, index) => (
-                                                                                <div key={index} className="text-sm text-gray-600 dark:text-gray-400">
-                                                                                    • {item.item_name}
+                                                                                <div key={index} className="text-sm text-gray-600 dark:text-gray-400 flex justify-between">
+                                                                                    <span>• {item.item_name}</span>
+                                                                                    <span className="font-medium text-green-600 dark:text-green-400">
+                                                                                        {item.weekly_quantity || item.quantity}
+                                                                                    </span>
                                                                                 </div>
                                                                             ))}
                                                                         </div>
@@ -1332,4 +1377,10 @@ export default function NewDietPage() {
             </div>
         </div>
     );
+
+    // Helper function to calculate weekly quantities for shopping list
+    function getWeeklyQuantity(foodName: string): string {
+        // A API já retorna as quantidades corretas, então apenas retornamos o que está no item
+        return 'Ver quantidade';
+    }
 }

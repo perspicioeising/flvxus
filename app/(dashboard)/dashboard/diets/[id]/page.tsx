@@ -133,7 +133,7 @@ export default function DietDetailsPage() {
         .from('diets')
         .select(`
           *,
-          student:student_id (
+          student:profiles!diets_student_id_fkey (
             id,
             full_name,
             avatar_url
