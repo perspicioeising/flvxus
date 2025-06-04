@@ -19,7 +19,8 @@ import {
   ChevronRight,
   ClipboardList,
   BookOpen,
-  Camera
+  Camera,
+  Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -100,16 +101,22 @@ export function Sidebar({ className, userRole }: SidebarProps) {
         isActive: pathname.startsWith("/dashboard/my-workouts"),
       },
       {
-        name: "Progresso",
-        href: "/dashboard/progress",
+        name: "Meu Progresso",
+        href: "/dashboard/my-progress",
         icon: BarChart4,
-        isActive: pathname.startsWith("/dashboard/progress"),
+        isActive: pathname.startsWith("/dashboard/my-progress"),
       },
       {
-        name: "Conquistas",
-        href: "/dashboard/achievements",
+        name: "Minhas Conquistas",
+        href: "/dashboard/my-achievements",
         icon: Trophy,
-        isActive: pathname.startsWith("/dashboard/achievements"),
+        isActive: pathname.startsWith("/dashboard/my-achievements"),
+      },
+      {
+        name: "Avaliações",
+        href: "/dashboard/progress",
+        icon: Heart,
+        isActive: pathname.startsWith("/dashboard/progress"),
       }
     ];
   }

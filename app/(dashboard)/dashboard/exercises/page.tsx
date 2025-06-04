@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,9 @@ import {
 import { Plus, Search, Filter, PlayCircle, Edit, Copy, Trash2, Upload, Video, X, Grid, LayoutList, Dumbbell, Eye, List, Library } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
+import { useExercises } from "@/hooks/use-exercises";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 const MUSCLE_GROUPS = [
   "Peito", "Costas", "Pernas", "Ombros", "Braços", "Core", "Corpo Inteiro", "Cardio"
@@ -34,12 +37,23 @@ const EQUIPMENT_TYPES = [
   "Outros"
 ];
 
+interface NewExercise {
+  name: string;
+  description: string;
+  muscleGroups: string[];
+  equipment: string[];
+  variations: string;
+  videoUrl: string;
+  tips: string;
+  commonErrors: string;
+}
+
 export default function ExercisesPage() {
+  const router = useRouter();
   const { supabase } = useSupabase();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddingExercise, setIsAddingExercise] = useState(false);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -49,6 +63,18 @@ export default function ExercisesPage() {
   const [muscleFilter, setMuscleFilter] = useState("all");
   const [equipmentFilter, setEquipmentFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const { 
+    exercises, 
+    loading, 
+    pagination,
+    addExercise,
+    updateExercise,
+    deleteExercise,
+    uploadVideo,
+    changePage,
+    changePageSize
+  } = useExercises();
 
   const [newExercise, setNewExercise] = useState<NewExercise>({
     name: "",
@@ -61,58 +87,30 @@ export default function ExercisesPage() {
     commonErrors: "",
   });
 
-  const fetchExercises = useCallback(async () => {
-    try {
-      const response = await fetch('/api/exercises');
-      const data = await response.json();
+  // Filter exercises based on search query and filters
+  const filteredExercises = exercises.filter((exercise) => {
+    const matchesSearch =
+      exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      exercise.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
+    const matchesMuscle =
+      muscleFilter === "all" ||
+      exercise.muscle_group.includes(muscleFilter);
 
-      setExercises(data);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao buscar exercícios",
-        description: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }, [toast]);
+    const matchesEquipment =
+      equipmentFilter === "all" ||
+      exercise.equipment.includes(equipmentFilter);
 
-  useEffect(() => {
-    fetchExercises();
-  }, [fetchExercises]);
+    return matchesSearch && matchesMuscle && matchesEquipment;
+  });
 
-  interface HandleVideoUploadProps {
-    file: File;
-  }
-
-  interface SupabaseUploadProgressEvent {
-    loaded: number;
-    total: number;
-  }
-
-  const handleVideoUpload = async (file: File): Promise<void> => {
+  const handleVideoUpload = async (file: File) => {
     try {
       setVideoFile(file);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `videos/${fileName}`;
-
-      const { data, error }: { data: any; error: any } = await supabase.storage
-        .from('exercise-videos')
-        .upload(filePath, file);
-
-      if (error) throw error;
-
-      const { data: { publicUrl } }: { data: { publicUrl: string } } = supabase.storage
-        .from('exercise-videos')
-        .getPublicUrl(filePath);
-
+      const url = await uploadVideo(file);
       setNewExercise(prev => ({
         ...prev,
-        videoUrl: publicUrl
+        videoUrl: url
       }));
 
       toast({
@@ -123,19 +121,11 @@ export default function ExercisesPage() {
       toast({
         variant: "destructive",
         title: "Erro ao fazer upload do vídeo",
-        description: error instanceof Error ? error.message : String(error),
+        description: error.message,
       });
     } finally {
       setUploadProgress(0);
     }
-  };
-
-  const removeVideo = () => {
-    setVideoFile(null);
-    setNewExercise(prev => ({
-      ...prev,
-      videoUrl: ""
-    }));
   };
 
   const handleSaveExercise = async () => {
@@ -153,141 +143,24 @@ export default function ExercisesPage() {
         common_errors: newExercise.commonErrors.split('\n').filter(e => e.trim()),
       };
 
-      const url = isEditing ? `/api/exercises/${currentExerciseId}` : '/api/exercises';
-      const method = isEditing ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(exerciseData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
+      if (isEditing) {
+        await updateExercise(currentExerciseId!, exerciseData);
+      } else {
+        await addExercise(exerciseData);
       }
 
       toast({
-        title: isCloning ? "Exercício clonado com sucesso" : (isEditing ? "Exercício atualizado com sucesso" : "Exercício adicionado com sucesso"),
+        title: isCloning ? "Exercício clonado" : (isEditing ? "Exercício atualizado" : "Exercício adicionado"),
         description: isCloning ? "Uma cópia do exercício foi criada." : (isEditing ? "O exercício foi atualizado." : "O novo exercício foi adicionado à sua biblioteca."),
       });
 
-      await fetchExercises();
       handleCancel();
-
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao salvar exercício",
-        description: error instanceof Error ? error.message : String(error),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  interface Exercise {
-    id: string;
-    name: string;
-    description: string;
-    muscle_group: string[];
-    equipment: string[];
-    variations?: string[];
-    video_url?: string;
-    tips?: string[];
-    common_errors?: string[];
-  }
-
-  interface NewExercise {
-    name: string;
-    description: string;
-    muscleGroups: string[];
-    equipment: string[];
-    variations: string;
-    videoUrl: string;
-    tips: string;
-    commonErrors: string;
-  }
-
-  const handleEditClick = (exercise: Exercise): void => {
-    setIsEditing(true);
-    setIsCloning(false);
-    setCurrentExerciseId(exercise.id);
-    setNewExercise({
-      name: exercise.name,
-      description: exercise.description,
-      muscleGroups: exercise.muscle_group,
-      equipment: exercise.equipment,
-      variations: exercise.variations?.join('\n') || '',
-      videoUrl: exercise.video_url || '',
-      tips: exercise.tips?.join('\n') || '',
-      commonErrors: exercise.common_errors?.join('\n') || '',
-    });
-    setIsAddingExercise(true);
-  };
-
-  interface CloneExercise {
-    name: string;
-    description: string;
-    muscle_group: string[];
-    equipment: string[];
-    variations?: string[];
-    video_url?: string;
-    tips?: string[];
-    common_errors?: string[];
-  }
-
-  const handleCloneClick = (exercise: CloneExercise): void => {
-    setIsEditing(false);
-    setIsCloning(true);
-    setCurrentExerciseId(null);
-    setNewExercise({
-      name: `${exercise.name} (Cópia)`,
-      description: exercise.description,
-      muscleGroups: exercise.muscle_group,
-      equipment: exercise.equipment,
-      variations: exercise.variations?.join('\n') || '',
-      videoUrl: exercise.video_url || '',
-      tips: exercise.tips?.join('\n') || '',
-      commonErrors: exercise.common_errors?.join('\n') || '',
-    });
-    setIsAddingExercise(true);
-  };
-
-  interface DeleteExercise {
-    id: string;
-    name: string;
-  }
-
-  const handleDeleteExercise = async (exercise: DeleteExercise): Promise<void> => {
-    try {
-      setIsLoading(true);
-
-      const response: Response = await fetch(`/api/exercises/${exercise.id}`, {
-        method: 'DELETE',
-      });
-
-      const data: { error?: string } = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      toast({
-        title: "Exercício deletado",
-        description: `${exercise.name} foi removido da sua biblioteca.`,
-      });
-
-      await fetchExercises();
 
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao deletar exercício",
-        description: error instanceof Error ? error.message : String(error),
+        title: "Erro ao salvar exercício",
+        description: error.message,
       });
     } finally {
       setIsLoading(false);
@@ -312,24 +185,36 @@ export default function ExercisesPage() {
     setVideoFile(null);
   };
 
-  const filteredExercises = exercises.filter((exercise) => {
-    const matchesSearch =
-      exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exercise.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleDeleteExercise = async (id: string) => {
+    try {
+      await deleteExercise(id);
+    } catch (error: any) {
+      // Error handling is done in the hook
+    }
+  };
 
-    const matchesMuscle =
-      muscleFilter === "all" ||
-      exercise.muscle_group.includes(muscleFilter);
+  const handleAddExerciseClick = () => {
+    router.push('/dashboard/exercises/new');
+  };
 
-    const matchesEquipment =
-      equipmentFilter === "all" ||
-      exercise.equipment.includes(equipmentFilter);
+  const handleViewExerciseDetails = (id: string) => {
+    router.push(`/dashboard/exercises/${id}`);
+  };
 
-    return matchesSearch && matchesMuscle && matchesEquipment;
-  });
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-2">Carregando exercícios...</h2>
+          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos os dados.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -340,251 +225,26 @@ export default function ExercisesPage() {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold tracking-tight">Exercícios</h2>
-                  {/* <p className="text-muted-foreground">
+                  <p className="text-muted-foreground">
                     Gerencie sua biblioteca de exercícios
-                  </p> */}
+                  </p>
                 </div>
               </div>
             </div>
-            <div className="flex gap-3">
-              <div className="bg-background border border-primary/20 rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
-                <div className="text-xl font-bold text-primary">
-                  {exercises.length}
-                </div>
-                <div className="text-xs text-muted-foreground">Ativos</div>
-              </div>
-              <div className="bg-background border border-border rounded-lg p-3 text-center min-w-[90px] hover:bg-primary/5 transition-colors cursor-default">
-                <div className="text-xl font-bold">{exercises.length}</div>
-                <div className="text-xs text-muted-foreground">Total</div>
-              </div>
 
-              <Button
-                onClick={() => setIsAddingExercise(true)}
-                disabled={isAddingExercise}
-                className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <Plus className="h-6 w-6" />
-                <span className="text-xs">Adicionar</span>
-              </Button>
-            </div>
+            <Button
+              onClick={handleAddExerciseClick}
+              className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Plus className="h-6 w-6" />
+              <span className="text-xs">Adicionar</span>
+            </Button>
           </div>
         </div>
       </div>
 
-      {isAddingExercise && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {isCloning ? 'Clonar Exercício' : (isEditing ? 'Editar Exercício' : 'Adicionar Novo Exercício')}
-            </CardTitle>
-            <CardDescription>
-              {isCloning ? 'Crie uma cópia de um exercício existente' : (isEditing ? 'Atualize os detalhes do exercício' : 'Crie um novo exercício para sua biblioteca')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nome do Exercício *</Label>
-                  <Input
-                    id="name"
-                    value={newExercise.name}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="ex.: Supino com Barra"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Descrição *</Label>
-                  <Textarea
-                    id="description"
-                    value={newExercise.description}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Descreva o exercício..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div>
-                  <Label>Grupos Musculares *</Label>
-                  <div className="grid grid-cols-2 gap-2 border rounded-lg p-4 mt-2">
-                    {MUSCLE_GROUPS.map((muscle) => (
-                      <div key={muscle} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={muscle}
-                          checked={newExercise.muscleGroups.includes(muscle)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNewExercise(prev => ({
-                                ...prev,
-                                muscleGroups: [...prev.muscleGroups, muscle]
-                              }));
-                            } else {
-                              setNewExercise(prev => ({
-                                ...prev,
-                                muscleGroups: prev.muscleGroups.filter(g => g !== muscle)
-                              }));
-                            }
-                          }}
-                          className="rounded border-input"
-                        />
-                        <label htmlFor={muscle}>{muscle}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Equipamento *</Label>
-                  <div className="grid grid-cols-2 gap-2 border rounded-lg p-4 mt-2">
-                    {EQUIPMENT_TYPES.map((equipment) => (
-                      <div key={equipment} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={equipment}
-                          checked={newExercise.equipment.includes(equipment)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNewExercise(prev => ({
-                                ...prev,
-                                equipment: [...prev.equipment, equipment]
-                              }));
-                            } else {
-                              setNewExercise(prev => ({
-                                ...prev,
-                                equipment: prev.equipment.filter(eq => eq !== equipment)
-                              }));
-                            }
-                          }}
-                          className="rounded border-input"
-                        />
-                        <label htmlFor={equipment}>{equipment}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label>Adicionar Vídeo</Label>
-                  {!videoFile && !newExercise.videoUrl && (
-                    <div className="border-2 border-dashed rounded-lg p-6 text-center mt-2">
-                      <input
-                        type="file"
-                        accept="video/*"
-                        className="hidden"
-                        id="video-upload"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleVideoUpload(file);
-                        }}
-                      />
-                      <label
-                        htmlFor="video-upload"
-                        className="cursor-pointer flex flex-col items-center gap-2"
-                      >
-                        <Upload className="h-8 w-8 text-muted-foreground" />
-                        <span className="text-sm font-medium">
-                          Clique para fazer upload ou cole uma URL
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          MP4, WebM ou OGG (máx. 100MB)
-                        </span>
-                      </label>
-                    </div>
-                  )}
-
-                  {(videoFile || newExercise.videoUrl) && (
-                    <div className="relative border rounded-lg p-4 mt-2">
-                      <div className="flex items-center gap-4">
-                        <Video className="h-8 w-8 text-primary" />
-                        <div className="flex-1">
-                          <p className="font-medium">
-                            {videoFile?.name || "Vídeo carregado"}
-                          </p>
-                          {uploadProgress > 0 && uploadProgress < 100 && (
-                            <div className="w-full bg-muted rounded-full h-2 mt-2">
-                              <div
-                                className="bg-primary h-2 rounded-full transition-all"
-                                style={{ width: `${uploadProgress}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={removeVideo}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-4">
-                    <Label htmlFor="videoUrl">Ou cole uma URL de vídeo</Label>
-                    <Input
-                      id="videoUrl"
-                      placeholder="https://example.com/video.mp4"
-                      value={newExercise.videoUrl}
-                      onChange={(e) => setNewExercise(prev => ({ ...prev, videoUrl: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="variations">Variações (uma por linha)</Label>
-                  <Textarea
-                    id="variations"
-                    value={newExercise.variations}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, variations: e.target.value }))}
-                    placeholder="ex.: Supino com Barra, Supino com Halteres..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="tips">Dicas de Execução (uma por linha)</Label>
-                  <Textarea
-                    id="tips"
-                    value={newExercise.tips}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, tips: e.target.value }))}
-                    placeholder="Adicione dicas para realizar este exercício..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="commonErrors">Erros Comuns a Evitar (uma por linha)</Label>
-                  <Textarea
-                    id="commonErrors"
-                    value={newExercise.commonErrors}
-                    onChange={(e) => setNewExercise(prev => ({ ...prev, commonErrors: e.target.value }))}
-                    placeholder="Liste erros comuns a evitar..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={handleCancel}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveExercise} disabled={isLoading}>
-                {isLoading ?
-                  (isCloning ? "Clonando..." : (isEditing ? "Atualizando..." : "Adicionando...")) :
-                  (isCloning ? "Clonar Exercício" : (isEditing ? "Atualizar Exercício" : "Adicionar Exercício"))}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="bg-background/60 backdrop-blur-xl border border-primary/20 border shadow-sm">
+      {/* Main Content */}
+      <Card className="bg-background/60 backdrop-blur-xl border border-primary/20 shadow-sm">
         <CardHeader className="pb-6">
           <div className="flex flex-col space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
@@ -680,7 +340,8 @@ export default function ExercisesPage() {
               {filteredExercises.map((exercise) => (
                 <Card
                   key={exercise.id}
-                  className="bg-background/40 backdrop-blur-sm hover:bg-background/60 transition-all border border-primary/20 hover:border-primary/30 group overflow-hidden"
+                  className="bg-background/40 backdrop-blur-sm hover:bg-background/60 transition-all border border-primary/20 hover:border-primary/30 group overflow-hidden cursor-pointer"
+                  onClick={() => handleViewExerciseDetails(exercise.id)}
                 >
                   <div className="relative aspect-video bg-muted/50">
                     {exercise.video_url ? (
@@ -701,7 +362,10 @@ export default function ExercisesPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                            onClick={() => handleEditClick(exercise)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/dashboard/exercises/${exercise.id}`);
+                            }}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -714,7 +378,21 @@ export default function ExercisesPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                            onClick={() => handleCloneClick(exercise)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsCloning(true);
+                              setNewExercise({
+                                name: `${exercise.name} (Cópia)`,
+                                description: exercise.description,
+                                muscleGroups: exercise.muscle_group,
+                                equipment: exercise.equipment,
+                                variations: (exercise.variations || []).join('\n'),
+                                videoUrl: exercise.video_url || '',
+                                tips: (exercise.tips || []).join('\n'),
+                                commonErrors: (exercise.common_errors || []).join('\n'),
+                              });
+                              setIsAddingExercise(true);
+                            }}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -727,7 +405,10 @@ export default function ExercisesPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90"
-                            onClick={() => handleDeleteExercise(exercise)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteExercise(exercise.id);
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -764,7 +445,8 @@ export default function ExercisesPage() {
               {filteredExercises.map((exercise) => (
                 <div
                   key={exercise.id}
-                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-all duration-300 hover:border-primary/20 bg-background/50 backdrop-blur-sm"
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-all duration-300 hover:border-primary/20 bg-background/50 backdrop-blur-sm cursor-pointer"
+                  onClick={() => handleViewExerciseDetails(exercise.id)}
                 >
                   <div className="w-40 h-24 relative rounded-md overflow-hidden bg-muted/50">
                     {exercise.video_url ? (
@@ -805,7 +487,10 @@ export default function ExercisesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 bg-background/70 backdrop-blur-sm"
-                          onClick={() => handleEditClick(exercise)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/exercises/${exercise.id}`);
+                          }}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -818,7 +503,21 @@ export default function ExercisesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 bg-background/70 backdrop-blur-sm"
-                          onClick={() => handleCloneClick(exercise)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsCloning(true);
+                            setNewExercise({
+                              name: `${exercise.name} (Cópia)`,
+                              description: exercise.description,
+                              muscleGroups: exercise.muscle_group,
+                              equipment: exercise.equipment,
+                              variations: (exercise.variations || []).join('\n'),
+                              videoUrl: exercise.video_url || '',
+                              tips: (exercise.tips || []).join('\n'),
+                              commonErrors: (exercise.common_errors || []).join('\n'),
+                            });
+                            setIsAddingExercise(true);
+                          }}
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
@@ -830,8 +529,11 @@ export default function ExercisesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 bg-background/70 backdrop-blur-sm"
-                          onClick={() => handleDeleteExercise(exercise)}
+                          className="h-9 w-9 bg-background/70 backdrop-blur-sm hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteExercise(exercise.id);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -842,6 +544,17 @@ export default function ExercisesPage() {
                 </div>
               ))}
             </div>
+          )}
+
+          {filteredExercises.length > 0 && (
+            <DataPagination
+              page={pagination.page}
+              pageSize={pagination.limit}
+              total={pagination.total}
+              totalPages={pagination.totalPages}
+              onPageChange={changePage}
+              onPageSizeChange={changePageSize}
+            />
           )}
         </CardContent>
       </Card>

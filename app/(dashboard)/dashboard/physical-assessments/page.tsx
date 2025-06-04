@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,8 +19,15 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip";
+import { DataPagination } from "@/components/ui/data-pagination";
 
-export default function PhysicalAssessmentsPage() {
+
+const PROTOCOLS = [
+  "McArdle 1992",
+  "Guedes 1994"
+];
+
+export default function NewPhysicalAssessmentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,26 +35,179 @@ export default function PhysicalAssessmentsPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  });
+  // type Student = { id: string; full_name: string };
+  // const [students, setStudents] = useState<Student[]>([]);
+  type CalculatedResults = {
+    body_density: string;
+    fat_percentage: string;
+    fat_mass: string;
+    lean_mass: string;
+  } | null;
+
+  const [calculatedResults, setCalculatedResults] = useState<CalculatedResults>(null);
+
+  const [assessment, setAssessment] = useState({
+    protocol: "",
+    student_id: "",
+    date: new Date().toISOString().split('T')[0], // formato YYYY-MM-DD
+    weight: "",
+    height: "",
+    age: "",
+    gender: "",
+    // Perimetry
+    neck: "",
+    shoulders: "",
+    chest: "",
+    abdomen: "",
+    waist: "",
+    hips: "",
+    left_arm: "",
+    right_arm: "",
+    left_thigh: "",
+    right_thigh: "",
+    left_calf: "",
+    right_calf: "",
+    // Skinfolds
+    triceps: "",
+    abdominal: "",
+    suprailiac: "",
+    // Outros
+    notes: ""
+  });
 
   useEffect(() => {
-    fetchAssessments();
     fetchStudents();
   }, []);
 
-  const fetchAssessments = async () => {
+  const calculateResults = () => {
+    const {
+      protocol,
+      gender,
+      age,
+      weight,
+      triceps,
+      abdominal,
+      suprailiac,
+    } = assessment;
+
+    let body_density;
+    let fat_percentage;
+
+    // Convert string values to numbers
+    const measurements = {
+      triceps: parseFloat(triceps),
+      abdominal: parseFloat(abdominal),
+      suprailiac: parseFloat(suprailiac),
+      thigh: parseFloat(assessment.left_thigh), // or use right_thigh if needed
+    };
+
+    const numericAge = typeof age === "string" ? parseInt(age, 10) : age;
+
+    if (protocol === "McArdle 1992") {
+      if (gender === "male") {
+        if (numericAge >= 18 && numericAge <= 34) {
+          body_density = 1.1610 - 0.0632 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
+        } else if (numericAge >= 18 && numericAge <= 27) {
+          body_density = 1.0913 - 0.00116 * (measurements.triceps + measurements.suprailiac);
+        }
+      } else if (gender === "female") {
+        if (numericAge >= 18 && numericAge <= 48) {
+          body_density = 1.06234 - 0.00068 * measurements.suprailiac - 0.00039 * measurements.triceps - 0.00025 * measurements.suprailiac;
+        }
+      }
+    } else if (protocol === "Guedes 1994") {
+      if (gender === "male") {
+        body_density = 1.17136 - 0.06706 * Math.log10(measurements.triceps + measurements.suprailiac + measurements.abdominal);
+      } else if (gender === "female") {
+        body_density = 1.16650 - 0.07063 * Math.log10(measurements.thigh + measurements.suprailiac + measurements.suprailiac);
+      }
+    }
+
+    if (body_density) {
+      fat_percentage = ((4.95 / body_density) - 4.50) * 100;
+      const fat_mass = (fat_percentage / 100) * parseFloat(weight);
+      const lean_mass = parseFloat(weight) - fat_mass;
+
+      setCalculatedResults({
+        body_density: body_density.toFixed(4),
+        fat_percentage: fat_percentage.toFixed(2),
+        fat_mass: fat_mass.toFixed(2),
+        lean_mass: lean_mass.toFixed(2)
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (assessment.protocol && assessment.gender && assessment.age &&
+      assessment.weight && assessment.triceps && assessment.abdominal &&
+      assessment.suprailiac) {
+      calculateResults();
+    }
+  }, [assessment]);
+
+  const handleSubmit = async () => {
     try {
-      const response = await fetch('/api/physical-assessments');
+      setIsLoading(true);
+
+      if (!calculatedResults) {
+        throw new Error("Por favor, preencha todos os campos obrigatórios para calcular os resultados");
+      }
+
+      const assessmentData = {
+        ...assessment,
+        ...calculatedResults,
+        // Convert string values to numbers
+        weight: parseFloat(assessment.weight),
+        height: parseFloat(assessment.height),
+        age: parseInt(assessment.age),
+        neck: parseFloat(assessment.neck),
+        shoulders: parseFloat(assessment.shoulders),
+        chest: parseFloat(assessment.chest),
+        abdomen: parseFloat(assessment.abdomen),
+        waist: parseFloat(assessment.waist),
+        hips: parseFloat(assessment.hips),
+        left_arm: parseFloat(assessment.left_arm),
+        right_arm: parseFloat(assessment.right_arm),
+        left_thigh: parseFloat(assessment.left_thigh),
+        right_thigh: parseFloat(assessment.right_thigh),
+        left_calf: parseFloat(assessment.left_calf),
+        right_calf: parseFloat(assessment.right_calf),
+        triceps: parseFloat(assessment.triceps),
+        abdominal: parseFloat(assessment.abdominal),
+        suprailiac: parseFloat(assessment.suprailiac),
+      };
+
+      const response = await fetch('/api/physical-assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(assessmentData),
+      });
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
-      setAssessments(data);
+
+      toast({
+        title: "Avaliação criada",
+        description: "Avaliação física salva com sucesso",
+      });
+
+      router.push('/dashboard/physical-assessments');
+
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao buscar avaliações",
+        title: "Erro ao criar avaliação",
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -72,6 +233,29 @@ export default function PhysicalAssessmentsPage() {
       });
     }
   };
+
+  const fetchAssessments = async () => {
+    try {
+      const response = await fetch('/api/physical-assessments');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      setAssessments(data);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar avaliações",
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchAssessments();
+  }, []);
 
   interface Student {
     id: string;

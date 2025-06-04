@@ -1,22 +1,19 @@
+// app/api/students/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Missing env.SUPABASE_SERVICE_ROLE_KEY');
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  const { searchParams } = new URL(request.url);
+  
+  // Get pagination parameters
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const offset = (page - 1) * limit;
 
   try {
-    // Verify user is authenticated and is a trainer
     const { data: { session }, error: authError } = await supabase.auth.getSession();
     if (authError || !session) {
       return NextResponse.json(
@@ -27,7 +24,80 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role, tenant_id, id')
+      .select('role, tenant_id')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (profileError || profile?.role !== 'trainer') {
+      return NextResponse.json(
+        { error: 'Access restricted to trainers' },
+        { status: 403 }
+      );
+    }
+
+    // Get total count
+    const { count: totalCount, error: countError } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'student')
+      .eq('tenant_id', profile.tenant_id);
+
+    if (countError) {
+      return NextResponse.json(
+        { error: countError.message },
+        { status: 500 }
+      );
+    }
+
+    // Get paginated students
+    const { data: students, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'student')
+      .eq('tenant_id', profile.tenant_id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      students,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil((totalCount || 0) / limit)
+      }
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'An error occurred while fetching students' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  const cookieStore = cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+
+  try {
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, tenant_id')
       .eq('user_id', session.user.id)
       .single();
 
@@ -39,23 +109,6 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
-    
-    // Invite user using admin client with redirectTo URL
-    const { data: authData, error: authError2 } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-      data: {
-        full_name: data.name,
-        is_student_creation: true,
-        tenant_id: profile.tenant_id
-      }
-    });
-
-    if (authError2) {
-      return NextResponse.json(
-        { error: authError2.message },
-        { status: 500 }
-      );
-    }
 
     // Process and validate data types
     const height = data.height ? parseFloat(data.height) : null;
@@ -66,7 +119,6 @@ export async function POST(request: Request) {
     const { data: profileData, error: profileError2 } = await supabase
       .from('profiles')
       .insert({
-        user_id: authData.user.id,
         email: data.email,
         full_name: data.name,
         phone: data.phone || null,
@@ -89,71 +141,16 @@ export async function POST(request: Request) {
       .single();
 
     if (profileError2) {
-      // Try to clean up the auth user if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json(
         { error: profileError2.message },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({
-      message: 'Student invited successfully',
-      data: profileData
-    });
+    return NextResponse.json(profileData);
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'An error occurred while creating the student' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET() {
-  const cookieStore = cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-
-  try {
-    // Verify user is authenticated and is a trainer
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role, tenant_id')
-      .eq('user_id', session.user.id)
-      .single();
-
-    if (profileError || profile?.role !== 'trainer') {
-      return NextResponse.json(
-        { error: 'Access restricted to trainers' },
-        { status: 403 }
-      );
-    }
-    
-    // Get students for this tenant
-    const { data: students, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('role', 'student')
-      .eq('tenant_id', profile.tenant_id);
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(students);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || 'An error occurred while fetching students' },
       { status: 500 }
     );
   }

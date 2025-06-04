@@ -1,6 +1,7 @@
+// components/dashboard/header.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Dumbbell, Menu, User, Settings, LogOut } from "lucide-react";
@@ -28,8 +29,28 @@ export function Header({ userRole }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
 
-  const userInitial = session?.user?.email?.charAt(0).toUpperCase() || "U";
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch('/api/profile');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const userInitial = profile?.full_name?.charAt(0).toUpperCase() || session?.user?.email?.charAt(0).toUpperCase() || "U";
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -126,24 +147,24 @@ export function Header({ userRole }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src="" alt="Profile" />
+                  <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
                   <AvatarFallback className="bg-primary/10">{userInitial}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/profile" className="flex items-center">
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  Perfil
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/settings" className="flex items-center">
                   <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                  Configurações
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -152,7 +173,7 @@ export function Header({ userRole }: HeaderProps) {
                 className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -1,13 +1,15 @@
-// components/AddStudentForm.tsx
-"use client";
+'use client';
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const EXPERIENCE_LEVELS = [
   "Iniciante",
@@ -34,31 +36,13 @@ const GOALS = [
   "Reabilitação"
 ];
 
-type StudentFormData = {
-  name: string;
-  email: string;
-  phone: string;
-  birthDate: string;
-  gender: string;
-  height: string;
-  weight: string;
-  goals: string[];
-  medicalConditions: string;
-  emergencyContact: string;
-  preferredTime: string;
-  experienceLevel: string;
-  notes: string;
-};
-
-type AddStudentFormProps = {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-};
-
-export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
-  const [currentStep, setCurrentStep] = useState(1);
+export default function NewStudentPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [newStudent, setNewStudent] = useState<StudentFormData>({
+  const [currentStep, setCurrentStep] = useState(1);
+  
+  const [newStudent, setNewStudent] = useState({
     name: "",
     email: "",
     phone: "",
@@ -66,7 +50,7 @@ export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
     gender: "",
     height: "",
     weight: "",
-    goals: [],
+    goals: [] as string[],
     medicalConditions: "",
     emergencyContact: "",
     preferredTime: "",
@@ -91,33 +75,21 @@ export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
         throw new Error(data.error);
       }
 
-      if (onSuccess) onSuccess();
-      handleFormReset();
+      toast({
+        title: "Aluno adicionado",
+        description: "O convite foi enviado para o email do aluno.",
+      });
+
+      router.push('/dashboard/students');
     } catch (error: any) {
-      console.error("Erro ao adicionar aluno:", error);
-      alert(error.message);
+      toast({
+        variant: "destructive",
+        title: "Erro ao adicionar aluno",
+        description: error.message,
+      });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFormReset = () => {
-    setNewStudent({
-      name: "",
-      email: "",
-      phone: "",
-      birthDate: "",
-      gender: "",
-      height: "",
-      weight: "",
-      goals: [],
-      medicalConditions: "",
-      emergencyContact: "",
-      preferredTime: "",
-      experienceLevel: "",
-      notes: ""
-    });
-    setCurrentStep(1);
   };
 
   const nextStep = () => {
@@ -141,7 +113,7 @@ export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
               <Label htmlFor="name">Nome Completo *</Label>
               <Input
                 id="name"
-                placeholder="Full name"
+                placeholder="Nome completo"
                 value={newStudent.name}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, name: e.target.value }))}
               />
@@ -151,7 +123,7 @@ export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
               <Input
                 id="email"
                 type="email"
-                placeholder="Email address"
+                placeholder="Email"
                 value={newStudent.email}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
               />
@@ -160,7 +132,7 @@ export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
               <Label htmlFor="phone">Número de Telefone</Label>
               <Input
                 id="phone"
-                placeholder="Phone number"
+                placeholder="Telefone"
                 value={newStudent.phone}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, phone: e.target.value }))}
               />
@@ -200,7 +172,7 @@ export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
               <Input
                 id="height"
                 type="number"
-                placeholder="Height in centimeters"
+                placeholder="Altura em centímetros"
                 value={newStudent.height}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, height: e.target.value }))}
               />
@@ -210,7 +182,7 @@ export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
               <Input
                 id="weight"
                 type="number"
-                placeholder="Weight in kilograms"
+                placeholder="Peso em quilogramas"
                 value={newStudent.weight}
                 onChange={(e) => setNewStudent(prev => ({ ...prev, weight: e.target.value }))}
               />
@@ -316,62 +288,79 @@ export function AddStudentForm({ onSuccess, onCancel }: AddStudentFormProps) {
 
   return (
     <div className="space-y-6">
-      <div className="border-b pb-4">
-        <h2 className="text-2xl font-bold">Adicionar Novo Aluno</h2>
-        <p className="text-muted-foreground">
-          {currentStep === 1 && "Insira as informações básicas do aluno."}
-          {currentStep === 2 && "Insira detalhes físicos e objetivos."}
-          {currentStep === 3 && "Insira informações médicas e preferências."}
-        </p>
-      </div>
-
-      {/* Progress Steps Indicator */}
-      <div className="px-6 pt-2">
-        <div className="flex justify-between relative">
-          <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-border -translate-y-1/2 z-0" />
-          {[1, 2, 3].map((step) => (
-            <div key={step} className="flex flex-col items-center z-10">
-              <div className={`h-6 w-6 rounded-full flex items-center justify-center ${currentStep >= step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                {step}
-              </div>
-              <span className={`text-xs mt-1 ${currentStep === step ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
-                Passo {step}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="py-4">
-        {renderStepContent()}
-      </div>
-
-      <div className="flex justify-between">
-        <div>
-          {currentStep > 1 && (
-            <Button variant="outline" onClick={prevStep}>
-              Anterior
-            </Button>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel || handleFormReset}>
-            Cancelar
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
           </Button>
-          {currentStep < 3 ? (
-            <Button onClick={nextStep}>Próximo</Button>
-          ) : (
-            <Button onClick={handleAddStudent} disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando...
-                </>
-              ) : "Enviar Convite"}
-            </Button>
-          )}
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Adicionar Novo Aluno</h2>
+            <p className="text-muted-foreground">
+              Preencha as informações do novo aluno
+            </p>
+          </div>
         </div>
       </div>
+
+      <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
+        <CardContent className="p-6 space-y-6">
+          {/* Progress Steps Indicator */}
+          <div className="px-6 pt-2">
+            <div className="flex justify-between relative">
+              <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-border -translate-y-1/2 z-0" />
+              {[1, 2, 3].map((step) => (
+                <div key={step} className="flex flex-col items-center z-10">
+                  <div className={`h-6 w-6 rounded-full flex items-center justify-center ${
+                    currentStep >= step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {step}
+                  </div>
+                  <span className={`text-xs mt-1 ${
+                    currentStep === step ? 'font-medium text-primary' : 'text-muted-foreground'
+                  }`}>
+                    Passo {step}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="py-4">
+            {renderStepContent()}
+          </div>
+
+          <div className="flex justify-between">
+            <div>
+              {currentStep > 1 && (
+                <Button variant="outline\" onClick={prevStep}>
+                  Anterior
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => router.back()}>
+                Cancelar
+              </Button>
+              {currentStep < 3 ? (
+                <Button onClick={nextStep}>Próximo</Button>
+              ) : (
+                <Button onClick={handleAddStudent} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : "Enviar Convite"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
