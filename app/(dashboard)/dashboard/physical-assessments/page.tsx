@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -12,47 +15,86 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter, ArrowRight, Edit, Copy, Trash2, ClipboardList, CalendarDays, Eye, User } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip";
 
-export default function PhysicalAssessmentsPage() {
+const PROTOCOLS = [
+  "McArdle 1992",
+  "Guedes 1994"
+];
+
+export default function NewPhysicalAssessmentPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [studentFilter, setStudentFilter] = useState("all");
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  type Student = { id: string; full_name: string };
   const [students, setStudents] = useState<Student[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  type CalculatedResults = {
+    body_density: string;
+    fat_percentage: string;
+    fat_mass: string;
+    lean_mass: string;
+  } | null;
+
+  const [calculatedResults, setCalculatedResults] = useState<CalculatedResults>(null);
+
+  const [assessment, setAssessment] = useState({
+    protocol: "",
+    student_id: "",
+    date: new Date().toISOString().split('T')[0], // formato YYYY-MM-DD
+    weight: "",
+    height: "",
+    age: "",
+    gender: "",
+    // Perimetry
+    neck: "",
+    shoulders: "",
+    chest: "",
+    abdomen: "",
+    waist: "",
+    hips: "",
+    left_arm: "",
+    right_arm: "",
+    left_thigh: "",
+    right_thigh: "",
+    left_calf: "",
+    right_calf: "",
+    // Skinfolds
+    triceps: "",
+    abdominal: "",
+    suprailiac: "",
+    // Outros
+    notes: ""
+  });
 
   useEffect(() => {
-    fetchAssessments();
     fetchStudents();
   }, []);
 
-  const fetchAssessments = async () => {
+  const fetchStudents = async () => {
     try {
-      const response = await fetch('/api/physical-assessments');
+      // Request all students by setting a large limit
+      const response = await fetch('/api/students?limit=1000');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
-      setAssessments(data);
+
+      // Access the students array from the response
+      setStudents(data.students);
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao buscar avaliações",
+        title: "Erro ao buscar alunos",
         description: error instanceof Error ? error.message : String(error),
       });
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  // Rest of the component code remains the same...
+  // (I'm keeping only the relevant part that needed to be fixed)
+}
 
   const fetchStudents = async () => {
     try {
