@@ -17,36 +17,50 @@ export type Exercise = {
   tenant_id: string;
 };
 
+interface PaginationState {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export function useExercises() {
   const { supabase } = useSupabase();
   const { toast } = useToast();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 1,
+    limit: 25,
+    total: 0,
+    totalPages: 1
+  });
 
-  useEffect(() => {
-    fetchExercises();
-  }, []);
-
-  const fetchExercises = async () => {
+  const fetchExercises = async (page = pagination.page, limit = pagination.limit) => {
     try {
-      const response = await fetch('/api/exercises');
+      const response = await fetch(`/api/exercises?page=${page}&limit=${limit}`);
       const data = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error);
       }
       
-      setExercises(data);
+      setExercises(data.exercises);
+      setPagination(data.pagination);
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error fetching exercises",
+        title: "Erro ao buscar exercícios",
         description: error.message,
       });
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchExercises();
+  }, []);
 
   const addExercise = async (exerciseData: Partial<Exercise>) => {
     try {
@@ -64,12 +78,12 @@ export function useExercises() {
         throw new Error(data.error);
       }
 
-      setExercises([...exercises, data]);
+      await fetchExercises(); // Refresh the list after adding
       return data;
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error adding exercise",
+        title: "Erro ao adicionar exercício",
         description: error.message,
       });
       throw error;
@@ -92,12 +106,12 @@ export function useExercises() {
         throw new Error(data.error);
       }
 
-      setExercises(exercises.map(ex => ex.id === id ? data : ex));
+      await fetchExercises(); // Refresh the list after updating
       return data;
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error updating exercise",
+        title: "Erro ao atualizar exercício",
         description: error.message,
       });
       throw error;
@@ -113,14 +127,22 @@ export function useExercises() {
       const data = await response.json();
       
       if (!response.ok) {
+        if (data.code === 'DEPENDENCY_ERROR') {
+          toast({
+            variant: "destructive",
+            title: "Não é possível excluir",
+            description: data.error,
+          });
+          return;
+        }
         throw new Error(data.error);
       }
 
-      setExercises(exercises.filter(ex => ex.id !== id));
+      await fetchExercises(); // Refresh the list after deleting
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error deleting exercise",
+        title: "Erro ao excluir exercício",
         description: error.message,
       });
       throw error;
@@ -147,20 +169,31 @@ export function useExercises() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error uploading video",
+        title: "Erro ao fazer upload do vídeo",
         description: error.message,
       });
       throw error;
     }
   };
 
+  const changePage = (page: number) => {
+    fetchExercises(page, pagination.limit);
+  };
+
+  const changePageSize = (limit: number) => {
+    fetchExercises(1, limit);
+  };
+
   return {
     exercises,
     loading,
+    pagination,
     addExercise,
     updateExercise,
     deleteExercise,
     uploadVideo,
+    changePage,
+    changePageSize,
     refresh: fetchExercises,
   };
 }
