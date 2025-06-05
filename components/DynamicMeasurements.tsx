@@ -92,8 +92,18 @@ const MEASUREMENT_FIELDS: Record<string, MeasurementField[]> = {
   
   "Guedes (1994)": [
     // Circunferências básicas
+    { id: "neck", label: "Pescoço", category: "circumferences", required: false, unit: "cm", normalRange: [30, 45] },
+    { id: "shoulders", label: "Ombros", category: "circumferences", required: false, unit: "cm", normalRange: [90, 140] },
+    { id: "chest_circ", label: "Tórax", category: "circumferences", required: false, unit: "cm", normalRange: [70, 130] },
     { id: "waist", label: "Cintura", category: "circumferences", required: false, unit: "cm", normalRange: [60, 120] },
+    { id: "abdomen", label: "Abdômen", category: "circumferences", required: false, unit: "cm", normalRange: [65, 130] },
     { id: "hips", label: "Quadril", category: "circumferences", required: false, unit: "cm", normalRange: [80, 140] },
+    { id: "right_arm", label: "Braço Direito", category: "circumferences", required: false, unit: "cm", normalRange: [20, 45] },
+    { id: "left_arm", label: "Braço Esquerdo", category: "circumferences", required: false, unit: "cm", normalRange: [20, 45] },
+    { id: "right_thigh", label: "Coxa Direita", category: "circumferences", required: false, unit: "cm", normalRange: [40, 75] },
+    { id: "left_thigh", label: "Coxa Esquerda", category: "circumferences", required: false, unit: "cm", normalRange: [40, 75] },
+    { id: "right_calf", label: "Panturrilha Direita", category: "circumferences", required: false, unit: "cm", normalRange: [25, 45] },
+    { id: "left_calf", label: "Panturrilha Esquerda", category: "circumferences", required: false, unit: "cm", normalRange: [25, 45] },
     
     // 3 Dobras obrigatórias
     { id: "triceps", label: "Tríceps", category: "skinfolds", required: true, unit: "mm", normalRange: [5, 40] },
