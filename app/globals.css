@@ -792,3 +792,121 @@
 .dark .landing-pricing-card {
   @apply bg-card/50 backdrop-blur-sm;
 }
+
+
+/* Adicione essas variáveis CSS ao seu arquivo globals.css ou tailwind.css */
+
+@layer base {
+  :root {
+    /* Chart color variables */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+
+  .dark {
+    /* Dark mode chart colors */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+/* Chart specific styles */
+[data-chart] {
+  --color-bg: white;
+  --color-border: hsl(var(--border));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+}
+
+.dark [data-chart] {
+  --color-bg: hsl(var(--background));
+}
+
+/* Recharts customizations */
+.recharts-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.recharts-surface {
+  overflow: visible;
+}
+
+/* Tooltip styles */
+.recharts-tooltip-wrapper {
+  z-index: 50;
+}
+
+/* Grid lines */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: hsl(var(--border));
+  stroke-opacity: 0.5;
+}
+
+/* Axis styles */
+.recharts-cartesian-axis-tick-value {
+  fill: hsl(var(--muted-foreground));
+  font-size: 12px;
+}
+
+/* Legend styles */
+.recharts-legend-wrapper {
+  margin-top: 16px;
+}
+
+/* Responsive breakpoints for charts */
+@media (max-width: 640px) {
+  [data-chart] {
+    font-size: 10px;
+  }
+  
+  .recharts-cartesian-axis-tick-value {
+    font-size: 10px;
+  }
+}
+
+/* Animation styles */
+.recharts-area,
+.recharts-bar,
+.recharts-line {
+  transition: all 0.3s ease-in-out;
+}
+
+.recharts-area:hover,
+.recharts-bar:hover,
+.recharts-line:hover {
+  filter: brightness(1.1);
+}
+
+/* Custom gradient definitions */
+.chart-gradient-blue {
+  --gradient-from: #3b82f6;
+  --gradient-to: #1d4ed8;
+}
+
+.chart-gradient-green {
+  --gradient-from: #10b981;
+  --gradient-to: #059669;
+}
+
+.chart-gradient-red {
+  --gradient-from: #ef4444;
+  --gradient-to: #dc2626;
+}
+
+.chart-gradient-purple {
+  --gradient-from: #8b5cf6;
+  --gradient-to: #7c3aed;
+}
+
+.chart-gradient-orange {
+  --gradient-from: #f59e0b;
+  --gradient-to: #d97706;
+}
