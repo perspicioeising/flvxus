@@ -55,7 +55,7 @@ interface ComparisonData {
   isPositive: boolean;
 }
 
-interface AssessmentComparisonProps {
+type  AssessmentComparisonProps = {
   studentId: string;
   currentAssessment?: Assessment;
 }
