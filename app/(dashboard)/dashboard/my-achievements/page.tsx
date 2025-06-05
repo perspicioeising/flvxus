@@ -7,14 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Trophy, 
-  Dumbbell, 
-  Calendar, 
-  BarChart, 
-  Target, 
-  Award, 
-  Lock, 
+import {
+  Trophy,
+  Dumbbell,
+  Calendar,
+  BarChart,
+  Target,
+  Award,
+  Lock,
   CheckCircle,
   Clock
 } from "lucide-react";
@@ -25,8 +25,24 @@ export default function MyAchievementsPage() {
   const router = useRouter();
   const { supabase, session } = useSupabase();
   const { toast } = useToast();
-  const [achievements, setAchievements] = useState([]);
-  const [userAchievements, setUserAchievements] = useState([]);
+  type Achievement = {
+    id: string;
+    name: string;
+    description: string;
+    criteria_type: string;
+    criteria_value: number;
+    points_reward: number;
+    earned?: boolean;
+    progress?: number;
+  };
+
+  type UserAchievement = {
+    achievement_id: string;
+    earned_at: string;
+  };
+
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPoints: 0,
@@ -62,11 +78,11 @@ export default function MyAchievementsPage() {
     try {
       const response = await fetch('/api/user/achievements');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       setAchievements(data.achievements || []);
       setUserAchievements(data.userAchievements || []);
     } catch (error) {
@@ -78,11 +94,11 @@ export default function MyAchievementsPage() {
     try {
       const response = await fetch('/api/user/stats');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       setStats({
         totalPoints: data.totalPoints,
         level: data.level,
@@ -128,7 +144,7 @@ export default function MyAchievementsPage() {
   // Group achievements by status (earned vs. in progress)
   const earnedAchievements = achievements.filter((a: any) => a.earned);
   const inProgressAchievements = achievements.filter((a: any) => !a.earned);
-
+  // Removed incorrect userAchievement lookup here; this logic should be handled inside the map where each achievement is available.
   return (
     <div className="space-y-6">
       <div>
@@ -155,7 +171,7 @@ export default function MyAchievementsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex-1 max-w-md">
               <div className="flex justify-between text-sm mb-2">
                 <span>Progresso para Nível {stats.level + 1}</span>
@@ -181,9 +197,10 @@ export default function MyAchievementsPage() {
         <CardContent>
           {earnedAchievements.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {earnedAchievements.map((achievement: any) => {
-                const userAchievement = userAchievements.find((ua: any) => ua.achievement_id === achievement.id);
-                
+              {earnedAchievements.map((achievement) => {
+                const userAchievement = userAchievements.find(
+                  (ua: UserAchievement) => ua.achievement_id === achievement.id
+                );
                 return (
                   <Card key={achievement.id} className="border-primary/20 bg-primary/5">
                     <CardContent className="p-4">
@@ -191,22 +208,22 @@ export default function MyAchievementsPage() {
                         <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-3">
                           {getCriteriaTypeIcon(achievement.criteria_type)}
                         </div>
-                        
+
                         <h3 className="font-semibold text-lg mb-1">{achievement.name}</h3>
                         <p className="text-sm text-muted-foreground mb-3">{achievement.description}</p>
-                        
+
                         <Badge className="bg-green-500 text-white mb-3">
                           <Award className="h-3 w-3 mr-1" />
                           Conquistado
                         </Badge>
-                        
+
                         {userAchievement && (
                           <div className="text-xs text-muted-foreground">
                             <Clock className="h-3 w-3 inline mr-1" />
                             Obtido em {format(new Date(userAchievement.earned_at), 'dd/MM/yyyy')}
                           </div>
                         )}
-                        
+
                         <div className="mt-3 text-sm">
                           <span className="text-muted-foreground">Recompensa: </span>
                           <span className="font-medium">{achievement.points_reward} pontos</span>
@@ -250,10 +267,10 @@ export default function MyAchievementsPage() {
                       <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
                         {getCriteriaTypeIcon(achievement.criteria_type)}
                       </div>
-                      
+
                       <h3 className="font-semibold text-lg mb-1">{achievement.name}</h3>
                       <p className="text-sm text-muted-foreground mb-3">{achievement.description}</p>
-                      
+
                       <div className="w-full space-y-2 mb-3">
                         <div className="flex justify-between text-xs">
                           <span>{achievement.progress}%</span>
@@ -261,7 +278,7 @@ export default function MyAchievementsPage() {
                         </div>
                         <Progress value={achievement.progress} className="h-2" />
                       </div>
-                      
+
                       <div className="mt-3 text-sm">
                         <span className="text-muted-foreground">Recompensa: </span>
                         <span className="font-medium">{achievement.points_reward} pontos</span>
