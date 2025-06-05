@@ -1,9 +1,10 @@
-// app/api/diets/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
+   console.log('=== DIETS GET ROUTE FUNCIONANDO ===');
+  console.log('URL:', request.url);
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
   const { searchParams } = new URL(request.url);
