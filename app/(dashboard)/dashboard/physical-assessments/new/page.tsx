@@ -21,13 +21,18 @@ import ProtocolSelector from "@/components/ProtocolSelector";
 import DynamicMeasurements from "@/components/DynamicMeasurements";
 
 interface Student {
+  height: any;
+  weight: any;
   id: string;
   full_name: string;
+  email?: string;
+  phone?: string;
+  avatar_url?: string;
   birth_date?: string;
   gender?: string;
-  height?: number;
-  weight?: number;
+  goals?: string[];
 }
+
 
 export default function EnhancedAssessmentForm() {
   const router = useRouter();
@@ -179,59 +184,101 @@ export default function EnhancedAssessmentForm() {
   };
 
   const handleSubmit = async () => {
-    try {
-      setIsLoading(true);
+  try {
+    setIsLoading(true);
 
-      if (!calculatedResults) {
-        throw new Error("Por favor, complete todas as medições obrigatórias");
-      }
-
-      const assessmentData = {
-        ...assessment,
-        ...calculatedResults,
-        // Converter valores string para números
-        weight: parseFloat(assessment.weight),
-        height: parseFloat(assessment.height),
-        age: parseInt(assessment.age),
-        // Converter medições
-        ...Object.fromEntries(
-          Object.entries(assessment.measurements).map(([key, value]) => [
-            key, value ? parseFloat(value) : null
-          ])
-        )
-      };
-
-      const response = await fetch('/api/physical-assessments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(assessmentData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      toast({
-        title: "✅ Avaliação criada com sucesso!",
-        description: "Os dados foram salvos e já estão disponíveis no histórico do aluno.",
-      });
-
-      router.push('/dashboard/physical-assessments');
-
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar avaliação",
-        description: error instanceof Error ? error.message : String(error),
-      });
-    } finally {
-      setIsLoading(false);
+    if (!calculatedResults) {
+      throw new Error("Por favor, complete todas as medições obrigatórias");
     }
-  };
+
+    // Preparar os dados da avaliação
+    const assessmentData = {
+      // Dados básicos obrigatórios
+      protocol: assessment.protocol,
+      student_id: assessment.student_id,
+      date: assessment.date,
+      weight: parseFloat(assessment.weight),
+      height: parseFloat(assessment.height),
+      age: parseInt(assessment.age),
+      gender: assessment.gender,
+      
+      // Dados opcionais
+      goals: assessment.goals.length > 0 ? assessment.goals : null,
+      notes: assessment.notes || null,
+      
+      // Resultados calculados do componente DynamicMeasurements
+      bmi: calculatedResults.bmi || null,
+      body_density: calculatedResults.body_density || null,
+      fat_percentage: calculatedResults.fat_percentage || null,
+      lean_mass: calculatedResults.lean_mass || null,
+      fat_mass: calculatedResults.fat_mass || null,
+      
+      // Nova coluna measurements (JSONB) - flexível para qualquer protocolo
+      measurements: assessment.measurements,
+      
+      // Também incluir as colunas específicas para compatibilidade
+      // (o trigger no banco fará a sincronização automaticamente)
+      triceps: assessment.measurements.triceps ? parseFloat(assessment.measurements.triceps) : null,
+      subscapular: assessment.measurements.subscapular ? parseFloat(assessment.measurements.subscapular) : null,
+      biceps: assessment.measurements.biceps ? parseFloat(assessment.measurements.biceps) : null,
+      chest: assessment.measurements.chest ? parseFloat(assessment.measurements.chest) : null,
+      midaxillary: assessment.measurements.midaxillary ? parseFloat(assessment.measurements.midaxillary) : null,
+      suprailiac: assessment.measurements.suprailiac ? parseFloat(assessment.measurements.suprailiac) : null,
+      abdominal: assessment.measurements.abdominal ? parseFloat(assessment.measurements.abdominal) : null,
+      thigh: assessment.measurements.thigh ? parseFloat(assessment.measurements.thigh) : null,
+      
+      // Circunferências
+      neck: assessment.measurements.neck ? parseFloat(assessment.measurements.neck) : null,
+      shoulders: assessment.measurements.shoulders ? parseFloat(assessment.measurements.shoulders) : null,
+      waist: assessment.measurements.waist ? parseFloat(assessment.measurements.waist) : null,
+      abdomen: assessment.measurements.abdomen ? parseFloat(assessment.measurements.abdomen) : null,
+      hips: assessment.measurements.hips ? parseFloat(assessment.measurements.hips) : null,
+      left_arm: assessment.measurements.left_arm ? parseFloat(assessment.measurements.left_arm) : null,
+      right_arm: assessment.measurements.right_arm ? parseFloat(assessment.measurements.right_arm) : null,
+      left_thigh: assessment.measurements.left_thigh ? parseFloat(assessment.measurements.left_thigh) : null,
+      right_thigh: assessment.measurements.right_thigh ? parseFloat(assessment.measurements.right_thigh) : null,
+      left_calf: assessment.measurements.left_calf ? parseFloat(assessment.measurements.left_calf) : null,
+      right_calf: assessment.measurements.right_calf ? parseFloat(assessment.measurements.right_calf) : null,
+    };
+
+    // Log para debug (remover em produção)
+    console.log('Dados sendo enviados para API:', {
+      ...assessmentData,
+      measurements: JSON.stringify(assessmentData.measurements, null, 2)
+    });
+
+    const response = await fetch('/api/physical-assessments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(assessmentData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erro desconhecido ao salvar avaliação');
+    }
+
+    toast({
+      title: "✅ Avaliação criada com sucesso!",
+      description: "Os dados foram salvos e já estão disponíveis no histórico do aluno.",
+    });
+
+    router.push('/dashboard/physical-assessments');
+
+  } catch (error) {
+    console.error('Erro ao salvar avaliação:', error);
+    toast({
+      variant: "destructive",
+      title: "Erro ao criar avaliação",
+      description: error instanceof Error ? error.message : String(error),
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const renderStepContent = () => {
     switch (currentStep) {
