@@ -274,36 +274,37 @@ export default function StudentDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black overflow-x-hidden">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         
         {/* Modern Header */}
-        <div className="relative mb-8">
+        <div className="relative mb-6">
           <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl p-8 shadow-2xl">
-            <div className="flex items-center gap-6 mb-6">
+          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl p-4 sm:p-8 shadow-2xl">
+            <div className="flex flex-col gap-4 mb-4">
               <Button
                 variant="ghost"
                 onClick={() => router.back()}
-                className="p-3 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all"
+                className="p-2 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all w-10 h-10 self-start"
+                aria-label="Voltar"
               >
                 <ArrowLeft className="h-5 w-5 text-green-600 dark:text-green-400" />
               </Button>
               
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <User className="h-8 w-8 text-white" />
+                  <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <User className="h-5 w-5 sm:h-8 sm:w-8 text-white" />
                   </div>
                   {student.status === 'active' && (
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-white dark:border-gray-900 rounded-full"></div>
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-6 sm:h-6 bg-green-500 border-2 sm:border-4 border-white dark:border-gray-900 rounded-full"></div>
                   )}
                 </div>
                 <div>
-                  <h1 className="text-4xl font-black bg-gradient-to-r from-gray-900 via-green-600 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent">
+                  <h1 className="text-2xl sm:text-4xl font-black bg-gradient-to-r from-gray-900 via-green-600 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent">
                     {student.name || "Detalhes do Aluno"}
                   </h1>
-                  <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-lg mt-1">
                     Perfil Completo • {student.status === 'active' ? 'Ativo' : 'Inativo'}
                   </p>
                 </div>
@@ -311,11 +312,12 @@ export default function StudentDetailsPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-3">
               <Button
                 onClick={handleResendInvite}
                 disabled={isResendingInvite}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all duration-300 font-semibold"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all duration-300 font-semibold min-h-[48px] text-sm sm:text-base"
+                aria-label={isResendingInvite ? "Reenviando convite" : "Reenviar convite"}
               >
                 <Send className="h-4 w-4 mr-2" />
                 {isResendingInvite ? "Reenviando..." : "Reenviar Convite"}
@@ -323,7 +325,8 @@ export default function StudentDetailsPage() {
               <Button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-green-500/25 transition-all duration-300 font-semibold"
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2 rounded-xl shadow-lg hover:shadow-green-500/25 transition-all duration-300 font-semibold min-h-[48px] text-sm sm:text-base"
+                aria-label={isSaving ? "Salvando alterações" : "Salvar alterações"}
               >
                 {isSaving ? "Salvando..." : "Salvar Alterações"}
               </Button>
