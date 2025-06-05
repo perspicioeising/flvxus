@@ -83,13 +83,17 @@ interface Assessment {
   fat_percentage: number;
   fat_mass: number;
   lean_mass: number;
+ // bmi?: number;
   protocol: string;
+ // notes?: string;
   student_id: string;
+
 
 interface ComparisonData {
   metric: string;
   label: string;
   unit: string;
+  category?: string;
   previous: number;
   current: number;
   change: number;
@@ -220,39 +224,206 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
     if (!previousAssessment || !currentAssessment) return;
 
     const metrics = [
+      // === DADOS BÁSICOS ===
       {
         metric: 'weight',
         label: 'Peso Corporal',
         unit: 'kg',
-        isPositiveChange: (change: number) => Math.abs(change) < 1 // Estabilidade é boa
+        category: 'basic',
+        isPositiveChange: (change: number) => Math.abs(change) < 1
       },
+      {
+        metric: 'height',
+        label: 'Altura',
+        unit: 'cm',
+        category: 'basic',
+        isPositiveChange: (change: number) => Math.abs(change) < 1
+      },
+      {
+        metric: 'age',
+        label: 'Idade',
+        unit: 'anos',
+        category: 'basic',
+        isPositiveChange: (change: number) => Math.abs(change) < 1
+      },
+      
+      // === COMPOSIÇÃO CORPORAL ===
       {
         metric: 'fat_percentage',
         label: '% Gordura Corporal',
         unit: '%',
-        isPositiveChange: (change: number) => change < 0 // Diminuir é positivo
+        category: 'composition',
+        isPositiveChange: (change: number) => change < 0
       },
       {
         metric: 'fat_mass',
         label: 'Massa Gorda',
         unit: 'kg',
-        isPositiveChange: (change: number) => change < 0 // Diminuir é positivo
+        category: 'composition',
+        isPositiveChange: (change: number) => change < 0
       },
       {
         metric: 'lean_mass',
         label: 'Massa Magra',
         unit: 'kg',
-        isPositiveChange: (change: number) => change > 0 // Aumentar é positivo
+        category: 'composition',
+        isPositiveChange: (change: number) => change > 0
       },
       {
         metric: 'bmi',
         label: 'IMC',
         unit: '',
-        isPositiveChange: (change: number) => Math.abs(change) < 0.5 // Estabilidade é positiva
+        category: 'composition',
+        isPositiveChange: (change: number) => Math.abs(change) < 0.5
+      },
+      {
+        metric: 'body_density',
+        label: 'Densidade Corporal',
+        unit: 'g/ml',
+        category: 'composition',
+        isPositiveChange: (change: number) => change > 0 // Densidade maior = menos gordura
+      },
+      
+      // === DOBRAS CUTÂNEAS ===
+      {
+        metric: 'triceps',
+        label: 'Dobra Tríceps',
+        unit: 'mm',
+        category: 'skinfolds',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'subscapular',
+        label: 'Dobra Subescapular',
+        unit: 'mm',
+        category: 'skinfolds',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'biceps',
+        label: 'Dobra Bíceps',
+        unit: 'mm',
+        category: 'skinfolds',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'chest',
+        label: 'Dobra Peitoral',
+        unit: 'mm',
+        category: 'skinfolds',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'midaxillary',
+        label: 'Dobra Axilar Média',
+        unit: 'mm',
+        category: 'skinfolds',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'suprailiac',
+        label: 'Dobra Supra-ilíaca',
+        unit: 'mm',
+        category: 'skinfolds',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'abdominal',
+        label: 'Dobra Abdominal',
+        unit: 'mm',
+        category: 'skinfolds',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'thigh',
+        label: 'Dobra Coxa',
+        unit: 'mm',
+        category: 'skinfolds',
+        isPositiveChange: (change: number) => change < 0
+      },
+      
+      // === CIRCUNFERÊNCIAS ===
+      {
+        metric: 'neck',
+        label: 'Circunf. Pescoço',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => Math.abs(change) < 1
+      },
+      {
+        metric: 'shoulders',
+        label: 'Circunf. Ombros',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change > 0
+      },
+      {
+        metric: 'waist',
+        label: 'Circunf. Cintura',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'abdomen',
+        label: 'Circunf. Abdômen',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change < 0
+      },
+      {
+        metric: 'hips',
+        label: 'Circunf. Quadril',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => Math.abs(change) < 1
+      },
+      {
+        metric: 'left_arm',
+        label: 'Circunf. Braço Esq.',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change > 0
+      },
+      {
+        metric: 'right_arm',
+        label: 'Circunf. Braço Dir.',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change > 0
+      },
+      {
+        metric: 'left_thigh',
+        label: 'Circunf. Coxa Esq.',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change > 0
+      },
+      {
+        metric: 'right_thigh',
+        label: 'Circunf. Coxa Dir.',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change > 0
+      },
+      {
+        metric: 'left_calf',
+        label: 'Circunf. Panturr. Esq.',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change > 0
+      },
+      {
+        metric: 'right_calf',
+        label: 'Circunf. Panturr. Dir.',
+        unit: 'cm',
+        category: 'circumferences',
+        isPositiveChange: (change: number) => change > 0
       }
     ];
 
-    const comparisons: ComparisonData[] = metrics.map(metric => {
+    // Processar métricas principais
+    const mainComparisons: ComparisonData[] = metrics.map(metric => {
       const previous = (previousAssessment as any)[metric.metric] || 0;
       const current = (currentAssessment as any)[metric.metric] || 0;
       const change = current - previous;
@@ -267,6 +438,7 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
         metric: metric.metric,
         label: metric.label,
         unit: metric.unit,
+        category: metric.category,
         previous,
         current,
         change,
@@ -276,7 +448,85 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
       };
     }).filter(comp => comp.previous !== 0 && comp.current !== 0);
 
-    setComparisonData(comparisons);
+    // Processar medições adicionais do campo JSONB
+    const additionalComparisons: ComparisonData[] = [];
+    
+    if (previousAssessment.measurements && currentAssessment.measurements) {
+      const previousMeasurements = previousAssessment.measurements;
+      const currentMeasurements = currentAssessment.measurements;
+      
+      // Encontrar todas as chaves únicas entre as duas avaliações
+      const allKeys = new Set([
+        ...Object.keys(previousMeasurements),
+        ...Object.keys(currentMeasurements)
+      ]);
+      
+      allKeys.forEach(key => {
+        const previous = parseFloat(previousMeasurements[key]) || 0;
+        const current = parseFloat(currentMeasurements[key]) || 0;
+        
+        if (previous !== 0 && current !== 0) {
+          const change = current - previous;
+          const changePercent = previous !== 0 ? (change / previous) * 100 : 0;
+          
+          let trend: 'up' | 'down' | 'stable' = 'stable';
+          if (Math.abs(change) > 0.1) {
+            trend = change > 0 ? 'up' : 'down';
+          }
+
+          // Determinar se a mudança é positiva baseada no tipo de medição
+          let isPositive = false;
+          const keyLower = key.toLowerCase();
+          
+          if (keyLower.includes('dobra') || keyLower.includes('skinfold') || keyLower.includes('triceps') || 
+              keyLower.includes('subscapular') || keyLower.includes('suprailiac') || keyLower.includes('abdominal')) {
+            isPositive = change < 0; // Dobras: diminuir é positivo
+          } else if (keyLower.includes('arm') || keyLower.includes('thigh') || keyLower.includes('calf') || 
+                     keyLower.includes('chest') || keyLower.includes('shoulder')) {
+            isPositive = change > 0; // Músculos: aumentar é positivo
+          } else if (keyLower.includes('waist') || keyLower.includes('abdomen')) {
+            isPositive = change < 0; // Cintura: diminuir é positivo
+          } else {
+            isPositive = Math.abs(change) < 1; // Outros: estabilidade é positiva
+          }
+
+          // Determinar unidade baseada no tipo
+          let unit = '';
+          if (keyLower.includes('dobra') || keyLower.includes('skinfold')) {
+            unit = 'mm';
+          } else {
+            unit = 'cm';
+          }
+
+          additionalComparisons.push({
+            metric: key,
+            label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            unit,
+            category: 'additional',
+            previous,
+            current,
+            change,
+            changePercent,
+            trend,
+            isPositive
+          });
+        }
+      });
+    }
+
+    // Combinar todas as comparações
+    const allComparisons = [...mainComparisons, ...additionalComparisons];
+    
+    // Remover duplicatas (preferir dados principais sobre measurements)
+    const uniqueComparisons = allComparisons.filter((comp, index, arr) => {
+      const duplicateIndex = arr.findIndex(c => 
+        c.metric === comp.metric || 
+        (c.metric.replace(/_/g, '') === comp.metric.replace(/_/g, ''))
+      );
+      return duplicateIndex === index || comp.category !== 'additional';
+    });
+
+    setComparisonData(uniqueComparisons);
   };
 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable', isPositive: boolean) => {
@@ -1085,4 +1335,4 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
       </div>
     </div>
   );
-}
+} 
