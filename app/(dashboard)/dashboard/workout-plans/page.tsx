@@ -15,9 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter, Calendar, ArrowRight, Copy, Trash2, Edit, CalendarCheck, Eye, Loader2 } from "lucide-react";
+import { Plus, Search, Filter, Calendar, ArrowRight, Copy, Trash2, Edit, CalendarCheck, Eye, Loader2, Zap, Target, TrendingUp, Users, Save, X, Clock, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek, differenceInDays } from "date-fns";
 import { TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip";
 import { ptBR } from "date-fns/locale";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -39,20 +39,20 @@ export default function WorkoutPlansPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddingPlan, setIsAddingPlan] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCloning, setIsCloning] = useState(false);
+  
   type Workout = {
     id: string;
     name: string;
     description?: string;
     level?: string;
     goal?: string;
-    // Add other fields as needed
     day_of_week?: number;
   };
 
   type Student = {
     id: string;
     full_name: string;
-    // Add other fields as needed
   };
 
   type Plan = {
@@ -64,7 +64,6 @@ export default function WorkoutPlansPage() {
     end_date: string;
     workouts: any[];
     student?: Student;
-    // Add other fields as needed
   };
 
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -134,7 +133,6 @@ export default function WorkoutPlansPage() {
         throw new Error(data.error);
       }
 
-      // Make sure we're setting an array of students
       setStudents(Array.isArray(data.students) ? data.students : []);
     } catch (error) {
       toast({
@@ -172,8 +170,8 @@ export default function WorkoutPlansPage() {
       }
 
       toast({
-        title: "Plano de treino criado",
-        description: `${newPlan.name} has been created successfully`,
+        title: isCloning ? "Plano clonado" : "Plano criado",
+        description: `${newPlan.name} foi ${isCloning ? 'clonado' : 'criado'} com sucesso`,
       });
 
       await fetchWorkoutPlans();
@@ -182,7 +180,7 @@ export default function WorkoutPlansPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar plano de treino",
+        title: isCloning ? "Erro ao clonar plano" : "Erro ao criar plano",
         description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
     } finally {
@@ -192,6 +190,7 @@ export default function WorkoutPlansPage() {
 
   const handleCancel = () => {
     setIsAddingPlan(false);
+    setIsCloning(false);
     setNewPlan({
       name: "",
       description: "",
@@ -203,7 +202,6 @@ export default function WorkoutPlansPage() {
     setSelectedWorkouts([]);
   };
 
-
   const handleWorkoutSelect = (workout: Workout) => {
     if (!selectedWorkouts.find(w => w.id === workout.id)) {
       setSelectedWorkouts([...selectedWorkouts, {
@@ -213,14 +211,9 @@ export default function WorkoutPlansPage() {
     }
   };
 
-  interface HandleWorkoutUpdateField {
-    day_of_week: number;
-    // Add other fields as needed
-  }
-
   const handleWorkoutUpdate = (
     index: number,
-    field: keyof HandleWorkoutUpdateField,
+    field: keyof { day_of_week: number },
     value: number
   ) => {
     const updatedWorkouts = [...selectedWorkouts];
@@ -231,21 +224,40 @@ export default function WorkoutPlansPage() {
     setSelectedWorkouts(updatedWorkouts);
   };
 
-  interface HandleRemoveWorkout {
-    (index: number): void;
-  }
-
-  const handleRemoveWorkout: HandleRemoveWorkout = (index) => {
+  const handleRemoveWorkout = (index: number) => {
     setSelectedWorkouts(selectedWorkouts.filter((_, i) => i !== index));
   };
 
-  interface DeletePlan {
-    id: string;
-    name: string;
-    // Add other fields as needed
-  }
+  const handleClonePlan = async (plan: Plan) => {
+    setNewPlan({
+      name: `${plan.name} (Cópia)`,
+      description: plan.description || "",
+      student_id: plan.student_id,
+      start_date: format(new Date(), 'yyyy-MM-dd'),
+      end_date: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+      workouts: []
+    });
+    
+    // Fetch plan details to get workouts
+    try {
+      const response = await fetch(`/api/workout-plans/${plan.id}`);
+      const data = await response.json();
+      
+      if (response.ok && data.workouts) {
+        setSelectedWorkouts(data.workouts.map((w: any) => ({
+          ...w.workout,
+          day_of_week: w.day_of_week
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching plan details:', error);
+    }
+    
+    setIsCloning(true);
+    setIsAddingPlan(true);
+  };
 
-  const handleDeletePlan = async (plan: DeletePlan): Promise<void> => {
+  const handleDeletePlan = async (plan: { id: string; name: string }) => {
     try {
       setIsLoading(true);
 
@@ -260,8 +272,8 @@ export default function WorkoutPlansPage() {
       }
 
       toast({
-        title: "Plano de treino deletado",
-        description: `${plan.name} has been removed`,
+        title: "Plano deletado",
+        description: `${plan.name} foi removido`,
       });
 
       await fetchWorkoutPlans();
@@ -269,7 +281,7 @@ export default function WorkoutPlansPage() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao deletar plano de treino",
+        title: "Erro ao deletar plano",
         description: error.message,
       });
     } finally {
@@ -290,128 +302,260 @@ export default function WorkoutPlansPage() {
     return matchesSearch && matchesStatus;
   });
 
+  // Calculate statistics
+  const totalPlans = plans.length;
+  const activePlans = plans.filter(p => new Date(p.end_date) >= new Date()).length;
+  const totalStudents = new Set(plans.map(p => p.student_id)).size;
+  const avgDuration = plans.length > 0 
+    ? Math.round(plans.reduce((sum, plan) => sum + differenceInDays(new Date(plan.end_date), new Date(plan.start_date)), 0) / plans.length)
+    : 0;
+
   return (
-    <div className="space-y-6">
-      {/* Cabeçalho Aprimorado */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20 w-full">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <CalendarCheck className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold tracking-tight">Gerenciar Planos de Treino</h2>
-                  <p className="text-muted-foreground">
-                    Crie e gerencie planos de treino para seus alunos
-                  </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+
+        {/* Ultra Modern Header */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-pink-600/20 dark:from-blue-500/10 dark:via-purple-400/10 dark:to-pink-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-blue-800/30 rounded-3xl p-8 shadow-2xl">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                      <CalendarCheck className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                      <Zap className="h-3 w-3 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-900 via-blue-600 to-gray-900 dark:from-white dark:via-blue-400 dark:to-white bg-clip-text text-transparent">
+                      Planos de Treino
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">{filteredPlans.length}</span> plano{filteredPlans.length !== 1 ? 's' : ''} • Gestão Completa
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <Button
-              onClick={() => setIsAddingPlan(true)}
-              className="h-full min-w-[90px] p-3 flex flex-col items-center justify-center gap-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              <Plus className="h-6 w-6" />
-              <span className="text-xs">Adicionar</span>
-            </Button>
+              <Button
+                onClick={() => setIsAddingPlan(true)}
+                className="group bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-10 py-4 rounded-2xl font-bold shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 border-0"
+              >
+                <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
+                Novo Plano
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Formulário de Criação */}
-      {isAddingPlan && (
-        <div className="space-y-6">
-          <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
-            <CardHeader>
-              <CardTitle>Criar Plano de Treino</CardTitle>
-              <CardDescription>
-                Crie um novo plano de treino para seu aluno
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="name">Nome do Plano *</Label>
-                    <Input
-                      id="name"
-                      value={newPlan.name}
-                      onChange={(e) => setNewPlan(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="ex.: Programa de Força 12 Semanas"
-                      className="bg-background/70 backdrop-blur-sm"
-                    />
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-105 transition-all duration-300">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                    <CalendarCheck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-
-                  <div>
-                    <Label htmlFor="description">Descrição</Label>
-                    <Textarea
-                      id="description"
-                      value={newPlan.description}
-                      onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Descreva os objetivos e foco do plano..."
-                      className="min-h-[100px] bg-background/70 backdrop-blur-sm"
-                    />
+                  <div className="text-left">
+                    <p className="text-blue-600 dark:text-blue-400 text-sm font-semibold">Total</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalPlans}</p>
                   </div>
                 </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full w-full"></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="student">Aluno *</Label>
-                    <Select
-                      value={newPlan.student_id}
-                      onValueChange={(value) => setNewPlan(prev => ({ ...prev, student_id: value }))}
-                    >
-                      <SelectTrigger className="bg-background/70 backdrop-blur-sm">
-                        <SelectValue placeholder="Selecione aluno" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background/90 backdrop-blur-sm border border-primary/20">
-                        {Array.isArray(students) && students.map((student) => (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-105 transition-all duration-300">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                    <Activity className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="start_date">Data de Início *</Label>
-                      <Input
-                        id="start_date"
-                        type="date"
-                        value={newPlan.start_date}
-                        onChange={(e) => setNewPlan(prev => ({ ...prev, start_date: e.target.value }))}
-                        className="bg-background/70 backdrop-blur-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="end_date">Data de Término *</Label>
-                      <Input
-                        id="end_date"
-                        type="date"
-                        value={newPlan.end_date}
-                        onChange={(e) => setNewPlan(prev => ({ ...prev, end_date: e.target.value }))}
-                        className="bg-background/70 backdrop-blur-sm"
-                      />
-                    </div>
+                  <div className="text-left">
+                    <p className="text-green-600 dark:text-green-400 text-sm font-semibold">Ativos</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{activePlans}</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-1000"
+                    style={{ width: `${totalPlans > 0 ? (activePlans / totalPlans) * 100 : 0}%` }}
+                  ></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Seleção de Treinos */}
-          <Card className="bg-background/60 backdrop-blur-sm border border-primary/20 shadow-sm">
-            <CardHeader>
-              <CardTitle>Selecionar Treinos</CardTitle>
-              <CardDescription>
-                Escolha e agende os treinos para este plano
-              </CardDescription>
-            </CardHeader>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-105 transition-all duration-300">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                    <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-purple-600 dark:text-purple-400 text-sm font-semibold">Alunos</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalStudents}</p>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min((totalStudents / students.length) * 100, 100)}%` }}
+                  ></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-105 transition-all duration-300">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                    <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-orange-600 dark:text-orange-400 text-sm font-semibold">Duração Média</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{avgDuration}d</p>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min((avgDuration / 90) * 100, 100)}%` }}
+                  ></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Creation Form */}
+        {isAddingPlan && (
+          <div className="space-y-8 mb-8">
+            {/* Basic Information */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-pink-600/10 rounded-2xl blur-xl"></div>
+              <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl">
+                <CardHeader>
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                      <Plus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {isCloning ? 'Clonar Plano' : 'Criar Novo Plano'}
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 dark:text-gray-400 text-lg">
+                        {isCloning ? 'Crie uma cópia de um plano existente' : 'Configure as informações básicas do plano de treino'}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="name" className="text-sm font-semibold text-gray-700 dark:text-gray-200">Nome do Plano *</Label>
+                        <Input
+                          id="name"
+                          value={newPlan.name}
+                          onChange={(e) => setNewPlan(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="ex.: Programa de Força 12 Semanas"
+                          className="h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label htmlFor="description" className="text-sm font-semibold text-gray-700 dark:text-gray-200">Descrição</Label>
+                        <Textarea
+                          id="description"
+                          value={newPlan.description}
+                          onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Descreva os objetivos e foco do plano..."
+                          className="min-h-[120px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="student" className="text-sm font-semibold text-gray-700 dark:text-gray-200">Aluno *</Label>
+                        <Select
+                          value={newPlan.student_id}
+                          onValueChange={(value) => setNewPlan(prev => ({ ...prev, student_id: value }))}
+                        >
+                          <SelectTrigger className="h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl">
+                            <SelectValue placeholder="Selecione o aluno" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white/95 dark:bg-gray-900/95 border-0 rounded-xl shadow-2xl backdrop-blur-xl">
+                            {Array.isArray(students) && students.map((student) => (
+                              <SelectItem key={student.id} value={student.id} className="rounded-xl">
+                                {student.full_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <Label htmlFor="start_date" className="text-sm font-semibold text-gray-700 dark:text-gray-200">Data de Início *</Label>
+                          <Input
+                            id="start_date"
+                            type="date"
+                            value={newPlan.start_date}
+                            onChange={(e) => setNewPlan(prev => ({ ...prev, start_date: e.target.value }))}
+                            className="h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <Label htmlFor="end_date" className="text-sm font-semibold text-gray-700 dark:text-gray-200">Data de Término *</Label>
+                          <Input
+                            id="end_date"
+                            type="date"
+                            value={newPlan.end_date}
+                            onChange={(e) => setNewPlan(prev => ({ ...prev, end_date: e.target.value }))}
+                            className="h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Workout Selection */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-500/10 to-orange-600/10 rounded-2xl blur-xl"></div>
+              <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl">
+                <CardHeader>
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                      <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Selecionar Treinos</CardTitle>
+                      <CardDescription className="text-gray-600 dark:text-gray-400 text-lg">
+                        Escolha e agende os treinos para este plano
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {workouts.map((workout) => (
@@ -513,6 +657,7 @@ export default function WorkoutPlansPage() {
             </Button>
           </div>
         </div>
+      </div>
       )}
 
       {/* Lista de Planos */}
@@ -648,6 +793,7 @@ export default function WorkoutPlansPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
