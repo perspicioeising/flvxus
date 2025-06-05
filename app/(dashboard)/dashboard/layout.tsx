@@ -62,7 +62,7 @@ export default function DashboardLayout({
       <Header userRole={userRole} />
       <div className="flex flex-1">
         <Sidebar className="hidden md:flex" userRole={userRole} />
-        <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 md:p-6 lg:p-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">{children}</main>
       </div>
     </div>
   );

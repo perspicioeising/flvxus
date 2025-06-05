@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const totalWeight = progress.reduce((sum, p) => {
       // If we have set_weights, use the sum of all sets
       if (p.set_weights && p.set_weights.length > 0) {
-        return sum + p.set_weights.reduce((setSum, weight) => setSum + (weight || 0), 0);
+        return sum + p.set_weights.reduce((setSum: any, weight: any) => setSum + (weight || 0), 0);
       }
       // Otherwise use the average weight
       return sum + (p.weight || 0);
@@ -157,10 +157,10 @@ async function checkAndAwardAchievements(supabase: any, userId: string, tenantId
         // For now, we'll just check if they have enough workouts
         criteriaFulfilled = workoutHistory.length >= achievement.criteria_value;
       } else if (achievement.criteria_type === 'total_weight') {
-        const totalWeight = workoutHistory.reduce((sum, wh) => sum + (wh.total_weight || 0), 0);
+        const totalWeight = workoutHistory.reduce((sum: any, wh: { total_weight: any; }) => sum + (wh.total_weight || 0), 0);
         criteriaFulfilled = totalWeight >= achievement.criteria_value;
       } else if (achievement.criteria_type === 'exercises_completed') {
-        const totalExercises = workoutHistory.reduce((sum, wh) => sum + (wh.exercises_completed || 0), 0);
+        const totalExercises = workoutHistory.reduce((sum: any, wh: { exercises_completed: any; }) => sum + (wh.exercises_completed || 0), 0);
         criteriaFulfilled = totalExercises >= achievement.criteria_value;
       }
 

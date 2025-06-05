@@ -80,7 +80,7 @@ export default function NewPhysicalAssessmentPage() {
         throw new Error(data.error);
       }
 
-      setStudents(data);
+      setStudents(Array.isArray(data.students) ? data.students : []);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -287,8 +287,8 @@ export default function NewPhysicalAssessmentPage() {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o aluno" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {students.map((student) => (
+                  <SelectContent className="bg-background/90 backdrop-blur-sm border border-primary/20">
+                    {Array.isArray(students) && students.map((student) => (
                       <SelectItem key={student.id} value={student.id}>
                         {student.full_name}
                       </SelectItem>

@@ -75,7 +75,7 @@ function generateInsights(progressData: any[], workoutHistory: any[]) {
 
   // Analyze workout frequency
   const workoutFrequency = analyzeWorkoutFrequency(workoutHistory);
-  if (workoutFrequency.insight) {
+  if (workoutFrequency.insight && 'description' in workoutFrequency) {
     insights.push({
       type: 'frequency',
       title: workoutFrequency.title,
@@ -87,7 +87,7 @@ function generateInsights(progressData: any[], workoutHistory: any[]) {
 
   // Analyze weight progression
   const weightProgression = analyzeWeightProgression(progressData);
-  if (weightProgression.insight) {
+  if (weightProgression.insight && 'description' in weightProgression) {
     insights.push({
       type: 'progression',
       title: weightProgression.title,
@@ -99,7 +99,7 @@ function generateInsights(progressData: any[], workoutHistory: any[]) {
 
   // Analyze muscle group balance
   const muscleBalance = analyzeMuscleBalance(progressData);
-  if (muscleBalance.insight) {
+  if (muscleBalance.insight && 'description' in muscleBalance) {
     insights.push({
       type: 'balance',
       title: muscleBalance.title,
@@ -164,8 +164,9 @@ function analyzeWeightProgression(progressData: any[]) {
   };
 
   // Find exercises with stagnant progression
-  const stagnantExercises = Object.entries(exerciseProgress).filter(([_, records]: [string, any[]]) => {
-    const weights = records.map(r => r.weight).filter(Boolean);
+  const stagnantExercises = Object.entries(exerciseProgress).filter(([_, records]) => {
+    const recs = records as any[];
+    const weights = recs.map(r => r.weight).filter(Boolean);
     return weights.length >= 3 && new Set(weights).size === 1;
   });
 

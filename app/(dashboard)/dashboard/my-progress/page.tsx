@@ -46,11 +46,11 @@ export default function MyProgressPage() {
   const router = useRouter();
   const { supabase, session } = useSupabase();
   const { toast } = useToast();
-  const [physicalAssessments, setPhysicalAssessments] = useState([]);
-  const [posturalAssessments, setPosturalAssessments] = useState([]);
-  const [achievements, setAchievements] = useState([]);
-  const [userAchievements, setUserAchievements] = useState([]);
-  const [insights, setInsights] = useState([]);
+  const [physicalAssessments, setPhysicalAssessments] = useState<any[]>([]);
+  const [posturalAssessments, setPosturalAssessments] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [userAchievements, setUserAchievements] = useState<any[]>([]);
+  const [insights, setInsights] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     workoutsCompleted: 0,
