@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Trash2, Upload, Loader2, Play, Sparkles, Volume2 } from "lucide-react";
+import { ArrowLeft, Trash2, Upload, Loader2, Play, Sparkles, Volume2, Dumbbell, Zap, Video, Target, Brain, Mic, FileText, Settings, CheckCircle, AlertTriangle, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -372,425 +372,612 @@ export default function ExerciseDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Carregando detalhes do exercício...</h2>
-          <p className="text-muted-foreground">Por favor, aguarde enquanto buscamos as informações.</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-green-200 dark:border-green-800 rounded-full animate-spin border-t-green-600 dark:border-t-green-400"></div>
+            <div className="absolute inset-0 w-20 h-20 border-4 border-transparent rounded-full animate-ping border-t-green-400 dark:border-t-green-500"></div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+              Carregando detalhes do exercício...
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">Por favor, aguarde enquanto buscamos as informações.</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">{exercise.name}</h2>
-            <p className="text-muted-foreground">
-              Detalhes do Exercício
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+
+        {/* Ultra Modern Header */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl p-8 shadow-2xl">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => router.back()}
+                    className="p-3 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 transition-all duration-300"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                  <div className="relative">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Edit className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                      <Zap className="h-3 w-3 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent">
+                      {exercise.name || 'Editando Exercício'}
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
+                      <span className="font-semibold text-green-600 dark:text-green-400">Edição Avançada</span> • Detalhes do Exercício
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  variant="outline"
+                  onClick={handleDelete}
+                  className="bg-gradient-to-r from-red-100 to-red-100 dark:from-red-900/30 dark:to-pink-900/30 border-red-300 dark:border-red-600 hover:from-red-200 hover:to-pink-200 dark:hover:from-red-800/50 dark:hover:to-pink-800/50 rounded-2xl h-14 px-6 font-semibold transition-all duration-300 transform hover:scale-105"
+                >
+                  <Trash2 className="h-5 w-5 mr-2 text-red-600 dark:text-red-400" />
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white px-10 py-4 rounded-2xl font-bold shadow-2xl hover:shadow-green-500/25 transition-all duration-500 transform hover:scale-105 border-0 h-14"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-3 h-5 w-5" />
+                      Salvar Alterações
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Excluir
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : "Salvar Alterações"}
-          </Button>
-        </div>
+
+        {/* Modern Tabs */}
+        <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
+            <TabsList className="relative grid w-full grid-cols-3 bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl shadow-2xl rounded-2xl p-2 border-0">
+              <TabsTrigger 
+                value="details" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300 flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Detalhes
+              </TabsTrigger>
+              <TabsTrigger 
+                value="media" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300 flex items-center gap-2"
+              >
+                <Video className="h-4 w-4" />
+                Mídia
+              </TabsTrigger>
+              <TabsTrigger 
+                value="advanced" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300 flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Avançado
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="details" className="space-y-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-blue-500/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+
+                {/* Animated gradient border */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+
+                <CardHeader className="relative pb-4">
+                  <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl shadow-lg">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                          Informações Básicas
+                        </CardTitle>
+                        <CardDescription className="text-gray-600 dark:text-gray-400">
+                          Edite as informações básicas do exercício
+                        </CardDescription>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      onClick={generateWithAI} 
+                      disabled={isGeneratingAI || !exercise.name}
+                      className="group bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border-purple-300 dark:border-purple-600 hover:from-purple-200 hover:to-pink-200 dark:hover:from-purple-800/50 dark:hover:to-pink-800/50 rounded-2xl h-14 px-6 font-semibold transition-all duration-300 transform hover:scale-105"
+                    >
+                      {isGeneratingAI ? (
+                        <>
+                          <Loader2 className="mr-3 h-5 w-5 animate-spin text-purple-600 dark:text-purple-400" />
+                          <span className="text-purple-800 dark:text-purple-300">Gerando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="mr-3 h-5 w-5 text-purple-600 dark:text-purple-400 group-hover:animate-pulse" />
+                          <span className="text-purple-800 dark:text-purple-300">Gerar com IA</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="relative space-y-8">
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="name" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        Nome do Exercício *
+                      </Label>
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-xl blur opacity-50"></div>
+                        <Input
+                          id="name"
+                          value={exercise.name}
+                          onChange={(e) => setExercise(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="ex.: Supino Reto"
+                          className="relative h-14 text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="description" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        Descrição *
+                      </Label>
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur opacity-50"></div>
+                        <Textarea
+                          id="description"
+                          value={exercise.description}
+                          onChange={(e) => setExercise(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Descreva o exercício em detalhes..."
+                          className="relative min-h-[120px] text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Muscle Groups */}
+                    <div className="space-y-4">
+                      <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        Grupos Musculares *
+                      </Label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {MUSCLE_GROUPS.map((group) => (
+                          <div key={group} className="relative group/checkbox">
+                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl blur opacity-0 group-hover/checkbox:opacity-100 transition-opacity duration-300"></div>
+                            <label className="relative flex items-center space-x-3 p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 cursor-pointer hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 backdrop-blur-sm">
+                              <input
+                                type="checkbox"
+                                checked={exercise.muscle_group.includes(group)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setExercise(prev => ({
+                                      ...prev,
+                                      muscle_group: [...prev.muscle_group, group]
+                                    }));
+                                  } else {
+                                    setExercise(prev => ({
+                                      ...prev,
+                                      muscle_group: prev.muscle_group.filter(g => g !== group)
+                                    }));
+                                  }
+                                }}
+                                className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                              />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{group}</span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Equipment */}
+                    <div className="space-y-4">
+                      <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        Equipamentos *
+                      </Label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {EQUIPMENT_TYPES.map((type) => (
+                          <div key={type} className="relative group/checkbox">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl blur opacity-0 group-hover/checkbox:opacity-100 transition-opacity duration-300"></div>
+                            <label className="relative flex items-center space-x-3 p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 cursor-pointer hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 backdrop-blur-sm">
+                              <input
+                                type="checkbox"
+                                checked={exercise.equipment.includes(type)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setExercise(prev => ({
+                                      ...prev,
+                                      equipment: [...prev.equipment, type]
+                                    }));
+                                  } else {
+                                    setExercise(prev => ({
+                                      ...prev,
+                                      equipment: prev.equipment.filter(eq => eq !== type)
+                                    }));
+                                  }
+                                }}
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                              />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{type}</span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="media" className="space-y-6">
+            {/* Video Card */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+
+                <CardHeader className="relative pb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
+                      <Video className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                        Vídeo Demonstrativo
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 dark:text-gray-400">
+                        Faça upload de um vídeo ou informe a URL do vídeo demonstrativo
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="relative space-y-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="video_url" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      URL do Vídeo
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl blur opacity-50"></div>
+                      <Input
+                        id="video_url"
+                        placeholder="ex.: https://example.com/video.mp4"
+                        value={exercise.video_url}
+                        onChange={(e) => setExercise(prev => ({ ...prev, video_url: e.target.value }))}
+                        className="relative h-14 text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Informe a URL de um vídeo existente ou faça upload abaixo
+                    </p>
+                  </div>
+
+                  {exercise.video_url && (
+                    <div className="space-y-4">
+                      <div className="relative aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shadow-xl">
+                        <video
+                          src={exercise.video_url}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          <span className="text-blue-800 dark:text-blue-300 font-semibold">
+                            Vídeo atual
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setExercise(prev => ({ ...prev, video_url: '' }))}
+                          className="bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-xl"
+                        >
+                          Remover Vídeo
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      {exercise.video_url ? 'Ou substitua o vídeo' : 'Ou faça upload de um vídeo'}
+                    </Label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleVideoUpload(file);
+                        }}
+                        className="hidden"
+                        id="video-upload"
+                      />
+                      <Button asChild className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-2xl h-14 px-6 font-bold shadow-xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 border-0">
+                        <label htmlFor="video-upload" className="cursor-pointer flex items-center">
+                          <Upload className="h-5 w-5 mr-3" />
+                          {exercise.video_url ? 'Substituir Vídeo' : 'Upload Vídeo'}
+                        </label>
+                      </Button>
+                      {videoFile && (
+                        <Badge className="px-4 py-2 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-300 dark:from-blue-900/30 dark:to-cyan-900/30 dark:text-blue-300 dark:border-blue-600 rounded-full font-semibold">
+                          {videoFile.name}
+                        </Badge>
+                      )}
+                    </div>
+                    {uploadProgress > 0 && (
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    )}
+                    {videoUrl && (
+                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200/50 dark:border-green-700/50">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <span className="text-green-800 dark:text-green-300 font-semibold">
+                            Vídeo enviado com sucesso!
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Audio Card */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-orange-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+
+                <CardHeader className="relative pb-4">
+                  <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
+                        <Mic className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                          Áudio de Instruções
+                        </CardTitle>
+                        <CardDescription className="text-gray-600 dark:text-gray-400">
+                          Faça upload de um áudio ou gere automaticamente com IA
+                        </CardDescription>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      onClick={generateAudioWithAI} 
+                      disabled={isGeneratingAudio || !exercise.description}
+                      className="group bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border-orange-300 dark:border-orange-600 hover:from-orange-200 hover:to-red-200 dark:hover:from-orange-800/50 dark:hover:to-red-800/50 rounded-2xl h-14 px-6 font-semibold transition-all duration-300 transform hover:scale-105"
+                    >
+                      {isGeneratingAudio ? (
+                        <>
+                          <Loader2 className="mr-3 h-5 w-5 animate-spin text-orange-600 dark:text-orange-400" />
+                          <span className="text-orange-800 dark:text-orange-300">Gerando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="mr-3 h-5 w-5 text-orange-600 dark:text-orange-400 group-hover:animate-pulse" />
+                          <span className="text-orange-800 dark:text-orange-300">Gerar Áudio com IA</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="relative space-y-6">
+                  {exercise.audio_url && (
+                    <div className="space-y-4">
+                      <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50">
+                        <audio controls className="w-full h-12 rounded-xl">
+                          <source src={exercise.audio_url} type="audio/mpeg" />
+                          Seu navegador não suporta o elemento de áudio.
+                        </audio>
+                      </div>
+                      <div className="flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          <span className="text-purple-800 dark:text-purple-300 font-semibold">
+                            Áudio atual
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setExercise(prev => ({ ...prev, audio_url: '' }))}
+                          className="bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-xl"
+                        >
+                          Remover Áudio
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      {exercise.audio_url ? 'Ou substitua o áudio' : 'Faça upload de um arquivo de áudio'}
+                    </Label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAudioUpload(file);
+                        }}
+                        className="hidden"
+                        id="audio-upload"
+                      />
+                      <Button asChild className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-2xl h-14 px-6 font-bold shadow-xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 border-0">
+                        <label htmlFor="audio-upload" className="cursor-pointer flex items-center">
+                          <Upload className="h-5 w-5 mr-3" />
+                          {exercise.audio_url ? 'Substituir Áudio' : 'Upload Áudio'}
+                        </label>
+                      </Button>
+                      {audioFile && (
+                        <Badge className="px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-purple-300 dark:from-purple-900/30 dark:to-pink-900/30 dark:text-purple-300 dark:border-purple-600 rounded-full font-semibold">
+                          {audioFile.name}
+                        </Badge>
+                      )}
+                    </div>
+                    {audioUploadProgress > 0 && (
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                          style={{ width: `${audioUploadProgress}%` }}
+                        />
+                      </div>
+                    )}
+                    {audioUrl && !exercise.audio_url && (
+                      <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50">
+                        <div className="flex items-center gap-3 mb-4">
+                          <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          <span className="text-purple-800 dark:text-purple-300 font-semibold">
+                            Áudio enviado com sucesso:
+                          </span>
+                        </div>
+                        <audio controls className="w-full h-12 rounded-xl">
+                          <source src={audioUrl} type="audio/mpeg" />
+                          Seu navegador não suporta o elemento de áudio.
+                        </audio>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="advanced" className="space-y-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-indigo-500/20 to-blue-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+
+                <CardHeader className="relative pb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl shadow-lg">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                        Detalhes Adicionais
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 dark:text-gray-400">
+                        Forneça informações detalhadas sobre o exercício
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="relative space-y-8">
+                  <div className="space-y-3">
+                    <Label htmlFor="variations" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Variações
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 rounded-xl blur opacity-50"></div>
+                      <Textarea
+                        id="variations"
+                        value={exercise.variations}
+                        onChange={(e) => setExercise(prev => ({ ...prev, variations: e.target.value }))}
+                        placeholder="Liste as variações do exercício (uma por linha)"
+                        className="relative min-h-[120px] text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Adicione cada variação em uma nova linha
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="tips" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Dicas de Execução
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl blur opacity-50"></div>
+                      <Textarea
+                        id="tips"
+                        value={exercise.tips}
+                        onChange={(e) => setExercise(prev => ({ ...prev, tips: e.target.value }))}
+                        placeholder="Liste as dicas importantes (uma por linha)"
+                        className="relative min-h-[120px] text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Adicione cada dica em uma nova linha
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="common_errors" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Erros Comuns
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl blur opacity-50"></div>
+                      <Textarea
+                        id="common_errors"
+                        value={exercise.common_errors}
+                        onChange={(e) => setExercise(prev => ({ ...prev, common_errors: e.target.value }))}
+                        placeholder="Liste os erros comuns a serem evitados (um por linha)"
+                        className="relative min-h-[120px] text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Adicione cada erro em uma nova linha
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="details">Detalhes</TabsTrigger>
-          <TabsTrigger value="media">Mídia</TabsTrigger>
-          <TabsTrigger value="advanced">Avançado</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Informações Básicas</CardTitle>
-                  <CardDescription>
-                    Edite as informações básicas do exercício
-                  </CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={generateWithAI} 
-                  disabled={isGeneratingAI || !exercise.name}
-                  className="bg-primary/5 hover:bg-primary/10 border-primary/20"
-                >
-                  {isGeneratingAI ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Gerar com IA
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Exercício *</Label>
-                  <Input
-                    id="name"
-                    value={exercise.name}
-                    onChange={(e) => setExercise(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="ex.: Supino Reto"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição *</Label>
-                  <Textarea
-                    id="description"
-                    value={exercise.description}
-                    onChange={(e) => setExercise(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Descreva o exercício..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Grupos Musculares *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {MUSCLE_GROUPS.map((group) => (
-                      <div key={group} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={group}
-                          checked={exercise.muscle_group.includes(group)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setExercise(prev => ({
-                                ...prev,
-                                muscle_group: [...prev.muscle_group, group]
-                              }));
-                            } else {
-                              setExercise(prev => ({
-                                ...prev,
-                                muscle_group: prev.muscle_group.filter(g => g !== group)
-                              }));
-                            }
-                          }}
-                        />
-                        <label htmlFor={group}>{group}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Equipamentos *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {EQUIPMENT_TYPES.map((type) => (
-                      <div key={type} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={type}
-                          checked={exercise.equipment.includes(type)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setExercise(prev => ({
-                                ...prev,
-                                equipment: [...prev.equipment, type]
-                              }));
-                            } else {
-                              setExercise(prev => ({
-                                ...prev,
-                                equipment: prev.equipment.filter(eq => eq !== type)
-                              }));
-                            }
-                          }}
-                        />
-                        <label htmlFor={type}>{type}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="media" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vídeo Demonstrativo</CardTitle>
-              <CardDescription>
-                Faça upload de um vídeo ou informe a URL do vídeo demonstrativo
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="video_url">URL do Vídeo</Label>
-                  <Input
-                    id="video_url"
-                    placeholder="ex.: https://example.com/video.mp4"
-                    value={exercise.video_url}
-                    onChange={(e) => setExercise(prev => ({ ...prev, video_url: e.target.value }))}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Informe a URL de um vídeo existente ou faça upload abaixo
-                  </p>
-                </div>
-
-                {exercise.video_url && (
-                  <div className="space-y-4">
-                    <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                      <video
-                        src={exercise.video_url}
-                        controls
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-muted-foreground">
-                        Vídeo atual
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setExercise(prev => ({ ...prev, video_url: '' }))}
-                      >
-                        Remover Vídeo
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <Label>Ou faça upload de um vídeo</Label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleVideoUpload(file);
-                      }}
-                      className="hidden"
-                      id="video-upload"
-                    />
-                    <Button asChild>
-                      <label htmlFor="video-upload" className="cursor-pointer">
-                        <Upload className="h-4 w-4 mr-2" />
-                        {exercise.video_url ? 'Substituir Vídeo' : 'Upload Vídeo'}
-                      </label>
-                    </Button>
-                    {videoFile && (
-                      <span className="text-sm text-muted-foreground">
-                        {videoFile.name}
-                      </span>
-                    )}
-                  </div>
-                  {uploadProgress > 0 && (
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  )}
-                  {videoUrl && (
-                    <div className="text-sm text-green-600">
-                      Vídeo enviado com sucesso!
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Áudio de Instruções</CardTitle>
-                  <CardDescription>
-                    Faça upload de um áudio ou gere automaticamente com IA
-                  </CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={generateAudioWithAI} 
-                  disabled={isGeneratingAudio || !exercise.description}
-                  className="bg-primary/5 hover:bg-primary/10 border-primary/20"
-                >
-                  {isGeneratingAudio ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="mr-2 h-4 w-4" />
-                      Gerar Áudio com IA
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {exercise.audio_url && (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-muted/20 rounded-lg">
-                      <audio controls className="w-full">
-                        <source src={exercise.audio_url} type="audio/mpeg" />
-                        Seu navegador não suporta o elemento de áudio.
-                      </audio>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-muted-foreground">
-                        Áudio atual
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setExercise(prev => ({ ...prev, audio_url: '' }))}
-                      >
-                        Remover Áudio
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <Label>Faça upload de um arquivo de áudio</Label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleAudioUpload(file);
-                      }}
-                      className="hidden"
-                      id="audio-upload"
-                    />
-                    <Button asChild>
-                      <label htmlFor="audio-upload" className="cursor-pointer">
-                        <Upload className="h-4 w-4 mr-2" />
-                        {exercise.audio_url ? 'Substituir Áudio' : 'Upload Áudio'}
-                      </label>
-                    </Button>
-                    {audioFile && (
-                      <span className="text-sm text-muted-foreground">
-                        {audioFile.name}
-                      </span>
-                    )}
-                  </div>
-                  {audioUploadProgress > 0 && (
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${audioUploadProgress}%` }}
-                      />
-                    </div>
-                  )}
-                  {audioUrl && !exercise.audio_url && (
-                    <div className="mt-4">
-                      <p className="text-sm text-green-600 mb-2">
-                        Áudio enviado com sucesso:
-                      </p>
-                      <audio controls className="w-full">
-                        <source src={audioUrl} type="audio/mpeg" />
-                        Seu navegador não suporta o elemento de áudio.
-                      </audio>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="advanced" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Detalhes Adicionais</CardTitle>
-              <CardDescription>
-                Forneça informações detalhadas sobre o exercício
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="variations">Variações</Label>
-                <Textarea
-                  id="variations"
-                  value={exercise.variations}
-                  onChange={(e) => setExercise(prev => ({ ...prev, variations: e.target.value }))}
-                  placeholder="Liste as variações do exercício (uma por linha)"
-                  className="min-h-[100px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Adicione cada variação em uma nova linha
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tips">Dicas de Execução</Label>
-                <Textarea
-                  id="tips"
-                  value={exercise.tips}
-                  onChange={(e) => setExercise(prev => ({ ...prev, tips: e.target.value }))}
-                  placeholder="Liste as dicas importantes (uma por linha)"
-                  className="min-h-[100px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Adicione cada dica em uma nova linha
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="common_errors">Erros Comuns</Label>
-                <Textarea
-                  id="common_errors"
-                  value={exercise.common_errors}
-                  onChange={(e) => setExercise(prev => ({ ...prev, common_errors: e.target.value }))}
-                  placeholder="Liste os erros comuns a serem evitados (um por linha)"
-                  className="min-h-[100px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Adicione cada erro em uma nova linha
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
