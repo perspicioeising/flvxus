@@ -22,7 +22,8 @@ import {
   Camera,
   Award,
   Zap,
-  Sparkles
+  Sparkles,
+  Utensils
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +72,15 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           href: "/dashboard/posture-assessments",
           icon: Camera,
           isActive: pathname.startsWith("/dashboard/posture-assessments"),
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+        },
+         {
+          name: "Dietas",
+          href: "/dashboard/diets",
+          icon: Utensils,
+          isActive: pathname.startsWith("/dashboard/diets"),
           color: "text-green-600 dark:text-green-400",
           bgColor: "bg-gray-100 dark:bg-gray-900/30",
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
@@ -130,6 +140,15 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           isActive: pathname.startsWith("/dashboard/my-workouts"),
           color: "text-green-600 dark:text-green-400",
           bgColor: "bg-green-100 dark:bg-green-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+        },
+          {
+          name: "Dietas",
+          href: "/dashboard/diets",
+          icon: Calendar,
+          isActive: pathname.startsWith("/dashboard/diets"),
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {

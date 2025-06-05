@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter, Dumbbell, Clock, Trash2, Edit, Eye, Loader2, Zap, Target, TrendingUp, Users, Copy, X, Save, Settings } from "lucide-react";
+import { Plus, Search, Filter, Dumbbell, Clock, Trash2, Edit, Eye, Loader2, Zap, Target, TrendingUp, Users, Copy, X, Save, Settings, Activity } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 import { useExercises } from "@/hooks/use-exercises";
@@ -343,7 +343,7 @@ export default function WorkoutsPage() {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Dumbbell className="h-8 w-8 text-white" />
+                      <Activity className="h-8 w-8 text-white" />
                     </div>
                     <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
                       <Zap className="h-3 w-3 text-white" />
@@ -379,7 +379,7 @@ export default function WorkoutsPage() {
               <CardContent className="p-6 text-center">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                    <Dumbbell className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <Activity className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="text-left">
                     <p className="text-green-600 dark:text-green-400 text-sm font-semibold">Total</p>
@@ -773,7 +773,7 @@ export default function WorkoutsPage() {
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                    <Dumbbell className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <Activity className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
                     <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Biblioteca de Treinos</CardTitle>

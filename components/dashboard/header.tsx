@@ -67,12 +67,13 @@ export function Header({ userRole }: HeaderProps) {
         { name: "Treinos", href: "/dashboard/workouts", current: pathname.startsWith("/dashboard/workouts") },
         { name: "Exercícios", href: "/dashboard/exercises", current: pathname.startsWith("/dashboard/exercises") },
         { name: "Planos", href: "/dashboard/workout-plans", current: pathname.startsWith("/dashboard/workout-plans") },
-        { name: "Conquistas", href: "/dashboard/achievements", current: pathname.startsWith("/dashboard/achievements") },
+        { name: "Dietas", href: "/dashboard/diets", current: pathname.startsWith("/dashboard/diets") },
       ];
     } else {
       return [
         { name: "Meus Treinos", href: "/dashboard/my-workouts", current: pathname.startsWith("/dashboard/my-workouts") },
         { name: "Progresso", href: "/dashboard/progress", current: pathname.startsWith("/dashboard/progress") },
+         { name: "Dietas", href: "/dashboard/diets", current: pathname.startsWith("/dashboard/diets") },
         { name: "Perfil", href: "/dashboard/profile", current: pathname.startsWith("/dashboard/profile") },
       ];
     }
