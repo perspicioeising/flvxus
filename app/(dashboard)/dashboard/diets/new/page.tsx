@@ -47,7 +47,9 @@ import {
     Timer,
     BarChart3,
     Shield,
-    ChefHat
+    ChefHat,
+    Edit3,
+    Save
 } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +58,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+
+// Importar types do hook
+type DietParams = Parameters<ReturnType<typeof useDiets>['generateDietWithAI']>[0];
+type CreateDietParams = Parameters<ReturnType<typeof useDiets>['createDiet']>[0];
 
 const GOALS = [
     { value: 'muscle_gain', label: 'Ganho de Massa Muscular', icon: TrendingUp, color: 'from-blue-500 to-purple-500' },
@@ -103,6 +109,43 @@ const FOOD_PREFERENCES = [
     { value: 'ready_made', label: 'Prontos/congelados' }
 ];
 
+interface GeneratedDiet {
+    name: string;
+    description: string;
+    target_calories: number;
+    target_protein: number;
+    target_carbs: number;
+    target_fat: number;
+    meals: Array<{
+        meal_type: string;
+        meal_time: string;
+        name: string;
+        description: string;
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        foods: Array<{
+            food_name: string;
+            quantity: number;
+            unit: string;
+            calories: number;
+            protein: number;
+            carbs: number;
+            fat: number;
+        }>;
+    }>;
+    shopping_list: Array<{
+        category: string;
+        item_name: string;
+        quantity: string;
+        notes: string;
+        order_index: number;
+        weekly_quantity?: string;
+    }>;
+    recommendations: string[];
+}
+
 export default function NewDietPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -114,9 +157,10 @@ export default function NewDietPage() {
     const [userProfile, setUserProfile] = useState<any>(null);
     const [students, setStudents] = useState<any[]>([]);
     const [physicalAssessment, setPhysicalAssessment] = useState<any>(null);
-    const [generatedDiet, setGeneratedDiet] = useState<any>(null);
+    const [generatedDiet, setGeneratedDiet] = useState<GeneratedDiet | null>(null);
     const [activeTab, setActiveTab] = useState("basic");
-  type Student = { id: string; full_name: string };
+    const [isEditing, setIsEditing] = useState(false);
+    const [dietNotes, setDietNotes] = useState("");
 
     // Form state
     const [formData, setFormData] = useState({
@@ -125,10 +169,10 @@ export default function NewDietPage() {
         weight: '',
         height: '',
         gender: 'male',
-        activity_level: 'moderate',
-        goal: 'maintenance',
+        activity_level: '',
+        goal: '',
         goal_description: '',
-        budget_profile: 'intermediate',
+        budget_profile: '',
         meals_per_day: 3,
         dietary_style: [] as string[],
         food_preferences: [] as string[],
@@ -163,6 +207,10 @@ export default function NewDietPage() {
     useEffect(() => {
         if (formData.student_id && formData.use_physical_assessment) {
             fetchPhysicalAssessment();
+        } else {
+            // Limpar avaliação física quando mudar de aluno ou desmarcar
+            setPhysicalAssessment(null);
+            setFormData(prev => ({ ...prev, physical_assessment_id: '' }));
         }
     }, [formData.student_id, formData.use_physical_assessment]);
 
@@ -219,6 +267,7 @@ export default function NewDietPage() {
             }
         } catch (error: any) {
             console.error('Error fetching physical assessment:', error);
+            setPhysicalAssessment(null);
         }
     };
 
@@ -243,8 +292,13 @@ export default function NewDietPage() {
                 age: calculateAge(student.birth_date),
                 weight: student.weight || '',
                 height: student.height || '',
-                gender: student.gender || 'male'
+                gender: student.gender || 'male',
+                // Resetar campos relacionados à avaliação física
+                use_physical_assessment: false,
+                physical_assessment_id: ''
             }));
+            // Limpar avaliação física ao mudar de aluno
+            setPhysicalAssessment(null);
         }
     };
 
@@ -253,7 +307,7 @@ export default function NewDietPage() {
             setIsGenerating(true);
 
             // Validar campos obrigatórios
-            if (!formData.student_id || !formData.age || !formData.weight) {
+            if (!formData.student_id || !formData.age || !formData.weight || !formData.goal || !formData.activity_level || !formData.budget_profile) {
                 toast({
                     variant: "destructive",
                     title: "Campos obrigatórios",
@@ -262,12 +316,22 @@ export default function NewDietPage() {
                 return;
             }
 
-            const dietParams = {
-                ...formData,
+            const dietParams: DietParams = {
+                student_id: formData.student_id,
                 age: parseInt(formData.age),
                 weight: parseFloat(formData.weight),
-                height: formData.height ? parseFloat(formData.height) : null,
-                physical_assessment: formData.use_physical_assessment ? physicalAssessment : null
+                height: formData.height ? parseFloat(formData.height) : undefined,
+                gender: formData.gender,
+                activity_level: formData.activity_level,
+                goal: formData.goal,
+                goal_description: formData.goal_description,
+                budget_profile: formData.budget_profile,
+                meals_per_day: formData.meals_per_day,
+                dietary_style: formData.dietary_style,
+                food_preferences: formData.food_preferences,
+                restrictions: formData.restrictions,
+                custom_restrictions: formData.custom_restrictions,
+                physical_assessment: formData.use_physical_assessment ? physicalAssessment : undefined
             };
 
             const generated = await generateDietWithAI(dietParams);
@@ -303,17 +367,42 @@ export default function NewDietPage() {
                 return;
             }
 
-            const dietData = {
-                ...formData,
-                ...generatedDiet,
+            // Preparar dados para salvar (sem o campo meals que vai para tabela separada)
+            const dietData: CreateDietParams = {
+                student_id: formData.student_id,
+                name: generatedDiet.name,
+                description: dietNotes ? `${generatedDiet.description}\n\nObservações: ${dietNotes}` : generatedDiet.description,
                 age: parseInt(formData.age),
                 weight: parseFloat(formData.weight),
-                height: formData.height ? parseFloat(formData.height) : null,
+                height: formData.height ? parseFloat(formData.height) : undefined,
+                gender: formData.gender,
+                activity_level: formData.activity_level,
+                goal: formData.goal,
+                goal_description: formData.goal_description,
+                budget_profile: formData.budget_profile,
+                meals_per_day: formData.meals_per_day,
+                dietary_style: formData.dietary_style,
+                food_preferences: formData.food_preferences,
+                restrictions: formData.restrictions,
+                custom_restrictions: formData.custom_restrictions,
                 used_physical_assessment: formData.use_physical_assessment,
-                physical_assessment_id: formData.use_physical_assessment ? formData.physical_assessment_id : null
+                physical_assessment_id: formData.use_physical_assessment && formData.physical_assessment_id ? formData.physical_assessment_id : undefined,
+                target_calories: generatedDiet.target_calories,
+                target_protein: generatedDiet.target_protein,
+                target_carbs: generatedDiet.target_carbs,
+                target_fat: generatedDiet.target_fat,
+                // Dados adicionais que serão salvos em tabelas relacionadas
+                generatedMeals: generatedDiet.meals,
+                generatedShoppingList: generatedDiet.shopping_list,
+                generatedRecommendations: generatedDiet.recommendations
             };
 
-            await createDiet(dietData);
+            const newDiet = await createDiet(dietData);
+            
+            toast({
+                title: "Dieta salva com sucesso!",
+                description: "A dieta foi criada e está disponível para o aluno"
+            });
 
             router.push('/dashboard/diets');
 
@@ -329,7 +418,19 @@ export default function NewDietPage() {
     };
 
     const isFormValid = () => {
-        return formData.student_id && formData.age && formData.weight && formData.goal;
+        return formData.student_id && formData.age && formData.weight && formData.goal && formData.activity_level && formData.budget_profile;
+    };
+
+    const getMealTypeLabel = (mealType: string) => {
+        const labels: Record<string, string> = {
+            breakfast: 'Café da Manhã',
+            morning_snack: 'Lanche da Manhã', 
+            lunch: 'Almoço',
+            afternoon_snack: 'Lanche da Tarde',
+            dinner: 'Jantar',
+            evening_snack: 'Lanche da Noite'
+        };
+        return labels[mealType] || mealType;
     };
 
     return (
@@ -753,6 +854,63 @@ export default function NewDietPage() {
                                         </div>
                                     </div>
 
+                                    {/* Budget Profile */}
+                                    <div className="space-y-4">
+                                        <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                            Perfil de Orçamento *
+                                        </Label>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {[
+                                                { value: 'economic', label: 'Econômico', description: 'Alimentos básicos e acessíveis', color: 'from-green-500 to-emerald-500' },
+                                                { value: 'intermediate', label: 'Intermediário', description: 'Equilíbrio entre preço e variedade', color: 'from-yellow-500 to-orange-500' },
+                                                { value: 'free', label: 'Livre', description: 'Sem restrições de orçamento', color: 'from-purple-500 to-pink-500' }
+                                            ].map((budget) => {
+                                                const isSelected = formData.budget_profile === budget.value;
+
+                                                return (
+                                                    <button
+                                                        key={budget.value}
+                                                        onClick={() => setFormData(prev => ({ ...prev, budget_profile: budget.value }))}
+                                                        className={cn(
+                                                            "relative p-4 rounded-xl border-2 transition-all duration-300 text-left",
+                                                            isSelected
+                                                                ? "border-transparent shadow-xl"
+                                                                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                        )}
+                                                    >
+                                                        {isSelected && (
+                                                            <div className={cn(
+                                                                "absolute inset-0 bg-gradient-to-r rounded-xl opacity-10",
+                                                                budget.color
+                                                            )} />
+                                                        )}
+                                                        <div className="relative">
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <div className={cn(
+                                                                    "p-2 rounded-lg bg-gradient-to-r",
+                                                                    budget.color
+                                                                )}>
+                                                                    <DollarSign className="h-4 w-4 text-white" />
+                                                                </div>
+                                                                <span className="font-semibold text-gray-900 dark:text-white">
+                                                                    {budget.label}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                                {budget.description}
+                                                            </p>
+                                                        </div>
+                                                        {isSelected && (
+                                                            <div className="absolute top-2 right-2">
+                                                                <CheckCircle className="h-5 w-5 text-green-500" />
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
                                     {/* Meals per Day */}
                                     <div className="space-y-4">
                                         <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
@@ -848,72 +1006,381 @@ export default function NewDietPage() {
                                             })}
                                         </div>
                                     </div>
+
+                                    {/* Food Preferences */}
+                                    <div className="space-y-4">
+                                        <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                            Preferências de Alimentos
+                                        </Label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {FOOD_PREFERENCES.map((pref) => {
+                                                const isSelected = formData.food_preferences.includes(pref.value);
+
+                                                return (
+                                                    <button
+                                                        key={pref.value}
+                                                        onClick={() => {
+                                                            if (isSelected) {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    food_preferences: prev.food_preferences.filter(f => f !== pref.value)
+                                                                }));
+                                                            } else {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    food_preferences: [...prev.food_preferences, pref.value]
+                                                                }));
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "p-4 rounded-xl border-2 transition-all duration-300 text-left",
+                                                            isSelected
+                                                                ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
+                                                                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <span className={cn(
+                                                                "font-medium",
+                                                                isSelected ? "text-orange-800 dark:text-orange-300" : "text-gray-700 dark:text-gray-300"
+                                                            )}>
+                                                                {pref.label}
+                                                            </span>
+                                                            {isSelected && (
+                                                                <CheckCircle className="h-5 w-5 text-orange-500" />
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Restrictions */}
+                                    <div className="space-y-4">
+                                        <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                            Restrições Alimentares
+                                        </Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            {RESTRICTIONS.map((restriction) => {
+                                                const isSelected = formData.restrictions.includes(restriction);
+
+                                                return (
+                                                    <button
+                                                        key={restriction}
+                                                        onClick={() => {
+                                                            if (isSelected) {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    restrictions: prev.restrictions.filter(r => r !== restriction)
+                                                                }));
+                                                            } else {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    restrictions: [...prev.restrictions, restriction]
+                                                                }));
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "p-3 rounded-xl border-2 transition-all duration-300 text-center",
+                                                            isSelected
+                                                                ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                                                                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                                        )}
+                                                    >
+                                                        <span className={cn(
+                                                            "text-sm font-medium",
+                                                            isSelected ? "text-red-800 dark:text-red-300" : "text-gray-700 dark:text-gray-300"
+                                                        )}>
+                                                            {restriction}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Custom Restrictions */}
+                                    <div className="space-y-3">
+                                        <Label htmlFor="custom_restrictions" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                            Outras Restrições
+                                        </Label>
+                                        <Textarea
+                                            id="custom_restrictions"
+                                            value={formData.custom_restrictions}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, custom_restrictions: e.target.value }))}
+                                            placeholder="Descreva outras restrições ou observações..."
+                                            className="min-h-[100px] bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm"
+                                        />
+                                    </div>
                                 </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
 
+                    <TabsContent value="review" className="space-y-6">
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 to-red-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
 
-                                <TabsContent value="review" className="space-y-6">
-                                    <div className="relative group">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 to-red-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                        <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl overflow-hidden">
-                                            <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                            <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+                                <CardHeader className="relative pb-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg">
+                                            <FileText className="h-6 w-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                                                Dieta Gerada com IA
+                                            </CardTitle>
+                                            <CardDescription className="text-gray-600 dark:text-gray-400">
+                                                Revise e aprove a dieta personalizada
+                                            </CardDescription>
+                                        </div>
+                                    </div>
+                                </CardHeader>
 
-                                            <CardHeader className="relative pb-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg">
-                                                        <FileText className="h-6 w-6 text-white" />
+                                <CardContent className="relative space-y-6">
+                                    {!generatedDiet ? (
+                                        <div className="text-center py-12">
+                                            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center mb-4">
+                                                <Brain className="h-10 w-10 text-gray-400" />
+                                            </div>
+                                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                                                Gere sua dieta personalizada
+                                            </h3>
+                                            <p className="text-gray-600 dark:text-gray-400 mb-6">
+                                                Complete as informações nas abas anteriores e clique em "Gerar com IA"
+                                            </p>
+                                            <Button
+                                                onClick={handleGenerateDiet}
+                                                disabled={!isFormValid() || isGenerating}
+                                                className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 hover:from-purple-700 hover:via-pink-700 hover:to-orange-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg"
+                                            >
+                                                {isGenerating ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                        Gerando...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Brain className="mr-2 h-5 w-5" />
+                                                        Gerar com IA
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-8">
+                                            {/* Diet Summary */}
+                                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border border-green-200/50 dark:border-green-700/50">
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg">
+                                                        <CheckCircle className="h-5 w-5 text-white" />
                                                     </div>
                                                     <div>
-                                                        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
-                                                            Revisão e Geração da Dieta
-                                                        </CardTitle>
-                                                        <CardDescription className="text-gray-600 dark:text-gray-400">
-                                                            Verifique as informações e gere a dieta com inteligência artificial
-                                                        </CardDescription>
+                                                        <h3 className="text-xl font-bold text-green-800 dark:text-green-300">
+                                                            {generatedDiet.name}
+                                                        </h3>
+                                                        <p className="text-green-600 dark:text-green-400">
+                                                            {generatedDiet.description}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                            </CardHeader>
 
-                                            <CardContent className="space-y-6">
-                                                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                                                    <p><strong>Aluno:</strong> {formData.student_id}</p>
-                                                    <p><strong>Idade:</strong> {formData.age} anos</p>
-                                                    <p><strong>Peso:</strong> {formData.weight} kg</p>
-                                                    <p><strong>Altura:</strong> {formData.height} cm</p>
-                                                    <p><strong>Sexo:</strong> {formData.gender}</p>
-                                                    <p><strong>Objetivo:</strong> {formData.goal}</p>
-                                                    {formData.goal === 'other' && (
-                                                        <p><strong>Descrição:</strong> {formData.goal_description}</p>
-                                                    )}
-                                                    <p><strong>Atividade Física:</strong> {formData.activity_level}</p>
-                                                    <p><strong>Refeições por dia:</strong> {formData.meals_per_day}</p>
-                                                    <p><strong>Estilo Alimentar:</strong> {formData.dietary_style.join(', ') || 'Não especificado'}</p>
-                                                </div>
-
-                                                <Button
-                                                    size="lg"
-                                                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold shadow-lg"
-                                                    onClick={handleGenerateDiet}
-                                                    disabled={isLoading || generatedDiet}
-                                                >
-                                                    {isLoading ? 'Gerando dieta...' : 'Gerar dieta com IA'}
-                                                </Button>
-
-                                                {generatedDiet && (
-                                                    <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-300/50 dark:border-green-700/50 text-sm text-green-800 dark:text-green-300 whitespace-pre-line">
-                                                        {generatedDiet}
+                                                {/* Macros Overview */}
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                    <div className="text-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-xl">
+                                                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                                            {Math.round(generatedDiet.target_calories)}
+                                                        </div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">Calorias</div>
                                                     </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-                                </TabsContent>
-                                                            </Card>
+                                                    <div className="text-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-xl">
+                                                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                                            {Math.round(generatedDiet.target_protein)}g
+                                                        </div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">Proteína</div>
+                                                    </div>
+                                                    <div className="text-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-xl">
+                                                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                                            {Math.round(generatedDiet.target_carbs)}g
+                                                        </div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">Carboidratos</div>
+                                                    </div>
+                                                    <div className="text-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-xl">
+                                                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                                            {Math.round(generatedDiet.target_fat)}g
+                                                        </div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">Gordura</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Editable Notes Section */}
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Edit3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                                    <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                                                        Observações Adicionais (Opcional)
+                                                    </Label>
+                                                </div>
+                                                <Textarea
+                                                    value={dietNotes}
+                                                    onChange={(e) => setDietNotes(e.target.value)}
+                                                    placeholder="Adicione observações personalizadas, instruções especiais ou modificações desejadas..."
+                                                    className="min-h-[120px] bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm"
+                                                />
+                                            </div>
+
+                                            {/* Meals */}
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                        <Utensils className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                                        Refeições ({generatedDiet.meals.length})
+                                                    </h3>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setIsEditing(!isEditing)}
+                                                        className="text-blue-600 dark:text-blue-400 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                    >
+                                                        <Edit3 className="h-4 w-4 mr-2" />
+                                                        {isEditing ? 'Visualizar' : 'Editar'}
+                                                    </Button>
+                                                </div>
+                                                
+                                                <div className="grid gap-4">
+                                                    {generatedDiet.meals.map((meal, index) => (
+                                                        <Card key={index} className="border-0 bg-white/80 dark:bg-gray-800/80 shadow-lg rounded-xl">
+                                                            <CardContent className="p-6">
+                                                                <div className="flex items-center justify-between mb-4">
+                                                                    <div>
+                                                                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                                                            {meal.name}
+                                                                        </h4>
+                                                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                                            {meal.meal_time} • {meal.description}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                        <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                                                                            {Math.round(meal.calories)} cal
+                                                                        </div>
+                                                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                                            P: {Math.round(meal.protein)}g • C: {Math.round(meal.carbs)}g • G: {Math.round(meal.fat)}g
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Foods */}
+                                                                <div className="space-y-2">
+                                                                    {meal.foods.map((food, foodIndex) => (
+                                                                        <div key={foodIndex} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                                                            <div>
+                                                                                <span className="font-medium text-gray-900 dark:text-white">
+                                                                                    {food.food_name}
+                                                                                </span>
+                                                                                <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                                                                                    {food.quantity} {food.unit}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                                                                                {food.calories} cal
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Shopping List */}
+                                            {generatedDiet.shopping_list && generatedDiet.shopping_list.length > 0 && (
+                                                <div className="space-y-4">
+                                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                        <Apple className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                                        Lista de Compras (Semanal)
+                                                    </h3>
+                                                    
+                                                    <Card className="border-0 bg-white/80 dark:bg-gray-800/80 shadow-lg rounded-xl">
+                                                        <CardContent className="p-6">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                                {Object.entries(
+                                                                    generatedDiet.shopping_list.reduce((acc, item) => {
+                                                                        if (!acc[item.category]) {
+                                                                            acc[item.category] = [];
+                                                                        }
+                                                                        acc[item.category].push(item);
+                                                                        return acc;
+                                                                    }, {} as Record<string, typeof generatedDiet.shopping_list>)
+                                                                ).map(([category, items]) => (
+                                                                    <div key={category} className="space-y-2">
+                                                                        <h4 className="font-semibold text-gray-900 dark:text-white capitalize">
+                                                                            {category}
+                                                                        </h4>
+                                                                        <div className="space-y-1">
+                                                                            {items.map((item, index) => (
+                                                                                <div key={index} className="text-sm text-gray-600 dark:text-gray-400 flex justify-between">
+                                                                                    <span>• {item.item_name}</span>
+                                                                                    <span className="font-medium text-green-600 dark:text-green-400">
+                                                                                        {item.weekly_quantity || item.quantity}
+                                                                                    </span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                </div>
+                                            )}
+
+                                            {/* Recommendations */}
+                                            {generatedDiet.recommendations && generatedDiet.recommendations.length > 0 && (
+                                                <div className="space-y-4">
+                                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                        <Brain className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                                        Recomendações
+                                                    </h3>
+                                                    
+                                                    <Card className="border-0 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 shadow-lg rounded-xl">
+                                                        <CardContent className="p-6">
+                                                            <div className="space-y-3">
+                                                                {generatedDiet.recommendations.map((rec, index) => (
+                                                                    <div key={index} className="flex items-start gap-3">
+                                                                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                                            <CheckCircle className="h-3 w-3 text-white" />
+                                                                        </div>
+                                                                        <p className="text-blue-800 dark:text-blue-300 text-sm">
+                                                                            {rec}
+                                                                        </p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </div>
                     </TabsContent>
                 </Tabs>
             </div>
         </div>
     );
-}
 
+    // Helper function to calculate weekly quantities for shopping list
+    function getWeeklyQuantity(foodName: string): string {
+        // A API já retorna as quantidades corretas, então apenas retornamos o que está no item
+        return 'Ver quantidade';
+    }
+}
