@@ -74,7 +74,6 @@ export function Header({ userRole }: HeaderProps) {
         { name: "Meus Treinos", href: "/dashboard/my-workouts", current: pathname.startsWith("/dashboard/my-workouts") },
         { name: "Progresso", href: "/dashboard/progress", current: pathname.startsWith("/dashboard/progress") },
          { name: "Dietas", href: "/dashboard/diets", current: pathname.startsWith("/dashboard/diets") },
-        { name: "Perfil", href: "/dashboard/profile", current: pathname.startsWith("/dashboard/profile") },
       ];
     }
   };
