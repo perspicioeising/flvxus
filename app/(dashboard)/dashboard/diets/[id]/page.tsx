@@ -1,4 +1,3 @@
-// app/(dashboard)/dashboard/diets/[id]/page.tsx
 'use client';
 
 import { useState, useEffect } from "react";
@@ -74,6 +73,7 @@ interface DietData {
   status: string;
   created_at: string;
   updated_at: string;
+  student_id: string;
   meals: Array<{
     id: string;
     meal_type: string;
@@ -128,21 +128,28 @@ export default function DietDetailsPage() {
     try {
       setLoading(true);
 
-      // Buscar dieta principal
+      // Buscar dieta principal primeiro
       const { data: dietData, error: dietError } = await supabase
         .from('diets')
-        .select(`
-          *,
-          student:profiles!diets_student_id_fkey (
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('id', params.id)
         .single();
 
       if (dietError) throw dietError;
+
+      // Buscar dados do estudante separadamente
+      let studentData = null;
+      if (dietData && dietData.student_id) {
+        const { data: student, error: studentError } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .eq('id', dietData.student_id)
+          .single();
+
+        if (!studentError && student) {
+          studentData = student;
+        }
+      }
 
       // Buscar refeições
       const { data: mealsData, error: mealsError } = await supabase
@@ -182,6 +189,7 @@ export default function DietDetailsPage() {
 
       setDiet({
         ...dietData,
+        student: studentData,
         meals: mealsWithFoods,
         shopping_list: shoppingData || []
       });
@@ -299,12 +307,6 @@ export default function DietDetailsPage() {
           <div className="relative">
             <div className="w-20 h-20 border-4 border-green-200 dark:border-green-800 rounded-full animate-spin border-t-green-600 dark:border-t-green-400"></div>
             <div className="absolute inset-0 w-20 h-20 border-4 border-transparent rounded-full animate-ping border-t-green-400 dark:border-t-green-500"></div>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
-              Carregando dieta...
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">Por favor, aguarde enquanto buscamos as informações.</p>
           </div>
         </div>
       </div>
