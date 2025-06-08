@@ -55,13 +55,18 @@ interface ComparisonData {
   isPositive: boolean;
 }
 
-interface AssessmentComparisonProps {
-  studentId: string;
-  currentAssessment?: Assessment;
+
+interface PageProps {
+  params: {
+    id: string;
+  };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default function AssessmentComparison({ studentId, currentAssessment }: AssessmentComparisonProps) {
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
+export default function AssessmentComparison({ params, searchParams }: PageProps) {
+  const studentId = params.id; // O ID vem dos parâmetros da rota
+  const [currentAssessment, setCurrentAssessment] = useState<Assessment>();
+   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [selectedAssessment, setSelectedAssessment] = useState<string>('');
   const [comparisonData, setComparisonData] = useState<ComparisonData[]>([]);
   const [isLoading, setIsLoading] = useState(true);

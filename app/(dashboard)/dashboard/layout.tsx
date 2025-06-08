@@ -59,11 +59,13 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header userRole={userRole} />
-      <div className="flex flex-1">
-        <Sidebar className="hidden md:flex" userRole={userRole} />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">{children}</main>
-      </div>
-    </div>
+  <Header userRole={userRole} />
+  <div className="flex flex-1 flex-col md:flex-row">
+    <Sidebar className="hidden md:flex" userRole={userRole} />
+    <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black overflow-x-hidden">
+      {children}
+    </main>
+  </div>
+</div>
   );
 }

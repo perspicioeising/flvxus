@@ -242,33 +242,33 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        
-        {/* Ultra Modern Header */}
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl p-8 shadow-2xl">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Activity className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                      <Sparkles className="h-3 w-3 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent">
-                      {timeOfDay}, {userName}! 👋
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
-                      Aqui está um resumo do que está acontecendo com seus alunos hoje
-                    </p>
-                  </div>
+  <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-7xl">
+    
+    {/* Ultra Modern Header - Versão Mobile Responsiva */}
+    <div className="relative mb-6 sm:mb-8">
+      <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-2xl sm:rounded-3xl blur-xl"></div>
+      <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-lg sm:shadow-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="relative">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md sm:shadow-lg">
+                  <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                 </div>
               </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent">
+                  {timeOfDay}, {userName}! 👋
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base md:text-lg mt-1">
+                  Aqui está um resumo do que está acontecendo com seus alunos hoje
+                </p>
+              </div>
+            </div>
+          </div>
 
               <div className="flex gap-3">
                 <Button
