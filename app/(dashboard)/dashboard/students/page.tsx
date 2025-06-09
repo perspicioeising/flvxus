@@ -149,7 +149,7 @@ export default function StudentsPage() {
               </div>
               <div>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent">
-                  Meus Alunos
+                  Alunos
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg mt-1">
                   <span className="font-semibold text-green-600 dark:text-green-400">{filteredStudents.length}</span> aluno{filteredStudents.length !== 1 ? 's' : ''} • Dashboard Inteligente
