@@ -76,6 +76,8 @@ export default function DietsPage() {
     }
   }, [userProfile]);
 
+  //teste
+
   const fetchUserProfile = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
