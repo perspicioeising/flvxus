@@ -79,16 +79,16 @@ export default function DashboardPage() {
       shadowColor: "hover:shadow-blue-500/25",
       stats: "24 ativos"
     },
-    {
-      name: "Novo Aluno",
-      description: "Cadastre um novo aluno",
-      href: "/dashboard/students/new",
-      icon: Plus,
-      color: "from-green-500 to-green-600",
-      hoverColor: "hover:from-green-600 hover:to-green-700",
-      shadowColor: "hover:shadow-green-500/25",
-      stats: "Cadastrar"
-    },
+    // {
+    //   name: "Novo Aluno",
+    //   description: "Cadastre um novo aluno",
+    //   href: "/dashboard/students/new",
+    //   icon: Plus,
+    //   color: "from-green-500 to-green-600",
+    //   hoverColor: "hover:from-green-600 hover:to-green-700",
+    //   shadowColor: "hover:shadow-green-500/25",
+    //   stats: "Cadastrar"
+    // },
     {
       name: "Exercícios",
       description: "Biblioteca de exercícios",
