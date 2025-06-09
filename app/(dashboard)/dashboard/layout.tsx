@@ -48,24 +48,40 @@ export default function DashboardLayout({
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Loading...</h2>
-          <p className="text-muted-foreground">Please wait while we set up your dashboard.</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-green-200 dark:border-green-800 rounded-full animate-spin border-t-green-600 dark:border-t-green-400"></div>
+            <div className="absolute inset-0 w-20 h-20 border-4 border-transparent rounded-full animate-ping border-t-green-400 dark:border-t-green-500"></div>
+          </div>
+          <div className="space-y-2">          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-  <Header userRole={userRole} />
-  <div className="flex flex-1 flex-col md:flex-row">
-    <Sidebar className="hidden md:flex" userRole={userRole} />
-    <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black overflow-x-hidden">
-      {children}
-    </main>
-  </div>
-</div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Header - apenas mobile (md:hidden) */}
+      <Header userRole={userRole} />
+
+      {/* Layout Principal */}
+      <div className="flex h-screen">
+        {/* Sidebar - apenas desktop (hidden md:flex) */}
+        <div className="hidden md:flex">
+          <Sidebar userRole={userRole} />
+        </div>
+
+        {/* Conteúdo Principal */}
+        <main className="flex-1 overflow-auto ">
+          {/* Container do conteúdo com padding ajustado */}
+          <div className="h-full pt-16 md:pt-0">
+            <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black min-h-full">
+              {children}
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }

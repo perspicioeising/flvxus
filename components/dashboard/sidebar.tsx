@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -23,10 +23,28 @@ import {
   Award,
   Zap,
   Sparkles,
-  Utensils
+  Utensils,
+  User,
+  LogOut,
+  Bell,
+  Moon,
+  Sun,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTheme } from "next-themes";
+import { useSupabase } from "@/app/providers";
+import { useRouter } from "next/navigation";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   userRole: 'trainer' | 'student' | null;
@@ -35,6 +53,41 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 export function Sidebar({ className, userRole }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [showPremiumCard, setShowPremiumCard] = useState(true);
+  const { theme, setTheme } = useTheme();
+  const { supabase, session } = useSupabase();
+  const router = useRouter();
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch('/api/profile');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const userInitial = profile?.full_name?.charAt(0).toUpperCase() || session?.user?.email?.charAt(0).toUpperCase() || "U";
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   const getRoutes = () => {
     if (userRole === 'trainer') {
@@ -56,27 +109,8 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           color: "text-green-600 dark:text-green-400",
           bgColor: "bg-gray-100 dark:bg-gray-900/30",
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
-        //  badge: "12"
         },
-        // {
-        //   name: "Avaliação Física",
-        //   href: "/dashboard/physical-assessments",
-        //   icon: BookOpen,
-        //   isActive: pathname.startsWith("/dashboard/physical-assessments"),
-        //   color: "text-green-600 dark:text-green-400",
-        //   bgColor: "bg-gray-100 dark:bg-gray-900/30",
-        //   hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
-        // },
-        // {
-        //   name: "Avaliação Postural",
-        //   href: "/dashboard/posture-assessments",
-        //   icon: Camera,
-        //   isActive: pathname.startsWith("/dashboard/posture-assessments"),
-        //   color: "text-green-600 dark:text-green-400",
-        //   bgColor: "bg-gray-100 dark:bg-gray-900/30",
-        //   hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
-        // },
-         {
+        {
           name: "Dietas",
           href: "/dashboard/diets",
           icon: Utensils,
@@ -85,15 +119,6 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           bgColor: "bg-gray-100 dark:bg-gray-900/30",
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
-        // {
-        //   name: "Calendário",
-        //   href: "/dashboard/calendar",
-        //   icon: Calendar,
-        //   isActive: pathname.startsWith("/dashboard/calendar"),
-        //   color: "text-green-600 dark:text-green-400",
-        //   bgColor: "bg-gray-100 dark:bg-gray-900/30",
-        //   hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
-        // },
         {
           name: "Conquistas",
           href: "/dashboard/achievements",
@@ -142,7 +167,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           bgColor: "bg-green-100 dark:bg-green-900/30",
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
-          {
+        {
           name: "Dietas",
           href: "/dashboard/diets",
           icon: Calendar,
@@ -208,7 +233,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "relative flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 ease-in-out",
+        "relative flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 ease-in-out h-screen",
         isCollapsed ? "w-[70px]" : "w-64",
         className
       )}
@@ -266,7 +291,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
       )}
 
       {/* Main Navigation */}
-      <div className="flex-1 py-4">
+      <div className="flex-1 py-4 overflow-y-auto">
         <div className="px-3 space-y-2">
           {routes.map((route) => (
             <Link
@@ -303,21 +328,27 @@ export function Sidebar({ className, userRole }: SidebarProps) {
               {!isCollapsed && (
                 <div className="flex items-center justify-between flex-1">
                   <span className="truncate">{route.name}</span>
-             
                 </div>
               )}
-
-              {/* Collapsed badge indicator */}
-         
             </Link>
           ))}
         </div>
       </div>
 
-      {/* Premium Upgrade Card (only for non-collapsed) */}
-      {!isCollapsed && userRole === 'trainer' && (
+   
+      {/* {!isCollapsed && userRole === 'trainer' && showPremiumCard && (
         <div className="px-3 mb-4">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600 p-4 text-white">
+            {/* Close Button 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white"
+              onClick={() => setShowPremiumCard(false)}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+            
             <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-cyan-400/20 blur-xl"></div>
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
@@ -336,50 +367,253 @@ export function Sidebar({ className, userRole }: SidebarProps) {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
-      {/* Bottom Navigation */}
-      <div className="border-t border-gray-200 dark:border-gray-800 p-3">
-        <div className="space-y-2">
-          {bottomRoutes.map((route) => (
-            <Link
-              key={route.href}
-              href={route.href}
-              className={cn(
-                "group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
-                isCollapsed && "justify-center px-2",
-                route.isActive
-                  ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
-                  : `text-gray-700 dark:text-gray-200 ${route.hoverColor}`
-              )}
-              title={isCollapsed ? route.name : undefined}
+      {/* Bottom Section - User Controls & Navigation */}
+      <div className="border-t border-gray-200 dark:border-gray-800">
+        {/* Quick Actions */}
+        {!isCollapsed && (
+          <div className="p-3 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-2">
+              {/* Notifications */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="flex-1 h-10 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all relative"
+                title="Notificações"
+              >
+                <Bell className="h-4 w-4 text-gray-700 dark:text-gray-200" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </Button>
+
+              {/* Theme Toggle */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="flex-1 h-10 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all"
+                onClick={toggleTheme}
+                title="Alternar tema"
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4 text-yellow-500" />
+                ) : (
+                  <Moon className="h-4 w-4 text-blue-600" />
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Collapsed Quick Actions */}
+        {isCollapsed && (
+          <div className="p-2 border-b border-gray-200 dark:border-gray-800 space-y-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="w-full h-10 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all relative"
+              title="Notificações"
             >
-              <div className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200",
-                route.isActive
-                  ? "bg-white/20 shadow-sm"
-                  : route.bgColor
-              )}>
-                <route.icon className={cn(
-                  "h-5 w-5 transition-all duration-200",
-                  route.isActive ? "text-white" : route.color
-                )} />
-              </div>
+              <Bell className="h-4 w-4 text-gray-700 dark:text-gray-200" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </Button>
 
-              {!isCollapsed && (
-                <span className="truncate">{route.name}</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="w-full h-10 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all"
+              onClick={toggleTheme}
+              title="Alternar tema"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4 text-yellow-500" />
+              ) : (
+                <Moon className="h-4 w-4 text-blue-600" />
               )}
-            </Link>
-          ))}
+            </Button>
+          </div>
+        )}
+
+        {/* Bottom Navigation */}
+        <div className="p-3">
+          <div className="space-y-2 mb-4">
+            {bottomRoutes.map((route) => (
+              <Link
+                key={route.href}
+                href={route.href}
+                className={cn(
+                  "group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
+                  isCollapsed && "justify-center px-2",
+                  route.isActive
+                    ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
+                    : `text-gray-700 dark:text-gray-200 ${route.hoverColor}`
+                )}
+                title={isCollapsed ? route.name : undefined}
+              >
+                <div className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200",
+                  route.isActive
+                    ? "bg-white/20 shadow-sm"
+                    : route.bgColor
+                )}>
+                  <route.icon className={cn(
+                    "h-5 w-5 transition-all duration-200",
+                    route.isActive ? "text-white" : route.color
+                  )} />
+                </div>
+
+                {!isCollapsed && (
+                  <span className="truncate">{route.name}</span>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          {/* User Profile Section */}
+          {!isCollapsed && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-all cursor-pointer group">
+                  <Avatar className="h-10 w-10 border-2 border-green-200 dark:border-green-800">
+                    <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
+                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold">
+                      {userInitial}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {profile?.full_name || "Usuário"}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                      {userRole === 'trainer' ? 'Personal Trainer' : 'Aluno'}
+                    </p>
+                  </div>
+                  {profile?.status === 'active' && (
+                    <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+                  )}
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                side="top"
+                className="w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-800 shadow-2xl rounded-2xl p-2 mb-2"
+              >
+                <DropdownMenuLabel className="p-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border-2 border-green-200 dark:border-green-800">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
+                      <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold">
+                        {userInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 dark:text-white truncate">
+                        {profile?.full_name || "Usuário"}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        {profile?.email}
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                        {userRole === 'trainer' ? 'Personal Trainer' : 'Aluno'}
+                      </p>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuItem asChild className="p-0 m-1">
+                  <Link 
+                    href="/dashboard/profile" 
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                  >
+                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                      <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <span className="font-medium">Meu Perfil</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuItem 
+                  onClick={handleSignOut}
+                  className="p-0 m-1"
+                >
+                  <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all w-full">
+                    <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                      <LogOut className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <span className="font-medium text-red-600 dark:text-red-400">Sair</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Collapsed User Profile */}
+          {isCollapsed && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all">
+                  <Avatar className="h-8 w-8 border-2 border-green-200 dark:border-green-800">
+                    <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
+                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold text-sm">
+                      {userInitial}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                side="right"
+                className="w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-800 shadow-2xl rounded-2xl p-2"
+              >
+                <DropdownMenuLabel className="p-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border-2 border-green-200 dark:border-green-800">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
+                      <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold">
+                        {userInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 dark:text-white truncate">
+                        {profile?.full_name || "Usuário"}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        {profile?.email}
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                        {userRole === 'trainer' ? 'Personal Trainer' : 'Aluno'}
+                      </p>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuItem asChild className="p-0 m-1">
+                  <Link 
+                    href="/dashboard/profile" 
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                  >
+                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                      <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <span className="font-medium">Meu Perfil</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuItem 
+                  onClick={handleSignOut}
+                  className="p-0 m-1"
+                >
+                  <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all w-full">
+                    <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                      <LogOut className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <span className="font-medium text-red-600 dark:text-red-400">Sair</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
-
-      {/* User Status Indicator (collapsed) */}
-      {isCollapsed && (
-        <div className="p-3 border-t border-gray-200 dark:border-gray-800">
-          <div className="w-full h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></div>
-        </div>
-      )}
     </aside>
   );
 }

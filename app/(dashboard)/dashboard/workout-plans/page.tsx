@@ -96,6 +96,7 @@ export default function WorkoutPlansPage() {
 
   const fetchWorkoutPlans = async (page = pagination.page, limit = pagination.limit) => {
     try {
+      setIsLoading(true);
       const response = await fetch(`/api/workout-plans?page=${page}&limit=${limit}`);
       const data = await response.json();
 
@@ -123,6 +124,8 @@ export default function WorkoutPlansPage() {
         title: "Erro ao buscar planos de treino",
         description: typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : String(error),
       });
+      } finally {
+    setIsLoading(false); 
     }
   };
 
