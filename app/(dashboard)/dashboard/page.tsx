@@ -29,13 +29,10 @@ import {
 import Link from "next/link";
 import { useSupabase } from "@/app/providers";
 
-interface DashboardProps {
-  userRole?: 'trainer' | 'student';
-}
-
-export default function DashboardPage({ userRole = 'trainer' }: DashboardProps) {
+export default function DashboardPage() {
   const { supabase } = useSupabase();
   const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<'trainer' | 'student'>('trainer');
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
   const [timeOfDay, setTimeOfDay] = useState("");
@@ -44,6 +41,17 @@ export default function DashboardPage({ userRole = 'trainer' }: DashboardProps) 
     const getUser = async () => {
       const { data, error } = await supabase.auth.getUser();
       setUser(data?.user || null);
+      
+      // Fetch user profile to get role
+      if (data?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .single();
+        
+        setUserRole(profile?.role || 'trainer');
+      }
     };
     getUser();
   }, [supabase]);
