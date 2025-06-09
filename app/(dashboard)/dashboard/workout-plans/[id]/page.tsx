@@ -375,11 +375,11 @@ export default function WorkoutPlanDetailsPage() {
 
                 <div className="space-y-4">
                   <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50">
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2 mb-3">
                       <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                       <h3 className="font-semibold text-gray-900 dark:text-white">Período</h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className="">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Início:</span>
                         <span className="font-medium text-gray-900 dark:text-white">
