@@ -70,8 +70,8 @@ export default function DashboardPage() {
 
   const getTrainerActions = () => [
     {
-      name: "Meus Alunos",
-      description: "Gerencie e acompanhe seus alunos",
+      name: "Alunos",
+      description: "Gerencie seus alunos",
       href: "/dashboard/students",
       icon: Users,
       color: "from-blue-500 to-blue-600",
@@ -371,9 +371,6 @@ export default function DashboardPage() {
                     <div className="relative mb-6">
                       <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r ${action.color} rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-2xl group-hover:shadow-3xl transition-all duration-500 group-hover:scale-110`}>
                         <action.icon className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
-                      </div>
-                      <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                        <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                       </div>
                     </div>
 
