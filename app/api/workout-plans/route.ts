@@ -1,8 +1,9 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -28,7 +29,26 @@ export async function GET() {
       );
     }
 
-    // Get workout plans with related data
+    // Extract pagination parameters from URL
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const offset = (page - 1) * limit;
+
+    // Get total count for pagination
+    const { count, error: countError } = await supabase
+      .from('workout_plans')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', profile.tenant_id);
+
+    if (countError) {
+      return NextResponse.json(
+        { error: countError.message },
+        { status: 500 }
+      );
+    }
+
+    // Get workout plans with related data and pagination
     const { data: plans, error } = await supabase
       .from('workout_plans')
       .select(`
@@ -50,7 +70,8 @@ export async function GET() {
         )
       `)
       .eq('tenant_id', profile.tenant_id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       return NextResponse.json(
@@ -59,7 +80,25 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(plans);
+    // Transform data to match frontend expectations
+    const transformedPlans = plans?.map(plan => ({
+      ...plan,
+      workouts: plan.workout_plan_items || []
+    })) || [];
+
+    const totalPages = Math.ceil((count || 0) / limit);
+
+    const response = {
+      plans: transformedPlans,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages
+      }
+    };
+
+    return NextResponse.json(response);
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'An error occurred while fetching workout plans' },

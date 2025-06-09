@@ -839,7 +839,7 @@ export default function WorkoutsPage() {
                               </div>
                               <div className="space-y-2 flex-1">
                                 <div className="flex items-center gap-3">
-                                  <h3 className="font-bold text-xl text-gray-800 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-300">
+                                  <h3 className="font-bold text-sm text-gray-800 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-300">
                                     {workout.name}
                                   </h3>
                                   <Badge className={`capitalize rounded-full px-3 py-1 text-xs font-semibold ${
@@ -850,9 +850,9 @@ export default function WorkoutsPage() {
                                     {workout.level}
                                   </Badge>
                                 </div>
-                                <p className="text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                                {/* <p className="text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
                                   {workout.description}
-                                </p>
+                                </p> */}
                                 <div className="flex items-center gap-4 text-sm">
                                   <div className="flex items-center gap-2">
                                     <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -876,12 +876,11 @@ export default function WorkoutsPage() {
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="outline"
-                                  size="sm"
+                                  size="icon"
                                   className="bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                                   onClick={() => handleViewDetails(workout.id)}
                                 >
                                   <Eye className="h-4 w-4 mr-2" />
-                                  Detalhes
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Ver detalhes completos</TooltipContent>

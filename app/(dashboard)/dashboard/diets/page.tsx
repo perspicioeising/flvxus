@@ -76,7 +76,6 @@ export default function DietsPage() {
     }
   }, [userProfile]);
 
-  //teste
 
   const fetchUserProfile = async () => {
     try {

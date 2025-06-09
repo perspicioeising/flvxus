@@ -276,7 +276,7 @@ export default function StudentDetailsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black overflow-x-hidden">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        
+
         {/* Modern Header */}
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl"></div>
@@ -290,7 +290,7 @@ export default function StudentDetailsPage() {
               >
                 <ArrowLeft className="h-5 w-5 text-green-600 dark:text-green-400" />
               </Button>
-              
+
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
@@ -338,28 +338,28 @@ export default function StudentDetailsPage() {
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-8">
             <TabsList className="grid w-full grid-cols-4 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-2 shadow-lg">
-              <TabsTrigger 
-                value="profile" 
+              <TabsTrigger
+                value="profile"
                 className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"
               >
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">Perfil</span>
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="physical"
                 className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"
               >
                 <Activity className="h-4 w-4" />
                 <span className="hidden sm:inline">Avaliações Físicas</span>
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="postural"
                 className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"
               >
                 <Camera className="h-4 w-4" />
                 <span className="hidden sm:inline">Avaliações Posturais</span>
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="media"
                 className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"
               >
@@ -542,7 +542,7 @@ export default function StudentDetailsPage() {
                               }}
                               className="peer sr-only"
                             />
-                            <label 
+                            <label
                               htmlFor={goal}
                               className="flex items-center justify-center p-3 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 peer-checked:bg-green-50 dark:peer-checked:bg-green-900/20 peer-checked:border-green-500 dark:peer-checked:border-green-400 peer-checked:text-green-700 dark:peer-checked:text-green-300"
                             >
@@ -685,12 +685,12 @@ export default function StudentDetailsPage() {
                           </CardDescription>
                         </div>
                       </div>
-                      <Button 
+                      <Button
                         onClick={() => router.push(`/dashboard/physical-assessments/new?student=${params.id}`)}
                         className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-blue-500/25 transition-all duration-300 font-semibold"
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Nova Avaliação
+                        Incluir
                       </Button>
                     </div>
                   </CardHeader>
@@ -720,9 +720,9 @@ export default function StudentDetailsPage() {
                                     </div>
                                   </div>
                                 </div>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => router.push(`/dashboard/physical-assessments/${assessment.id}`)}
                                   className="bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                                 >
@@ -784,12 +784,12 @@ export default function StudentDetailsPage() {
                           </CardDescription>
                         </div>
                       </div>
-                      <Button 
+                      <Button
                         onClick={() => router.push(`/dashboard/posture-assessments/new?student=${params.id}`)}
                         className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all duration-300 font-semibold"
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Nova Avaliação
+                        Incluir
                       </Button>
                     </div>
                   </CardHeader>
@@ -822,9 +822,9 @@ export default function StudentDetailsPage() {
                                     )}
                                   </div>
                                 </div>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => router.push(`/dashboard/posture-assessments/${assessment.id}`)}
                                   className="bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                                 >
