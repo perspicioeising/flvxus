@@ -104,9 +104,9 @@ export default function DashboardPage() {
       description: "Crie e gerencie treinos",
       href: "/dashboard/workouts",
       icon: Activity,
-      color: "from-orange-500 to-orange-600",
-      hoverColor: "hover:from-orange-600 hover:to-orange-700",
-      shadowColor: "hover:shadow-orange-500/25",
+       color: "from-yellow-500 to-yellow-600",
+      hoverColor: "hover:from-yellow-600 hover:to-yellow-700",
+      shadowColor: "hover:shadow-yellow-500/25",
       stats: "32 treinos"
     },
     {
@@ -134,9 +134,10 @@ export default function DashboardPage() {
       description: "Sistema de recompensas",
       href: "/dashboard/achievements",
       icon: Trophy,
-      color: "from-yellow-500 to-yellow-600",
-      hoverColor: "hover:from-yellow-600 hover:to-yellow-700",
-      shadowColor: "hover:shadow-yellow-500/25",
+   
+        color: "from-orange-500 to-orange-600",
+      hoverColor: "hover:from-orange-600 hover:to-orange-700",
+      shadowColor: "hover:shadow-orange-500/25",
       stats: "25 conquistas"
     },
     {
