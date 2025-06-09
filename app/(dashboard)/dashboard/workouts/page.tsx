@@ -362,10 +362,10 @@ export default function WorkoutsPage() {
 
               <Button
                 onClick={() => setIsAddingWorkout(true)}
-                className="group bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white px-10 py-4 rounded-2xl font-bold shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 border-0"
+            className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
               >
                 <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                Novo Treino
+                Novo
               </Button>
             </div>
           </div>
@@ -769,21 +769,7 @@ export default function WorkoutsPage() {
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
           <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl">
-            <CardHeader>
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                    <Activity className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Biblioteca de Treinos</CardTitle>
-                    <CardDescription className="text-gray-600 dark:text-gray-400 text-lg">
-                      Gerencie todos os seus programas de treino
-                    </CardDescription>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
+            
             <CardContent>
               {/* Filters */}
               <div className="flex flex-col lg:flex-row gap-4 mb-8">

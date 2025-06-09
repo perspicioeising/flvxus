@@ -387,10 +387,10 @@ export default function WorkoutPlansPage() {
 
               <Button
                 onClick={() => setIsAddingPlan(true)}
-                className="group bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-6 py-3 sm:px-10 sm:py-4 rounded-2xl font-bold shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 border-0 min-h-[44px]"
+            className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
               >
                 <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                Novo Plano
+                Novo
               </Button>
             </div>
           </div>
@@ -754,21 +754,7 @@ export default function WorkoutPlansPage() {
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-pink-600/10 rounded-2xl blur-xl"></div>
           <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl">
-            <CardHeader className="p-4 sm:p-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                    <CalendarCheck className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Biblioteca de Planos</CardTitle>
-                    <CardDescription className="text-gray-600 dark:text-gray-400 text-sm sm:text-lg">
-                      Gerencie todos os seus planos de treino
-                    </CardDescription>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
+           
             <CardContent className="p-4 sm:p-6">
               {/* Filters */}
               <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">

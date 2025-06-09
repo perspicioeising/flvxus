@@ -247,10 +247,10 @@ export default function ExercisesPage() {
 
               <Button
                 onClick={handleAddExerciseClick}
-                className="group bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 hover:from-green-700 hover:via-green-600 hover:to-emerald-700 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 border-0"
+            className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
               >
                 <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                Novo Exercício
+                Novo
               </Button>
             </div>
           </div>
