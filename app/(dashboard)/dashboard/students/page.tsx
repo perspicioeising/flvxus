@@ -161,7 +161,7 @@ export default function StudentsPage() {
           </div>
           <Button
             onClick={() => router.push('/dashboard/students/new')}
-            className="group bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 hover:from-green-700 hover:via-green-600 hover:to-emerald-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
+            className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
           >
             <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 group-hover:rotate-90 transition-transform duration-300" />
             Novo
@@ -307,8 +307,8 @@ export default function StudentsPage() {
                 {/* Enhanced Avatar Section */}
                 <div className="flex items-start gap-3 sm:gap-4 flex-1">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-500 rounded-3xl blur-sm opacity-50 group-hover:opacity-75 group-focus-within:opacity-75 transition-opacity duration-300"></div>
-                    <Avatar className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-3xl overflow-hidden border-4 border-white dark:border-gray-800 shadow-xl">
+                    <div className=" rounded-3xl blur-sm opacity-50 group-hover:opacity-75 group-focus-within:opacity-75 transition-opacity duration-300"></div>
+                    <Avatar className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-3xl overflow-hidden  shadow-xl">
                       <AvatarImage alt={student.full_name} />
                       <AvatarFallback className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center text-white font-black text-xl sm:text-2xl">
                         {student.full_name?.substring(0, 2).toUpperCase()}
@@ -341,7 +341,7 @@ export default function StudentsPage() {
                         {student.experience_level && (
                           <Badge className={`px-2 py-1 text-xs sm:px-3 sm:text-sm font-semibold rounded-full capitalize ${student.experience_level === 'iniciante' ? 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 border-blue-200 dark:from-blue-900/30 dark:to-cyan-900/30 dark:text-blue-300 dark:border-blue-600' :
                             student.experience_level === 'intermediário' ? 'bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-700 border-yellow-200 dark:from-yellow-900/30 dark:to-orange-900/30 dark:text-yellow-300 dark:border-yellow-600' :
-                              'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200 dark:from-purple-900/30 dark:to-pink-900/30 dark:text-purple-300 dark:border-purple-600'
+                              'bg-gradient-to-r from-blue-100 to-blue-100 text-blue-700 border-blue-200 dark:from-blue-900/30 dark:to-blue-900/30 dark:text-blue-300 dark:border-blue-600'
                             }`}>
                             {student.experience_level}
                           </Badge>
