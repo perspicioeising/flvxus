@@ -14,7 +14,6 @@ import {
 import { 
   TrendingUp, 
   TrendingDown, 
-  Minus, 
   Calendar,
   Target,
   Activity,
@@ -33,10 +32,8 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { number, string } from "zod";
 
 interface Assessment {
-  [x: string]: any;
   id: string;
   created_at: string;
   weight: number;
@@ -79,15 +76,6 @@ interface Assessment {
   // Medições flexíveis (JSONB)
   measurements?: Record<string, any>;
 }
-  height: number;
-  fat_percentage: number;
-  fat_mass: number;
-  lean_mass: number;
- // bmi?: number;
-  protocol: string;
- // notes?: string;
-  student_id: string;
-
 
 interface ComparisonData {
   metric: string;
@@ -125,7 +113,7 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
   useEffect(() => {
     if (currentAssessment) {
       // Verificar diferentes formas de obter o student_id
-      const studentId = currentAssessment.student_id || currentAssessment.student?.id;
+      const studentId = currentAssessment.student_id || (currentAssessment as any).student?.id;
       console.log('Student ID encontrado:', studentId);
       console.log('Current assessment completa:', currentAssessment);
       
@@ -1238,6 +1226,22 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
                             dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                             activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2 }}
                           />
+                          <Line 
+                            type="monotone" 
+                            dataKey="gordura" 
+                            stroke="#EF4444" 
+                            strokeWidth={3}
+                            dot={{ fill: '#EF4444', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6, stroke: '#F59E0B', strokeWidth: 2 }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="massaMagra" 
+                            stroke="#10B981" 
+                            strokeWidth={3}
+                            dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6, stroke: '#8B5CF6', strokeWidth: 2 }}
+                          />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
@@ -1335,4 +1339,4 @@ export default function AssessmentDetailsPage({ params }: PageProps) {
       </div>
     </div>
   );
-} 
+}
