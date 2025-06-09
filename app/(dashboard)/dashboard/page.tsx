@@ -110,8 +110,8 @@ export default function DashboardPage() {
       stats: "32 treinos"
     },
     {
-      name: "Planos de Treino",
-      description: "Organize programas completos",
+      name: "Rotinas",
+      description: "Organize rotinas completas",
       href: "/dashboard/workout-plans",
       icon: ClipboardList,
       color: "from-pink-500 to-pink-600",

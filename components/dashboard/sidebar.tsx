@@ -122,7 +122,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
-          name: "Planos de Treino",
+          name: "Rotinas",
           href: "/dashboard/workout-plans",
           icon: ClipboardList,
           isActive: pathname.startsWith("/dashboard/workout-plans"),
