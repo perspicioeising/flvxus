@@ -1,12 +1,11 @@
-// components/dashboard/header.tsx - MODERNIZADO
+// components/dashboard/header.tsx - MOBILE ONLY
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Dumbbell, Menu, User, Settings, LogOut, Search, Zap } from "lucide-react";
+import { Bell, Dumbbell, Menu, User, Settings, LogOut, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +30,6 @@ export function Header({ userRole }: HeaderProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchProfile();
@@ -73,7 +71,7 @@ export function Header({ userRole }: HeaderProps) {
       return [
         { name: "Meus Treinos", href: "/dashboard/my-workouts", current: pathname.startsWith("/dashboard/my-workouts") },
         { name: "Progresso", href: "/dashboard/progress", current: pathname.startsWith("/dashboard/progress") },
-         { name: "Dietas", href: "/dashboard/diets", current: pathname.startsWith("/dashboard/diets") },
+        { name: "Dietas", href: "/dashboard/diets", current: pathname.startsWith("/dashboard/diets") },
       ];
     }
   };
@@ -81,7 +79,8 @@ export function Header({ userRole }: HeaderProps) {
   const navigationItems = getNavigationItems();
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-lg">
+    // Adiciona md:hidden para esconder em desktop (768px+)
+    <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-lg md:hidden">
       <div className="container mx-auto">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6">
           
@@ -92,7 +91,7 @@ export function Header({ userRole }: HeaderProps) {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="md:hidden p-2 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all"
+                  className="p-2 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all"
                 >
                   <Menu className="h-5 w-5 text-green-600 dark:text-green-400" />
                   <span className="sr-only">Toggle menu</span>
@@ -157,7 +156,7 @@ export function Header({ userRole }: HeaderProps) {
               </SheetContent>
             </Sheet>
 
-            {/* Desktop Logo */}
+            {/* Mobile Logo */}
             <Link href="/dashboard" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110">
@@ -167,7 +166,7 @@ export function Header({ userRole }: HeaderProps) {
                   <Zap className="h-2 w-2 text-white" />
                 </div>
               </div>
-              <div className="hidden lg:block">
+              <div className="hidden sm:block">
                 <span className="font-black text-xl bg-gradient-to-r from-gray-900 via-green-600 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent">
                   FLVXUS
                 </span>
@@ -176,28 +175,8 @@ export function Header({ userRole }: HeaderProps) {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  item.current
-                    ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
-                    : "text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-300"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-2 lg:gap-3">
-            
-        
-
+          {/* Right Side Actions - Mobile */}
+          <div className="flex items-center gap-2">
             {/* Theme Toggle */}
             <div className="p-2">
               <ThemeToggle />
