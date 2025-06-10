@@ -66,6 +66,7 @@ export function Header({ userRole }: HeaderProps) {
         { name: "Exercícios", href: "/dashboard/exercises", current: pathname.startsWith("/dashboard/exercises") },
         { name: "Planos", href: "/dashboard/workout-plans", current: pathname.startsWith("/dashboard/workout-plans") },
         { name: "Dietas", href: "/dashboard/diets", current: pathname.startsWith("/dashboard/diets") },
+      { name: "Avaliações", href: "/dashboard/physical-assessments", current: pathname.startsWith("/dashboard/physical-assessments") },
       ];
     } else {
       return [
