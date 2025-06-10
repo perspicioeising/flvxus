@@ -111,6 +111,15 @@ export function Sidebar({ className, userRole }: SidebarProps) {
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
+          name: "Avaliações",
+          href: "/dashboard/physical-assessments",
+          icon: Users,
+          isActive: pathname.startsWith("/dashboard/physical-assessments"),
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+        },
+        {
           name: "Dietas",
           href: "/dashboard/diets",
           icon: Utensils,
