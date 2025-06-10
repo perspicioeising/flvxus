@@ -33,13 +33,14 @@ import {
   Calendar
 } from 'lucide-react';
 
-// Constantes
+// Constantes - ADICIONADO PROTOCOLO GUEDES 1994
 const BODY_PROTOCOLS = [
   { value: "jackson_pollock_3", label: "Jackson & Pollock (3 dobras)", gender: "both", description: "Protocolo padrão com 3 pontos de medição" },
   { value: "jackson_pollock_7", label: "Jackson & Pollock (7 dobras)", gender: "both", description: "Protocolo mais preciso com 7 pontos" },
   { value: "durnin_womersley", label: "Durnin & Womersley", gender: "both", description: "Protocolo clássico de 4 dobras" },
   { value: "slaughter", label: "Slaughter et al.", gender: "both", description: "Específico para adolescentes" },
-  { value: "boileau", label: "Boileau et al.", gender: "youth", description: "Para jovens atletas" }
+  { value: "boileau", label: "Boileau et al.", gender: "youth", description: "Para jovens atletas" },
+  { value: "guedes_1994", label: "Guedes 1994", gender: "both", description: "Protocolo brasileiro para população jovem" }
 ];
 
 const MEASUREMENT_FIELDS = {
@@ -59,9 +60,9 @@ const MEASUREMENT_FIELDS = {
     { key: 'right_calf', label: 'Panturrilha Dir.', unit: 'cm', icon: '🔵' }
   ],
   skinfolds: [
-    { key: 'triceps', label: 'Tríceps', unit: 'mm', icon: '🟡', required: ['jackson_pollock_3', 'durnin_womersley'] },
+    { key: 'triceps', label: 'Tríceps', unit: 'mm', icon: '🟡', required: ['jackson_pollock_3', 'durnin_womersley', 'guedes_1994'] },
     { key: 'biceps', label: 'Bíceps', unit: 'mm', icon: '🟡', required: ['jackson_pollock_7', 'durnin_womersley'] },
-    { key: 'subscapular', label: 'Subescapular', unit: 'mm', icon: '🟡', required: ['jackson_pollock_7', 'durnin_womersley'] },
+    { key: 'subscapular', label: 'Subescapular', unit: 'mm', icon: '🟡', required: ['jackson_pollock_7', 'durnin_womersley', 'guedes_1994'] },
     { key: 'abdominal', label: 'Abdominal', unit: 'mm', icon: '🟡', required: ['jackson_pollock_3', 'jackson_pollock_7'] },
     { key: 'suprailiac', label: 'Supra-ilíaca', unit: 'mm', icon: '🟡', required: ['jackson_pollock_3', 'jackson_pollock_7', 'durnin_womersley'] },
     { key: 'midaxillary', label: 'Axilar Média', unit: 'mm', icon: '🟡', required: ['jackson_pollock_7'] },
@@ -73,7 +74,7 @@ const MEASUREMENT_FIELDS = {
 interface Student {
   id: string;
   full_name: string;
-  birth_date: string;
+  birth_date: string; // CORRIGIDO: era birthDate, agora é birth_date
   gender: string;
   height: number;
   weight: number;
@@ -105,7 +106,27 @@ export default function NewPhysicalAssessmentPage() {
     notes: ''
   });
 
-  // Buscar estudantes
+  const fetchUserRole = useCallback(async () => {
+    try {
+      const response = await fetch('/api/profile');
+      const data = await response.json();
+      if (response.ok) {
+        // Verificar se é trainer
+        if (data.role !== 'trainer') {
+          toast({
+            variant: "destructive",
+            title: "Acesso negado",
+            description: "Apenas treinadores podem criar avaliações físicas.",
+          });
+          router.push('/dashboard/physical-assessments');
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar permissões:', error);
+    }
+  }, [router, toast]);
+
   const fetchStudents = useCallback(async () => {
     try {
       const response = await fetch('/api/students');
@@ -135,13 +156,23 @@ export default function NewPhysicalAssessmentPage() {
   }, [searchParams, toast]);
 
   useEffect(() => {
-    fetchStudents();
-  }, [fetchStudents]);
+    const initializePage = async () => {
+      await fetchUserRole();
+      await fetchStudents();
+    };
+    initializePage();
+  }, [fetchUserRole, fetchStudents]);
 
-  // Calcular idade
+  // CORRIGIDO: Função para calcular idade
   const calculateAge = (birthDate: string) => {
+    if (!birthDate) return 0;
+    
     const today = new Date();
     const birth = new Date(birthDate);
+    
+    // Verificar se a data é válida
+    if (isNaN(birth.getTime())) return 0;
+    
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
     
@@ -149,16 +180,20 @@ export default function NewPhysicalAssessmentPage() {
       age--;
     }
     
-    return age;
+    return Math.max(0, age); // Garantir que não retorne idade negativa
   };
 
   // Selecionar aluno
   const handleStudentSelect = (student: Student) => {
+    console.log('Student data:', student); // Debug
+    const calculatedAge = calculateAge(student.birth_date);
+    console.log('Calculated age:', calculatedAge); // Debug
+    
     setSelectedStudent(student);
     setAssessment(prev => ({
       ...prev,
       student_id: student.id,
-      age: calculateAge(student.birth_date).toString(),
+      age: calculatedAge.toString(),
       gender: student.gender,
       height: student.height?.toString() || '',
       weight: student.weight?.toString() || ''
@@ -166,7 +201,7 @@ export default function NewPhysicalAssessmentPage() {
     setActiveTab('protocol');
   };
 
-  // Calcular composição corporal
+  // Calcular composição corporal - ADICIONADO PROTOCOLO GUEDES 1994
   const calculateBodyComposition = useCallback(() => {
     const { weight, height, age, gender, protocol, measurements } = assessment;
     
@@ -216,6 +251,16 @@ export default function NewPhysicalAssessmentPage() {
         }
         break;
 
+      // NOVO PROTOCOLO GUEDES 1994
+      case 'guedes_1994':
+        const sumGuedes = (parseFloat(measurements.triceps) || 0) + (parseFloat(measurements.subscapular) || 0);
+        if (gender === 'male') {
+          fatPercentage = (0.735 * sumGuedes) + 1.0;
+        } else {
+          fatPercentage = (0.610 * sumGuedes) + 5.1;
+        }
+        break;
+
       default:
         // Estimativa básica usando IMC
         if (gender === 'male') {
@@ -233,11 +278,11 @@ export default function NewPhysicalAssessmentPage() {
     const leanMass = parseFloat(weight) - fatMass;
 
     return {
-      bmi: parseFloat(bmi.toFixed(1)),
+      bmi: parseFloat(bmi.toFixed(2)),
       bodyDensity: parseFloat(bodyDensity.toFixed(4)),
-      fatPercentage: parseFloat(Math.max(0, fatPercentage).toFixed(1)),
-      fatMass: parseFloat(Math.max(0, fatMass).toFixed(1)),
-      leanMass: parseFloat(leanMass.toFixed(1))
+      fatPercentage: parseFloat(Math.max(0, fatPercentage).toFixed(2)),
+      fatMass: parseFloat(Math.max(0, fatMass).toFixed(2)),
+      leanMass: parseFloat(leanMass.toFixed(2))
     };
   }, [assessment]);
 
@@ -249,7 +294,7 @@ export default function NewPhysicalAssessmentPage() {
     }
   }, [assessment, calculateBodyComposition]);
 
-  // Analisar com IA
+  // CORRIGIDO: Analisar com IA
   const analyzeWithAI = async () => {
     setIsAnalyzing(true);
     
@@ -258,28 +303,40 @@ export default function NewPhysicalAssessmentPage() {
         throw new Error('Dados insuficientes para análise');
       }
 
+      // CORRIGIDO: Preparar dados corretamente
+      const requestData = {
+        assessmentData: {
+          age: parseInt(assessment.age),
+          gender: assessment.gender as 'male' | 'female',
+          weight: parseFloat(assessment.weight),
+          height: parseFloat(assessment.height),
+          bmi: calculations.bmi,
+          fatPercentage: calculations.fatPercentage,
+          fatMass: calculations.fatMass,
+          leanMass: calculations.leanMass,
+          protocol: assessment.protocol
+        },
+        studentInfo: {
+          name: selectedStudent?.full_name,
+          goals: selectedStudent?.goals || []
+        },
+        previousAssessments: [] // TODO: Buscar avaliações anteriores
+      };
+
+      console.log('Sending to AI:', requestData); // Debug
+
       const response = await fetch('/api/physical-assessments/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          assessmentData: {
-            ...assessment,
-            ...calculations
-          },
-          studentInfo: {
-            name: selectedStudent?.full_name,
-            goals: selectedStudent?.goals || []
-          },
-          previousAssessments: [] // TODO: Buscar avaliações anteriores
-        }),
+        body: JSON.stringify(requestData),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error);
+        throw new Error(data.error || 'Erro na análise IA');
       }
 
       setAiAnalysis(data.analysis);
@@ -291,6 +348,7 @@ export default function NewPhysicalAssessmentPage() {
       });
       
     } catch (error: any) {
+      console.error('AI Analysis Error:', error);
       toast({
         variant: "destructive",
         title: "Erro na análise IA",
@@ -317,6 +375,12 @@ export default function NewPhysicalAssessmentPage() {
         },
         body: JSON.stringify({
           ...assessment,
+          // Adicionar os cálculos aos dados
+          bmi: calculations.bmi,
+          fat_percentage: calculations.fatPercentage,
+          fat_mass: calculations.fatMass,
+          lean_mass: calculations.leanMass,
+          body_density: calculations.bodyDensity,
           ai_analysis: aiAnalysis,
           ai_recommendations: aiAnalysis ? {
             training: aiAnalysis.recommendations?.training,
@@ -350,7 +414,7 @@ export default function NewPhysicalAssessmentPage() {
     }
   };
 
-  // Verificar se campos obrigatórios estão preenchidos
+  // Verificar se campos obrigatórios estão preenchidos - ATUALIZADO PARA GUEDES
   const getRequiredFields = (protocol: string) => {
     const required = MEASUREMENT_FIELDS.skinfolds.filter(field => 
       field.required && field.required.includes(protocol)
@@ -493,7 +557,7 @@ export default function NewPhysicalAssessmentPage() {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-green-600" />
-                              <span>{calculateAge(selectedStudent.birth_date)} anos</span>
+                              <span>{assessment.age} anos</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-green-600" />
@@ -999,12 +1063,34 @@ export default function NewPhysicalAssessmentPage() {
                           Recomendações de Treinamento
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-3">
-                            <div className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                              <div className="font-semibold text-green-700 dark:text-green-300">Suplementação:</div>
-                              <div className="text-gray-900 dark:text-white">{aiAnalysis.recommendations.nutrition.supplementation}</div>
+                          {Object.entries(aiAnalysis.recommendations.training).map(([key, value]) => (
+                            <div key={key} className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                              <div className="font-semibold text-blue-700 dark:text-blue-300 capitalize mb-1">
+                                {key.replace(/([A-Z])/g, ' $1').trim()}:
+                              </div>
+                              <div className="text-gray-900 dark:text-white text-sm">{value}</div>
                             </div>
-                          </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recomendações Nutricionais */}
+                    {aiAnalysis.recommendations?.nutrition && (
+                      <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl">
+                        <h4 className="text-xl font-bold text-green-800 dark:text-green-300 mb-4 flex items-center gap-2">
+                          <Heart className="h-6 w-6" />
+                          Recomendações Nutricionais
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.entries(aiAnalysis.recommendations.nutrition).map(([key, value]) => (
+                            <div key={key} className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                              <div className="font-semibold text-green-700 dark:text-green-300 capitalize mb-1">
+                                {key.replace(/([A-Z])/g, ' $1').trim()}:
+                              </div>
+                              <div className="text-gray-900 dark:text-white text-sm">{value}</div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -1021,7 +1107,7 @@ export default function NewPhysicalAssessmentPage() {
                             </h5>
                             <ul className="space-y-2">
                               {aiAnalysis.analysis.strengths.map((strength: string, index: number) => (
-                                <li key={index} className="flex items-start gap-2 text-green-700 dark:text-green-300">
+                                <li key={index} className="flex items-start gap-2 text-green-700 dark:text-green-300 text-sm">
                                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                                   <span>{strength}</span>
                                 </li>
@@ -1039,7 +1125,7 @@ export default function NewPhysicalAssessmentPage() {
                             </h5>
                             <ul className="space-y-2">
                               {aiAnalysis.analysis.improvements.map((improvement: string, index: number) => (
-                                <li key={index} className="flex items-start gap-2 text-orange-700 dark:text-orange-300">
+                                <li key={index} className="flex items-start gap-2 text-orange-700 dark:text-orange-300 text-sm">
                                   <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                                   <span>{improvement}</span>
                                 </li>
@@ -1059,7 +1145,7 @@ export default function NewPhysicalAssessmentPage() {
                         </h5>
                         <ul className="space-y-2">
                           {aiAnalysis.analysis.risks.map((risk: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2 text-red-700 dark:text-red-300">
+                            <li key={index} className="flex items-start gap-2 text-red-700 dark:text-red-300 text-sm">
                               <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
                               <span>{risk}</span>
                             </li>
@@ -1078,11 +1164,11 @@ export default function NewPhysicalAssessmentPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
                             <div className="font-semibold text-purple-700 dark:text-purple-300 mb-2">Próxima Avaliação:</div>
-                            <div className="text-gray-900 dark:text-white">{aiAnalysis.progressTracking.nextAssessment}</div>
+                            <div className="text-gray-900 dark:text-white text-sm">{aiAnalysis.progressTracking.nextAssessment}</div>
                           </div>
                           <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
                             <div className="font-semibold text-purple-700 dark:text-purple-300 mb-2">Timeline Esperada:</div>
-                            <div className="text-gray-900 dark:text-white">{aiAnalysis.progressTracking.expectedTimeline}</div>
+                            <div className="text-gray-900 dark:text-white text-sm">{aiAnalysis.progressTracking.expectedTimeline}</div>
                           </div>
                           <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
                             <div className="font-semibold text-purple-700 dark:text-purple-300 mb-2">Métricas Chave:</div>
@@ -1101,7 +1187,7 @@ export default function NewPhysicalAssessmentPage() {
                           <Info className="h-5 w-5" />
                           Observações Específicas
                         </h5>
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm">
                           {aiAnalysis.specificNotes}
                         </p>
                       </div>

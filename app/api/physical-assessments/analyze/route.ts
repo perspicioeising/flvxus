@@ -74,17 +74,39 @@ interface AIAnalysis {
 export async function POST(request: Request) {
   try {
     const body: RequestBody = await request.json();
+    console.log('Received request body:', body); // Debug log
+
     const { assessmentData, studentInfo, previousAssessments = [] } = body;
 
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'Chave da API Gemini não configurada' }, { status: 500 });
+    // VALIDAÇÃO MAIS ROBUSTA DOS DADOS
+    if (!assessmentData || typeof assessmentData !== 'object') {
+      return NextResponse.json({ error: 'Dados da avaliação são obrigatórios' }, { status: 400 });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const requiredFields = ['age', 'gender', 'weight', 'height', 'bmi', 'fatPercentage', 'fatMass', 'leanMass'];
+    for (const field of requiredFields) {
+      if (assessmentData[field as keyof AssessmentData] === undefined || assessmentData[field as keyof AssessmentData] === null) {
+        return NextResponse.json({ error: `Campo obrigatório ausente: ${field}` }, { status: 400 });
+      }
+    }
 
-    // Preparar prompt para análise
-    const prompt = `
+    // Se não há chave da API, usar análise fallback
+    if (!process.env.GEMINI_API_KEY) {
+      console.log('Gemini API key not found, using fallback analysis');
+      const fallbackAnalysis = generateFallbackAnalysis(assessmentData);
+      return NextResponse.json({
+        success: true,
+        analysis: fallbackAnalysis,
+        warning: 'Análise gerada com dados básicos (API IA não configurada)'
+      });
+    }
+
+    try {
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+      // Preparar prompt para análise
+      const prompt = `
 Você é um especialista em avaliação física e composição corporal. Analise os seguintes dados de uma avaliação física e forneça recomendações detalhadas.
 
 DADOS DA AVALIAÇÃO:
@@ -157,29 +179,66 @@ IMPORTANTE:
 - Se houver histórico, comente sobre a evolução
 - Seja específico e prático nas recomendações
 - Use linguagem profissional mas acessível
+- Retorne APENAS o JSON, sem texto adicional
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+      console.log('Sending prompt to Gemini AI'); // Debug log
 
-    try {
-      // Tentar extrair JSON do texto
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      const analysisJson: AIAnalysis | null = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-      if (!analysisJson) {
-        throw new Error('Resposta da IA não está em formato JSON válido');
+      console.log('Received AI response:', text.substring(0, 200) + '...'); // Debug log
+
+      try {
+        // Tentar extrair JSON do texto
+        let jsonText = text.trim();
+        
+        // Remover marcações de código se existirem
+        if (jsonText.startsWith('```json')) {
+          jsonText = jsonText.replace(/```json\s*/, '').replace(/\s*```$/, '');
+        } else if (jsonText.startsWith('```')) {
+          jsonText = jsonText.replace(/```\s*/, '').replace(/\s*```$/, '');
+        }
+
+        // Tentar encontrar JSON no texto
+        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[0];
+        }
+
+        const analysisJson: AIAnalysis = JSON.parse(jsonText);
+
+        // Validar estrutura básica do JSON
+        if (!analysisJson.classification || !analysisJson.recommendations) {
+          throw new Error('Estrutura JSON inválida');
+        }
+
+        console.log('Successfully parsed AI analysis'); // Debug log
+
+        return NextResponse.json({
+          success: true,
+          analysis: analysisJson,
+          rawResponse: text
+        });
+
+      } catch (parseError) {
+        console.error('Erro ao parsear resposta da IA:', parseError);
+        console.error('Raw AI response:', text);
+        
+        // Fallback: análise básica
+        const fallbackAnalysis = generateFallbackAnalysis(assessmentData);
+        
+        return NextResponse.json({
+          success: true,
+          analysis: fallbackAnalysis,
+          warning: 'Análise gerada com dados básicos devido a erro no parsing da IA',
+          rawResponse: text
+        });
       }
 
-      return NextResponse.json({
-        success: true,
-        analysis: analysisJson,
-        rawResponse: text
-      });
-
-    } catch (parseError) {
-      console.error('Erro ao parsear resposta da IA:', parseError);
+    } catch (aiError) {
+      console.error('Erro na API do Gemini:', aiError);
       
       // Fallback: análise básica
       const fallbackAnalysis = generateFallbackAnalysis(assessmentData);
@@ -187,23 +246,32 @@ IMPORTANTE:
       return NextResponse.json({
         success: true,
         analysis: fallbackAnalysis,
-        warning: 'Análise gerada com dados básicos devido a erro na IA',
-        rawResponse: text
+        warning: 'Análise gerada com dados básicos devido a erro na IA'
       });
     }
 
   } catch (error: any) {
-    console.error('Erro na análise IA:', error);
+    console.error('Erro geral na análise IA:', error);
     
-    // Fallback: análise básica
-    const body: RequestBody = await request.json();
-    const fallbackAnalysis = generateFallbackAnalysis(body?.assessmentData);
+    // Em caso de erro geral, tentar ainda assim retornar uma análise básica
+    try {
+      const body: RequestBody = await request.json();
+      if (body?.assessmentData) {
+        const fallbackAnalysis = generateFallbackAnalysis(body.assessmentData);
+        return NextResponse.json({
+          success: true,
+          analysis: fallbackAnalysis,
+          warning: 'Análise gerada com dados básicos devido a erro geral'
+        });
+      }
+    } catch (fallbackError) {
+      console.error('Erro ao gerar análise fallback:', fallbackError);
+    }
     
-    return NextResponse.json({
-      success: true,
-      analysis: fallbackAnalysis,
-      warning: 'Análise gerada com dados básicos devido a erro na IA'
-    });
+    return NextResponse.json({ 
+      error: 'Erro interno do servidor na análise IA',
+      details: error.message 
+    }, { status: 500 });
   }
 }
 
@@ -211,8 +279,11 @@ function generateFallbackAnalysis(data: AssessmentData): AIAnalysis {
   const fatPercentage = data.fatPercentage;
   const bmi = data.bmi;
   const gender = data.gender;
+  const age = data.age;
 
   let classification = '';
+  let healthStatus = '';
+  let somatotype = '';
   let recommendations: AIAnalysis['recommendations'];
 
   // Classificação baseada no percentual de gordura
@@ -230,88 +301,123 @@ function generateFallbackAnalysis(data: AssessmentData): AIAnalysis {
     else classification = 'Elevado';
   }
 
-  // Recomendações básicas
-  if (fatPercentage > 25) {
+  // Status de saúde baseado no IMC
+  if (bmi < 18.5) healthStatus = 'Abaixo do peso';
+  else if (bmi < 25) healthStatus = 'Peso normal';
+  else if (bmi < 30) healthStatus = 'Sobrepeso';
+  else healthStatus = 'Obesidade';
+
+  // Somatótipo estimado
+  if (fatPercentage > 25) somatotype = 'Endomorfo';
+  else if (fatPercentage < 12) somatotype = 'Ectomorfo';
+  else somatotype = 'Mesomorfo';
+
+  // Recomendações baseadas na classificação
+  if (fatPercentage > 25 || bmi > 25) {
     recommendations = {
       training: {
-        focus: 'Redução de gordura corporal',
-        frequency: '5-6x por semana',
-        cardio: 'HIIT 3x/semana + cardio moderado 2x/semana',
-        strength: 'Circuitos e exercícios compostos',
-        flexibility: 'Alongamento pós-treino'
+        focus: 'Redução de gordura corporal e melhoria cardiovascular',
+        frequency: '5-6 sessões por semana',
+        cardio: 'HIIT 3x/semana + cardio moderado 2-3x/semana (30-45 min)',
+        strength: 'Circuitos funcionais e exercícios compostos 3x/semana',
+        flexibility: 'Alongamento diário e yoga/pilates 2x/semana'
       },
       nutrition: {
-        caloricStrategy: 'Déficit calórico moderado (300-500 kcal)',
-        proteinIntake: `${Math.round(data.leanMass * 2.2)}g/dia`,
-        mealTiming: '4-5 refeições menores',
-        supplementation: 'Whey protein, multivitamínico'
+        caloricStrategy: 'Déficit calórico moderado de 300-500 kcal/dia',
+        proteinIntake: `${Math.round(data.leanMass * 2.2)}g/dia (distribuído ao longo do dia)`,
+        mealTiming: '5-6 refeições menores, evitar carboidratos simples à noite',
+        supplementation: 'Whey protein, multivitamínico, ômega-3'
       },
       lifestyle: {
-        sleep: '7-9 horas de sono de qualidade',
-        hydration: '35ml por kg de peso corporal',
-        stress: 'Técnicas de relaxamento e meditação'
+        sleep: '7-9 horas de sono de qualidade, horários regulares',
+        hydration: `${Math.round(data.weight * 35)}ml/dia (aumentar em dias de treino)`,
+        stress: 'Técnicas de relaxamento, meditação, atividades prazerosas'
       }
     };
-  } else if (fatPercentage < 15) {
+  } else if (fatPercentage < 15 || bmi < 20) {
     recommendations = {
       training: {
-        focus: 'Ganho de massa muscular',
-        frequency: '4-5x por semana',
-        cardio: 'Cardio leve 2-3x/semana',
-        strength: 'Treinos de hipertrofia com progressão',
-        flexibility: 'Mobilidade diária'
+        focus: 'Ganho de massa muscular e força',
+        frequency: '4-5 sessões de musculação por semana',
+        cardio: 'Cardio leve 2-3x/semana (20-30 min) para saúde cardiovascular',
+        strength: 'Treinos de hipertrofia com progressão de carga, foco em compostos',
+        flexibility: 'Mobilidade diária e alongamento pós-treino'
       },
       nutrition: {
-        caloricStrategy: 'Leve superávit calórico (200-400 kcal)',
-        proteinIntake: `${Math.round(data.leanMass * 2.5)}g/dia`,
-        mealTiming: '5-6 refeições ao longo do dia',
-        supplementation: 'Creatina, whey protein'
+        caloricStrategy: 'Superávit calórico de 200-400 kcal/dia',
+        proteinIntake: `${Math.round(data.leanMass * 2.5)}g/dia em todas as refeições`,
+        mealTiming: '6 refeições, carboidratos ao redor dos treinos',
+        supplementation: 'Whey protein, creatina, multivitamínico'
       },
       lifestyle: {
-        sleep: '8-9 horas para recuperação muscular',
-        hydration: '40ml por kg de peso corporal',
-        stress: 'Gestão do estresse para melhor recuperação'
+        sleep: '8-9 horas para recuperação muscular adequada',
+        hydration: `${Math.round(data.weight * 40)}ml/dia`,
+        stress: 'Gestão do estresse para otimizar recuperação e ganhos'
       }
     };
   } else {
     recommendations = {
       training: {
-        focus: 'Manutenção e melhoria da composição',
-        frequency: '4-5x por semana',
-        cardio: 'Cardio moderado 3x/semana',
-        strength: 'Treinos mistos força/hipertrofia',
-        flexibility: 'Yoga ou pilates 1-2x/semana'
+        focus: 'Manutenção e melhoria da composição corporal',
+        frequency: '4-5 sessões variadas por semana',
+        cardio: 'Cardio moderado 3x/semana, variando modalidades',
+        strength: 'Treinos mistos força/hipertrofia, periodização',
+        flexibility: 'Yoga ou pilates 2x/semana, mobilidade diária'
       },
       nutrition: {
-        caloricStrategy: 'Manutenção calórica',
-        proteinIntake: `${Math.round(data.leanMass * 2.0)}g/dia`,
-        mealTiming: '4-5 refeições balanceadas',
-        supplementation: 'Conforme necessidade individual'
+        caloricStrategy: 'Manutenção calórica com ajustes conforme objetivos',
+        proteinIntake: `${Math.round(data.leanMass * 2.0)}g/dia distribuídos`,
+        mealTiming: '4-5 refeições balanceadas, timing pré/pós-treino',
+        supplementation: 'Conforme necessidade individual e exames'
       },
       lifestyle: {
-        sleep: '7-8 horas consistentes',
-        hydration: 'Mínimo 2-3 litros por dia',
-        stress: 'Atividades recreativas e hobbies'
+        sleep: '7-8 horas consistentes, higiene do sono',
+        hydration: 'Mínimo 2-3 litros/dia, mais nos treinos',
+        stress: 'Atividades recreativas, hobbies, equilíbrio vida/treino'
       }
     };
   }
 
+  // Análise de pontos fortes, melhorias e riscos
+  const analysis = {
+    strengths: [] as string[],
+    improvements: [] as string[],
+    risks: [] as string[]
+  };
+
+  // Pontos fortes
+  if (fatPercentage <= 20) analysis.strengths.push('Boa composição corporal');
+  if (bmi >= 18.5 && bmi <= 25) analysis.strengths.push('IMC dentro da faixa ideal');
+  if (age < 30) analysis.strengths.push('Jovem, boa capacidade de adaptação');
+  if (data.leanMass > data.fatMass * 2) analysis.strengths.push('Boa proporção de massa magra');
+
+  // Melhorias
+  if (fatPercentage > 25) analysis.improvements.push('Reduzir percentual de gordura corporal');
+  if (bmi > 25) analysis.improvements.push('Melhorar índice de massa corporal');
+  if (data.leanMass < data.weight * 0.7) analysis.improvements.push('Aumentar massa muscular');
+
+  // Riscos
+  if (bmi > 30) analysis.risks.push('Obesidade - risco cardiovascular elevado');
+  if (fatPercentage > 30) analysis.risks.push('Excesso de gordura corporal');
+  if (age > 40 && fatPercentage > 20) analysis.risks.push('Risco metabólico relacionado à idade');
+
+  // Garantir que há pelo menos um item em cada categoria
+  if (analysis.strengths.length === 0) analysis.strengths.push('Potencial para melhoria significativa');
+  if (analysis.improvements.length === 0) analysis.improvements.push('Manter consistência no programa atual');
+  if (analysis.risks.length === 0) analysis.risks.push('Sem fatores de risco evidentes');
+
   return {
     classification,
-    healthStatus: bmi > 30 ? 'Atenção necessária' : 'Dentro dos parâmetros',
-    somatotype: fatPercentage > 20 ? 'Endomorfo' : fatPercentage < 12 ? 'Ectomorfo' : 'Mesomorfo',
-    metabolicProfile: fatPercentage > 20 ? 'Lento' : 'Normal',
-    analysis: {
-      strengths: fatPercentage < 20 ? ['Boa composição corporal'] : ['Potencial para melhoria'],
-      improvements: fatPercentage > 25 ? ['Reduzir gordura corporal'] : ['Manter consistência'],
-      risks: bmi > 30 ? ['Sobrepeso/obesidade'] : []
-    },
+    healthStatus,
+    somatotype,
+    metabolicProfile: fatPercentage > 20 ? 'Lento' : fatPercentage < 15 ? 'Rápido' : 'Normal',
+    analysis,
     recommendations,
     progressTracking: {
       nextAssessment: '4-6 semanas',
-      keyMetrics: ['Peso', 'Percentual de gordura', 'Circunferências'],
+      keyMetrics: ['Peso corporal', 'Percentual de gordura', 'Circunferências', 'Força'],
       expectedTimeline: '8-12 semanas para mudanças significativas'
     },
-    specificNotes: `Análise baseada em ${data.protocol}. Resultados individuais podem variar.`
+    specificNotes: `Análise baseada no protocolo ${data.protocol}. Resultados individuais podem variar conforme aderência ao programa e fatores genéticos. Recomenda-se acompanhamento profissional.`
   };
 }

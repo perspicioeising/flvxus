@@ -104,7 +104,7 @@ export default function PhysicalAssessmentsPage() {
 
   const fetchUserRole = useCallback(async () => {
     try {
-      const response = await fetch('/api/user');
+      const response = await fetch('/api/profile');
       const data = await response.json();
       if (response.ok) {
         setUserRole(data.role);
@@ -115,9 +115,17 @@ export default function PhysicalAssessmentsPage() {
   }, []);
 
   useEffect(() => {
-    fetchUserRole();
-    fetchAssessments();
+    const initializePage = async () => {
+      await fetchUserRole();
+      await fetchAssessments();
+    };
+    initializePage();
   }, [fetchUserRole, fetchAssessments]);
+
+  // Debug: adicionar console.log para verificar userRole
+  useEffect(() => {
+    console.log('UserRole atual:', userRole);
+  }, [userRole]);
 
   const calculateStats = (assessmentsList: Assessment[]) => {
     const currentDate = new Date();
@@ -266,7 +274,7 @@ export default function PhysicalAssessmentsPage() {
                 </div>
               </div>
 
-              {userRole === 'trainer' && (
+              {(userRole === 'trainer' || userRole === null) && (
                 <Button
                   onClick={() => router.push('/dashboard/physical-assessments/new')}
                   className="group bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-700 hover:via-purple-700 hover:to-cyan-700 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0"
@@ -527,7 +535,7 @@ export default function PhysicalAssessmentsPage() {
                       : "Comece criando avaliações físicas inteligentes com análise de IA para transformar a vida dos seus alunos"}
                   </p>
 
-                  {userRole === 'trainer' && (
+                  {(userRole === 'trainer' || userRole === null) && (
                     <Button
                       onClick={() => router.push('/dashboard/physical-assessments/new')}
                       className="bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-700 hover:via-purple-700 hover:to-cyan-700 text-white px-10 py-4 rounded-2xl font-bold shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 transform hover:scale-110 border-0"

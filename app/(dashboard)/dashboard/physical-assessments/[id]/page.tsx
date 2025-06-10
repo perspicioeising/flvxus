@@ -36,6 +36,7 @@ import {
     Sparkles,
     PieChart
 } from "lucide-react";
+import AssessmentComparison from "@/components/AssessmentComparison";
 
 interface Assessment {
     id: string;
@@ -52,8 +53,16 @@ interface Assessment {
     lean_mass: number;
     body_density: number;
     notes?: string;
-    ai_analysis?: any;
-    ai_recommendations?: any;
+    ai_analysis?: {
+        classification: string;
+        somatotype: string;
+        healthStatus: string;
+    };
+    ai_recommendations?: {
+        training?: Record<string, string>;
+        nutrition?: Record<string, string>;
+        lifestyle?: Record<string, string>;
+    };
     measurements: Record<string, number>;
     created_at: string;
     calculations_used: string;
@@ -100,6 +109,17 @@ const MEASUREMENT_LABELS = {
     thigh: 'Coxa'
 };
 
+// Função auxiliar para garantir que o valor seja um número
+const formatNumber = (value: unknown, decimals: number = 2): string => {
+    const num = typeof value === 'number' ? value : Number(value);
+    return isNaN(num) ? '0.00' : num.toFixed(decimals);
+};
+
+// Função auxiliar para garantir que o valor seja uma string
+const formatString = (value: unknown): string => {
+    return typeof value === 'string' ? value : String(value || '');
+};
+
 export default function AssessmentDetailsPage() {
     const params = useParams();
     const router = useRouter();
@@ -136,7 +156,7 @@ export default function AssessmentDetailsPage() {
 
     const fetchUserRole = useCallback(async () => {
         try {
-            const response = await fetch('/api/user');
+            const response = await fetch('/api/profile');
             const data = await response.json();
             if (response.ok) {
                 setUserRole(data.role);
@@ -354,7 +374,7 @@ export default function AssessmentDetailsPage() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Weight className="h-4 w-4 text-blue-600" />
-                                            <span>{assessment.weight}kg</span>
+                                            <span>{formatNumber(assessment.weight)}kg</span>
                                         </div>
                                     </div>
                                 </div>
@@ -363,7 +383,7 @@ export default function AssessmentDetailsPage() {
                                         {classification}
                                     </div>
                                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                                        {assessment.fat_percentage}% Gordura
+                                        {formatNumber(assessment.fat_percentage)}% Gordura
                                     </div>
                                 </div>
                             </div>
@@ -418,9 +438,8 @@ export default function AssessmentDetailsPage() {
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
                                                 <p className="text-blue-600 dark:text-blue-400 text-sm font-bold uppercase tracking-wider">IMC</p>
-                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{assessment.bmi}</p>
+                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{formatNumber(assessment.bmi)}</p>
                                             </div>
-
                                             <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
                                                 <Scale className="h-6 w-6 text-white" />
                                             </div>
@@ -440,7 +459,7 @@ export default function AssessmentDetailsPage() {
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
                                                 <p className="text-red-600 dark:text-red-400 text-sm font-bold uppercase tracking-wider">% Gordura</p>
-                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{assessment.fat_percentage}%</p>
+                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{formatNumber(assessment.fat_percentage)}%</p>
                                             </div>
                                             <div className="p-3 bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl shadow-lg">
                                                 <BarChart3 className="h-6 w-6 text-white" />
@@ -461,7 +480,7 @@ export default function AssessmentDetailsPage() {
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
                                                 <p className="text-orange-600 dark:text-orange-400 text-sm font-bold uppercase tracking-wider">M. Gorda</p>
-                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{assessment.fat_mass}kg</p>
+                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{formatNumber(assessment.fat_mass)}kg</p>
                                             </div>
                                             <div className="p-3 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-2xl shadow-lg">
                                                 <Weight className="h-6 w-6 text-white" />
@@ -482,7 +501,7 @@ export default function AssessmentDetailsPage() {
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
                                                 <p className="text-green-600 dark:text-green-400 text-sm font-bold uppercase tracking-wider">M. Magra</p>
-                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{assessment.lean_mass}kg</p>
+                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{formatNumber(assessment.lean_mass)}kg</p>
                                             </div>
                                             <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl shadow-lg">
                                                 <Activity className="h-6 w-6 text-white" />
@@ -503,7 +522,7 @@ export default function AssessmentDetailsPage() {
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
                                                 <p className="text-purple-600 dark:text-purple-400 text-sm font-bold uppercase tracking-wider">Densidade</p>
-                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{assessment.body_density}</p>
+                                                <p className="text-3xl font-black text-gray-900 dark:text-white">{formatNumber(assessment.body_density, 4)}</p>
                                             </div>
                                             <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
                                                 <Calculator className="h-6 w-6 text-white" />
@@ -546,7 +565,7 @@ export default function AssessmentDetailsPage() {
                                             <div className="absolute inset-6 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center shadow-inner">
                                                 <div className="text-center">
                                                     <div className="text-3xl font-black text-gray-900 dark:text-white">
-                                                        {assessment.fat_percentage}%
+                                                        {formatNumber(assessment.fat_percentage)}%
                                                     </div>
                                                     <div className="text-sm text-gray-600 dark:text-gray-400">Gordura</div>
                                                 </div>
@@ -556,11 +575,11 @@ export default function AssessmentDetailsPage() {
                                         <div className="flex justify-center gap-6">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                                                <span className="text-sm font-medium">Massa Gorda ({assessment.fat_mass}kg)</span>
+                                                <span className="text-sm font-medium">Massa Gorda ({formatNumber(assessment.fat_mass)}kg)</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                                                <span className="text-sm font-medium">Massa Magra ({assessment.lean_mass}kg)</span>
+                                                <span className="text-sm font-medium">Massa Magra ({formatNumber(assessment.lean_mass)}kg)</span>
                                             </div>
                                         </div>
                                     </div>
@@ -573,7 +592,7 @@ export default function AssessmentDetailsPage() {
                                             <div>
                                                 <div className="flex justify-between mb-2">
                                                     <span className="text-sm font-medium">IMC</span>
-                                                    <span className="text-sm text-gray-600 dark:text-gray-400">{assessment.bmi}</span>
+                                                    <span className="text-sm text-gray-600 dark:text-gray-400">{formatNumber(assessment.bmi)}</span>
                                                 </div>
                                                 <Progress value={Math.min((assessment.bmi / 30) * 100, 100)} className="h-3" />
                                                 <div className="text-xs text-gray-500 mt-1">Normal: 18.5-24.9</div>
@@ -582,7 +601,7 @@ export default function AssessmentDetailsPage() {
                                             <div>
                                                 <div className="flex justify-between mb-2">
                                                     <span className="text-sm font-medium">% Gordura</span>
-                                                    <span className="text-sm text-gray-600 dark:text-gray-400">{assessment.fat_percentage}%</span>
+                                                    <span className="text-sm text-gray-600 dark:text-gray-400">{formatNumber(assessment.fat_percentage)}%</span>
                                                 </div>
                                                 <Progress value={Math.min((assessment.fat_percentage / 35) * 100, 100)} className="h-3" />
                                                 <div className="text-xs text-gray-500 mt-1">
@@ -706,7 +725,7 @@ export default function AssessmentDetailsPage() {
                                                         {MEASUREMENT_LABELS[key as keyof typeof MEASUREMENT_LABELS]}
                                                     </div>
                                                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                                                        {value}cm
+                                                        {formatNumber(value)}cm
                                                     </div>
                                                 </div>
                                             ))}
@@ -729,7 +748,7 @@ export default function AssessmentDetailsPage() {
                                                         {MEASUREMENT_LABELS[key as keyof typeof MEASUREMENT_LABELS]}
                                                     </div>
                                                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                                                        {value}mm
+                                                        {formatNumber(value)}mm
                                                     </div>
                                                 </div>
                                             ))}
@@ -820,7 +839,7 @@ export default function AssessmentDetailsPage() {
                                                                 <div className="font-semibold text-blue-700 dark:text-blue-300 capitalize mb-2">
                                                                     {key.replace(/([A-Z])/g, ' $1').trim()}:
                                                                 </div>
-                                                                <div className="text-gray-900 dark:text-white">{value}</div>
+                                                                <div className="text-gray-900 dark:text-white">{formatString(value)}</div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -851,7 +870,7 @@ export default function AssessmentDetailsPage() {
                                                                 <div className="font-semibold text-green-700 dark:text-green-300 capitalize mb-2">
                                                                     {key.replace(/([A-Z])/g, ' $1').trim()}:
                                                                 </div>
-                                                                <div className="text-gray-900 dark:text-white">{value}</div>
+                                                                <div className="text-gray-900 dark:text-white">{formatString(value)}</div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -882,7 +901,7 @@ export default function AssessmentDetailsPage() {
                                                                 <div className="font-semibold text-purple-700 dark:text-purple-300 capitalize mb-2">
                                                                     {key.replace(/([A-Z])/g, ' $1').trim()}:
                                                                 </div>
-                                                                <div className="text-gray-900 dark:text-white">{value}</div>
+                                                                <div className="text-gray-900 dark:text-white">{formatString(value)}</div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -912,43 +931,10 @@ export default function AssessmentDetailsPage() {
 
                     {/* Comparison Tab */}
                     <TabsContent value="comparison" className="space-y-6">
-                        <Card className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
-                            <CardHeader>
-                                <div className="flex items-center gap-3">
-                                    <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                                        <TrendingUp className="h-6 w-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Evolução e Comparações</CardTitle>
-                                        <CardDescription className="text-gray-600 dark:text-gray-400">
-                                            Análise temporal e comparações com avaliações anteriores
-                                        </CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-center py-24">
-                                    <TrendingUp className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                                    <h3 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-2">
-                                        Comparações em Desenvolvimento
-                                    </h3>
-                                    <p className="text-gray-500 dark:text-gray-500 mb-6 max-w-md mx-auto">
-                                        Esta funcionalidade permitirá comparar esta avaliação com avaliações anteriores do mesmo aluno, mostrando gráficos de evolução e tendências.
-                                    </p>
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                        <Badge className="bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600 px-4 py-2">
-                                            📊 Gráficos de Evolução
-                                        </Badge>
-                                        <Badge className="bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600 px-4 py-2">
-                                            📈 Análise de Tendências
-                                        </Badge>
-                                        <Badge className="bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-600 px-4 py-2">
-                                            🎯 Metas vs Resultados
-                                        </Badge>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <AssessmentComparison 
+                            currentAssessment={assessment}
+                            studentId={assessment.student_id}
+                        />
                     </TabsContent>
                 </Tabs>
             </div>
