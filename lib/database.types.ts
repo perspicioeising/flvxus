@@ -453,7 +453,7 @@ export interface Database {
           tenant_id?: string
         }
       }
-      physical_assessments: {
+       physical_assessments: {
         Row: {
           id: string
           student_id: string
@@ -476,12 +476,26 @@ export interface Database {
           left_calf: number | null
           right_calf: number | null
           triceps: number | null
+          biceps: number | null
+          subscapular: number | null
           abdominal: number | null
           suprailiac: number | null
+          midaxillary: number | null
+          thigh: number | null
+          chest_circ: number | null
           body_density: number | null
           fat_percentage: number | null
           fat_mass: number | null
           lean_mass: number | null
+          bmi: number | null
+          ai_analysis: Json | null          // ✅ ADICIONADO
+          ai_recommendations: Json | null   // ✅ ADICIONADO
+          goals: string[] | null
+          workout_plan: Json | null
+          nutrition_plan: Json | null
+          calculations_used: string | null
+          accuracy_estimate: string | null
+          measurements: Json | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -509,12 +523,26 @@ export interface Database {
           left_calf?: number | null
           right_calf?: number | null
           triceps?: number | null
+          biceps?: number | null
+          subscapular?: number | null
           abdominal?: number | null
           suprailiac?: number | null
+          midaxillary?: number | null
+          thigh?: number | null
+          chest_circ?: number | null
           body_density?: number | null
           fat_percentage?: number | null
           fat_mass?: number | null
           lean_mass?: number | null
+          bmi?: number | null
+          ai_analysis?: Json | null          // ✅ ADICIONADO
+          ai_recommendations?: Json | null   // ✅ ADICIONADO
+          goals?: string[] | null
+          workout_plan?: Json | null
+          nutrition_plan?: Json | null
+          calculations_used?: string | null
+          accuracy_estimate?: string | null
+          measurements?: Json | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -542,12 +570,26 @@ export interface Database {
           left_calf?: number | null
           right_calf?: number | null
           triceps?: number | null
+          biceps?: number | null
+          subscapular?: number | null
           abdominal?: number | null
           suprailiac?: number | null
+          midaxillary?: number | null
+          thigh?: number | null
+          chest_circ?: number | null
           body_density?: number | null
           fat_percentage?: number | null
           fat_mass?: number | null
           lean_mass?: number | null
+          bmi?: number | null
+          ai_analysis?: Json | null          // ✅ ADICIONADO
+          ai_recommendations?: Json | null   // ✅ ADICIONADO
+          goals?: string[] | null
+          workout_plan?: Json | null
+          nutrition_plan?: Json | null
+          calculations_used?: string | null
+          accuracy_estimate?: string | null
+          measurements?: Json | null
           notes?: string | null
           created_at?: string
           updated_at?: string

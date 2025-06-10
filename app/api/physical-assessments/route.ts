@@ -1,4 +1,5 @@
-// /opt/flvxus/app/api/physical-assessments/route.ts
+// /opt/flvxus/app/api/physical-assessments/route.ts - VERSÃO CORRIGIDA
+
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
@@ -32,7 +33,8 @@ const PROTOCOLS: Record<string, string> = {
   'jackson_pollock_7': 'Jackson & Pollock (7 dobras)',
   'durnin_womersley': 'Durnin & Womersley',
   'slaughter': 'Slaughter et al.',
-  'boileau': 'Boileau et al.'
+  'boileau': 'Boileau et al.',
+  'guedes_1994': 'Guedes 1994'
 };
 
 export async function GET(request: Request) {
@@ -56,9 +58,14 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url);
     const studentId = url.searchParams.get('student_id');
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = parseInt(url.searchParams.get('limit') || '10');
-    const offset = (page - 1) * limit;
+    const page = url.searchParams.get('page');
+    const limit = url.searchParams.get('limit');
+
+    console.log('=== DEBUG GET ASSESSMENTS ===');
+    console.log('Profile ID:', profile.id);
+    console.log('Profile Role:', profile.role);
+    console.log('Tenant ID:', profile.tenant_id);
+    console.log('Student ID filter:', studentId);
 
     let query = supabase
       .from('physical_assessments')
@@ -67,7 +74,8 @@ export async function GET(request: Request) {
         profiles!physical_assessments_student_id_fkey(
           full_name,
           avatar_url,
-          email
+          email,
+          goals
         )
       `)
       .eq('tenant_id', profile.tenant_id)
@@ -81,24 +89,81 @@ export async function GET(request: Request) {
       query = query.eq('student_id', profile.id);
     }
 
-    const { data: assessments, error, count } = await query
-      .range(offset, offset + limit - 1);
+    // ===== CORREÇÃO: APLICAR PAGINAÇÃO APENAS SE SOLICITADA =====
+    let assessments, error, count;
+    
+    if (page && limit) {
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const offset = (pageNum - 1) * limitNum;
+      
+      const result = await query.range(offset, offset + limitNum - 1);
+      assessments = result.data;
+      error = result.error;
+      count = result.count;
+    } else {
+      // SEM PAGINAÇÃO - BUSCAR TODOS OS REGISTROS
+      const result = await query;
+      assessments = result.data;
+      error = result.error;
+      count = result.data?.length || 0;
+    }
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Erro do Supabase:', error);
+      throw error;
+    }
 
-    return NextResponse.json({
-      assessments,
-      pagination: {
-        page,
-        limit,
-        total: count,
-        totalPages: Math.ceil((count || 0) / limit)
+    console.log(`✅ GET Assessments: ${assessments?.length || 0} registros encontrados`);
+    console.log('Primeiros registros:', assessments?.slice(0, 2));
+
+    // ===== PROCESSAR DADOS DE IA NOS RESULTADOS =====
+    const processedAssessments = assessments?.map(assessment => {
+      // Processar ai_analysis se necessário
+      if (assessment.ai_analysis && typeof assessment.ai_analysis === 'string') {
+        try {
+          assessment.ai_analysis = JSON.parse(assessment.ai_analysis);
+        } catch (error) {
+          console.warn('Erro ao processar ai_analysis:', error);
+        }
       }
-    });
+
+      // Processar ai_recommendations se necessário
+      if (assessment.ai_recommendations && typeof assessment.ai_recommendations === 'string') {
+        try {
+          assessment.ai_recommendations = JSON.parse(assessment.ai_recommendations);
+        } catch (error) {
+          console.warn('Erro ao processar ai_recommendations:', error);
+        }
+      }
+
+      return assessment;
+    }) || [];
+
+    // ===== RETORNO PADRONIZADO =====
+    if (page && limit) {
+      // Com paginação
+      return NextResponse.json({
+        assessments: processedAssessments,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages: Math.ceil((count || 0) / parseInt(limit))
+        }
+      });
+    } else {
+      // ===== CORREÇÃO PRINCIPAL: SEMPRE RETORNAR FORMATO CONSISTENTE =====
+      return NextResponse.json({
+        assessments: processedAssessments,
+        total: count
+      });
+    }
+
   } catch (error: any) {
-    console.error('Erro ao buscar avaliações físicas:', error);
+    console.error('❌ Erro ao buscar avaliações físicas:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro interno do servidor', details: error.message },
       { status: 500 }
     );
   }
@@ -125,6 +190,14 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     
+    // ===== LOGS DE DEBUG =====
+    console.log('=== DADOS RECEBIDOS NA API ===');
+    console.log('Body completo:', JSON.stringify(body, null, 2));
+    console.log('ai_analysis no body:', body.ai_analysis ? 'PRESENTE' : 'AUSENTE');
+    console.log('ai_recommendations no body:', body.ai_recommendations ? 'PRESENTE' : 'AUSENTE');
+    console.log('Tipo ai_analysis:', typeof body.ai_analysis);
+    console.log('Tipo ai_recommendations:', typeof body.ai_recommendations);
+    
     // Validar dados obrigatórios
     const requiredFields = ['student_id', 'weight', 'height', 'protocol', 'age', 'gender'];
     for (const field of requiredFields) {
@@ -136,18 +209,43 @@ export async function POST(request: Request) {
       }
     }
 
-    // Calcular composição corporal
-    const calculations = calculateBodyComposition({
-      weight: parseFloat(body.weight),
-      height: parseFloat(body.height),
-      age: parseInt(body.age),
-      gender: body.gender,
-      protocol: body.protocol,
-      measurements: body.measurements || {}
-    });
+    // Verificar se o student pertence ao mesmo tenant
+    const { data: student, error: studentError } = await supabase
+      .from('profiles')
+      .select('id, tenant_id')
+      .eq('id', body.student_id)
+      .eq('tenant_id', profile.tenant_id)
+      .single();
+
+    if (studentError || !student) {
+      return NextResponse.json({ error: 'Aluno não encontrado' }, { status: 404 });
+    }
+
+    // Calcular composição corporal se não fornecida
+    let calculations = null;
+    if (body.bmi && body.fat_percentage && body.fat_mass && body.lean_mass && body.body_density) {
+      // Usar dados fornecidos pelo frontend
+      calculations = {
+        bmi: parseFloat(body.bmi),
+        bodyDensity: parseFloat(body.body_density),
+        fatPercentage: parseFloat(body.fat_percentage),
+        fatMass: parseFloat(body.fat_mass),
+        leanMass: parseFloat(body.lean_mass)
+      };
+    } else {
+      // Calcular automaticamente
+      calculations = calculateBodyComposition({
+        weight: parseFloat(body.weight),
+        height: parseFloat(body.height),
+        age: parseInt(body.age),
+        gender: body.gender,
+        protocol: body.protocol,
+        measurements: body.measurements || {}
+      });
+    }
 
     // Preparar dados para inserção
-    const assessmentData = {
+    const assessmentData: any = {
       student_id: body.student_id,
       weight: parseFloat(body.weight),
       height: parseFloat(body.height),
@@ -195,25 +293,106 @@ export async function POST(request: Request) {
       measurements: body.measurements || {}
     };
 
+    // ===== PROCESSAMENTO DOS DADOS DE IA =====
+    console.log('📝 Processando dados de IA...');
+
+    // 1. Processar ai_analysis
+    if (body.ai_analysis) {
+      console.log('📝 Processando ai_analysis...');
+      
+      if (typeof body.ai_analysis === 'string') {
+        try {
+          assessmentData.ai_analysis = JSON.parse(body.ai_analysis);
+          console.log('✅ ai_analysis convertido de string para objeto');
+        } catch (error) {
+          console.error('❌ Erro ao converter ai_analysis string:', error);
+          assessmentData.ai_analysis = body.ai_analysis; // Manter como string se parse falhar
+        }
+      } else if (typeof body.ai_analysis === 'object') {
+        assessmentData.ai_analysis = body.ai_analysis;
+        console.log('✅ ai_analysis já é objeto');
+      }
+    } else {
+      console.log('⚠️ ai_analysis não fornecido');
+      assessmentData.ai_analysis = null;
+    }
+
+    // 2. Processar ai_recommendations
+    if (body.ai_recommendations) {
+      console.log('📝 Processando ai_recommendations...');
+      
+      if (typeof body.ai_recommendations === 'string') {
+        try {
+          assessmentData.ai_recommendations = JSON.parse(body.ai_recommendations);
+          console.log('✅ ai_recommendations convertido de string para objeto');
+        } catch (error) {
+          console.error('❌ Erro ao converter ai_recommendations string:', error);
+          assessmentData.ai_recommendations = body.ai_recommendations; // Manter como string se parse falhar
+        }
+      } else if (typeof body.ai_recommendations === 'object') {
+        assessmentData.ai_recommendations = body.ai_recommendations;
+        console.log('✅ ai_recommendations já é objeto');
+      }
+    } else {
+      console.log('⚠️ ai_recommendations não fornecido');
+      assessmentData.ai_recommendations = null;
+    }
+
+    // ===== FALLBACK: EXTRAIR RECOMMENDATIONS DE DENTRO DE AI_ANALYSIS =====
+    if (!assessmentData.ai_recommendations && 
+        assessmentData.ai_analysis && 
+        assessmentData.ai_analysis.recommendations) {
+      console.log('🔄 Extraindo recommendations de dentro de ai_analysis...');
+      assessmentData.ai_recommendations = {
+        training: assessmentData.ai_analysis.recommendations.training,
+        nutrition: assessmentData.ai_analysis.recommendations.nutrition,
+        lifestyle: assessmentData.ai_analysis.recommendations.lifestyle
+      };
+      console.log('✅ ai_recommendations extraído de ai_analysis');
+    }
+
+    console.log('=== DADOS FINAIS PARA INSERÇÃO ===');
+    console.log('ai_analysis final:', assessmentData.ai_analysis ? 'PRESENTE' : 'NULL');
+    console.log('ai_recommendations final:', assessmentData.ai_recommendations ? 'PRESENTE' : 'NULL');
+    console.log('Tipo ai_analysis final:', typeof assessmentData.ai_analysis);
+    console.log('Tipo ai_recommendations final:', typeof assessmentData.ai_recommendations);
+
+    // ===== INSERIR NO BANCO =====
     const { data: assessment, error } = await supabase
       .from('physical_assessments')
       .insert(assessmentData)
-      .select()
+      .select(`
+        *,
+        profiles!physical_assessments_student_id_fkey(
+          full_name,
+          avatar_url,
+          email,
+          goals
+        )
+      `)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Erro do Supabase ao inserir:', error);
+      console.error('Dados que causaram erro:', JSON.stringify(assessmentData, null, 2));
+      throw error;
+    }
+
+    console.log('=== AVALIAÇÃO CRIADA COM SUCESSO ===');
+    console.log('ID da avaliação:', assessment.id);
+    console.log('ai_analysis salvo no banco:', assessment.ai_analysis ? 'SIM' : 'NÃO');
+    console.log('ai_recommendations salvo no banco:', assessment.ai_recommendations ? 'SIM' : 'NÃO');
 
     return NextResponse.json(assessment);
   } catch (error: any) {
-    console.error('Erro ao criar avaliação física:', error);
+    console.error('❌ Erro geral ao criar avaliação física:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro interno do servidor', details: error.message },
       { status: 500 }
     );
   }
 }
 
-// Função para calcular composição corporal com tipos corretos
 function calculateBodyComposition({ 
   weight, 
   height, 
@@ -258,6 +437,15 @@ function calculateBodyComposition({
       }
       break;
 
+    case 'guedes_1994':
+      const sumGuedes = (measurements.triceps || 0) + (measurements.subscapular || 0);
+      if (gender === 'male') {
+        fatPercentage = (0.735 * sumGuedes) + 1.0;
+      } else {
+        fatPercentage = (0.610 * sumGuedes) + 5.1;
+      }
+      break;
+
     default:
       // Estimativa básica usando IMC
       if (gender === 'male') {
@@ -267,7 +455,7 @@ function calculateBodyComposition({
       }
   }
 
-  if (bodyDensity > 0) {
+  if (bodyDensity > 0 && protocol !== 'guedes_1994') {
     fatPercentage = ((4.95 / bodyDensity) - 4.5) * 100;
   }
 
@@ -289,7 +477,8 @@ function getAccuracyEstimate(protocol: string): string {
     'jackson_pollock_7': 'Excelente (±2-3%)',
     'durnin_womersley': 'Boa (±3-4%)',
     'slaughter': 'Boa para jovens (±3-4%)',
-    'boileau': 'Específico para jovens (±3-4%)'
+    'boileau': 'Específico para jovens (±3-4%)',
+    'guedes_1994': 'Boa para jovens brasileiros (±3-4%)'
   };
   return accuracy[protocol] || 'Estimativa (±5-6%)';
 }

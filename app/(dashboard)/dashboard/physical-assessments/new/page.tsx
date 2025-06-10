@@ -361,59 +361,95 @@ export default function NewPhysicalAssessmentPage() {
   };
 
   // Salvar avaliação
-  const saveAssessment = async () => {
-    setIsLoading(true);
+  // Substitua a função saveAssessment na página de criação por esta versão corrigida:
 
-    try {
-      if (!calculations) {
-        throw new Error('Complete os dados básicos para salvar');
-      }
+const saveAssessment = async () => {
+  setIsLoading(true);
 
-      const response = await fetch('/api/physical-assessments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...assessment,
-          // Adicionar os cálculos aos dados
-          bmi: calculations.bmi,
-          fat_percentage: calculations.fatPercentage,
-          fat_mass: calculations.fatMass,
-          lean_mass: calculations.leanMass,
-          body_density: calculations.bodyDensity,
-          ai_analysis: aiAnalysis,
-          ai_recommendations: aiAnalysis ? {
-            training: aiAnalysis.recommendations?.training,
-            nutrition: aiAnalysis.recommendations?.nutrition,
-            lifestyle: aiAnalysis.recommendations?.lifestyle
-          } : null
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
-
-      toast({
-        title: "Avaliação salva com sucesso!",
-        description: "A avaliação física foi criada e está disponível para consulta.",
-      });
-
-      router.push('/dashboard/physical-assessments');
-
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao salvar avaliação",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
+  try {
+    if (!calculations) {
+      throw new Error('Complete os dados básicos para salvar');
     }
-  };
+
+    console.log('=== PREPARANDO DADOS PARA SALVAR ===');
+    console.log('assessment state:', assessment);
+    console.log('calculations:', calculations);
+    console.log('aiAnalysis state:', aiAnalysis);
+
+    // ===== CORREÇÃO PRINCIPAL: PREPARAR DADOS CORRETAMENTE =====
+    const requestData = {
+      // Dados básicos da avaliação
+      student_id: assessment.student_id,
+      protocol: assessment.protocol,
+      date: assessment.date,
+      weight: assessment.weight,
+      height: assessment.height,
+      age: assessment.age,
+      gender: assessment.gender,
+      measurements: assessment.measurements,
+      notes: assessment.notes,
+      
+      // Dados calculados
+      bmi: calculations.bmi,
+      fat_percentage: calculations.fatPercentage,
+      fat_mass: calculations.fatMass,
+      lean_mass: calculations.leanMass,
+      body_density: calculations.bodyDensity,
+      
+      // ===== DADOS DE IA CORRIGIDOS =====
+      ai_analysis: aiAnalysis || null,
+      ai_recommendations: aiAnalysis ? {
+        training: aiAnalysis.recommendations?.training || null,
+        nutrition: aiAnalysis.recommendations?.nutrition || null,
+        lifestyle: aiAnalysis.recommendations?.lifestyle || null
+      } : null
+    };
+
+    console.log('=== DADOS ENVIADOS PARA API ===');
+    console.log('requestData completo:', JSON.stringify(requestData, null, 2));
+    console.log('ai_analysis sendo enviado:', requestData.ai_analysis);
+    console.log('ai_recommendations sendo enviado:', requestData.ai_recommendations);
+    console.log('Tipo ai_analysis:', typeof requestData.ai_analysis);
+    console.log('Tipo ai_recommendations:', typeof requestData.ai_recommendations);
+
+    const response = await fetch('/api/physical-assessments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('❌ Erro na resposta da API:', data);
+      throw new Error(data.error);
+    }
+
+    console.log('=== RESPOSTA DA API ===');
+    console.log('Avaliação criada:', data);
+    console.log('ai_analysis retornado:', data.ai_analysis);
+    console.log('ai_recommendations retornado:', data.ai_recommendations);
+
+    toast({
+      title: "Avaliação salva com sucesso! 🎉",
+      description: `Avaliação física criada${aiAnalysis ? ' com análise IA' : ''} e está disponível para consulta.`,
+    });
+
+    router.push('/dashboard/physical-assessments');
+
+  } catch (error: any) {
+    console.error('❌ Erro ao salvar avaliação:', error);
+    toast({
+      variant: "destructive",
+      title: "Erro ao salvar avaliação",
+      description: error.message,
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Verificar se campos obrigatórios estão preenchidos - ATUALIZADO PARA GUEDES
   const getRequiredFields = (protocol: string) => {

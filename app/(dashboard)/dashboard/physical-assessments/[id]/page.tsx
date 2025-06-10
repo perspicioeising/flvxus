@@ -54,33 +54,8 @@ interface Assessment {
     lean_mass: number;
     body_density: number;
     notes?: string;
-    ai_analysis?: {
-        classification: string;
-        somatotype: string;
-        healthStatus: string;
-        metabolicProfile?: string;
-        analysis?: {
-            strengths: string[];
-            improvements: string[];
-            risks: string[];
-        };
-        recommendations?: {
-            training?: Record<string, string>;
-            nutrition?: Record<string, string>;
-            lifestyle?: Record<string, string>;
-        };
-        progressTracking?: {
-            nextAssessment: string;
-            keyMetrics: string[];
-            expectedTimeline: string;
-        };
-        specificNotes?: string;
-    };
-    ai_recommendations?: {
-        training?: Record<string, string>;
-        nutrition?: Record<string, string>;
-        lifestyle?: Record<string, string>;
-    };
+    ai_analysis?: any;
+    ai_recommendations?: any;
     measurements: Record<string, number>;
     created_at: string;
     calculations_used: string;
@@ -135,28 +110,12 @@ const formatNumber = (value: unknown, decimals: number = 2): string => {
     return isNaN(num) ? '0.00' : num.toFixed(decimals);
 };
 
-// Função auxiliar para garantir que o valor seja uma string
-const formatString = (value: unknown): string => {
-    return typeof value === 'string' ? value : String(value || '');
-};
-
 export default function AssessmentDetailsPage() {
     const params = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const toast = useToast// Principais alterações na página de detalhes:
-
-    // 1. PROTOCOLOS ATUALIZADOS - Adicionar Guedes 1994
-    const PROTOCOLS = {
-        'jackson_pollock_3': 'Jackson & Pollock (3 dobras)',
-        'jackson_pollock_7': 'Jackson & Pollock (7 dobras)',
-        'durnin_womersley': 'Durnin & Womersley',
-        'slaughter': 'Slaughter et al.',
-        'boileau': 'Boileau et al.',
-        'guedes_1994': 'Guedes 1994'  // NOVO PROTOCOLO ADICIONADO
-    };
-
-
+    const { toast } = useToast();
+    
     const [assessment, setAssessment] = useState<Assessment | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -216,6 +175,7 @@ export default function AssessmentDetailsPage() {
             setIsLoading(false);
         }
     }, [params.id, toast, router]);
+
     const fetchUserRole = useCallback(async () => {
         try {
             const response = await fetch('/api/profile');
@@ -229,8 +189,11 @@ export default function AssessmentDetailsPage() {
     }, []);
 
     useEffect(() => {
-        fetchUserRole();
-        fetchAssessment();
+        const init = async () => {
+            await fetchUserRole();
+            await fetchAssessment();
+        };
+        init();
     }, [fetchUserRole, fetchAssessment]);
 
     const getClassificationColor = (fatPercentage: number, gender: string) => {
@@ -294,7 +257,6 @@ export default function AssessmentDetailsPage() {
             toast({
                 title: "Avaliação deletada",
                 description: "A avaliação foi removida com sucesso.",
-                variant: ""
             });
 
             router.push('/dashboard/physical-assessments');
@@ -833,40 +795,11 @@ export default function AssessmentDetailsPage() {
                         </Card>
                     </TabsContent>
 
+                    {/* Analysis Tab - CORRIGIDO PARA USAR O COMPONENTE CORRETO */}
                     <TabsContent value="analysis" className="space-y-6">
-                        {/* Debug Card - TEMPORÁRIO */}
-                        <Card className="border-2 border-orange-300 bg-orange-50 dark:bg-orange-900/20">
-                            <CardHeader>
-                                <CardTitle className="text-orange-800 dark:text-orange-300">🔍 DEBUG INFO</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-2 text-sm">
-                                    <div><strong>assessment.ai_analysis:</strong> {assessment.ai_analysis ? 'EXISTS' : 'NULL/UNDEFINED'}</div>
-                                    <div><strong>assessment.ai_recommendations:</strong> {assessment.ai_recommendations ? 'EXISTS' : 'NULL/UNDEFINED'}</div>
-                                    <div><strong>typeof ai_analysis:</strong> {typeof assessment.ai_analysis}</div>
-                                    <div><strong>typeof ai_recommendations:</strong> {typeof assessment.ai_recommendations}</div>
-                                    {assessment.ai_analysis && (
-                                        <div><strong>ai_analysis keys:</strong> {Object.keys(assessment.ai_analysis).join(', ')}</div>
-                                    )}
-                                    {assessment.ai_recommendations && (
-                                        <div><strong>ai_recommendations keys:</strong> {Object.keys(assessment.ai_recommendations).join(', ')}</div>
-                                    )}
-                                    <details className="mt-4">
-                                        <summary className="cursor-pointer font-bold">Ver dados completos</summary>
-                                        <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto max-h-40">
-                                            {JSON.stringify({
-                                                ai_analysis: assessment.ai_analysis,
-                                                ai_recommendations: assessment.ai_recommendations
-                                            }, null, 2)}
-                                        </pre>
-                                    </details>
-                                </div>
-                            </CardContent>
-                        </Card>
-
                         <AssessmentAIAnalysis
-                            aiAnalysis={assessment && assessment.ai_analysis ? assessment.ai_analysis : null}
-                            aiRecommendations={assessment && assessment.ai_recommendations ? assessment.ai_recommendations : null}
+                            aiAnalysis={assessment.ai_analysis}
+                            aiRecommendations={assessment.ai_recommendations}
                         />
                     </TabsContent>
 

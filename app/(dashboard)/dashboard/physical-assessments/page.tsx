@@ -1,4 +1,4 @@
-// /opt/flvxus/app/(dashboard)/dashboard/physical-assessments/page.tsx
+// /opt/flvxus/app/(dashboard)/dashboard/physical-assessments/page.tsx - CORRIGIDO
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
@@ -60,7 +60,8 @@ const PROTOCOLS = {
   'jackson_pollock_7': 'Jackson & Pollock (7 dobras)',
   'durnin_womersley': 'Durnin & Womersley',
   'slaughter': 'Slaughter et al.',
-  'boileau': 'Boileau et al.'
+  'boileau': 'Boileau et al.',
+  'guedes_1994': 'Guedes 1994'
 };
 
 export default function PhysicalAssessmentsPage() {
@@ -82,21 +83,51 @@ export default function PhysicalAssessmentsPage() {
   const fetchAssessments = useCallback(async () => {
     try {
       setIsLoading(true);
+      
+      console.log('🔍 Fazendo requisição para /api/physical-assessments...');
+      
       const response = await fetch('/api/physical-assessments');
       const data = await response.json();
 
+      console.log('📦 Resposta da API:', data);
+      console.log('✅ Response OK:', response.ok);
+
       if (!response.ok) {
-        throw new Error(data.error);
+        throw new Error(data.error || 'Erro ao buscar avaliações');
       }
 
-      setAssessments(data.assessments || []);
-      calculateStats(data.assessments || []);
+      // ===== CORREÇÃO: ADAPTAÇÃO PARA NOVA ESTRUTURA =====
+      let assessmentsList: Assessment[] = [];
+      
+      if (data.assessments) {
+        // Formato novo: { assessments: [...], total: number }
+        assessmentsList = data.assessments;
+        console.log('✅ Usando formato novo com data.assessments');
+      } else if (Array.isArray(data)) {
+        // Formato antigo (array direto) - compatibilidade
+        assessmentsList = data;
+        console.log('⚠️ Usando formato antigo (array direto)');
+      } else {
+        console.error('❌ Formato de resposta não reconhecido:', data);
+        assessmentsList = [];
+      }
+
+      console.log(`📊 Total de avaliações encontradas: ${assessmentsList.length}`);
+      console.log('🗂️ Primeiras 2 avaliações:', assessmentsList.slice(0, 2));
+
+      setAssessments(assessmentsList);
+      calculateStats(assessmentsList);
+      
     } catch (error: any) {
+      console.error('❌ Erro ao buscar avaliações:', error);
       toast({
         variant: "destructive",
         title: "Erro ao buscar avaliações",
         description: error.message,
       });
+      // Em caso de erro, manter o array vazio
+      setAssessments([]);
+      calculateStats([]);
     } finally {
       setIsLoading(false);
     }
@@ -104,18 +135,26 @@ export default function PhysicalAssessmentsPage() {
 
   const fetchUserRole = useCallback(async () => {
     try {
+      console.log('👤 Buscando role do usuário...');
       const response = await fetch('/api/profile');
       const data = await response.json();
+      
       if (response.ok) {
+        console.log('✅ Role encontrado:', data.role);
         setUserRole(data.role);
+      } else {
+        console.warn('⚠️ Erro ao buscar role:', data);
+        setUserRole(null);
       }
     } catch (error) {
-      console.error('Erro ao buscar role do usuário:', error);
+      console.error('❌ Erro ao buscar role do usuário:', error);
+      setUserRole(null);
     }
   }, []);
 
   useEffect(() => {
     const initializePage = async () => {
+      console.log('🚀 Inicializando página...');
       await fetchUserRole();
       await fetchAssessments();
     };
@@ -124,10 +163,12 @@ export default function PhysicalAssessmentsPage() {
 
   // Debug: adicionar console.log para verificar userRole
   useEffect(() => {
-    console.log('UserRole atual:', userRole);
+    console.log('👤 UserRole atual:', userRole);
   }, [userRole]);
 
   const calculateStats = (assessmentsList: Assessment[]) => {
+    console.log('📊 Calculando estatísticas para', assessmentsList.length, 'avaliações');
+    
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
@@ -146,12 +187,15 @@ export default function PhysicalAssessmentsPage() {
       ? assessmentsList.reduce((sum, a) => sum + (a.bmi || 0), 0) / assessmentsList.length
       : 0;
 
-    setStats({
+    const newStats = {
       total: assessmentsList.length,
       thisMonth,
       avgFatPercentage: parseFloat(avgFatPercentage.toFixed(1)),
       avgBMI: parseFloat(avgBMI.toFixed(1))
-    });
+    };
+
+    console.log('📊 Stats calculados:', newStats);
+    setStats(newStats);
   };
 
   const filteredAssessments = assessments.filter((assessment) => {
@@ -231,7 +275,9 @@ export default function PhysicalAssessmentsPage() {
     );
   };
 
+  // ===== LOADING STATE COM DEBUG =====
   if (isLoading) {
+    console.log('⏳ Renderizando estado de loading...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -239,10 +285,19 @@ export default function PhysicalAssessmentsPage() {
             <div className="w-20 h-20 border-4 border-blue-200 dark:border-blue-800 rounded-full animate-spin border-t-blue-600 dark:border-t-blue-400"></div>
             <div className="absolute inset-0 w-20 h-20 border-4 border-transparent rounded-full animate-ping border-t-blue-400 dark:border-t-blue-500"></div>
           </div>
+          <p className="text-gray-600 dark:text-gray-400">Carregando avaliações...</p>
         </div>
       </div>
     );
   }
+
+  // ===== DEBUG DE RENDERIZAÇÃO =====
+  console.log('🎨 Renderizando página com:', {
+    totalAssessments: assessments.length,
+    filteredCount: filteredAssessments.length,
+    userRole,
+    stats
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
