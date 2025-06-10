@@ -1,8 +1,9 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -28,7 +29,26 @@ export async function GET() {
       );
     }
 
-    // Get workouts with exercise count
+    // Extract pagination parameters from URL
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '12');
+    const offset = (page - 1) * limit;
+
+    // Get total count for pagination
+    const { count, error: countError } = await supabase
+      .from('workouts')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', profile.tenant_id);
+
+    if (countError) {
+      return NextResponse.json(
+        { error: countError.message },
+        { status: 500 }
+      );
+    }
+
+    // Get workouts with exercise count and pagination
     const { data: workouts, error } = await supabase
       .from('workouts')
       .select(`
@@ -37,7 +57,9 @@ export async function GET() {
           count
         )
       `)
-      .eq('tenant_id', profile.tenant_id);
+      .eq('tenant_id', profile.tenant_id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       return NextResponse.json(
@@ -46,7 +68,19 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(workouts);
+    const totalPages = Math.ceil((count || 0) / limit);
+
+    const response = {
+      workouts: workouts || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages
+      }
+    };
+
+    return NextResponse.json(response);
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'An error occurred while fetching workouts' },

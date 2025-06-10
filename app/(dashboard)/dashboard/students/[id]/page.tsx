@@ -336,8 +336,8 @@ export default function StudentDetailsPage() {
 
         {/* Modern Tabs */}
         <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
-          <div className="mb-8">
-            <TabsList className="grid w-full grid-cols-4 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-2 shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-green-600/10 rounded-2xl blur-xl">
+            <TabsList className="relative grid w-full grid-cols-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl shadow-2xl rounded-2xl p-2 border-0">
               <TabsTrigger
                 value="profile"
                 className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"

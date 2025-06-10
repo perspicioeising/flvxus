@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import {
   ArrowLeft,
   User,
   Target,
@@ -34,7 +34,8 @@ import {
   Coffee,
   Salad,
   Pizza,
-  Beef
+  Beef,
+  InfoIcon
 } from "lucide-react";
 import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
@@ -353,7 +354,7 @@ export default function DietDetailsPage() {
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
-                  
+
                   <div className="flex items-center gap-4">
                     {diet.student?.avatar_url ? (
                       <img
@@ -366,13 +367,13 @@ export default function DietDetailsPage() {
                         <User className="h-8 w-8 text-white" />
                       </div>
                     )}
-                    
+
                     <div>
                       <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent">
                         {diet.name}
                       </h1>
                       <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
-                        <span className="font-semibold text-green-600 dark:text-green-400">{diet.student.full_name}</span> • 
+                        <span className="font-semibold text-green-600 dark:text-green-400">{diet.student.full_name}</span> •
                         <span className="ml-2">
                           {formatDistanceToNow(new Date(diet.created_at), {
                             locale: ptBR,
@@ -394,7 +395,7 @@ export default function DietDetailsPage() {
                   <Printer className="h-4 w-4 mr-2" />
                   Imprimir
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   onClick={handleClone}
@@ -403,7 +404,7 @@ export default function DietDetailsPage() {
                   <Copy className="h-4 w-4 mr-2" />
                   Clonar
                 </Button>
-                
+
                 <Button
                   onClick={handleEdit}
                   className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-bold shadow-2xl hover:shadow-green-500/25 transition-all duration-500 transform hover:scale-105 border-0 h-12"
@@ -433,32 +434,32 @@ export default function DietDetailsPage() {
             <TabsList className="relative grid w-full grid-cols-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl shadow-2xl rounded-2xl p-2 border-0">
               <TabsTrigger
                 value="overview"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300"
+                className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
-                Visão Geral
+                <span className="hidden sm:inline">Visão Geral</span>
               </TabsTrigger>
               <TabsTrigger
                 value="meals"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300"
+                className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"
               >
-                <Utensils className="h-4 w-4 mr-2" />
-                Refeições
+                <Utensils className="h-4 w-4 " />
+                <span className="hidden sm:inline">Refeições</span>
+
               </TabsTrigger>
               <TabsTrigger
                 value="shopping"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300"
+                className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"
               >
-                <Apple className="h-4 w-4 mr-2" />
-                Lista de Compras
+                <Apple className="h-4 w-4 " />
+                <span className="hidden sm:inline">Lista de Compras</span>
               </TabsTrigger>
               <TabsTrigger
                 value="info"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300"
+                className="flex items-center gap-2 rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white transition-all duration-300"
               >
-                <User className="h-4 w-4 mr-2" />
-                Informações
-              </TabsTrigger>
+                <InfoIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Informações</span>              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -713,7 +714,7 @@ export default function DietDetailsPage() {
                             </CardDescription>
                           </div>
                         </div>
-                        
+
                         <div className="text-right">
                           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                             {Math.round(meal.calories)} cal
@@ -748,7 +749,7 @@ export default function DietDetailsPage() {
                                 </p>
                               )}
                             </div>
-                            
+
                             {food.substitutions && food.substitutions.length > 0 && (
                               <div className="ml-4">
                                 <Badge className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full text-xs">
@@ -913,7 +914,7 @@ export default function DietDetailsPage() {
                           <span className="text-gray-600 dark:text-gray-400">Status:</span>
                           <Badge className={cn(
                             "px-3 py-1 rounded-full font-semibold",
-                            diet.status === 'active' 
+                            diet.status === 'active'
                               ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                               : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
                           )}>
