@@ -1,4 +1,4 @@
-// /opt/flvxus/app/(dashboard)/dashboard/physical-assessments/new/page.tsx
+// /opt/flvxus/app/(dashboard)/dashboard/physical-assessments/new/page.tsx - REFATORADO
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import AssessmentAIAnalysis from '@/components/AssessmentAIAnalysis'; // IMPORT DO COMPONENTE UNIFICADO
 import {
   ArrowLeft,
   User,
@@ -33,7 +34,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-// Constantes - ADICIONADO PROTOCOLO GUEDES 1994
+// Constantes (iguais ao código anterior)
 const BODY_PROTOCOLS = [
   { value: "jackson_pollock_3", label: "Jackson & Pollock (3 dobras)", gender: "both", description: "Protocolo padrão com 3 pontos de medição" },
   { value: "jackson_pollock_7", label: "Jackson & Pollock (7 dobras)", gender: "both", description: "Protocolo mais preciso com 7 pontos" },
@@ -74,13 +75,12 @@ const MEASUREMENT_FIELDS = {
 interface Student {
   id: string;
   full_name: string;
-  birth_date: string; // CORRIGIDO: era birthDate, agora é birth_date
+  birthDate: string;
   gender: string;
   height: number;
   weight: number;
   goals: string[];
 }
-
 
 export default function NewPhysicalAssessmentPage() {
   const router = useRouter();
@@ -107,12 +107,12 @@ export default function NewPhysicalAssessmentPage() {
     notes: ''
   });
 
+  // Funções existentes (iguais ao código anterior)
   const fetchUserRole = useCallback(async () => {
     try {
       const response = await fetch('/api/profile');
       const data = await response.json();
       if (response.ok) {
-        // Verificar se é trainer
         if (data.role !== 'trainer') {
           toast({
             variant: "destructive",
@@ -139,7 +139,6 @@ export default function NewPhysicalAssessmentPage() {
 
       setStudents(data.students || []);
 
-      // Se há um student_id na URL, selecionar automaticamente
       const preSelectedStudentId = searchParams.get('student');
       if (preSelectedStudentId) {
         const student = data.students?.find((s: Student) => s.id === preSelectedStudentId);
@@ -164,32 +163,21 @@ export default function NewPhysicalAssessmentPage() {
     initializePage();
   }, [fetchUserRole, fetchStudents]);
 
-  // CORRIGIDO: Função para calcular idade
   const calculateAge = (birthDate: string) => {
     if (!birthDate) return 0;
-
     const today = new Date();
     const birth = new Date(birthDate);
-
-    // Verificar se a data é válida
     if (isNaN(birth.getTime())) return 0;
-
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-
-    return Math.max(0, age); // Garantir que não retorne idade negativa
+    return Math.max(0, age);
   };
 
-  // Selecionar aluno
   const handleStudentSelect = (student: Student) => {
-    console.log('Student data:', student); // Debug
-    const calculatedAge = calculateAge(student.birth_date);
-    console.log('Calculated age:', calculatedAge); // Debug
-
+    const calculatedAge = calculateAge(student.birthDate);
     setSelectedStudent(student);
     setAssessment(prev => ({
       ...prev,
@@ -202,7 +190,6 @@ export default function NewPhysicalAssessmentPage() {
     setActiveTab('protocol');
   };
 
-  // Calcular composição corporal - ADICIONADO PROTOCOLO GUEDES 1994
   const calculateBodyComposition = useCallback(() => {
     const { weight, height, age, gender, protocol, measurements } = assessment;
 
@@ -215,7 +202,6 @@ export default function NewPhysicalAssessmentPage() {
     let bodyDensity = 0;
     let fatPercentage = 0;
 
-    // Cálculos baseados no protocolo selecionado
     switch (protocol) {
       case 'jackson_pollock_3':
         if (gender === 'male') {
@@ -252,7 +238,6 @@ export default function NewPhysicalAssessmentPage() {
         }
         break;
 
-      // NOVO PROTOCOLO GUEDES 1994
       case 'guedes_1994':
         const sumGuedes = (parseFloat(measurements.triceps) || 0) + (parseFloat(measurements.subscapular) || 0);
         if (gender === 'male') {
@@ -263,7 +248,6 @@ export default function NewPhysicalAssessmentPage() {
         break;
 
       default:
-        // Estimativa básica usando IMC
         if (gender === 'male') {
           fatPercentage = (1.2 * bmi) + (0.23 * ageNum) - 16.2;
         } else {
@@ -271,7 +255,7 @@ export default function NewPhysicalAssessmentPage() {
         }
     }
 
-    if (bodyDensity > 0) {
+    if (bodyDensity > 0 && protocol !== 'guedes_1994') {
       fatPercentage = ((4.95 / bodyDensity) - 4.5) * 100;
     }
 
@@ -287,7 +271,6 @@ export default function NewPhysicalAssessmentPage() {
     };
   }, [assessment]);
 
-  // Recalcular quando dados mudarem
   useEffect(() => {
     if (assessment.weight && assessment.height && assessment.protocol && assessment.age) {
       const calc = calculateBodyComposition();
@@ -295,7 +278,6 @@ export default function NewPhysicalAssessmentPage() {
     }
   }, [assessment, calculateBodyComposition]);
 
-  // CORRIGIDO: Analisar com IA
   const analyzeWithAI = async () => {
     setIsAnalyzing(true);
 
@@ -304,7 +286,6 @@ export default function NewPhysicalAssessmentPage() {
         throw new Error('Dados insuficientes para análise');
       }
 
-      // CORRIGIDO: Preparar dados corretamente
       const requestData = {
         assessmentData: {
           age: parseInt(assessment.age),
@@ -321,10 +302,8 @@ export default function NewPhysicalAssessmentPage() {
           name: selectedStudent?.full_name,
           goals: selectedStudent?.goals || []
         },
-        previousAssessments: [] // TODO: Buscar avaliações anteriores
+        previousAssessments: []
       };
-
-      console.log('Sending to AI:', requestData); // Debug
 
       const response = await fetch('/api/physical-assessments/analyze', {
         method: 'POST',
@@ -360,98 +339,70 @@ export default function NewPhysicalAssessmentPage() {
     }
   };
 
-  // Salvar avaliação
-  // Substitua a função saveAssessment na página de criação por esta versão corrigida:
+  const saveAssessment = async () => {
+    setIsLoading(true);
 
-const saveAssessment = async () => {
-  setIsLoading(true);
+    try {
+      if (!calculations) {
+        throw new Error('Complete os dados básicos para salvar');
+      }
 
-  try {
-    if (!calculations) {
-      throw new Error('Complete os dados básicos para salvar');
+      const requestData = {
+        student_id: assessment.student_id,
+        protocol: assessment.protocol,
+        date: assessment.date,
+        weight: assessment.weight,
+        height: assessment.height,
+        age: assessment.age,
+        gender: assessment.gender,
+        measurements: assessment.measurements,
+        notes: assessment.notes,
+        bmi: calculations.bmi,
+        fat_percentage: calculations.fatPercentage,
+        fat_mass: calculations.fatMass,
+        lean_mass: calculations.leanMass,
+        body_density: calculations.bodyDensity,
+        ai_analysis: aiAnalysis || null,
+        ai_recommendations: aiAnalysis ? {
+          training: aiAnalysis.recommendations?.training || null,
+          nutrition: aiAnalysis.recommendations?.nutrition || null,
+          lifestyle: aiAnalysis.recommendations?.lifestyle || null
+        } : null
+      };
+
+      const response = await fetch('/api/physical-assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Avaliação salva com sucesso! 🎉",
+        description: `Avaliação física criada${aiAnalysis ? ' com análise IA' : ''} e está disponível para consulta.`,
+      });
+
+      router.push('/dashboard/physical-assessments');
+
+    } catch (error: any) {
+      console.error('Erro ao salvar avaliação:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar avaliação",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    console.log('=== PREPARANDO DADOS PARA SALVAR ===');
-    console.log('assessment state:', assessment);
-    console.log('calculations:', calculations);
-    console.log('aiAnalysis state:', aiAnalysis);
-
-    // ===== CORREÇÃO PRINCIPAL: PREPARAR DADOS CORRETAMENTE =====
-    const requestData = {
-      // Dados básicos da avaliação
-      student_id: assessment.student_id,
-      protocol: assessment.protocol,
-      date: assessment.date,
-      weight: assessment.weight,
-      height: assessment.height,
-      age: assessment.age,
-      gender: assessment.gender,
-      measurements: assessment.measurements,
-      notes: assessment.notes,
-      
-      // Dados calculados
-      bmi: calculations.bmi,
-      fat_percentage: calculations.fatPercentage,
-      fat_mass: calculations.fatMass,
-      lean_mass: calculations.leanMass,
-      body_density: calculations.bodyDensity,
-      
-      // ===== DADOS DE IA CORRIGIDOS =====
-      ai_analysis: aiAnalysis || null,
-      ai_recommendations: aiAnalysis ? {
-        training: aiAnalysis.recommendations?.training || null,
-        nutrition: aiAnalysis.recommendations?.nutrition || null,
-        lifestyle: aiAnalysis.recommendations?.lifestyle || null
-      } : null
-    };
-
-    console.log('=== DADOS ENVIADOS PARA API ===');
-    console.log('requestData completo:', JSON.stringify(requestData, null, 2));
-    console.log('ai_analysis sendo enviado:', requestData.ai_analysis);
-    console.log('ai_recommendations sendo enviado:', requestData.ai_recommendations);
-    console.log('Tipo ai_analysis:', typeof requestData.ai_analysis);
-    console.log('Tipo ai_recommendations:', typeof requestData.ai_recommendations);
-
-    const response = await fetch('/api/physical-assessments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('❌ Erro na resposta da API:', data);
-      throw new Error(data.error);
-    }
-
-    console.log('=== RESPOSTA DA API ===');
-    console.log('Avaliação criada:', data);
-    console.log('ai_analysis retornado:', data.ai_analysis);
-    console.log('ai_recommendations retornado:', data.ai_recommendations);
-
-    toast({
-      title: "Avaliação salva com sucesso! 🎉",
-      description: `Avaliação física criada${aiAnalysis ? ' com análise IA' : ''} e está disponível para consulta.`,
-    });
-
-    router.push('/dashboard/physical-assessments');
-
-  } catch (error: any) {
-    console.error('❌ Erro ao salvar avaliação:', error);
-    toast({
-      variant: "destructive",
-      title: "Erro ao salvar avaliação",
-      description: error.message,
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-  // Verificar se campos obrigatórios estão preenchidos - ATUALIZADO PARA GUEDES
   const getRequiredFields = (protocol: string) => {
     const required = MEASUREMENT_FIELDS.skinfolds.filter(field =>
       field.required && field.required.includes(protocol)
@@ -465,7 +416,6 @@ const saveAssessment = async () => {
     return required.every(field => assessment.measurements[field]);
   };
 
-  // Atualizar medida
   const handleMeasurementChange = (field: string, value: string) => {
     setAssessment(prev => ({
       ...prev,
@@ -559,7 +509,7 @@ const saveAssessment = async () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Dados Básicos */}
+          {/* Dados Básicos - Tab Content */}
           <TabsContent value="basic">
             <Card className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
               <CardHeader>
@@ -694,7 +644,7 @@ const saveAssessment = async () => {
                               {student.full_name}
                             </h4>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {calculateAge(student.birth_date)} anos • {student.gender === 'male' ? 'M' : 'F'}
+                              {calculateAge(student.birthDate)} anos • {student.gender === 'male' ? 'M' : 'F'}
                             </p>
                           </div>
                         </div>
@@ -706,7 +656,7 @@ const saveAssessment = async () => {
             </Card>
           </TabsContent>
 
-          {/* Protocolo */}
+          {/* Protocolo Tab - Mantido igual */}
           <TabsContent value="protocol">
             <Card className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
               <CardHeader>
@@ -810,7 +760,7 @@ const saveAssessment = async () => {
             </Card>
           </TabsContent>
 
-          {/* Medidas */}
+          {/* Medidas Tab - Mantido igual mas simplificado */}
           <TabsContent value="measurements">
             <Card className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
               <CardHeader>
@@ -917,7 +867,7 @@ const saveAssessment = async () => {
             </Card>
           </TabsContent>
 
-          {/* Resultados */}
+          {/* Resultados Tab */}
           <TabsContent value="results">
             <Card className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
               <CardHeader>
@@ -1036,235 +986,32 @@ const saveAssessment = async () => {
             </Card>
           </TabsContent>
 
-          {/* Análise IA */}
+          {/* ===== ANÁLISE IA TAB - AGORA USANDO O COMPONENTE UNIFICADO ===== */}
           <TabsContent value="analysis">
-            <Card className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-                    <Brain className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Análise Inteligente</CardTitle>
-                    <CardDescription className="text-gray-600 dark:text-gray-400">
-                      Recomendações personalizadas geradas por IA
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {aiAnalysis ? (
-                  <div className="space-y-6">
-                    {/* Classificação */}
-                    <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl">
-                      <h4 className="text-xl font-bold text-purple-800 dark:text-purple-300 mb-3">
-                        Classificação da Composição Corporal
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="text-center">
-                          <div className="text-3xl font-black text-purple-600 dark:text-purple-400">
-                            {aiAnalysis.classification}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Status Atual</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-3xl font-black text-blue-600 dark:text-blue-400">
-                            {aiAnalysis.somatotype}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Somatótipo</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-3xl font-black text-green-600 dark:text-green-400">
-                            {aiAnalysis.healthStatus}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Status de Saúde</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Recomendações de Treino */}
-                    {Object.entries(aiAnalysis.recommendations.training).map(([key, value]) => (
-                      <div key={key} className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                        <div className="font-semibold text-blue-700 dark:text-blue-300 capitalize mb-1">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}:
-                        </div>
-                        <div className="text-gray-900 dark:text-white text-sm">
-                          {value as React.ReactNode}
-                        </div>
-                      </div>
-                    ))}
-
-
-                    {/* Recomendações Nutricionais */}
-                    {aiAnalysis.recommendations?.nutrition && (
-                      <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl">
-                        <h4 className="text-xl font-bold text-green-800 dark:text-green-300 mb-4 flex items-center gap-2">
-                          <Heart className="h-6 w-6" />
-                          Recomendações Nutricionais
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.entries(aiAnalysis.recommendations.nutrition).map(([key, value]) => (
-                            <div key={key} className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                              <div className="font-semibold text-green-700 dark:text-green-300 capitalize mb-1">
-                                {key.replace(/([A-Z])/g, ' $1').trim()}:
-                              </div>
-                              <div className="text-gray-900 dark:text-white text-sm">
-                                {value as React.ReactNode}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-
-                    {/* Pontos Fortes e Melhorias */}
-                    {aiAnalysis.analysis && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Pontos Fortes */}
-                        {aiAnalysis.analysis.strengths && aiAnalysis.analysis.strengths.length > 0 && (
-                          <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200 dark:border-green-700">
-                            <h5 className="font-bold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
-                              <CheckCircle2 className="h-5 w-5" />
-                              Pontos Fortes
-                            </h5>
-                            <ul className="space-y-2">
-                              {aiAnalysis.analysis.strengths.map((strength: string, index: number) => (
-                                <li key={index} className="flex items-start gap-2 text-green-700 dark:text-green-300 text-sm">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                  <span>{strength}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Áreas de Melhoria */}
-                        {aiAnalysis.analysis.improvements && aiAnalysis.analysis.improvements.length > 0 && (
-                          <div className="p-6 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-2xl border border-orange-200 dark:border-orange-700">
-                            <h5 className="font-bold text-orange-800 dark:text-orange-300 mb-3 flex items-center gap-2">
-                              <Target className="h-5 w-5" />
-                              Áreas de Melhoria
-                            </h5>
-                            <ul className="space-y-2">
-                              {aiAnalysis.analysis.improvements.map((improvement: string, index: number) => (
-                                <li key={index} className="flex items-start gap-2 text-orange-700 dark:text-orange-300 text-sm">
-                                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                                  <span>{improvement}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Fatores de Risco */}
-                    {aiAnalysis.analysis?.risks && aiAnalysis.analysis.risks.length > 0 && (
-                      <div className="p-6 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-2xl border border-red-200 dark:border-red-700">
-                        <h5 className="font-bold text-red-800 dark:text-red-300 mb-3 flex items-center gap-2">
-                          <AlertCircle className="h-5 w-5" />
-                          Fatores de Risco Identificados
-                        </h5>
-                        <ul className="space-y-2">
-                          {aiAnalysis.analysis.risks.map((risk: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2 text-red-700 dark:text-red-300 text-sm">
-                              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                              <span>{risk}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Acompanhamento */}
-                    {aiAnalysis.progressTracking && (
-                      <div className="p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl">
-                        <h4 className="text-xl font-bold text-purple-800 dark:text-purple-300 mb-4 flex items-center gap-2">
-                          <BarChart3 className="h-6 w-6" />
-                          Plano de Acompanhamento
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                            <div className="font-semibold text-purple-700 dark:text-purple-300 mb-2">Próxima Avaliação:</div>
-                            <div className="text-gray-900 dark:text-white text-sm">{aiAnalysis.progressTracking.nextAssessment}</div>
-                          </div>
-                          <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                            <div className="font-semibold text-purple-700 dark:text-purple-300 mb-2">Timeline Esperada:</div>
-                            <div className="text-gray-900 dark:text-white text-sm">{aiAnalysis.progressTracking.expectedTimeline}</div>
-                          </div>
-                          <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                            <div className="font-semibold text-purple-700 dark:text-purple-300 mb-2">Métricas Chave:</div>
-                            <div className="text-sm text-gray-900 dark:text-white">
-                              {aiAnalysis.progressTracking.keyMetrics?.join(', ')}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Observações Específicas */}
-                    {aiAnalysis.specificNotes && (
-                      <div className="p-6 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800/50 dark:to-slate-800/50 rounded-2xl border border-gray-200 dark:border-gray-700">
-                        <h5 className="font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
-                          <Info className="h-5 w-5" />
-                          Observações Específicas
-                        </h5>
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm">
-                          {aiAnalysis.specificNotes}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Ações finais */}
-                    <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
-                      <Button
-                        variant="outline"
-                        onClick={() => setActiveTab('results')}
-                        className="px-6 py-3 rounded-xl"
-                      >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Voltar aos Resultados
-                      </Button>
-                      <Button
-                        onClick={saveAssessment}
-                        disabled={isLoading}
-                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 rounded-xl"
-                      >
-                        {isLoading ? (
-                          <>
-                            <div className="h-4 w-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Salvando...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4 mr-2" />
-                            Salvar com Análise IA
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Brain className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                      Análise IA não disponível
-                    </h3>
-                    <p className="text-gray-500 dark:text-gray-500 mb-6">
-                      Volte à aba "Resultados" e clique em "Analisar com IA" para gerar recomendações personalizadas
-                    </p>
-                    <Button
-                      onClick={() => setActiveTab('results')}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl"
-                    >
-                      <Brain className="h-4 w-4 mr-2" />
-                      Ir para Resultados
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <AssessmentAIAnalysis
+              mode="create"
+              aiAnalysis={aiAnalysis}
+              aiRecommendations={aiAnalysis?.recommendations}
+              isLoading={isLoading}
+              onAnalyze={analyzeWithAI}
+              onSave={saveAssessment}
+              onBack={() => setActiveTab('results')}
+              assessmentData={calculations ? {
+                weight: parseFloat(assessment.weight),
+                height: parseFloat(assessment.height),
+                age: parseInt(assessment.age),
+                gender: assessment.gender as 'male' | 'female',
+                bmi: calculations.bmi,
+                fatPercentage: calculations.fatPercentage,
+                fatMass: calculations.fatMass,
+                leanMass: calculations.leanMass,
+                protocol: assessment.protocol
+              } : undefined}
+              studentInfo={{
+                name: selectedStudent?.full_name,
+                goals: selectedStudent?.goals
+              }}
+            />
           </TabsContent>
         </Tabs>
       </div>
