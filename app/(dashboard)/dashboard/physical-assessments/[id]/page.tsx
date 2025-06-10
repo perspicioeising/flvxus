@@ -37,6 +37,7 @@ import {
     PieChart
 } from "lucide-react";
 import AssessmentComparison from "@/components/AssessmentComparison";
+import AssessmentAIAnalysis from "@/components/AssessmentAIAnalysis";
 
 interface Assessment {
     id: string;
@@ -57,6 +58,23 @@ interface Assessment {
         classification: string;
         somatotype: string;
         healthStatus: string;
+        metabolicProfile?: string;
+        analysis?: {
+            strengths: string[];
+            improvements: string[];
+            risks: string[];
+        };
+        recommendations?: {
+            training?: Record<string, string>;
+            nutrition?: Record<string, string>;
+            lifestyle?: Record<string, string>;
+        };
+        progressTracking?: {
+            nextAssessment: string;
+            keyMetrics: string[];
+            expectedTimeline: string;
+        };
+        specificNotes?: string;
     };
     ai_recommendations?: {
         training?: Record<string, string>;
@@ -75,12 +93,14 @@ interface Assessment {
     };
 }
 
+// PROTOCOLOS ATUALIZADOS COM GUEDES 1994
 const PROTOCOLS = {
     'jackson_pollock_3': 'Jackson & Pollock (3 dobras)',
     'jackson_pollock_7': 'Jackson & Pollock (7 dobras)',
     'durnin_womersley': 'Durnin & Womersley',
     'slaughter': 'Slaughter et al.',
-    'boileau': 'Boileau et al.'
+    'boileau': 'Boileau et al.',
+    'guedes_1994': 'Guedes 1994'
 };
 
 const MEASUREMENT_LABELS = {
@@ -124,7 +144,18 @@ export default function AssessmentDetailsPage() {
     const params = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { toast } = useToast();
+    const toast = useToast// Principais alterações na página de detalhes:
+
+    // 1. PROTOCOLOS ATUALIZADOS - Adicionar Guedes 1994
+    const PROTOCOLS = {
+        'jackson_pollock_3': 'Jackson & Pollock (3 dobras)',
+        'jackson_pollock_7': 'Jackson & Pollock (7 dobras)',
+        'durnin_womersley': 'Durnin & Womersley',
+        'slaughter': 'Slaughter et al.',
+        'boileau': 'Boileau et al.',
+        'guedes_1994': 'Guedes 1994'  // NOVO PROTOCOLO ADICIONADO
+    };
+
 
     const [assessment, setAssessment] = useState<Assessment | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -141,6 +172,38 @@ export default function AssessmentDetailsPage() {
                 throw new Error(data.error);
             }
 
+            // DEBUG: Log para ver os dados que chegam da API
+            console.log('=== DADOS DA API ===');
+            console.log('Full data:', data);
+            console.log('ai_analysis:', data.ai_analysis);
+            console.log('ai_recommendations:', data.ai_recommendations);
+            console.log('ai_analysis type:', typeof data.ai_analysis);
+
+            // CORREÇÃO: Se os dados de IA estão como string, fazer parse
+            if (data.ai_analysis && typeof data.ai_analysis === 'string') {
+                try {
+                    console.log('Fazendo parse de ai_analysis string');
+                    data.ai_analysis = JSON.parse(data.ai_analysis);
+                } catch (parseError) {
+                    console.error('Erro ao fazer parse de ai_analysis:', parseError);
+                    data.ai_analysis = null;
+                }
+            }
+
+            if (data.ai_recommendations && typeof data.ai_recommendations === 'string') {
+                try {
+                    console.log('Fazendo parse de ai_recommendations string');
+                    data.ai_recommendations = JSON.parse(data.ai_recommendations);
+                } catch (parseError) {
+                    console.error('Erro ao fazer parse de ai_recommendations:', parseError);
+                    data.ai_recommendations = null;
+                }
+            }
+
+            console.log('Dados processados:');
+            console.log('ai_analysis final:', data.ai_analysis);
+            console.log('ai_recommendations final:', data.ai_recommendations);
+
             setAssessment(data);
         } catch (error: any) {
             toast({
@@ -153,7 +216,6 @@ export default function AssessmentDetailsPage() {
             setIsLoading(false);
         }
     }, [params.id, toast, router]);
-
     const fetchUserRole = useCallback(async () => {
         try {
             const response = await fetch('/api/profile');
@@ -232,6 +294,7 @@ export default function AssessmentDetailsPage() {
             toast({
                 title: "Avaliação deletada",
                 description: "A avaliação foi removida com sucesso.",
+                variant: ""
             });
 
             router.push('/dashboard/physical-assessments');
@@ -615,9 +678,9 @@ export default function AssessmentDetailsPage() {
                                                     <span className={`text-sm font-semibold ${colorClass}`}>{classification}</span>
                                                 </div>
                                                 <div className={`h-3 rounded-full ${classification === 'Atlético' ? 'bg-green-500' :
-                                                        classification === 'Fitness' ? 'bg-blue-500' :
-                                                            classification === 'Aceitável' ? 'bg-yellow-500' :
-                                                                'bg-red-500'
+                                                    classification === 'Fitness' ? 'bg-blue-500' :
+                                                        classification === 'Aceitável' ? 'bg-yellow-500' :
+                                                            'bg-red-500'
                                                     }`}></div>
                                             </div>
                                         </div>
@@ -646,13 +709,13 @@ export default function AssessmentDetailsPage() {
                                     <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl">
                                         <div className="font-semibold text-blue-700 dark:text-blue-300 mb-2">Protocolo Utilizado</div>
                                         <div className="text-gray-900 dark:text-white font-medium">
-                                            {PROTOCOLS[assessment.protocol as keyof typeof PROTOCOLS]}
+                                            {PROTOCOLS[assessment.protocol as keyof typeof PROTOCOLS] || assessment.protocol}
                                         </div>
                                     </div>
                                     <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl">
                                         <div className="font-semibold text-green-700 dark:text-green-300 mb-2">Precisão Estimada</div>
                                         <div className="text-gray-900 dark:text-white font-medium">
-                                            {assessment.accuracy_estimate}
+                                            {assessment.accuracy_estimate || 'Não especificada'}
                                         </div>
                                     </div>
                                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
@@ -770,168 +833,46 @@ export default function AssessmentDetailsPage() {
                         </Card>
                     </TabsContent>
 
-                    {/* AI Analysis Tab */}
                     <TabsContent value="analysis" className="space-y-6">
-                        {assessment.ai_analysis ? (
-                            <div className="space-y-6">
-                                {/* Classification */}
-                                <Card className="border-0 bg-gradient-to-r from-purple-50/80 to-pink-50/80 dark:from-purple-900/20 dark:to-pink-900/20 backdrop-blur-xl shadow-xl rounded-2xl">
-                                    <CardHeader>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
-                                                <Brain className="h-6 w-6 text-white" />
-                                            </div>
-                                            <div>
-                                                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Análise Inteligente</CardTitle>
-                                                <CardDescription className="text-gray-600 dark:text-gray-400">
-                                                    Classificação e perfil corporal por IA
-                                                </CardDescription>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl">
-                                                <div className="text-3xl font-black text-purple-600 dark:text-purple-400 mb-2">
-                                                    {assessment.ai_analysis.classification}
-                                                </div>
-                                                <div className="text-sm text-gray-600 dark:text-gray-400">Classificação Corporal</div>
-                                            </div>
-                                            <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl">
-                                                <div className="text-3xl font-black text-blue-600 dark:text-blue-400 mb-2">
-                                                    {assessment.ai_analysis.somatotype}
-                                                </div>
-                                                <div className="text-sm text-gray-600 dark:text-gray-400">Somatótipo</div>
-                                            </div>
-                                            <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl">
-                                                <div className="text-3xl font-black text-green-600 dark:text-green-400 mb-2">
-                                                    {assessment.ai_analysis.healthStatus}
-                                                </div>
-                                                <div className="text-sm text-gray-600 dark:text-gray-400">Status de Saúde</div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                        {/* Debug Card - TEMPORÁRIO */}
+                        <Card className="border-2 border-orange-300 bg-orange-50 dark:bg-orange-900/20">
+                            <CardHeader>
+                                <CardTitle className="text-orange-800 dark:text-orange-300">🔍 DEBUG INFO</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2 text-sm">
+                                    <div><strong>assessment.ai_analysis:</strong> {assessment.ai_analysis ? 'EXISTS' : 'NULL/UNDEFINED'}</div>
+                                    <div><strong>assessment.ai_recommendations:</strong> {assessment.ai_recommendations ? 'EXISTS' : 'NULL/UNDEFINED'}</div>
+                                    <div><strong>typeof ai_analysis:</strong> {typeof assessment.ai_analysis}</div>
+                                    <div><strong>typeof ai_recommendations:</strong> {typeof assessment.ai_recommendations}</div>
+                                    {assessment.ai_analysis && (
+                                        <div><strong>ai_analysis keys:</strong> {Object.keys(assessment.ai_analysis).join(', ')}</div>
+                                    )}
+                                    {assessment.ai_recommendations && (
+                                        <div><strong>ai_recommendations keys:</strong> {Object.keys(assessment.ai_recommendations).join(', ')}</div>
+                                    )}
+                                    <details className="mt-4">
+                                        <summary className="cursor-pointer font-bold">Ver dados completos</summary>
+                                        <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto max-h-40">
+                                            {JSON.stringify({
+                                                ai_analysis: assessment.ai_analysis,
+                                                ai_recommendations: assessment.ai_recommendations
+                                            }, null, 2)}
+                                        </pre>
+                                    </details>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                                {/* Recommendations */}
-                                {assessment.ai_recommendations && (
-                                    <>
-                                        {/* Training Recommendations */}
-                                        {assessment.ai_recommendations.training && (
-                                            <Card className="border-0 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 backdrop-blur-xl shadow-xl rounded-2xl">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl">
-                                                            <Activity className="h-6 w-6 text-white" />
-                                                        </div>
-                                                        <div>
-                                                            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Recomendações de Treino</CardTitle>
-                                                            <CardDescription className="text-gray-600 dark:text-gray-400">
-                                                                Estratégias personalizadas de treinamento
-                                                            </CardDescription>
-                                                        </div>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        {Object.entries(assessment.ai_recommendations.training).map(([key, value]) => (
-                                                            <div key={key} className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
-                                                                <div className="font-semibold text-blue-700 dark:text-blue-300 capitalize mb-2">
-                                                                    {key.replace(/([A-Z])/g, ' $1').trim()}:
-                                                                </div>
-                                                                <div className="text-gray-900 dark:text-white">{formatString(value)}</div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-
-                                        {/* Nutrition Recommendations */}
-                                        {assessment.ai_recommendations.nutrition && (
-                                            <Card className="border-0 bg-gradient-to-r from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 backdrop-blur-xl shadow-xl rounded-2xl">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                                                            <Heart className="h-6 w-6 text-white" />
-                                                        </div>
-                                                        <div>
-                                                            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Recomendações Nutricionais</CardTitle>
-                                                            <CardDescription className="text-gray-600 dark:text-gray-400">
-                                                                Estratégias alimentares personalizadas
-                                                            </CardDescription>
-                                                        </div>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        {Object.entries(assessment.ai_recommendations.nutrition).map(([key, value]) => (
-                                                            <div key={key} className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
-                                                                <div className="font-semibold text-green-700 dark:text-green-300 capitalize mb-2">
-                                                                    {key.replace(/([A-Z])/g, ' $1').trim()}:
-                                                                </div>
-                                                                <div className="text-gray-900 dark:text-white">{formatString(value)}</div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-
-                                        {/* Lifestyle Recommendations */}
-                                        {assessment.ai_recommendations.lifestyle && (
-                                            <Card className="border-0 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 dark:from-purple-900/20 dark:to-indigo-900/20 backdrop-blur-xl shadow-xl rounded-2xl">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl">
-                                                            <Zap className="h-6 w-6 text-white" />
-                                                        </div>
-                                                        <div>
-                                                            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Recomendações de Estilo de Vida</CardTitle>
-                                                            <CardDescription className="text-gray-600 dark:text-gray-400">
-                                                                Hábitos para otimizar resultados
-                                                            </CardDescription>
-                                                        </div>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                        {Object.entries(assessment.ai_recommendations.lifestyle).map(([key, value]) => (
-                                                            <div key={key} className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
-                                                                <div className="font-semibold text-purple-700 dark:text-purple-300 capitalize mb-2">
-                                                                    {key.replace(/([A-Z])/g, ' $1').trim()}:
-                                                                </div>
-                                                                <div className="text-gray-900 dark:text-white">{formatString(value)}</div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        ) : (
-                            <Card className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
-                                <CardContent className="text-center py-24">
-                                    <Brain className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                                    <h3 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-2">
-                                        Análise IA não disponível
-                                    </h3>
-                                    <p className="text-gray-500 dark:text-gray-500 mb-6">
-                                        Esta avaliação não possui análise de inteligência artificial
-                                    </p>
-                                    <Badge className="bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600">
-                                        Análise manual realizada
-                                    </Badge>
-                                </CardContent>
-                            </Card>
-                        )}
+                        <AssessmentAIAnalysis
+                            aiAnalysis={assessment && assessment.ai_analysis ? assessment.ai_analysis : null}
+                            aiRecommendations={assessment && assessment.ai_recommendations ? assessment.ai_recommendations : null}
+                        />
                     </TabsContent>
 
                     {/* Comparison Tab */}
                     <TabsContent value="comparison" className="space-y-6">
-                        <AssessmentComparison 
+                        <AssessmentComparison
                             currentAssessment={assessment}
                             studentId={assessment.student_id}
                         />
