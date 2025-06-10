@@ -12,14 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  ArrowLeft, 
-  User, 
-  Calculator, 
-  Brain, 
-  Target, 
-  Ruler, 
-  Weight, 
+import {
+  ArrowLeft,
+  User,
+  Calculator,
+  Brain,
+  Target,
+  Ruler,
+  Weight,
   Activity,
   Save,
   Sparkles,
@@ -81,11 +81,12 @@ interface Student {
   goals: string[];
 }
 
+
 export default function NewPhysicalAssessmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  
+
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -137,7 +138,7 @@ export default function NewPhysicalAssessmentPage() {
       }
 
       setStudents(data.students || []);
-      
+
       // Se há um student_id na URL, selecionar automaticamente
       const preSelectedStudentId = searchParams.get('student');
       if (preSelectedStudentId) {
@@ -166,20 +167,20 @@ export default function NewPhysicalAssessmentPage() {
   // CORRIGIDO: Função para calcular idade
   const calculateAge = (birthDate: string) => {
     if (!birthDate) return 0;
-    
+
     const today = new Date();
     const birth = new Date(birthDate);
-    
+
     // Verificar se a data é válida
     if (isNaN(birth.getTime())) return 0;
-    
+
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
+
     return Math.max(0, age); // Garantir que não retorne idade negativa
   };
 
@@ -188,7 +189,7 @@ export default function NewPhysicalAssessmentPage() {
     console.log('Student data:', student); // Debug
     const calculatedAge = calculateAge(student.birth_date);
     console.log('Calculated age:', calculatedAge); // Debug
-    
+
     setSelectedStudent(student);
     setAssessment(prev => ({
       ...prev,
@@ -204,7 +205,7 @@ export default function NewPhysicalAssessmentPage() {
   // Calcular composição corporal - ADICIONADO PROTOCOLO GUEDES 1994
   const calculateBodyComposition = useCallback(() => {
     const { weight, height, age, gender, protocol, measurements } = assessment;
-    
+
     if (!weight || !height || !protocol || !age) return null;
 
     const heightM = parseFloat(height) / 100;
@@ -218,14 +219,14 @@ export default function NewPhysicalAssessmentPage() {
     switch (protocol) {
       case 'jackson_pollock_3':
         if (gender === 'male') {
-          const sum3 = (parseFloat(measurements.chest) || 0) + 
-                      (parseFloat(measurements.abdominal) || 0) + 
-                      (parseFloat(measurements.thigh) || 0);
+          const sum3 = (parseFloat(measurements.chest) || 0) +
+            (parseFloat(measurements.abdominal) || 0) +
+            (parseFloat(measurements.thigh) || 0);
           bodyDensity = 1.10938 - (0.0008267 * sum3) + (0.0000016 * sum3 * sum3) - (0.0002574 * ageNum);
         } else {
-          const sum3 = (parseFloat(measurements.triceps) || 0) + 
-                      (parseFloat(measurements.suprailiac) || 0) + 
-                      (parseFloat(measurements.thigh) || 0);
+          const sum3 = (parseFloat(measurements.triceps) || 0) +
+            (parseFloat(measurements.suprailiac) || 0) +
+            (parseFloat(measurements.thigh) || 0);
           bodyDensity = 1.0994921 - (0.0009929 * sum3) + (0.0000023 * sum3 * sum3) - (0.0001392 * ageNum);
         }
         break;
@@ -240,10 +241,10 @@ export default function NewPhysicalAssessmentPage() {
         break;
 
       case 'durnin_womersley':
-        const sumDW = (parseFloat(measurements.biceps) || 0) + 
-                     (parseFloat(measurements.triceps) || 0) + 
-                     (parseFloat(measurements.subscapular) || 0) + 
-                     (parseFloat(measurements.suprailiac) || 0);
+        const sumDW = (parseFloat(measurements.biceps) || 0) +
+          (parseFloat(measurements.triceps) || 0) +
+          (parseFloat(measurements.subscapular) || 0) +
+          (parseFloat(measurements.suprailiac) || 0);
         if (gender === 'male') {
           bodyDensity = 1.1765 - (0.0744 * Math.log10(sumDW));
         } else {
@@ -297,7 +298,7 @@ export default function NewPhysicalAssessmentPage() {
   // CORRIGIDO: Analisar com IA
   const analyzeWithAI = async () => {
     setIsAnalyzing(true);
-    
+
     try {
       if (!calculations) {
         throw new Error('Dados insuficientes para análise');
@@ -341,12 +342,12 @@ export default function NewPhysicalAssessmentPage() {
 
       setAiAnalysis(data.analysis);
       setActiveTab('analysis');
-      
+
       toast({
         title: "Análise IA concluída!",
         description: "A inteligência artificial gerou recomendações personalizadas.",
       });
-      
+
     } catch (error: any) {
       console.error('AI Analysis Error:', error);
       toast({
@@ -362,7 +363,7 @@ export default function NewPhysicalAssessmentPage() {
   // Salvar avaliação
   const saveAssessment = async () => {
     setIsLoading(true);
-    
+
     try {
       if (!calculations) {
         throw new Error('Complete os dados básicos para salvar');
@@ -400,9 +401,9 @@ export default function NewPhysicalAssessmentPage() {
         title: "Avaliação salva com sucesso!",
         description: "A avaliação física foi criada e está disponível para consulta.",
       });
-      
+
       router.push('/dashboard/physical-assessments');
-      
+
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -416,7 +417,7 @@ export default function NewPhysicalAssessmentPage() {
 
   // Verificar se campos obrigatórios estão preenchidos - ATUALIZADO PARA GUEDES
   const getRequiredFields = (protocol: string) => {
-    const required = MEASUREMENT_FIELDS.skinfolds.filter(field => 
+    const required = MEASUREMENT_FIELDS.skinfolds.filter(field =>
       field.required && field.required.includes(protocol)
     );
     return required.map(field => field.key);
@@ -442,7 +443,7 @@ export default function NewPhysicalAssessmentPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        
+
         {/* Header */}
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 dark:from-blue-500/10 dark:via-purple-400/10 dark:to-cyan-500/10 rounded-3xl blur-xl"></div>
@@ -455,7 +456,7 @@ export default function NewPhysicalAssessmentPage() {
               >
                 <ArrowLeft className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </Button>
-              
+
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
@@ -491,31 +492,28 @@ export default function NewPhysicalAssessmentPage() {
               const StepIcon = step.icon;
               const isActive = activeTab === step.id;
               const isCompleted = ['basic', 'protocol', 'measurements', 'results'].indexOf(step.id) < ['basic', 'protocol', 'measurements', 'results'].indexOf(activeTab);
-              
+
               return (
                 <div key={step.id} className="flex items-center">
-                  <div className={`relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ${
-                    isActive 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg' 
-                      : isCompleted
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                  }`}>
+                  <div className={`relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ${isActive
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                    : isCompleted
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}>
                     {isCompleted ? (
                       <CheckCircle2 className="h-6 w-6" />
                     ) : (
                       <StepIcon className="h-6 w-6" />
                     )}
                   </div>
-                  <span className={`ml-2 text-sm font-medium ${
-                    isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
-                  }`}>
+                  <span className={`ml-2 text-sm font-medium ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
                     {step.label}
                   </span>
                   {index < 4 && (
-                    <div className={`mx-4 h-0.5 w-8 ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
-                    }`} />
+                    <div className={`mx-4 h-0.5 w-8 ${isCompleted ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
+                      }`} />
                   )}
                 </div>
               );
@@ -694,33 +692,29 @@ export default function NewPhysicalAssessmentPage() {
                     <div
                       key={protocol.value}
                       onClick={() => setAssessment(prev => ({ ...prev, protocol: protocol.value }))}
-                      className={`group cursor-pointer p-6 border-2 rounded-xl transition-all duration-300 ${
-                        assessment.protocol === protocol.value
-                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 bg-white dark:bg-gray-800'
-                      }`}
+                      className={`group cursor-pointer p-6 border-2 rounded-xl transition-all duration-300 ${assessment.protocol === protocol.value
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 bg-white dark:bg-gray-800'
+                        }`}
                     >
                       <div className="flex items-start gap-4">
-                        <div className={`p-3 rounded-lg ${
-                          assessment.protocol === protocol.value
-                            ? 'bg-purple-500 text-white'
-                            : 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
-                        }`}>
+                        <div className={`p-3 rounded-lg ${assessment.protocol === protocol.value
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+                          }`}>
                           <Calculator className="h-6 w-6" />
                         </div>
                         <div className="flex-1">
-                          <h4 className={`font-semibold text-lg mb-2 ${
-                            assessment.protocol === protocol.value
-                              ? 'text-purple-700 dark:text-purple-300'
-                              : 'text-gray-900 dark:text-white'
-                          }`}>
+                          <h4 className={`font-semibold text-lg mb-2 ${assessment.protocol === protocol.value
+                            ? 'text-purple-700 dark:text-purple-300'
+                            : 'text-gray-900 dark:text-white'
+                            }`}>
                             {protocol.label}
                           </h4>
-                          <p className={`text-sm ${
-                            assessment.protocol === protocol.value
-                              ? 'text-purple-600 dark:text-purple-400'
-                              : 'text-gray-600 dark:text-gray-400'
-                          }`}>
+                          <p className={`text-sm ${assessment.protocol === protocol.value
+                            ? 'text-purple-600 dark:text-purple-400'
+                            : 'text-gray-600 dark:text-gray-400'
+                            }`}>
                             {protocol.description}
                           </p>
                           {assessment.protocol === protocol.value && (
@@ -814,14 +808,12 @@ export default function NewPhysicalAssessmentPage() {
                       {MEASUREMENT_FIELDS.skinfolds.map((field) => {
                         const isRequired = assessment.protocol && getRequiredFields(assessment.protocol).includes(field.key);
                         return (
-                          <div key={field.key} className={`space-y-2 p-4 rounded-xl border-2 transition-all ${
-                            isRequired 
-                              ? 'border-orange-300 bg-orange-50 dark:border-orange-600 dark:bg-orange-900/20' 
-                              : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
-                          }`}>
-                            <Label className={`text-sm font-semibold flex items-center gap-2 ${
-                              isRequired ? 'text-orange-700 dark:text-orange-300' : 'text-gray-700 dark:text-gray-200'
+                          <div key={field.key} className={`space-y-2 p-4 rounded-xl border-2 transition-all ${isRequired
+                            ? 'border-orange-300 bg-orange-50 dark:border-orange-600 dark:bg-orange-900/20'
+                            : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
                             }`}>
+                            <Label className={`text-sm font-semibold flex items-center gap-2 ${isRequired ? 'text-orange-700 dark:text-orange-300' : 'text-gray-700 dark:text-gray-200'
+                              }`}>
                               <span className="text-lg">{field.icon}</span>
                               {field.label}
                               {isRequired && <span className="text-red-500">*</span>}
@@ -832,11 +824,10 @@ export default function NewPhysicalAssessmentPage() {
                               step="0.1"
                               value={assessment.measurements[field.key] || ''}
                               onChange={(e) => handleMeasurementChange(field.key, e.target.value)}
-                              className={`h-10 transition-all ${
-                                isRequired 
-                                  ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-500' 
-                                  : 'border-gray-200 dark:border-gray-700'
-                              }`}
+                              className={`h-10 transition-all ${isRequired
+                                ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-500'
+                                : 'border-gray-200 dark:border-gray-700'
+                                }`}
                               placeholder="0.0"
                             />
                           </div>
@@ -954,7 +945,7 @@ export default function NewPhysicalAssessmentPage() {
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Voltar às Medidas
                       </Button>
-                      
+
                       <div className="flex-1 flex gap-3">
                         <Button
                           onClick={analyzeWithAI}
@@ -973,7 +964,7 @@ export default function NewPhysicalAssessmentPage() {
                             </>
                           )}
                         </Button>
-                        
+
                         <Button
                           onClick={saveAssessment}
                           disabled={isLoading}
@@ -1056,24 +1047,17 @@ export default function NewPhysicalAssessmentPage() {
                     </div>
 
                     {/* Recomendações de Treino */}
-                    {aiAnalysis.recommendations?.training && (
-                      <div className="p-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl">
-                        <h4 className="text-xl font-bold text-blue-800 dark:text-blue-300 mb-4 flex items-center gap-2">
-                          <Activity className="h-6 w-6" />
-                          Recomendações de Treinamento
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.entries(aiAnalysis.recommendations.training).map(([key, value]) => (
-                            <div key={key} className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                              <div className="font-semibold text-blue-700 dark:text-blue-300 capitalize mb-1">
-                                {key.replace(/([A-Z])/g, ' $1').trim()}:
-                              </div>
-                              <div className="text-gray-900 dark:text-white text-sm">{value}</div>
-                            </div>
-                          ))}
+                    {Object.entries(aiAnalysis.recommendations.training).map(([key, value]) => (
+                      <div key={key} className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                        <div className="font-semibold text-blue-700 dark:text-blue-300 capitalize mb-1">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}:
+                        </div>
+                        <div className="text-gray-900 dark:text-white text-sm">
+                          {value as React.ReactNode}
                         </div>
                       </div>
-                    )}
+                    ))}
+
 
                     {/* Recomendações Nutricionais */}
                     {aiAnalysis.recommendations?.nutrition && (
@@ -1088,12 +1072,15 @@ export default function NewPhysicalAssessmentPage() {
                               <div className="font-semibold text-green-700 dark:text-green-300 capitalize mb-1">
                                 {key.replace(/([A-Z])/g, ' $1').trim()}:
                               </div>
-                              <div className="text-gray-900 dark:text-white text-sm">{value}</div>
+                              <div className="text-gray-900 dark:text-white text-sm">
+                                {value as React.ReactNode}
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
+
 
                     {/* Pontos Fortes e Melhorias */}
                     {aiAnalysis.analysis && (

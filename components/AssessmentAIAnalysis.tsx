@@ -30,8 +30,8 @@ interface AIAnalysis {
     risks?: string[];
   };
   recommendations?: {
-    training?: Record<string, string>;
-    nutrition?: Record<string, string>;
+    training?: Record<string, React.ReactNode>;
+    nutrition?: Record<string, React.ReactNode>;
     lifestyle?: Record<string, string>;
   };
   progressTracking?: {

@@ -41,7 +41,7 @@ export default function DashboardPage() {
     const getUser = async () => {
       const { data, error } = await supabase.auth.getUser();
       setUser(data?.user || null);
-      
+
       // Fetch user profile to get role
       if (data?.user) {
         const { data: profile } = await supabase
@@ -49,7 +49,7 @@ export default function DashboardPage() {
           .select('role')
           .eq('user_id', data.user.id)
           .single();
-        
+
         setUserRole(profile?.role || 'trainer');
       }
     };
@@ -79,16 +79,16 @@ export default function DashboardPage() {
       shadowColor: "hover:shadow-blue-500/25",
       stats: "24 ativos"
     },
-    // {
-    //   name: "Novo Aluno",
-    //   description: "Cadastre um novo aluno",
-    //   href: "/dashboard/students/new",
-    //   icon: Plus,
-    //   color: "from-green-500 to-green-600",
-    //   hoverColor: "hover:from-green-600 hover:to-green-700",
-    //   shadowColor: "hover:shadow-green-500/25",
-    //   stats: "Cadastrar"
-    // },
+    {
+      name: "Avaliações",
+      description: "Gerencie sua avaliações",
+      href: "/dashboard/physical-assessments",
+      icon: Plus,
+      color: "from-green-500 to-green-600",
+      hoverColor: "hover:from-green-600 hover:to-green-700",
+      shadowColor: "hover:shadow-green-500/25",
+      stats: "112 Avaliações"
+    },
     {
       name: "Exercícios",
       description: "Biblioteca de exercícios",
@@ -104,7 +104,7 @@ export default function DashboardPage() {
       description: "Crie e gerencie treinos",
       href: "/dashboard/workouts",
       icon: Activity,
-       color: "from-yellow-500 to-yellow-600",
+      color: "from-yellow-500 to-yellow-600",
       hoverColor: "hover:from-yellow-600 hover:to-yellow-700",
       shadowColor: "hover:shadow-yellow-500/25",
       stats: "32 treinos"
@@ -134,8 +134,8 @@ export default function DashboardPage() {
       description: "Sistema de recompensas",
       href: "/dashboard/achievements",
       icon: Trophy,
-   
-        color: "from-orange-500 to-orange-600",
+
+      color: "from-orange-500 to-orange-600",
       hoverColor: "hover:from-orange-600 hover:to-orange-700",
       shadowColor: "hover:shadow-orange-500/25",
       stats: "25 conquistas"
@@ -272,7 +272,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
-        
+
         {/* Welcome Header */}
         <div className="relative mb-8 sm:mb-12">
           <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl"></div>
@@ -286,7 +286,7 @@ export default function DashboardPage() {
                   <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
               </div>
-              
+
               <div className="space-y-2 sm:space-y-3">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-gray-600 via-gray-700 to-gray-900 dark:from-white dark:via-gray-300 dark:to-white bg-clip-text text-transparent leading-tight">
                   {timeOfDay}, {userName}!
@@ -295,7 +295,7 @@ export default function DashboardPage() {
                   {getMotivationalMessage()}
                 </p>
                 <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-                  {userRole === 'trainer' 
+                  {userRole === 'trainer'
                     ? "Acesse rapidamente as ferramentas que você mais usa para gerenciar seus alunos e treinos"
                     : "Escolha uma das opções abaixo para continuar sua jornada fitness"
                   }
@@ -348,7 +348,7 @@ export default function DashboardPage() {
               {userRole === 'trainer' ? 'Ferramentas Principais' : 'Suas Atividades'}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
-              {userRole === 'trainer' 
+              {userRole === 'trainer'
                 ? 'Tudo que você precisa para gerenciar seus alunos em um só lugar'
                 : 'Acesse suas funcionalidades favoritas com um toque'
               }
