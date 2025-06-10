@@ -20,6 +20,7 @@ import { useSupabase } from "@/app/providers";
 import { useToast } from "@/hooks/use-toast";
 import { useExercises } from "@/hooks/use-exercises";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { DataPagination } from "@/components/ui/data-pagination";
 
 const DIFFICULTY_LEVELS = ["Iniciante", "Intermediário", "Avançado"];
 const GOALS = ["Strength", "Hipertrofia", "Resistência", "Potência", "Emagrecimento", "Reabilitação"];
@@ -32,12 +33,20 @@ export default function WorkoutsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [isAddingWorkout, setIsAddingWorkout] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = useState("all");
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isCloning, setIsCloning] = useState(false);
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 1
+  });
 
   const [newWorkout, setNewWorkout] = useState({
     name: "",
@@ -51,28 +60,72 @@ export default function WorkoutsPage() {
     fetchWorkouts();
   }, []);
 
-  const fetchWorkouts = async () => {
+  // Separate effect for pagination changes
+  useEffect(() => {
+    if (pagination.page > 1 || pagination.limit !== 12) {
+      fetchWorkouts(pagination.page, pagination.limit);
+    }
+  }, [pagination.page, pagination.limit]);
+
+  const fetchWorkouts = async (page = pagination.page, limit = pagination.limit) => {
     try {
-      const response = await fetch('/api/workouts');
+      setIsLoading(true);
+      const response = await fetch(`/api/workouts?page=${page}&limit=${limit}`);
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error);
       }
 
-      setWorkouts(data);
+      if (data.workouts && data.pagination) {
+        setWorkouts(data.workouts);
+        setPagination(data.pagination);
+      } else {
+        // Fallback for non-paginated response
+        setWorkouts(Array.isArray(data) ? data : []);
+        setPagination({
+          page: 1,
+          limit: Array.isArray(data) ? data.length : 0,
+          total: Array.isArray(data) ? data.length : 0,
+          totalPages: 1
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro ao buscar treinos",
         description: error instanceof Error ? error.message : String(error),
       });
+      // Set empty state on error
+      setWorkouts([]);
+      setPagination({
+        page: 1,
+        limit: 12,
+        total: 0,
+        totalPages: 1
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page !== pagination.page) {
+      setPagination(prev => ({ ...prev, page }));
+      fetchWorkouts(page, pagination.limit);
+    }
+  };
+
+  const handlePageSizeChange = (pageSize: number) => {
+    if (pageSize !== pagination.limit) {
+      setPagination(prev => ({ ...prev, limit: pageSize, page: 1 }));
+      fetchWorkouts(1, pageSize);
     }
   };
 
   const handleAddWorkout = async () => {
     try {
-      setIsLoading(true);
+      setIsActionLoading(true);
 
       const workoutData = {
         name: newWorkout.name,
@@ -118,7 +171,7 @@ export default function WorkoutsPage() {
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -218,7 +271,7 @@ export default function WorkoutsPage() {
 
   const handleCloneWorkout = async (workout: Workout): Promise<void> => {
     try {
-      setIsLoading(true);
+      setIsActionLoading(true);
 
       // First fetch the complete workout details including exercises
       const detailsResponse = await fetch(`/api/workouts/${workout.id}`);
@@ -259,7 +312,7 @@ export default function WorkoutsPage() {
         description: error.message,
       });
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -270,7 +323,7 @@ export default function WorkoutsPage() {
 
   const handleDeleteWorkout = async (workout: HandleDeleteWorkoutParams): Promise<void> => {
     try {
-      setIsLoading(true);
+      setIsActionLoading(true);
 
       const response = await fetch(`/api/workouts/${workout.id}`, {
         method: 'DELETE',
@@ -296,7 +349,7 @@ export default function WorkoutsPage() {
         description: error.message,
       });
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -324,16 +377,127 @@ export default function WorkoutsPage() {
     return matchesSearch && matchesLevel;
   });
 
+  const displayedWorkouts = filteredWorkouts;
+
   // Calculate statistics
-  const totalWorkouts = workouts.length;
+  const totalWorkouts = pagination.total;
   const totalExercises = workouts.reduce((sum, workout) => sum + (workout.workout_exercises?.length || 0), 0);
-  const avgExercisesPerWorkout = totalWorkouts > 0 ? Math.round(totalExercises / totalWorkouts) : 0;
+  const avgExercisesPerWorkout = totalWorkouts > 0 ? Math.round(totalExercises / workouts.length) : 0;
   const uniqueDifficulties = new Set(workouts.map(w => w.level)).size;
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <Card key={i} className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-4 flex-1">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48" />
+                      <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse w-20" />
+                    </div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-full" />
+                    <div className="flex items-center gap-4">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {[1, 2, 3, 4].map((j) => (
+                  <div key={j} className="w-11 h-11 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  // Main loading screen
+  if (isLoading && workouts.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+
+          {/* Header Skeleton */}
+          <div className="relative mb-8">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl p-8 shadow-2xl">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+                    <div>
+                      <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48 mb-2" />
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-64" />
+                    </div>
+                  </div>
+                </div>
+                <div className="w-32 h-14 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl">
+                <CardContent className="p-6 text-center">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+                    <div className="text-left">
+                      <div className="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+                      <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="bg-gray-300 dark:bg-gray-600 h-2 rounded-full w-3/4 animate-pulse"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
+            <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl">
+              <CardContent className="p-6">
+                {/* Filters Skeleton */}
+                <div className="flex flex-col lg:flex-row gap-4 mb-8">
+                  <div className="flex-1 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+                  <div className="w-full lg:w-[220px] h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+                </div>
+
+                {/* Loading Skeleton */}
+                <LoadingSkeleton />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function changePage(page: number): void {
+    throw new Error("Function not implemented.");
+  }
+
+  function changePageSize(pageSize: number): void {
+    throw new Error("Function not implemented.");
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        
+
         {/* Ultra Modern Header */}
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl"></div>
@@ -354,7 +518,7 @@ export default function WorkoutsPage() {
                       Treinos
                     </h1>
                     <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
-                      <span className="font-semibold text-green-600 dark:text-green-400">{filteredWorkouts.length}</span> treino{filteredWorkouts.length !== 1 ? 's' : ''} • Biblioteca Completa
+                      <span className="font-semibold text-green-600 dark:text-green-400">{displayedWorkouts.length}</span> treino{displayedWorkouts.length !== 1 ? 's' : ''} • Biblioteca Completa
                     </p>
                   </div>
                 </div>
@@ -362,9 +526,14 @@ export default function WorkoutsPage() {
 
               <Button
                 onClick={() => setIsAddingWorkout(true)}
-            className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
+                disabled={isActionLoading}
+                className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:scale-100 border-0 min-h-[44px]"
               >
-                <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
+                {isActionLoading ? (
+                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                ) : (
+                  <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
+                )}
                 Novo
               </Button>
             </div>
@@ -383,7 +552,13 @@ export default function WorkoutsPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-green-600 dark:text-green-400 text-sm font-semibold">Total</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalWorkouts}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {isLoading ? (
+                        <div className="w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      ) : (
+                        totalWorkouts
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -403,11 +578,17 @@ export default function WorkoutsPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-blue-600 dark:text-blue-400 text-sm font-semibold">Exercícios</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalExercises}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {isLoading ? (
+                        <div className="w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      ) : (
+                        totalExercises
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000"
                     style={{ width: `${Math.min((totalExercises / (exercises.length || 1)) * 100, 100)}%` }}
                   ></div>
@@ -426,11 +607,17 @@ export default function WorkoutsPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-purple-600 dark:text-purple-400 text-sm font-semibold">Média</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{avgExercisesPerWorkout}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {isLoading ? (
+                        <div className="w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      ) : (
+                        avgExercisesPerWorkout
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-1000"
                     style={{ width: `${Math.min((avgExercisesPerWorkout / 10) * 100, 100)}%` }}
                   ></div>
@@ -449,11 +636,17 @@ export default function WorkoutsPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-orange-600 dark:text-orange-400 text-sm font-semibold">Níveis</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{uniqueDifficulties}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {isLoading ? (
+                        <div className="w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      ) : (
+                        uniqueDifficulties
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-1000"
                     style={{ width: `${Math.min((uniqueDifficulties / DIFFICULTY_LEVELS.length) * 100, 100)}%` }}
                   ></div>
@@ -602,25 +795,22 @@ export default function WorkoutsPage() {
                     {filteredExercises.map((exercise) => (
                       <Card
                         key={exercise.id}
-                        className={`group cursor-pointer transition-all duration-300 ${
-                          selectedExercises.find(e => e.id === exercise.id)
-                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500 dark:border-green-400 shadow-lg'
-                            : 'bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600'
-                        } rounded-xl shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm`}
+                        className={`group cursor-pointer transition-all duration-300 ${selectedExercises.find(e => e.id === exercise.id)
+                          ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500 dark:border-green-400 shadow-lg'
+                          : 'bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600'
+                          } rounded-xl shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm`}
                         onClick={() => handleExerciseSelect(exercise)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-center gap-3 mb-3">
-                            <div className={`p-2 rounded-lg ${
-                              selectedExercises.find(e => e.id === exercise.id)
-                                ? 'bg-green-500'
-                                : 'bg-gray-200 dark:bg-gray-700 group-hover:bg-green-200 dark:group-hover:bg-green-800'
-                            } transition-colors duration-300`}>
-                              <Dumbbell className={`h-4 w-4 ${
-                                selectedExercises.find(e => e.id === exercise.id)
-                                  ? 'text-white'
-                                  : 'text-gray-600 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400'
-                              }`} />
+                            <div className={`p-2 rounded-lg ${selectedExercises.find(e => e.id === exercise.id)
+                              ? 'bg-green-500'
+                              : 'bg-gray-200 dark:bg-gray-700 group-hover:bg-green-200 dark:group-hover:bg-green-800'
+                              } transition-colors duration-300`}>
+                              <Dumbbell className={`h-4 w-4 ${selectedExercises.find(e => e.id === exercise.id)
+                                ? 'text-white'
+                                : 'text-gray-600 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400'
+                                }`} />
                             </div>
                             <h3 className="font-bold text-gray-900 dark:text-white truncate">{exercise.name}</h3>
                           </div>
@@ -739,17 +929,18 @@ export default function WorkoutsPage() {
               <Button
                 variant="outline"
                 onClick={handleCancel}
-                className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 px-8 py-3 rounded-xl font-semibold transition-all duration-300"
+                disabled={isActionLoading}
+                className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 px-8 py-3 rounded-xl font-semibold transition-all duration-300"
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
               <Button
                 onClick={handleAddWorkout}
-                disabled={isLoading || !newWorkout.name || !newWorkout.level || !newWorkout.goal}
+                disabled={isActionLoading || !newWorkout.name || !newWorkout.level || !newWorkout.goal}
                 className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-10 py-3 rounded-xl font-bold shadow-lg hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 disabled:scale-100 disabled:shadow-none"
               >
-                {isLoading ? (
+                {isActionLoading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     {isCloning ? "Clonando..." : "Criando..."}
@@ -769,8 +960,8 @@ export default function WorkoutsPage() {
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
           <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl">
-            
-            <CardContent>
+
+            <CardContent className="p-6">
               {/* Filters */}
               <div className="flex flex-col lg:flex-row gap-4 mb-8">
                 <div className="relative flex-1">
@@ -803,168 +994,184 @@ export default function WorkoutsPage() {
 
               {/* Workouts Grid */}
               <div className="space-y-4">
-                {filteredWorkouts.map((workout, index) => (
-                  <div
-                    key={workout.id}
-                    className="group relative"
-                    style={{
-                      animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 via-blue-500/5 to-purple-500/5 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
-                    <Card className="relative bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-gray-900/80 transition-all duration-500 border border-gray-200/50 dark:border-gray-700/50 hover:border-green-300/50 dark:hover:border-green-600/50 rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-green-500/10 group-hover:scale-[1.01]">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                          <div className="space-y-4 flex-1">
-                            <div className="flex items-start gap-4">
-                              <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full opacity-20 blur-lg" />
-                                <div className="relative w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
-                                  <Dumbbell className="h-6 w-6 text-white" />
+                {isLoading ? (
+                  <LoadingSkeleton />
+                ) : (
+                  <>
+                    {displayedWorkouts.map((workout, index) => (
+                      <div
+                        key={workout.id}
+                        className="group relative"
+                        style={{
+                          animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 via-blue-500/5 to-purple-500/5 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                        <Card className="relative bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-900/90 transition-all duration-500 border border-gray-200/60 dark:border-gray-700/60 hover:border-green-300/60 dark:hover:border-green-600/60 rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-green-500/10 group-hover:scale-[1.01]">
+                          <CardContent className="p-6">
+                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                              <div className="space-y-4 flex-1">
+                                <div className="flex items-start gap-4">
+                                  <div className="relative">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full opacity-20 blur-lg" />
+                                    <div className="relative w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                                      <Dumbbell className="h-6 w-6 text-white" />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2 flex-1">
+                                    <div className="flex items-center gap-3">
+                                      <h3 className="font-bold text-xl text-gray-800 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-300">
+                                        {workout.name}
+                                      </h3>
+                                      <Badge className={`capitalize rounded-full px-3 py-1 text-xs font-semibold ${workout.level === 'iniciante' ? 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600' :
+                                        workout.level === 'intermediário' ? 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-600' :
+                                          'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
+                                        }`}>
+                                        {workout.level}
+                                      </Badge>
+                                    </div>
+                                    {workout.description && (
+                                      <p className="text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                                        {workout.description}
+                                      </p>
+                                    )}
+                                    <div className="flex items-center gap-6 text-sm">
+                                      <div className="flex items-center gap-2">
+                                        <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                                          <span className="text-blue-600 dark:text-blue-400">{workout.goal}</span>
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Dumbbell className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                                          <span className="text-purple-600 dark:text-purple-400">{workout.workout_exercises?.length || 0}</span> exercícios
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="space-y-2 flex-1">
-                                <div className="flex items-center gap-3">
-                                  <h3 className="font-bold text-sm text-gray-800 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-300">
-                                    {workout.name}
-                                  </h3>
-                                  <Badge className={`capitalize rounded-full px-3 py-1 text-xs font-semibold ${
-                                    workout.level === 'iniciante' ? 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600' :
-                                    workout.level === 'intermediário' ? 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-600' :
-                                    'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
-                                  }`}>
-                                    {workout.level}
-                                  </Badge>
-                                </div>
-                                {/* <p className="text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                                  {workout.description}
-                                </p> */}
-                                <div className="flex items-center gap-4 text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                                      Objetivo: <span className="text-blue-600 dark:text-blue-400">{workout.goal}</span>
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Dumbbell className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                                      <span className="text-purple-600 dark:text-purple-400">{workout.workout_exercises?.length || 0}</span> exercícios
-                                    </span>
-                                  </div>
-                                </div>
+
+                              <div className="flex items-center gap-3">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-11 w-11 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                      onClick={() => handleViewDetails(workout.id)}
+                                      disabled={isActionLoading}
+                                    >
+                                      <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Ver detalhes completos</TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-11 w-11 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                      onClick={() => handleViewDetails(workout.id)}
+                                      disabled={isActionLoading}
+                                    >
+                                      <Edit className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Editar treino</TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-11 w-11 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                      onClick={() => handleCloneWorkout(workout)}
+                                      disabled={isActionLoading}
+                                    >
+                                      <Copy className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Clonar treino</TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-11 w-11 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                      onClick={() => handleDeleteWorkout(workout)}
+                                      disabled={isActionLoading}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Excluir treino</TooltipContent>
+                                </Tooltip>
                               </div>
                             </div>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                                  onClick={() => handleViewDetails(workout.id)}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Ver detalhes completos</TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-10 w-10 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                                  onClick={() => handleViewDetails(workout.id)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Editar treino</TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-10 w-10 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                                  onClick={() => handleCloneWorkout(workout)}
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Clonar treino</TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-10 w-10 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                                  onClick={() => handleDeleteWorkout(workout)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Excluir treino</TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ))}
-
-                {filteredWorkouts.length === 0 && (
-                  <div className="text-center py-20">
-                    <div className="relative mb-8">
-                      <div className="w-32 h-32 mx-auto bg-gradient-to-br from-green-100 via-emerald-100 to-teal-100 dark:from-green-900/30 dark:via-emerald-900/30 dark:to-teal-900/30 rounded-full flex items-center justify-center shadow-2xl">
-                        <Dumbbell className="h-16 w-16 text-green-600 dark:text-green-400" />
+                          </CardContent>
+                        </Card>
                       </div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-400/30 via-emerald-400/30 to-teal-400/30 rounded-full blur-3xl animate-pulse"></div>
-                    </div>
+                    ))}
 
-                    <h3 className="text-3xl font-black bg-gradient-to-r from-gray-900 via-green-600 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent mb-4">
-                      {searchQuery || levelFilter !== 'all' ? 'Nenhum treino encontrado' : 'Crie Seu Primeiro Treino!'}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-10 max-w-lg mx-auto text-lg leading-relaxed">
-                      {searchQuery || levelFilter !== 'all'
-                        ? "Ajuste os filtros de busca para encontrar o treino que você procura"
-                        : "Comece criando programas de treino personalizados para seus alunos"}
-                    </p>
+                    {!isLoading && displayedWorkouts.length === 0 && (
+                      <div className="text-center py-20">
+                        <div className="relative mb-8">
+                          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-green-100 via-emerald-100 to-teal-100 dark:from-green-900/30 dark:via-emerald-900/30 dark:to-teal-900/30 rounded-full flex items-center justify-center shadow-2xl">
+                            <Dumbbell className="h-16 w-16 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-green-400/30 via-emerald-400/30 to-teal-400/30 rounded-full blur-3xl animate-pulse"></div>
+                        </div>
 
-                    <Button
-                      onClick={() => setIsAddingWorkout(true)}
-                      className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white px-10 py-4 rounded-2xl font-bold shadow-2xl hover:shadow-green-500/25 transition-all duration-500 transform hover:scale-110 border-0"
-                    >
-                      <Plus className="mr-3 h-6 w-6" />
-                      {searchQuery || levelFilter !== 'all' ? 'Novo Treino' : 'Começar Agora'}
-                    </Button>
-                  </div>
+                        <h3 className="text-3xl font-black bg-gradient-to-r from-gray-900 via-green-600 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent mb-4">
+                          {searchQuery || levelFilter !== 'all' ? 'Nenhum treino encontrado' : 'Crie Seu Primeiro Treino!'}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-10 max-w-lg mx-auto text-lg leading-relaxed">
+                          {searchQuery || levelFilter !== 'all'
+                            ? "Ajuste os filtros de busca para encontrar o treino que você procura"
+                            : "Comece criando programas de treino personalizados para seus alunos"}
+                        </p>
+
+                        <Button
+                          onClick={() => setIsAddingWorkout(true)}
+                          disabled={isActionLoading}
+                          className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-10 py-4 rounded-2xl font-bold shadow-2xl hover:shadow-green-500/25 transition-all duration-500 transform hover:scale-110 disabled:scale-100 border-0"
+                        >
+                          <Plus className="mr-3 h-6 w-6" />
+                          {searchQuery || levelFilter !== 'all' ? 'Novo Treino' : 'Começar Agora'}
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
+
+              {/* Pagination */}
+
             </CardContent>
           </Card>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+      {!isLoading && pagination.totalPages > 1 && (
+        <div className="flex justify-center mt-12">
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-4 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
+            <DataPagination
+              page={pagination.page}
+              pageSize={pagination.limit}
+              total={pagination.total}
+              totalPages={pagination.totalPages}
+              onPageChange={changePage}
+              onPageSizeChange={changePageSize}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
