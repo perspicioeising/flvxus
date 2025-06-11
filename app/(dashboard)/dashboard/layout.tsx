@@ -15,6 +15,11 @@ export default function DashboardLayout({
   const router = useRouter();
   const [userRole, setUserRole] = useState<'trainer' | 'student' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => !prev);
+  };
+
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -46,6 +51,18 @@ export default function DashboardLayout({
     checkUserRole();
   }, [session, supabase, router]);
 
+   useEffect(() => {
+    const setVh = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    setVh();
+    window.addEventListener('resize', setVh);
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
+
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center">
@@ -60,25 +77,27 @@ export default function DashboardLayout({
     );
   }
 
+  // const mainMargin = isSidebarCollapsed ? 'md:ml-[70px]' : 'md:ml-64';
+
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Header - apenas mobile (md:hidden) */}
+ <div className="min-h-[calc(var(--vh, 1vh) * 100)] bg-gray-50 dark:bg-gray-950">
+      {/* Header - Mobile only */}
       <Header userRole={userRole} />
 
       {/* Layout Principal */}
-      <div className="flex h-screen">
-        {/* Sidebar - apenas desktop (hidden md:flex) */}
-        <div className="hidden md:flex">
-          <Sidebar userRole={userRole} />
-        </div>
+      <div className="flex min-h-screen flex-col md:flex-row">
+        {/* Sidebar - Desktop only */}
+        <Sidebar
+          userRole={userRole}
+          isCollapsed={isSidebarCollapsed}
+          toggleCollapse={toggleSidebar}
+        />
 
-        {/* Conteúdo Principal */}
-        <main className="flex-1 overflow-auto ">
-          {/* Container do conteúdo com padding ajustado */}
-          <div className="h-full pt-16 md:pt-0">
-            <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black min-h-full">
-              {children}
-            </div>
+        {/* Main Content */}
+        <main className={`flex-1 overflow-y-auto transition-all duration-300 `}>
+          <div className="min-h-[calc(var(--vh, 1vh) * 100)] pt-[64px] md:pt-0 px-3 sm:px-4 md:px-6 lg:px-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+            {children}
           </div>
         </main>
       </div>
