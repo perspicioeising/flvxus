@@ -24,7 +24,8 @@ import {
   TrendingUp,
   Target,
   BookOpen,
-  Award
+  Award,
+  Book
 } from "lucide-react";
 import Link from "next/link";
 import { useSupabase } from "@/app/providers";
@@ -83,10 +84,10 @@ export default function DashboardPage() {
       name: "Avaliações",
       description: "Gerencie sua avaliações",
       href: "/dashboard/physical-assessments",
-      icon: Plus,
-      color: "from-green-500 to-green-600",
-      hoverColor: "hover:from-green-600 hover:to-green-700",
-      shadowColor: "hover:shadow-green-500/25",
+      icon: Book,
+      color: "from-indigo-500 to-indigo-600",
+      hoverColor: "hover:from-indigo-600 hover:to-indigo-700",
+      shadowColor: "hover:shadow-indigo-500/25",
       stats: "112 Avaliações"
     },
     {
@@ -145,9 +146,9 @@ export default function DashboardPage() {
       description: "Análises e métricas",
       href: "/dashboard/analytics",
       icon: BarChart4,
-      color: "from-indigo-500 to-indigo-600",
-      hoverColor: "hover:from-indigo-600 hover:to-indigo-700",
-      shadowColor: "hover:shadow-indigo-500/25",
+      color: "from-green-500 to-green-600",
+      hoverColor: "hover:from-green-600 hover:to-green-700",
+      shadowColor: "hover:shadow-green-500/25",
       stats: "Ver dados"
     }
   ];

@@ -11,16 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  Brain, 
-  Calculator, 
-  User, 
-  Calendar, 
-  TrendingUp, 
-  Search, 
-  Filter, 
-  Plus, 
-  Eye, 
+import {
+  Brain,
+  Calculator,
+  User,
+  Calendar,
+  TrendingUp,
+  Search,
+  Filter,
+  Plus,
+  Eye,
   Activity,
   Sparkles,
   BarChart3,
@@ -30,7 +30,11 @@ import {
   Scale,
   Ruler,
   Heart,
-  FileText
+  FileText,
+  ForkliftIcon,
+  RepeatIcon,
+  BookDown,
+  Book
 } from "lucide-react";
 
 interface Assessment {
@@ -83,9 +87,9 @@ export default function PhysicalAssessmentsPage() {
   const fetchAssessments = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       console.log('🔍 Fazendo requisição para /api/physical-assessments...');
-      
+
       const response = await fetch('/api/physical-assessments');
       const data = await response.json();
 
@@ -98,7 +102,7 @@ export default function PhysicalAssessmentsPage() {
 
       // ===== CORREÇÃO: ADAPTAÇÃO PARA NOVA ESTRUTURA =====
       let assessmentsList: Assessment[] = [];
-      
+
       if (data.assessments) {
         // Formato novo: { assessments: [...], total: number }
         assessmentsList = data.assessments;
@@ -117,7 +121,7 @@ export default function PhysicalAssessmentsPage() {
 
       setAssessments(assessmentsList);
       calculateStats(assessmentsList);
-      
+
     } catch (error: any) {
       console.error('❌ Erro ao buscar avaliações:', error);
       toast({
@@ -138,7 +142,7 @@ export default function PhysicalAssessmentsPage() {
       console.log('👤 Buscando role do usuário...');
       const response = await fetch('/api/profile');
       const data = await response.json();
-      
+
       if (response.ok) {
         console.log('✅ Role encontrado:', data.role);
         setUserRole(data.role);
@@ -168,18 +172,18 @@ export default function PhysicalAssessmentsPage() {
 
   const calculateStats = (assessmentsList: Assessment[]) => {
     console.log('📊 Calculando estatísticas para', assessmentsList.length, 'avaliações');
-    
+
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
 
     const thisMonth = assessmentsList.filter(assessment => {
       const assessmentDate = new Date(assessment.created_at);
-      return assessmentDate.getMonth() === currentMonth && 
-             assessmentDate.getFullYear() === currentYear;
+      return assessmentDate.getMonth() === currentMonth &&
+        assessmentDate.getFullYear() === currentYear;
     }).length;
 
-    const avgFatPercentage = assessmentsList.length > 0 
+    const avgFatPercentage = assessmentsList.length > 0
       ? assessmentsList.reduce((sum, a) => sum + (a.fat_percentage || 0), 0) / assessmentsList.length
       : 0;
 
@@ -199,7 +203,7 @@ export default function PhysicalAssessmentsPage() {
   };
 
   const filteredAssessments = assessments.filter((assessment) => {
-    const matchesSearch = 
+    const matchesSearch =
       assessment.profiles.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       assessment.profiles.email.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -209,7 +213,7 @@ export default function PhysicalAssessmentsPage() {
     if (dateFilter !== "all") {
       const assessmentDate = new Date(assessment.created_at);
       const currentDate = new Date();
-      
+
       switch (dateFilter) {
         case "today":
           matchesDate = assessmentDate.toDateString() === currentDate.toDateString();
@@ -220,7 +224,7 @@ export default function PhysicalAssessmentsPage() {
           break;
         case "month":
           matchesDate = assessmentDate.getMonth() === currentDate.getMonth() &&
-                       assessmentDate.getFullYear() === currentDate.getFullYear();
+            assessmentDate.getFullYear() === currentDate.getFullYear();
           break;
       }
     }
@@ -276,33 +280,110 @@ export default function PhysicalAssessmentsPage() {
   };
 
   // ===== LOADING STATE COM DEBUG =====
-  if (isLoading) {
-    console.log('⏳ Renderizando estado de loading...');
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <Card key={i} className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-4 flex-1">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48" />
+                      <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse w-20" />
+                    </div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-full" />
+                    <div className="flex items-center gap-4">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-32" />
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-24" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {[1, 2, 3, 4].map((j) => (
+                  <div key={j} className="w-11 h-11 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  // Main loading screen
+  if (isLoading && PhysicalAssessmentsPage.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="w-20 h-20 border-4 border-blue-200 dark:border-blue-800 rounded-full animate-spin border-t-blue-600 dark:border-t-blue-400"></div>
-            <div className="absolute inset-0 w-20 h-20 border-4 border-transparent rounded-full animate-ping border-t-blue-400 dark:border-t-blue-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+
+          {/* Header Skeleton */}
+          <div className="relative mb-8">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl"></div>
+            <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl p-8 shadow-2xl">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+                    <div>
+                      <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-48 mb-2" />
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-64" />
+                    </div>
+                  </div>
+                </div>
+                <div className="w-32 h-14 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+              </div>
+            </div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Carregando avaliações...</p>
+
+          {/* Statistics Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl">
+                <CardContent className="p-6 text-center">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+                    <div className="text-left">
+                      <div className="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+                      <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="bg-gray-300 dark:bg-gray-600 h-2 rounded-full w-3/4 animate-pulse"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
+            <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl">
+              <CardContent className="p-6">
+                {/* Filters Skeleton */}
+                <div className="flex flex-col lg:flex-row gap-4 mb-8">
+                  <div className="flex-1 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+                  <div className="w-full lg:w-[220px] h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+                </div>
+
+                {/* Loading Skeleton */}
+                <LoadingSkeleton />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ===== DEBUG DE RENDERIZAÇÃO =====
-  console.log('🎨 Renderizando página com:', {
-    totalAssessments: assessments.length,
-    filteredCount: filteredAssessments.length,
-    userRole,
-    stats
-  });
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        
+
         {/* Ultra Modern Header */}
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 dark:from-blue-500/10 dark:via-purple-400/10 dark:to-cyan-500/10 rounded-3xl blur-xl"></div>
@@ -311,16 +392,16 @@ export default function PhysicalAssessmentsPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Brain className="h-8 w-8 text-white" />
+                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Book className="h-8 w-8 text-white" />
                     </div>
                     <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
                       <Sparkles className="h-3 w-3 text-white" />
                     </div>
                   </div>
                   <div>
-                    <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400 bg-clip-text text-transparent">
-                      Avaliações Físicas IA
+                    <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent">
+                      Avaliações Físicas
                     </h1>
                     <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
                       <span className="font-semibold text-blue-600 dark:text-blue-400">{stats.total}</span> avaliações • Sistema inteligente de análise corporal
@@ -332,10 +413,11 @@ export default function PhysicalAssessmentsPage() {
               {(userRole === 'trainer' || userRole === null) && (
                 <Button
                   onClick={() => router.push('/dashboard/physical-assessments/new')}
-                  className="group bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-700 hover:via-purple-700 hover:to-cyan-700 text-white font-bold px-8 py-4 rounded-2xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0"
+                  variant="outline"
+                  className="min-h-[44px]  bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                  Nova Avaliação
+                  Nova
                 </Button>
               )}
             </div>
@@ -380,8 +462,8 @@ export default function PhysicalAssessmentsPage() {
                   </div>
                 </div>
                 <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" 
-                       style={{ width: `${Math.min((stats.thisMonth / Math.max(stats.total, 1)) * 100, 100)}%` }}></div>
+                  <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
+                    style={{ width: `${Math.min((stats.thisMonth / Math.max(stats.total, 1)) * 100, 100)}%` }}></div>
                 </div>
               </CardContent>
             </Card>
@@ -402,8 +484,8 @@ export default function PhysicalAssessmentsPage() {
                   </div>
                 </div>
                 <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full" 
-                       style={{ width: `${Math.min((stats.avgFatPercentage / 35) * 100, 100)}%` }}></div>
+                  <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
+                    style={{ width: `${Math.min((stats.avgFatPercentage / 35) * 100, 100)}%` }}></div>
                 </div>
               </CardContent>
             </Card>
@@ -424,8 +506,8 @@ export default function PhysicalAssessmentsPage() {
                   </div>
                 </div>
                 <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" 
-                       style={{ width: `${Math.min((stats.avgBMI / 35) * 100, 100)}%` }}></div>
+                  <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                    style={{ width: `${Math.min((stats.avgBMI / 35) * 100, 100)}%` }}></div>
                 </div>
               </CardContent>
             </Card>
@@ -447,7 +529,7 @@ export default function PhysicalAssessmentsPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                
+
                 <Select value={protocolFilter} onValueChange={setProtocolFilter}>
                   <SelectTrigger className="w-full lg:w-[250px] h-14 bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm">
                     <div className="flex items-center gap-3">
@@ -491,7 +573,7 @@ export default function PhysicalAssessmentsPage() {
                 <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
                   <CardContent className="p-6">
                     <div className="flex flex-col xl:flex-row xl:items-center gap-6">
-                      
+
                       {/* Student Info */}
                       <div className="flex items-center gap-4 flex-1">
                         <div className="relative">
@@ -502,7 +584,7 @@ export default function PhysicalAssessmentsPage() {
                             <Activity className="h-3 w-3 text-white" />
                           </div>
                         </div>
-                        
+
                         <div className="flex-1">
                           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
                             {assessment.profiles.full_name}
@@ -523,23 +605,79 @@ export default function PhysicalAssessmentsPage() {
                       </div>
 
                       {/* Metrics */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 xl:w-80">
-                        <div className="text-center p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl">
-                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{assessment.bmi}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">IMC</div>
-                        </div>
-                        <div className="text-center p-3 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-xl">
-                          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{assessment.fat_percentage}%</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Gordura</div>
-                        </div>
-                        <div className="text-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl">
-                          <div className="text-2xl font-bold text-green-600 dark:text-green-400">{assessment.lean_mass}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">M. Magra</div>
-                        </div>
-                        <div className="text-center p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
-                          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{assessment.weight}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Peso</div>
-                        </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 xl:w-80">
+                        {[
+                          {
+                            value: assessment.bmi,
+                            label: "IMC",
+                            colors: "from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20",
+                            text: "text-blue-600 dark:text-blue-400",
+                            isPercentage: false
+                          },
+                          {
+                            value: assessment.fat_percentage,
+                            label: "Gordura",
+                            colors: "from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20",
+                            text: "text-red-600 dark:text-red-400",
+                            isPercentage: true
+                          },
+                          {
+                            value: assessment.lean_mass,
+                            label: "M. Magra",
+                            colors: "from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20",
+                            text: "text-green-600 dark:text-green-400",
+                            isPercentage: false,
+                            unit: "kg"
+                          },
+                          {
+                            value: assessment.weight,
+                            label: "Peso",
+                            colors: "from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20",
+                            text: "text-purple-600 dark:text-purple-400",
+                            isPercentage: false,
+                            unit: "kg"
+                          }
+                        ].map((item, index) => {
+                          // Função para formatar o valor de exibição
+                          const formatDisplayValue = (value: number) => {
+                            if (item.isPercentage) return `${value}%`;
+
+                            if (value >= 1000) {
+                              return `${(value / 1000).toFixed(1)}k`; // Formata para "Xk" quando ≥ 1000
+                            }
+
+                            if (item.unit) {
+                              return `${value}${item.unit}`;
+                            }
+
+                            return value;
+                          };
+
+                          // Função para formatar o valor completo (tooltip)
+                          const formatFullValue = (value: number) => {
+                            if (item.isPercentage) return `${value.toLocaleString()}%`;
+                            if (item.unit) return `${value.toLocaleString()} ${item.unit}`;
+                            return value.toLocaleString();
+                          };
+
+                          const displayValue = formatDisplayValue(item.value);
+                          const fullValue = formatFullValue(item.value);
+
+                          return (
+                            <div
+                              key={index}
+                              className={`text-center p-2 bg-gradient-to-r ${item.colors} rounded-xl min-h-[80px] flex flex-col justify-between`}
+                              title={fullValue}
+                            >
+                              <div className={`text-xl font-bold ${item.text} truncate`}>
+                                {displayValue}
+                              </div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                {item.label}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Actions */}
@@ -580,8 +718,8 @@ export default function PhysicalAssessmentsPage() {
                   </div>
 
                   <h3 className="text-3xl font-black bg-gradient-to-r from-gray-900 via-blue-600 to-gray-900 dark:from-white dark:via-blue-400 dark:to-white bg-clip-text text-transparent mb-4">
-                    {searchQuery || protocolFilter !== 'all' || dateFilter !== 'all' 
-                      ? 'Nenhuma avaliação encontrada' 
+                    {searchQuery || protocolFilter !== 'all' || dateFilter !== 'all'
+                      ? 'Nenhuma avaliação encontrada'
                       : 'Transforme Vidas com IA!'}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-10 max-w-lg mx-auto text-lg leading-relaxed">
@@ -596,8 +734,8 @@ export default function PhysicalAssessmentsPage() {
                       className="bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-700 hover:via-purple-700 hover:to-cyan-700 text-white px-10 py-4 rounded-2xl font-bold shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 transform hover:scale-110 border-0"
                     >
                       <Plus className="mr-3 h-6 w-6" />
-                      {searchQuery || protocolFilter !== 'all' || dateFilter !== 'all' 
-                        ? 'Criar Nova Avaliação' 
+                      {searchQuery || protocolFilter !== 'all' || dateFilter !== 'all'
+                        ? 'Criar Nova Avaliação'
                         : 'Começar Agora'}
                     </Button>
                   )}

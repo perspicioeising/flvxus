@@ -64,9 +64,9 @@ export default function ExercisesPage() {
   const [equipmentFilter, setEquipmentFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const { 
-    exercises, 
-    loading, 
+  const {
+    exercises,
+    loading,
     pagination,
     addExercise,
     updateExercise,
@@ -209,7 +209,7 @@ export default function ExercisesPage() {
             <div className="w-20 h-20 border-4 border-green-200 dark:border-green-800 rounded-full animate-spin border-t-green-600 dark:border-t-green-400"></div>
             <div className="absolute inset-0 w-20 h-20 border-4 border-transparent rounded-full animate-ping border-t-green-400 dark:border-t-green-500"></div>
           </div>
-       
+
         </div>
       </div>
     );
@@ -247,7 +247,8 @@ export default function ExercisesPage() {
 
               <Button
                 onClick={handleAddExerciseClick}
-            className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
+                variant="outline"
+                className="min-h-[44px]  bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
                 Novo
@@ -444,7 +445,7 @@ export default function ExercisesPage() {
                 <div key={exercise.id} className="relative group">
                   <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-blue-500/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02] cursor-pointer"
-                        onClick={() => handleViewExerciseDetails(exercise.id)}>
+                    onClick={() => handleViewExerciseDetails(exercise.id)}>
 
                     {/* Animated gradient border */}
                     <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -465,7 +466,7 @@ export default function ExercisesPage() {
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Action buttons overlay */}
                       <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <Tooltip>
@@ -484,7 +485,7 @@ export default function ExercisesPage() {
                           </TooltipTrigger>
                           <TooltipContent>Editar exercício</TooltipContent>
                         </Tooltip>
-                        
+
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -512,7 +513,7 @@ export default function ExercisesPage() {
                           </TooltipTrigger>
                           <TooltipContent>Clonar exercício</TooltipContent>
                         </Tooltip>
-                        
+
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -587,7 +588,7 @@ export default function ExercisesPage() {
                 <div key={exercise.id} className="relative group">
                   <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-blue-500/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.01] cursor-pointer"
-                        onClick={() => handleViewExerciseDetails(exercise.id)}>
+                    onClick={() => handleViewExerciseDetails(exercise.id)}>
 
                     {/* Animated gradient border */}
                     <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -688,7 +689,7 @@ export default function ExercisesPage() {
                             </TooltipTrigger>
                             <TooltipContent>Editar exercício</TooltipContent>
                           </Tooltip>
-                          
+
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -716,7 +717,7 @@ export default function ExercisesPage() {
                             </TooltipTrigger>
                             <TooltipContent>Clonar exercício</TooltipContent>
                           </Tooltip>
-                          
+
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button

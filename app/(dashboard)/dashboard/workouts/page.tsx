@@ -527,8 +527,9 @@ export default function WorkoutsPage() {
               <Button
                 onClick={() => setIsAddingWorkout(true)}
                 disabled={isActionLoading}
-                className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:scale-100 border-0 min-h-[44px]"
-              >
+               variant="outline"
+                  className="min-h-[44px]  bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                >
                 {isActionLoading ? (
                   <Loader2 className="h-5 w-5 mr-3 animate-spin" />
                 ) : (

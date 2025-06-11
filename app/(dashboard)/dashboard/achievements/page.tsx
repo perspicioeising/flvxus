@@ -48,11 +48,11 @@ export default function AchievementsPage() {
     try {
       const response = await fetch('/api/achievements');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       setAchievements(data);
     } catch (error: any) {
       toast({
@@ -74,13 +74,13 @@ export default function AchievementsPage() {
   const handleDeleteAchievement = async (id: string) => {
     try {
       setIsLoading(true);
-      
+
       const response = await fetch(`/api/achievements/${id}`, {
         method: 'DELETE',
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
@@ -89,9 +89,9 @@ export default function AchievementsPage() {
         title: "Conquista deletada",
         description: "A conquista foi removida",
       });
-      
+
       fetchAchievements();
-      
+
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -121,7 +121,7 @@ export default function AchievementsPage() {
   const renderAchievementIcon = (criteriaType: string): JSX.Element | null => {
     const criteriaInfo = CRITERIA_TYPES.find((t) => t.value === criteriaType);
     if (!criteriaInfo) return null;
-    
+
     const IconComponent = criteriaInfo.icon;
     return (
       <div className="relative mb-6">
@@ -149,7 +149,7 @@ export default function AchievementsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        
+
         {/* Ultra Modern Header */}
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/20 via-orange-500/20 to-red-600/20 dark:from-yellow-500/10 dark:via-orange-400/10 dark:to-red-500/10 rounded-3xl blur-xl"></div>
@@ -170,7 +170,7 @@ export default function AchievementsPage() {
                       Conquistas
                     </h1>
                     <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
-                      {userRole === 'trainer' 
+                      {userRole === 'trainer'
                         ? <><span className="font-semibold text-orange-600 dark:text-orange-400">{achievements.length}</span> conquistas disponíveis</>
                         : 'Acompanhe seu progresso e ganhe recompensas'}
                     </p>
@@ -181,7 +181,8 @@ export default function AchievementsPage() {
               {userRole === 'trainer' && (
                 <Button
                   onClick={() => router.push('/dashboard/achievements/new')}
-            className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
+                  variant="outline"
+                  className="min-h-[44px]  bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
                   Nova
@@ -265,12 +266,12 @@ export default function AchievementsPage() {
           {achievements.map((achievement) => {
             const progress = getProgressForAchievement(achievement);
             const criteriaInfo = CRITERIA_TYPES.find((t) => t.value === achievement.criteria_type);
-            
+
             return (
               <div key={achievement.id} className="relative group">
                 <div className={`absolute inset-0 bg-gradient-to-r ${criteriaInfo?.color || 'from-gray-600 to-gray-700'} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                 <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
-                  
+
                   {/* Animated gradient border */}
                   <div className={`absolute inset-0 bg-gradient-to-r ${criteriaInfo?.color || 'from-gray-500 to-gray-600'} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
                   <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
@@ -366,7 +367,7 @@ export default function AchievementsPage() {
                   Nenhuma conquista ainda!
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-10 max-w-lg mx-auto text-lg leading-relaxed">
-                  {userRole === 'trainer' 
+                  {userRole === 'trainer'
                     ? "Crie conquistas para motivar seus alunos e acompanhar o progresso deles"
                     : "Em breve você poderá desbloquear conquistas incríveis!"}
                 </p>
