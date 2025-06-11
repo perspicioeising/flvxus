@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -18,21 +18,16 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  BookOpen,
-  Camera,
-  Award,
-  Zap,
-  Sparkles,
   Utensils,
   User,
   LogOut,
   Bell,
   Moon,
   Sun,
-  X
+  X,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,13 +43,13 @@ import { useRouter } from "next/navigation";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   userRole: 'trainer' | 'student' | null;
+  isCollapsed: boolean;
+  toggleCollapse: () => void;
 }
 
-export function Sidebar({ className, userRole }: SidebarProps) {
+export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: SidebarProps) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [profile, setProfile] = useState<any>(null);
-  const [showPremiumCard, setShowPremiumCard] = useState(true);
   const { theme, setTheme } = useTheme();
   const { supabase, session } = useSupabase();
   const router = useRouter();
@@ -242,7 +237,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "relative flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 ease-in-out h-screen",
+        "relative hidden md:flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 ease-in-out h-[calc(var(--vh, 1vh) * 100)]",
         isCollapsed ? "w-[70px]" : "w-64",
         className
       )}
@@ -252,7 +247,7 @@ export function Sidebar({ className, userRole }: SidebarProps) {
         variant="ghost"
         size="icon"
         className="absolute -right-4 top-6 h-8 w-8 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg hover:shadow-xl transition-all duration-300 z-10"
-        onClick={() => setIsCollapsed(!isCollapsed)}
+        onClick={toggleCollapse}
       >
         {isCollapsed ? (
           <ChevronRight className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -315,12 +310,9 @@ export function Sidebar({ className, userRole }: SidebarProps) {
               )}
               title={isCollapsed ? route.name : undefined}
             >
-              {/* Background glow effect for active items */}
               {route.isActive && (
                 <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 blur-xl -z-10"></div>
               )}
-
-              {/* Icon container */}
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200",
                 route.isActive
@@ -332,8 +324,6 @@ export function Sidebar({ className, userRole }: SidebarProps) {
                   route.isActive ? "text-white" : route.color
                 )} />
               </div>
-
-              {/* Text and badge */}
               {!isCollapsed && (
                 <div className="flex items-center justify-between flex-1">
                   <span className="truncate">{route.name}</span>
@@ -344,47 +334,10 @@ export function Sidebar({ className, userRole }: SidebarProps) {
         </div>
       </div>
 
-   
-      {/* {!isCollapsed && userRole === 'trainer' && showPremiumCard && (
-        <div className="px-3 mb-4">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600 p-4 text-white">
-            {/* Close Button 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 h-6 w-6 rounded-full bg-white/20 hover:bg-white/30 text-white"
-              onClick={() => setShowPremiumCard(false)}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-            
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-cyan-400/20 blur-xl"></div>
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-5 w-5 text-yellow-300" />
-                <span className="font-bold text-sm">Premium</span>
-              </div>
-              <p className="text-xs opacity-90 mb-3">
-                Desbloqueie recursos avançados e impulsione seu negócio!
-              </p>
-              <Button
-                size="sm"
-                className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs font-semibold"
-              >
-                Fazer Upgrade
-              </Button>
-            </div>
-          </div>
-        </div>
-      )} */}
-
-      {/* Bottom Section - User Controls & Navigation */}
       <div className="border-t border-gray-200 dark:border-gray-800">
-        {/* Quick Actions */}
         {!isCollapsed && (
           <div className="p-3 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-2">
-              {/* Notifications */}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -394,8 +347,6 @@ export function Sidebar({ className, userRole }: SidebarProps) {
                 <Bell className="h-4 w-4 text-gray-700 dark:text-gray-200" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </Button>
-
-              {/* Theme Toggle */}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -412,8 +363,6 @@ export function Sidebar({ className, userRole }: SidebarProps) {
             </div>
           </div>
         )}
-
-        {/* Collapsed Quick Actions */}
         {isCollapsed && (
           <div className="p-2 border-b border-gray-200 dark:border-gray-800 space-y-2">
             <Button 
@@ -425,7 +374,6 @@ export function Sidebar({ className, userRole }: SidebarProps) {
               <Bell className="h-4 w-4 text-gray-700 dark:text-gray-200" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </Button>
-
             <Button 
               variant="ghost" 
               size="icon" 
@@ -441,8 +389,6 @@ export function Sidebar({ className, userRole }: SidebarProps) {
             </Button>
           </div>
         )}
-
-        {/* Bottom Navigation */}
         <div className="p-3">
           <div className="space-y-2 mb-4">
             {bottomRoutes.map((route) => (
@@ -469,15 +415,12 @@ export function Sidebar({ className, userRole }: SidebarProps) {
                     route.isActive ? "text-white" : route.color
                   )} />
                 </div>
-
                 {!isCollapsed && (
                   <span className="truncate">{route.name}</span>
                 )}
               </Link>
             ))}
           </div>
-
-          {/* User Profile Section */}
           {!isCollapsed && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -554,8 +497,6 @@ export function Sidebar({ className, userRole }: SidebarProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
-          {/* Collapsed User Profile */}
           {isCollapsed && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
