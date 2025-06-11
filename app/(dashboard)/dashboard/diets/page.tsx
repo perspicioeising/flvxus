@@ -14,14 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Utensils, 
-  User, 
-  Calendar, 
-  Target, 
+import {
+  Plus,
+  Search,
+  Filter,
+  Utensils,
+  User,
+  Calendar,
+  Target,
   TrendingUp,
   Apple,
   Brain,
@@ -57,9 +57,9 @@ export default function DietsPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
 
-  const { 
-    diets, 
-    loading, 
+  const {
+    diets,
+    loading,
     pagination,
     deleteDiet,
     changePage,
@@ -86,7 +86,7 @@ export default function DietsPage() {
           .select('*')
           .eq('user_id', session.user.id)
           .single();
-        
+
         setUserProfile(profile);
       }
     } catch (error: any) {
@@ -102,7 +102,7 @@ export default function DietsPage() {
         .eq('role', 'student')
         .eq('tenant_id', userProfile.tenant_id)
         .order('full_name');
-      
+
       setStudents(data || []);
     } catch (error: any) {
       console.error('Error fetching students:', error);
@@ -189,7 +189,7 @@ export default function DietsPage() {
     return icons[budget] || <DollarSign className="h-4 w-4" />;
   };
 
-   const LoadingSkeleton = () => (
+  const LoadingSkeleton = () => (
     <div className="space-y-4">
       {[1, 2, 3, 4, 5, 6].map((i) => (
         <Card key={i} className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
@@ -321,10 +321,11 @@ export default function DietsPage() {
 
               <Button
                 onClick={handleCreateDiet}
-            className="group bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 text-white font-bold px-6 py-3 sm:px-8 sm:py-4 rounded-2xl shadow-2xl hover:shadow-gray-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border-0 min-h-[44px]"
+                variant="outline"
+                className="min-h-[44px]  bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                Novo
+                Nova
               </Button>
             </div>
           </div>
@@ -488,7 +489,7 @@ export default function DietsPage() {
                 <div key={diet.id} className="relative group">
                   <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-blue-500/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02] cursor-pointer"
-                        onClick={() => handleViewDiet(diet.id)}>
+                    onClick={() => handleViewDiet(diet.id)}>
 
                     {/* Animated gradient border */}
                     <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -520,7 +521,7 @@ export default function DietsPage() {
                             </p>
                           </div>
                         </div>
-                        
+
                         {/* Action buttons */}
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <Tooltip>
@@ -539,7 +540,7 @@ export default function DietsPage() {
                             </TooltipTrigger>
                             <TooltipContent>Editar dieta</TooltipContent>
                           </Tooltip>
-                          
+
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -556,7 +557,7 @@ export default function DietsPage() {
                             </TooltipTrigger>
                             <TooltipContent>Clonar dieta</TooltipContent>
                           </Tooltip>
-                          
+
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button

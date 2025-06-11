@@ -37,7 +37,8 @@ import {
     PieChart,
     Crown,
     Star,
-    Award
+    Award,
+    Book
 } from "lucide-react";
 import AssessmentComparison from "@/components/AssessmentComparison";
 import AssessmentAIAnalysis from "@/components/AssessmentAIAnalysis";
@@ -117,7 +118,7 @@ export default function AssessmentDetailsPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    
+
     const [assessment, setAssessment] = useState<Assessment | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -322,22 +323,21 @@ export default function AssessmentDetailsPage() {
                                 variant="ghost"
                                 onClick={() => router.back()}
                                 className="p-3 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all"
-                            >                                
-                            
+                            >
                                 <ArrowLeft className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                             </Button>
 
                             <div className="flex items-center gap-4 flex-1">
                                 <div className="relative">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                        <Brain className="h-8 w-8 text-white" />
+                                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <Book className="h-8 w-8 text-white" />
                                     </div>
                                     <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
                                         <Sparkles className="h-3 w-3 text-white" />
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <h1 className="text-2xl lg:text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400 bg-clip-text text-transparent">
+                                    <h1 className="text-2xl lg:text-3xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white dark:to-cyan-400 bg-clip-text text-transparent">
                                         Avaliação Física Detalhada
                                     </h1>
                                     <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
@@ -469,7 +469,7 @@ export default function AssessmentDetailsPage() {
                                 <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
                                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-                                    
+
                                     <CardContent className="relative p-6 text-center">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
@@ -493,7 +493,7 @@ export default function AssessmentDetailsPage() {
                                 <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
                                     <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-                                    
+
                                     <CardContent className="relative p-6 text-center">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
@@ -517,7 +517,7 @@ export default function AssessmentDetailsPage() {
                                 <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
                                     <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-                                    
+
                                     <CardContent className="relative p-6 text-center">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
@@ -541,7 +541,7 @@ export default function AssessmentDetailsPage() {
                                 <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
                                     <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-                                    
+
                                     <CardContent className="relative p-6 text-center">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
@@ -565,7 +565,7 @@ export default function AssessmentDetailsPage() {
                                 <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
                                     <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-                                    
+
                                     <CardContent className="relative p-6 text-center">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="space-y-1">
