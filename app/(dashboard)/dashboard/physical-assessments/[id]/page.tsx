@@ -462,8 +462,8 @@ export default function AssessmentDetailsPage() {
                 </div>
 
                 {/* Mobile-Optimized Tabs */}
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <div className="relative mb-6 sm:mb-8">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full ">
+                    <div className="relative mb-9 sm:mb-6">
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-cyan-600/10 rounded-xl sm:rounded-2xl blur-xl"></div>
                         <TabsList className="relative grid w-full grid-cols-2 sm:grid-cols-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl shadow-2xl rounded-xl sm:rounded-2xl p-1 sm:p-2 border-0 gap-1">
                             <TabsTrigger
