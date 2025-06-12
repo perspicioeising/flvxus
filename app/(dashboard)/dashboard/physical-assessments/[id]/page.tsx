@@ -110,10 +110,46 @@ const MEASUREMENT_LABELS = {
     thigh: 'Coxa'
 };
 
-// Função auxiliar para garantir que o valor seja um número
+// Função auxiliar corrigida para garantir que o valor seja um número
 const formatNumber = (value: unknown, decimals: number = 2): string => {
-    const num = typeof value === 'number' ? value : Number(value);
-    return isNaN(num) ? '0.00' : num.toFixed(decimals);
+    // Se o valor for null, undefined ou vazio, retorna '0.00'
+    if (value === null || value === undefined || value === '') {
+        return '0.00';
+    }
+    
+    // Converte para string primeiro e remove espaços
+    const stringValue = String(value).trim();
+    
+    // Se for uma string vazia após trim, retorna '0.00'
+    if (stringValue === '') {
+        return '0.00';
+    }
+    
+    // Tenta converter para número
+    const num = Number(stringValue);
+    
+    // Se não for um número válido, retorna '0.00'
+    if (isNaN(num) || !isFinite(num)) {
+        return '0.00';
+    }
+    
+    // Retorna o número formatado
+    return num.toFixed(decimals);
+};
+
+// Função auxiliar para garantir que temos um número válido
+const ensureNumber = (value: unknown): number => {
+    if (value === null || value === undefined || value === '') {
+        return 0;
+    }
+    
+    const stringValue = String(value).trim();
+    if (stringValue === '') {
+        return 0;
+    }
+    
+    const num = Number(stringValue);
+    return isNaN(num) || !isFinite(num) ? 0 : num;
 };
 
 export default function AssessmentDetailsPage() {
@@ -156,7 +192,31 @@ export default function AssessmentDetailsPage() {
                 }
             }
 
-            setAssessment(data);
+            // Garantir que todos os valores numéricos sejam números válidos
+            const processedData = {
+                ...data,
+                weight: ensureNumber(data.weight),
+                height: ensureNumber(data.height),
+                age: ensureNumber(data.age),
+                bmi: ensureNumber(data.bmi),
+                fat_percentage: ensureNumber(data.fat_percentage),
+                fat_mass: ensureNumber(data.fat_mass),
+                lean_mass: ensureNumber(data.lean_mass),
+                body_density: ensureNumber(data.body_density),
+                measurements: data.measurements || {}
+            };
+
+            // Debug para verificar os dados
+            console.log('Dados da avaliação processados:', {
+                bmi: processedData.bmi,
+                fat_percentage: processedData.fat_percentage,
+                fat_mass: processedData.fat_mass,
+                lean_mass: processedData.lean_mass,
+                body_density: processedData.body_density,
+                weight: processedData.weight
+            });
+
+            setAssessment(processedData);
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -193,17 +253,20 @@ export default function AssessmentDetailsPage() {
         let classification = '';
         let colorClass = '';
 
+        // Garantir que fatPercentage é um número válido
+        const validFatPercentage = ensureNumber(fatPercentage);
+
         if (gender === 'male') {
-            if (fatPercentage < 6) {
+            if (validFatPercentage < 6) {
                 classification = 'Muito Baixo';
                 colorClass = 'text-red-600 dark:text-red-400';
-            } else if (fatPercentage < 14) {
+            } else if (validFatPercentage < 14) {
                 classification = 'Atlético';
                 colorClass = 'text-green-600 dark:text-green-400';
-            } else if (fatPercentage < 18) {
+            } else if (validFatPercentage < 18) {
                 classification = 'Fitness';
                 colorClass = 'text-blue-600 dark:text-blue-400';
-            } else if (fatPercentage < 25) {
+            } else if (validFatPercentage < 25) {
                 classification = 'Aceitável';
                 colorClass = 'text-yellow-600 dark:text-yellow-400';
             } else {
@@ -211,16 +274,16 @@ export default function AssessmentDetailsPage() {
                 colorClass = 'text-orange-600 dark:text-orange-400';
             }
         } else {
-            if (fatPercentage < 16) {
+            if (validFatPercentage < 16) {
                 classification = 'Muito Baixo';
                 colorClass = 'text-red-600 dark:text-red-400';
-            } else if (fatPercentage < 21) {
+            } else if (validFatPercentage < 21) {
                 classification = 'Atlético';
                 colorClass = 'text-green-600 dark:text-green-400';
-            } else if (fatPercentage < 25) {
+            } else if (validFatPercentage < 25) {
                 classification = 'Fitness';
                 colorClass = 'text-blue-600 dark:text-blue-400';
-            } else if (fatPercentage < 32) {
+            } else if (validFatPercentage < 32) {
                 classification = 'Aceitável';
                 colorClass = 'text-yellow-600 dark:text-yellow-400';
             } else {
@@ -270,9 +333,7 @@ export default function AssessmentDetailsPage() {
                         <div className="w-16 h-16 sm:w-24 sm:h-24 border-4 border-blue-200 dark:border-blue-800 rounded-full animate-spin border-t-blue-600 dark:border-t-blue-400"></div>
                         <div className="absolute inset-0 w-16 h-16 sm:w-24 sm:h-24 border-4 border-transparent rounded-full animate-ping border-t-blue-400 dark:border-t-blue-500"></div>
                     </div>
-                    <h3 className="text-lg sm:text-2xl font-bold text-gray-600 dark:text-gray-400">
-                        Carregando avaliação...
-                    </h3>
+                  
                 </div>
             </div>
         );
@@ -435,11 +496,11 @@ export default function AssessmentDetailsPage() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Ruler className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
-                                                <span className="font-medium truncate">{assessment.height}cm</span>
+                                                <span className="font-medium truncate">{formatNumber(assessment.height, 0)}cm</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Weight className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
-                                                <span className="font-medium truncate">{formatNumber(assessment.weight)}kg</span>
+                                                <span className="font-medium truncate">{formatNumber(assessment.weight, 1)}kg</span>
                                             </div>
                                         </div>
                                     </div>
@@ -511,14 +572,14 @@ export default function AssessmentDetailsPage() {
                                     label: "IMC",
                                     color: "from-blue-600 to-cyan-600",
                                     icon: Scale,
-                                    progress: Math.min((assessment.bmi / 35) * 100, 100)
+                                    progress: Math.min((ensureNumber(assessment.bmi) / 35) * 100, 100)
                                 },
                                 {
                                     value: assessment.fat_percentage,
                                     label: "% Gordura",
                                     color: "from-red-600 to-orange-600",
                                     icon: BarChart3,
-                                    progress: Math.min((assessment.fat_percentage / 35) * 100, 100),
+                                    progress: Math.min((ensureNumber(assessment.fat_percentage) / 35) * 100, 100),
                                     suffix: "%"
                                 },
                                 {
@@ -526,7 +587,7 @@ export default function AssessmentDetailsPage() {
                                     label: "M. Gorda",
                                     color: "from-orange-600 to-yellow-600",
                                     icon: Weight,
-                                    progress: (assessment.fat_mass / assessment.weight) * 100,
+                                    progress: ensureNumber(assessment.weight) > 0 ? (ensureNumber(assessment.fat_mass) / ensureNumber(assessment.weight)) * 100 : 0,
                                     suffix: "kg"
                                 },
                                 {
@@ -534,7 +595,7 @@ export default function AssessmentDetailsPage() {
                                     label: "M. Magra",
                                     color: "from-green-600 to-emerald-600",
                                     icon: Activity,
-                                    progress: (assessment.lean_mass / assessment.weight) * 100,
+                                    progress: ensureNumber(assessment.weight) > 0 ? (ensureNumber(assessment.lean_mass) / ensureNumber(assessment.weight)) * 100 : 0,
                                     suffix: "kg"
                                 },
                                 {
@@ -547,6 +608,8 @@ export default function AssessmentDetailsPage() {
                                 }
                             ].map((metric, index) => {
                                 const Icon = metric.icon;
+                                const validValue = ensureNumber(metric.value);
+                                
                                 return (
                                     <div key={index} className="relative group">
                                         <div className={`absolute inset-0 bg-gradient-to-r ${metric.color} rounded-xl sm:rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300`}></div>
@@ -561,7 +624,7 @@ export default function AssessmentDetailsPage() {
                                                             {metric.label}
                                                         </p>
                                                         <p className="text-lg sm:text-4xl font-black text-gray-900 dark:text-white">
-                                                            {formatNumber(metric.value, metric.decimals || 1)}{metric.suffix || ''}
+                                                            {formatNumber(validValue, metric.decimals || 1)}{metric.suffix || ''}
                                                         </p>
                                                     </div>
                                                     <div className={`p-2 sm:p-4 bg-gradient-to-br ${metric.color} rounded-lg sm:rounded-2xl shadow-lg`}>
@@ -609,7 +672,7 @@ export default function AssessmentDetailsPage() {
                                                 <div
                                                     className="absolute inset-0 rounded-full shadow-2xl"
                                                     style={{
-                                                        background: `conic-gradient(from 0deg, #ef4444 ${assessment.fat_percentage * 3.6}deg, #10b981 0deg)`
+                                                        background: `conic-gradient(from 0deg, #ef4444 ${ensureNumber(assessment.fat_percentage) * 3.6}deg, #10b981 0deg)`
                                                     }}
                                                 />
                                                 <div className="absolute inset-6 sm:inset-8 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center shadow-inner">
@@ -647,7 +710,7 @@ export default function AssessmentDetailsPage() {
                                                         <span className="text-sm font-bold">IMC</span>
                                                         <span className="text-sm text-gray-600 dark:text-gray-400 font-semibold">{formatNumber(assessment.bmi)}</span>
                                                     </div>
-                                                    <Progress value={Math.min((assessment.bmi / 30) * 100, 100)} className="h-3 sm:h-4" />
+                                                    <Progress value={Math.min((ensureNumber(assessment.bmi) / 30) * 100, 100)} className="h-3 sm:h-4" />
                                                     <div className="text-xs text-gray-500 mt-2 font-medium">Normal: 18.5-24.9</div>
                                                 </div>
 
@@ -656,7 +719,7 @@ export default function AssessmentDetailsPage() {
                                                         <span className="text-sm font-bold">% Gordura</span>
                                                         <span className="text-sm text-gray-600 dark:text-gray-400 font-semibold">{formatNumber(assessment.fat_percentage)}%</span>
                                                     </div>
-                                                    <Progress value={Math.min((assessment.fat_percentage / 35) * 100, 100)} className="h-3 sm:h-4" />
+                                                    <Progress value={Math.min((ensureNumber(assessment.fat_percentage) / 35) * 100, 100)} className="h-3 sm:h-4" />
                                                     <div className="text-xs text-gray-500 mt-2 font-medium">
                                                         {assessment.gender === 'male' ? 'Ideal: 10-15%' : 'Ideal: 16-24%'}
                                                     </div>
@@ -804,7 +867,7 @@ export default function AssessmentDetailsPage() {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                                             {Object.entries(assessment.measurements)
                                                 .filter(([key]) => ['neck', 'shoulders', 'chest', 'chest_circ', 'waist', 'abdomen', 'hips', 'left_arm', 'right_arm', 'left_thigh', 'right_thigh', 'left_calf', 'right_calf'].includes(key))
-                                                .filter(([_, value]) => value > 0)
+                                                .filter(([_, value]) => ensureNumber(value) > 0)
                                                 .map(([key, value]) => (
                                                     <div key={key} className="group relative">
                                                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg sm:rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -830,7 +893,7 @@ export default function AssessmentDetailsPage() {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                                             {Object.entries(assessment.measurements)
                                                 .filter(([key]) => ['triceps', 'biceps', 'subscapular', 'abdominal', 'suprailiac', 'midaxillary', 'thigh'].includes(key))
-                                                .filter(([_, value]) => value > 0)
+                                                .filter(([_, value]) => ensureNumber(value) > 0)
                                                 .map(([key, value]) => (
                                                     <div key={key} className="group relative">
                                                         <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg sm:rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -847,7 +910,7 @@ export default function AssessmentDetailsPage() {
                                         </div>
                                     </div>
 
-                                    {Object.entries(assessment.measurements).filter(([_, value]) => value > 0).length === 0 && (
+                                    {Object.entries(assessment.measurements).filter(([_, value]) => ensureNumber(value) > 0).length === 0 && (
                                         <div className="text-center py-12 sm:py-24">
                                             <div className="relative mb-6 sm:mb-8">
                                                 <div className="w-20 h-20 sm:w-32 sm:h-32 mx-auto bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center shadow-2xl">

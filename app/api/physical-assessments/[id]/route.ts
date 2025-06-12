@@ -16,6 +16,29 @@ interface RouteParams {
   };
 }
 
+// FUNÇÃO PARA CONSTRUIR OBJETO MEASUREMENTS A PARTIR DAS COLUNAS
+function buildMeasurementsObject(row: any): Record<string, number> {
+  const measurements: Record<string, number> = {};
+  
+  // Lista de todas as medidas possíveis
+  const measurementFields = [
+    // Circunferências
+    'neck', 'shoulders', 'chest', 'chest_circ', 'abdomen', 'waist', 'hips',
+    'left_arm', 'right_arm', 'left_thigh', 'right_thigh', 'left_calf', 'right_calf',
+    // Dobras cutâneas
+    'triceps', 'biceps', 'subscapular', 'abdominal', 'suprailiac', 'midaxillary', 'thigh'
+  ];
+  
+  measurementFields.forEach(field => {
+    if (row[field] !== null && row[field] !== undefined && row[field] > 0) {
+      measurements[field] = parseFloat(row[field]);
+    }
+  });
+  
+  console.log('📏 Measurements construído para detalhes:', measurements);
+  return measurements;
+}
+
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
@@ -106,9 +129,32 @@ export async function GET(request: Request, { params }: RouteParams) {
       };
     }
 
+    // CONSTRUIR OBJETO MEASUREMENTS A PARTIR DAS COLUNAS
+    assessment.measurements = buildMeasurementsObject(assessment);
+
+    // GARANTIR QUE CAMPOS NUMÉRICOS SEJAM NÚMEROS
+    assessment.weight = parseFloat(assessment.weight) || 0;
+    assessment.height = parseFloat(assessment.height) || 0;
+    assessment.age = parseInt(assessment.age) || 0;
+    assessment.bmi = parseFloat(assessment.bmi) || 0;
+    assessment.fat_percentage = parseFloat(assessment.fat_percentage) || 0;
+    assessment.fat_mass = parseFloat(assessment.fat_mass) || 0;
+    assessment.lean_mass = parseFloat(assessment.lean_mass) || 0;
+    assessment.body_density = parseFloat(assessment.body_density) || 0;
+
     console.log('=== DADOS PROCESSADOS ===');
     console.log('ai_analysis (processado):', assessment.ai_analysis);
     console.log('ai_recommendations (processado):', assessment.ai_recommendations);
+    console.log('measurements (processado):', assessment.measurements);
+    console.log('Dados numéricos:', {
+      weight: assessment.weight,
+      height: assessment.height,
+      bmi: assessment.bmi,
+      fat_percentage: assessment.fat_percentage,
+      fat_mass: assessment.fat_mass,
+      lean_mass: assessment.lean_mass,
+      body_density: assessment.body_density
+    });
 
     return NextResponse.json(assessment);
   } catch (error: any) {
@@ -202,9 +248,40 @@ export async function PUT(request: Request, { params }: RouteParams) {
       throw error;
     }
 
+    // PROCESSAR ASSESSMENT ATUALIZADO ANTES DE RETORNAR
+    if (assessment.ai_analysis && typeof assessment.ai_analysis === 'string') {
+      try {
+        assessment.ai_analysis = JSON.parse(assessment.ai_analysis);
+      } catch (error) {
+        console.warn('Erro ao processar ai_analysis após update');
+      }
+    }
+
+    if (assessment.ai_recommendations && typeof assessment.ai_recommendations === 'string') {
+      try {
+        assessment.ai_recommendations = JSON.parse(assessment.ai_recommendations);
+      } catch (error) {
+        console.warn('Erro ao processar ai_recommendations após update');
+      }
+    }
+
+    // CONSTRUIR OBJETO MEASUREMENTS
+    assessment.measurements = buildMeasurementsObject(assessment);
+
+    // GARANTIR QUE CAMPOS NUMÉRICOS SEJAM NÚMEROS
+    assessment.weight = parseFloat(assessment.weight) || 0;
+    assessment.height = parseFloat(assessment.height) || 0;
+    assessment.age = parseInt(assessment.age) || 0;
+    assessment.bmi = parseFloat(assessment.bmi) || 0;
+    assessment.fat_percentage = parseFloat(assessment.fat_percentage) || 0;
+    assessment.fat_mass = parseFloat(assessment.fat_mass) || 0;
+    assessment.lean_mass = parseFloat(assessment.lean_mass) || 0;
+    assessment.body_density = parseFloat(assessment.body_density) || 0;
+
     console.log('=== AVALIAÇÃO ATUALIZADA ===');
     console.log('ai_analysis salvo:', assessment.ai_analysis);
     console.log('ai_recommendations salvo:', assessment.ai_recommendations);
+    console.log('measurements construído:', assessment.measurements);
 
     return NextResponse.json(assessment);
   } catch (error: any) {
