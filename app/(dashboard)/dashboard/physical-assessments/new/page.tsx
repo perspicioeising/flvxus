@@ -34,7 +34,8 @@ import {
   Crown,
   Star,
   TrendingUp,
-  Search
+  Search,
+  Book
 } from 'lucide-react';
 
 // Protocolos corrigidos conforme especificação
@@ -616,16 +617,16 @@ export default function NewPhysicalAssessmentPage() {
 
                 <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                   <div className="relative shrink-0">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
-                      <Brain className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                    <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                      <Book className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                     </div>
                     <div className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-6 sm:h-6 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
                       <Sparkles className="h-2 w-2 sm:h-3 sm:w-3 text-white" />
                     </div>
                   </div>
                   <div className="min-w-0">
-                    <h1 className="text-xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400 bg-clip-text text-transparent truncate">
-                      Nova Avaliação Física
+                    <h1 className="text-lg sm:text-2xl lg:text-3xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent truncate">
+                      Nova Avaliação
                     </h1>
                     <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-lg mt-1 truncate">
                       Sistema inteligente de análise corporal com IA
@@ -902,7 +903,7 @@ export default function NewPhysicalAssessmentPage() {
                       <Button
                         onClick={() => setActiveTab('protocol')}
                         disabled={!assessment.student_id || !assessment.weight || !assessment.height}
-                        className="w-full sm:w-auto px-6 sm:px-10 py-3 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-700 hover:via-purple-700 hover:to-cyan-700 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white font-bold rounded-xl shadow-2xl hover:shadow-blue-500/25 disabled:shadow-none transition-all duration-300 transform hover:scale-105 disabled:scale-100 border-0"
+                        className="w-full sm:w-auto px-6 sm:px-10 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg hover:shadow-green-500/25 transition-all duration-300 font-semibold"
                       >
                         Próximo
                         <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 ml-2 rotate-180" />
@@ -946,8 +947,8 @@ export default function NewPhysicalAssessmentPage() {
                       >
                         <div className={`absolute inset-0 bg-gradient-to-r ${protocol.color} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                         <Card className={`relative border-0 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02] ${assessment.protocol === protocol.value
-                            ? 'bg-gradient-to-r ' + protocol.color + ' text-white'
-                            : 'bg-white/90 dark:bg-gray-900/90'
+                          ? 'bg-gradient-to-r ' + protocol.color + ' text-white'
+                          : 'bg-white/90 dark:bg-gray-900/90'
                           }`}>
 
                           {assessment.protocol !== protocol.value && (
@@ -960,22 +961,22 @@ export default function NewPhysicalAssessmentPage() {
                           <CardContent className="relative p-6">
                             <div className="flex items-start gap-4">
                               <div className={`p-3 rounded-xl shadow-lg ${assessment.protocol === protocol.value
-                                  ? 'bg-white/20'
-                                  : 'bg-gradient-to-r ' + protocol.color
+                                ? 'bg-white/20'
+                                : 'bg-gradient-to-r ' + protocol.color
                                 }`}>
                                 <Calculator className={`h-6 w-6 ${assessment.protocol === protocol.value ? 'text-white' : 'text-white'
                                   }`} />
                               </div>
                               <div className="flex-1">
                                 <h4 className={`font-bold text-lg mb-2 ${assessment.protocol === protocol.value
-                                    ? 'text-white'
-                                    : 'text-gray-900 dark:text-white'
+                                  ? 'text-white'
+                                  : 'text-gray-900 dark:text-white'
                                   }`}>
                                   {protocol.label}
                                 </h4>
                                 <p className={`text-sm leading-relaxed ${assessment.protocol === protocol.value
-                                    ? 'text-white/80'
-                                    : 'text-gray-600 dark:text-gray-400'
+                                  ? 'text-white/80'
+                                  : 'text-gray-600 dark:text-gray-400'
                                   }`}>
                                   {protocol.description}
                                 </p>
@@ -1018,7 +1019,7 @@ export default function NewPhysicalAssessmentPage() {
                     </div>
                   )}
 
-                  <div className="flex justify-between pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex justify-between gap-4 pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
                     <Button
                       variant="outline"
                       onClick={() => setActiveTab('basic')}
@@ -1030,7 +1031,7 @@ export default function NewPhysicalAssessmentPage() {
                     <Button
                       onClick={() => setActiveTab('measurements')}
                       disabled={!assessment.protocol}
-                      className="px-10 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white font-bold rounded-xl shadow-2xl hover:shadow-purple-500/25 disabled:shadow-none transition-all duration-300 transform hover:scale-105 disabled:scale-100 border-0"
+                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-lg hover:shadow-green-500/25 transition-all duration-300 font-semibold"
                     >
                       Próximo
                       <ArrowLeft className="h-5 w-5 ml-2 rotate-180" />
@@ -1074,7 +1075,7 @@ export default function NewPhysicalAssessmentPage() {
                           className="flex items-center gap-2 rounded-xl data-[state=active]:bg-yellow-600 data-[state=active]:text-white transition-all duration-300 font-semibold"
                         >
                           <span className="text-xl">🟡</span>
-                          Dobras 
+                          Dobras
                         </TabsTrigger>
                         <TabsTrigger
                           value="circumferences"
@@ -1094,8 +1095,8 @@ export default function NewPhysicalAssessmentPage() {
                             <div key={field.key} className="group relative">
                               <div className={`absolute inset-0 bg-gradient-to-r ${field.color} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                               <Card className={`relative border-0 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02] ${isRequired
-                                  ? 'bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20'
-                                  : 'bg-white/90 dark:bg-gray-900/90'
+                                ? 'bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20'
+                                : 'bg-white/90 dark:bg-gray-900/90'
                                 }`}>
 
                                 {!isRequired && (
@@ -1121,8 +1122,8 @@ export default function NewPhysicalAssessmentPage() {
                                     value={assessment.measurements[field.key] || ''}
                                     onChange={(e) => handleMeasurementChange(field.key, e.target.value)}
                                     className={`h-12 text-lg transition-all duration-300 ${isRequired
-                                        ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-500 bg-white/80 dark:bg-gray-800/80'
-                                        : 'border-0 bg-white/80 dark:bg-gray-800/80 focus:bg-white dark:focus:bg-gray-800'
+                                      ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-500 bg-white/80 dark:bg-gray-800/80'
+                                      : 'border-0 bg-white/80 dark:bg-gray-800/80 focus:bg-white dark:focus:bg-gray-800'
                                       } rounded-xl shadow-lg backdrop-blur-sm`}
                                     placeholder="0.0"
                                   />
@@ -1168,7 +1169,7 @@ export default function NewPhysicalAssessmentPage() {
                     </TabsContent>
                   </Tabs>
 
-                  <div className="flex justify-between pt-8 border-t border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex justify-between gap-4 pt-8 border-t border-gray-200/50 dark:border-gray-700/50">
                     <Button
                       variant="outline"
                       onClick={() => setActiveTab('protocol')}
@@ -1180,9 +1181,9 @@ export default function NewPhysicalAssessmentPage() {
                     <Button
                       onClick={() => setActiveTab('results')}
                       disabled={!hasRequiredMeasurements()}
-                      className="px-10 py-3 bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 hover:from-green-700 hover:via-emerald-700 hover:to-green-700 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white font-bold rounded-xl shadow-2xl hover:shadow-green-500/25 disabled:shadow-none transition-all duration-300 transform hover:scale-105 disabled:scale-100 border-0"
+                      className="px-6 py-3 bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 hover:from-green-700 hover:via-emerald-700 hover:to-green-700 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white font-bold rounded-xl shadow-2xl hover:shadow-green-500/25 disabled:shadow-none transition-all duration-300 transform hover:scale-105 disabled:scale-100 border-0"
                     >
-                     Resultados
+                      Resultados
                       <ArrowLeft className="h-5 w-5 ml-2 rotate-180" />
                     </Button>
                   </div>
@@ -1363,7 +1364,7 @@ export default function NewPhysicalAssessmentPage() {
                             ) : (
                               <>
                                 <Brain className="h-5 w-5 mr-2" />
-                                Analisar com IA
+                                Analisar
                               </>
                             )}
                           </Button>
@@ -1381,7 +1382,7 @@ export default function NewPhysicalAssessmentPage() {
                             ) : (
                               <>
                                 <Save className="h-5 w-5 mr-2" />
-                                Salvar Avaliação
+                                Salvar
                               </>
                             )}
                           </Button>
