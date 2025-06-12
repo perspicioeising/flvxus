@@ -382,42 +382,48 @@ export default function PhysicalAssessmentsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto px-4 py-2 max-w-7xl">
 
         {/* Ultra Modern Header */}
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 dark:from-blue-500/10 dark:via-purple-400/10 dark:to-cyan-500/10 rounded-3xl blur-xl"></div>
           <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-blue-800/30 rounded-3xl p-8 shadow-2xl">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Book className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
-                      <Sparkles className="h-3 w-3 text-white" />
-                    </div>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+              {/* Header com ícone e título */}
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Ícone com badge */}
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Book className="h-5 w-5 sm:h-8 sm:w-8 text-white" />
                   </div>
-                  <div>
-                    <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent">
-                      Avaliações Físicas
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-300 text-lg mt-1">
-                      <span className="font-semibold text-blue-600 dark:text-blue-400">{stats.total}</span> avaliações • Sistema inteligente de análise corporal
-                    </p>
+                  <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center shadow-sm">
+                    <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                   </div>
+                </div>
+
+                {/* Textos */}
+                <div className="min-w-0 space-y-1">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-200 dark:to-white bg-clip-text text-transparent">
+                    Avaliações
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-base leading-tight">
+                    <span className="font-semibold text-blue-600 dark:text-blue-400">{stats.total}</span> avaliações
+                    <span className="hidden xs:inline"> • Sistema inteligente</span>
+                  </p>
                 </div>
               </div>
 
+              {/* Botão (condicional) */}
               {(userRole === 'trainer' || userRole === null) && (
                 <Button
                   onClick={() => router.push('/dashboard/physical-assessments/new')}
                   variant="outline"
-                  className="min-h-[44px]  bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="h-10 px-4 sm:h-12 sm:px-5 bg-white/95 dark:bg-gray-800/95 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg shadow-sm hover:shadow transition-all duration-200 group"
                 >
-                  <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                  Nova
+                  <div className="flex items-center justify-center gap-2">
+                    <Plus className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 group-hover:rotate-90 transition-all duration-300" />
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Nova</span>
+                  </div>
                 </Button>
               )}
             </div>
@@ -425,93 +431,77 @@ export default function PhysicalAssessmentsPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Total Assessments */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="space-y-1">
-                    <p className="text-blue-600 dark:text-blue-400 text-sm font-bold uppercase tracking-wider">Total</p>
-                    <p className="text-4xl font-black text-gray-900 dark:text-white">{stats.total}</p>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl shadow-lg">
-                    <FileText className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full w-full"></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-4">
+          {[
+            {
+              value: stats.total,
+              label: "Total",
+              color: "from-blue-600 to-purple-600",
+              icon: FileText,
+              progress: 100,
+              shortLabel: true
+            },
+            {
+              value: stats.thisMonth,
+              label: "Este Mês",
+              color: "from-green-600 to-emerald-600",
+              icon: Calendar,
+              progress: Math.min((stats.thisMonth / Math.max(stats.total, 1)) * 100, 100),
+              shortLabel: true
+            },
+            {
+              value: stats.avgFatPercentage,
+              label: "% Gordura Média",
+              color: "from-orange-600 to-red-600",
+              icon: BarChart3,
+              progress: Math.min((stats.avgFatPercentage / 35) * 100, 100),
+              suffix: "%",
+              shortLabel: false
+            },
+            {
+              value: stats.avgBMI,
+              label: "IMC Médio",
+              color: "from-purple-600 to-pink-600",
+              icon: Scale,
+              progress: Math.min((stats.avgBMI / 35) * 100, 100),
+              shortLabel: true
+            }
+          ].map((metric, index) => {
+            const Icon = metric.icon;
 
-          {/* This Month */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="space-y-1">
-                    <p className="text-green-600 dark:text-green-400 text-sm font-bold uppercase tracking-wider">Este Mês</p>
-                    <p className="text-4xl font-black text-gray-900 dark:text-white">{stats.thisMonth}</p>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl shadow-lg">
-                    <Calendar className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
-                    style={{ width: `${Math.min((stats.thisMonth / Math.max(stats.total, 1)) * 100, 100)}%` }}></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            return (
+              <div key={index} className="relative group">
+                <div className={`absolute inset-0 bg-gradient-to-r ${metric.color} rounded-xl sm:rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-xl sm:rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02] h-full flex flex-col">
+                  <div className={`absolute inset-0 bg-gradient-to-r ${metric.color} rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                  <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl"></div>
 
-          {/* Average Fat Percentage */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="space-y-1">
-                    <p className="text-orange-600 dark:text-orange-400 text-sm font-bold uppercase tracking-wider">% Gordura Média</p>
-                    <p className="text-4xl font-black text-gray-900 dark:text-white">{stats.avgFatPercentage}%</p>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg">
-                    <BarChart3 className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
-                    style={{ width: `${Math.min((stats.avgFatPercentage / 35) * 100, 100)}%` }}></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  <CardContent className="relative p-3 sm:p-4 flex flex-col h-full">
+                    <div className="flex justify-between items-start mb-2 sm:mb-3 gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs sm:text-sm font-bold uppercase tracking-wider truncate ${metric.color.replace('from-', 'text-').replace(' to-purple-600', '').replace(' to-emerald-600', '').replace(' to-red-600', '').replace(' to-pink-600', '')} dark:opacity-80`}>
+                          {metric.label}
+                        </p>
+                      </div>
+                      <div className={`p-2 sm:p-3 bg-gradient-to-br ${metric.color} rounded-lg sm:rounded-xl shadow-lg flex-shrink-0`}>
+                        <Icon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                      </div>
+                    </div>
 
-          {/* Average BMI */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="space-y-1">
-                    <p className="text-purple-600 dark:text-purple-400 text-sm font-bold uppercase tracking-wider">IMC Médio</p>
-                    <p className="text-4xl font-black text-gray-900 dark:text-white">{stats.avgBMI}</p>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
-                    <Scale className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
-                    style={{ width: `${Math.min((stats.avgBMI / 35) * 100, 100)}%` }}></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    <div className="mt-auto">
+                      <p className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white mb-2 sm:mb-3">
+                        {metric.value}{metric.suffix || ''}
+                      </p>
+                      <div className="h-1 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className={`h-full bg-gradient-to-r ${metric.color} rounded-full transition-all duration-1000`}
+                          style={{ width: `${Math.min(metric.progress, 100)}%` }}></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })}
         </div>
 
         {/* Search and Filters */}

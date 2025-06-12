@@ -116,23 +116,23 @@ const formatNumber = (value: unknown, decimals: number = 2): string => {
     if (value === null || value === undefined || value === '') {
         return '0.00';
     }
-    
+
     // Converte para string primeiro e remove espaços
     const stringValue = String(value).trim();
-    
+
     // Se for uma string vazia após trim, retorna '0.00'
     if (stringValue === '') {
         return '0.00';
     }
-    
+
     // Tenta converter para número
     const num = Number(stringValue);
-    
+
     // Se não for um número válido, retorna '0.00'
     if (isNaN(num) || !isFinite(num)) {
         return '0.00';
     }
-    
+
     // Retorna o número formatado
     return num.toFixed(decimals);
 };
@@ -142,12 +142,12 @@ const ensureNumber = (value: unknown): number => {
     if (value === null || value === undefined || value === '') {
         return 0;
     }
-    
+
     const stringValue = String(value).trim();
     if (stringValue === '') {
         return 0;
     }
-    
+
     const num = Number(stringValue);
     return isNaN(num) || !isFinite(num) ? 0 : num;
 };
@@ -333,7 +333,7 @@ export default function AssessmentDetailsPage() {
                         <div className="w-16 h-16 sm:w-24 sm:h-24 border-4 border-blue-200 dark:border-blue-800 rounded-full animate-spin border-t-blue-600 dark:border-t-blue-400"></div>
                         <div className="absolute inset-0 w-16 h-16 sm:w-24 sm:h-24 border-4 border-transparent rounded-full animate-ping border-t-blue-400 dark:border-t-blue-500"></div>
                     </div>
-                  
+
                 </div>
             </div>
         );
@@ -382,7 +382,7 @@ export default function AssessmentDetailsPage() {
                 <div className="relative mb-6 sm:mb-8">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 dark:from-blue-500/10 dark:via-purple-400/10 dark:to-cyan-500/10 rounded-2xl sm:rounded-3xl blur-xl"></div>
                     <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-blue-800/30 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl">
-                        
+
                         {/* Header Top Row */}
                         <div className="flex items-center justify-between mb-4 sm:mb-6">
                             <div className="flex items-center gap-3 sm:gap-4">
@@ -474,40 +474,47 @@ export default function AssessmentDetailsPage() {
                         </div>
 
                         {/* Student Info Card - Mobile Optimized */}
-                        <div className="relative">
+                        <div className="relative mx-auto max-w-md sm:max-w-full">
                             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl blur-xl opacity-75"></div>
                             <div className="relative p-4 sm:p-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-xl">
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                <div className="flex flex-col items-center sm:flex-row sm:items-center gap-4 text-center sm:text-left">
+                                    {/* Avatar */}
                                     <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black text-lg sm:text-xl shadow-lg flex-shrink-0">
                                         {assessment.profiles.full_name.substring(0, 2).toUpperCase()}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2 truncate">
+
+                                    {/* Informações principais */}
+                                    <div className="flex-1 min-w-0 w-full">
+                                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
                                             {assessment.profiles.full_name}
                                         </h3>
-                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
-                                            <div className="flex items-center gap-2">
+
+                                        {/* Dados em grid */}
+                                        <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm mx-auto max-w-xs sm:max-w-full sm:grid-cols-4 lg:grid-cols-4">
+                                            <div className="flex items-center justify-center sm:justify-start gap-2">
                                                 <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
-                                                <span className="font-medium truncate">{assessment.age} anos</span>
+                                                <span className="font-medium">{assessment.age} anos</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center justify-center sm:justify-start gap-2">
                                                 <User className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
-                                                <span className="font-medium truncate">{assessment.gender === 'male' ? 'Masculino' : 'Feminino'}</span>
+                                                <span className="font-medium">{assessment.gender === 'male' ? 'Masculino' : 'Feminino'}</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center justify-center sm:justify-start gap-2">
                                                 <Ruler className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
-                                                <span className="font-medium truncate">{formatNumber(assessment.height, 0)}cm</span>
+                                                <span className="font-medium">{formatNumber(assessment.height, 0)}cm</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center justify-center sm:justify-start gap-2">
                                                 <Weight className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
-                                                <span className="font-medium truncate">{formatNumber(assessment.weight, 1)}kg</span>
+                                                <span className="font-medium">{formatNumber(assessment.weight, 1)}kg</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-center sm:text-right">
+
+                                    {/* Classificação */}
+                                    <div className="w-full sm:w-auto">
                                         <div className={`text-lg sm:text-3xl font-black ${colorClass} flex items-center justify-center sm:justify-end gap-1 sm:gap-2`}>
                                             <Crown className="h-5 w-5 sm:h-8 sm:w-8" />
-                                            <span className="truncate">{classification}</span>
+                                            <span>{classification}</span>
                                         </div>
                                         <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-semibold">
                                             {formatNumber(assessment.fat_percentage)}% Gordura
@@ -565,14 +572,16 @@ export default function AssessmentDetailsPage() {
                     {/* Overview Tab - Mobile Optimized */}
                     <TabsContent value="overview" className="space-y-4 sm:space-y-6">
                         {/* Main Metrics - Mobile Grid */}
-                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                             {[
                                 {
                                     value: assessment.bmi,
                                     label: "IMC",
                                     color: "from-blue-600 to-cyan-600",
                                     icon: Scale,
-                                    progress: Math.min((ensureNumber(assessment.bmi) / 35) * 100, 100)
+                                    progress: Math.min((ensureNumber(assessment.bmi) / 35) * 100, 100),
+                                     suffix: "%",
+                                    
                                 },
                                 {
                                     value: assessment.fat_percentage,
@@ -597,19 +606,19 @@ export default function AssessmentDetailsPage() {
                                     icon: Activity,
                                     progress: ensureNumber(assessment.weight) > 0 ? (ensureNumber(assessment.lean_mass) / ensureNumber(assessment.weight)) * 100 : 0,
                                     suffix: "kg"
-                                },
-                                {
-                                    value: assessment.body_density,
-                                    label: "Densidade",
-                                    color: "from-purple-600 to-pink-600",
-                                    icon: Calculator,
-                                    progress: 75,
-                                    decimals: 4
                                 }
+                                // {
+                                //     value: assessment.body_density,
+                                //     label: "Densidade",
+                                //     color: "from-purple-600 to-pink-600",
+                                //     icon: Calculator,
+                                //     progress: 75,
+                                //     decimals: 4
+                                // }
                             ].map((metric, index) => {
                                 const Icon = metric.icon;
                                 const validValue = ensureNumber(metric.value);
-                                
+
                                 return (
                                     <div key={index} className="relative group">
                                         <div className={`absolute inset-0 bg-gradient-to-r ${metric.color} rounded-xl sm:rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300`}></div>
@@ -624,7 +633,7 @@ export default function AssessmentDetailsPage() {
                                                             {metric.label}
                                                         </p>
                                                         <p className="text-lg sm:text-4xl font-black text-gray-900 dark:text-white">
-                                                            {formatNumber(validValue, metric.decimals || 1)}{metric.suffix || ''}
+                                                            {formatNumber(validValue, 1)}{metric.suffix || ''}
                                                         </p>
                                                     </div>
                                                     <div className={`p-2 sm:p-4 bg-gradient-to-br ${metric.color} rounded-lg sm:rounded-2xl shadow-lg`}>

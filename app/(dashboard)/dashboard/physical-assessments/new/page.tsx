@@ -599,7 +599,7 @@ export default function NewPhysicalAssessmentPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-6xl">
+      <div className="container mx-auto px-2 py-2 max-w-7xl">
 
         {/* Ultra Modern Header */}
         <div className="relative mb-6 sm:mb-8">
@@ -1219,21 +1219,24 @@ export default function NewPhysicalAssessmentPage() {
                   {calculations ? (
                     <>
                       {/* Métricas principais */}
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-5">
+                        {/* IMC */}
                         <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-                            <CardContent className="p-6 text-center">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="space-y-1">
-                                  <p className="text-blue-600 dark:text-blue-400 text-sm font-bold uppercase tracking-wider">IMC</p>
-                                  <p className="text-3xl font-black text-gray-900 dark:text-white">{calculations.bmi}</p>
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl sm:rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+                              <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
+                                <div className="space-y-0.5 sm:space-y-1">
+                                  <p className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-bold uppercase tracking-wider">IMC</p>
+                                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
+                                    {calculations.bmi}
+                                  </p>
                                 </div>
-                                <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
-                                  <Scale className="h-6 w-6 text-white" />
+                                <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm sm:shadow-md">
+                                  <Scale className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
                                 </div>
                               </div>
-                              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-1 sm:h-1.5 md:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"
                                   style={{ width: `${Math.min((calculations.bmi / 35) * 100, 100)}%` }}></div>
                               </div>
@@ -1241,20 +1244,23 @@ export default function NewPhysicalAssessmentPage() {
                           </Card>
                         </div>
 
+                        {/* % Gordura */}
                         <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-                            <CardContent className="p-6 text-center">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="space-y-1">
-                                  <p className="text-red-600 dark:text-red-400 text-sm font-bold uppercase tracking-wider">% Gordura</p>
-                                  <p className="text-3xl font-black text-gray-900 dark:text-white">{calculations.fatPercentage}%</p>
+                          <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl sm:rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+                              <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
+                                <div className="space-y-0.5 sm:space-y-1">
+                                  <p className="text-red-600 dark:text-red-400 text-xs sm:text-sm font-bold uppercase tracking-wider">% Gordura</p>
+                                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
+                                    {calculations.fatPercentage}%
+                                  </p>
                                 </div>
-                                <div className="p-3 bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl shadow-lg">
-                                  <BarChart3 className="h-6 w-6 text-white" />
+                                <div className="p-2 sm:p-3 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm sm:shadow-md">
+                                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
                                 </div>
                               </div>
-                              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-1 sm:h-1.5 md:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full"
                                   style={{ width: `${Math.min((calculations.fatPercentage / 35) * 100, 100)}%` }}></div>
                               </div>
@@ -1262,20 +1268,23 @@ export default function NewPhysicalAssessmentPage() {
                           </Card>
                         </div>
 
+                        {/* M. Gorda */}
                         <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-yellow-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-                            <CardContent className="p-6 text-center">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="space-y-1">
-                                  <p className="text-orange-600 dark:text-orange-400 text-sm font-bold uppercase tracking-wider">M. Gorda</p>
-                                  <p className="text-3xl font-black text-gray-900 dark:text-white">{calculations.fatMass}kg</p>
+                          <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-yellow-600 rounded-xl sm:rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+                              <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
+                                <div className="space-y-0.5 sm:space-y-1">
+                                  <p className="text-orange-600 dark:text-orange-400 text-xs sm:text-sm font-bold uppercase tracking-wider">M. Gorda</p>
+                                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
+                                    {calculations.fatMass}kg
+                                  </p>
                                 </div>
-                                <div className="p-3 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-2xl shadow-lg">
-                                  <Weight className="h-6 w-6 text-white" />
+                                <div className="p-2 sm:p-3 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm sm:shadow-md">
+                                  <Weight className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
                                 </div>
                               </div>
-                              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-1 sm:h-1.5 md:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full"
                                   style={{ width: `${(calculations.fatMass / parseFloat(assessment.weight)) * 100}%` }}></div>
                               </div>
@@ -1283,20 +1292,23 @@ export default function NewPhysicalAssessmentPage() {
                           </Card>
                         </div>
 
+                        {/* M. Magra */}
                         <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-                            <CardContent className="p-6 text-center">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="space-y-1">
-                                  <p className="text-green-600 dark:text-green-400 text-sm font-bold uppercase tracking-wider">M. Magra</p>
-                                  <p className="text-3xl font-black text-gray-900 dark:text-white">{calculations.leanMass}kg</p>
+                          <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl sm:rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+                              <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
+                                <div className="space-y-0.5 sm:space-y-1">
+                                  <p className="text-green-600 dark:text-green-400 text-xs sm:text-sm font-bold uppercase tracking-wider">M. Magra</p>
+                                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
+                                    {calculations.leanMass}kg
+                                  </p>
                                 </div>
-                                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl shadow-lg">
-                                  <Activity className="h-6 w-6 text-white" />
+                                <div className="p-2 sm:p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm sm:shadow-md">
+                                  <Activity className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
                                 </div>
                               </div>
-                              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-1 sm:h-1.5 md:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
                                   style={{ width: `${(calculations.leanMass / parseFloat(assessment.weight)) * 100}%` }}></div>
                               </div>
@@ -1304,25 +1316,28 @@ export default function NewPhysicalAssessmentPage() {
                           </Card>
                         </div>
 
-                        <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transform group-hover:scale-105 transition-all duration-300">
-                            <CardContent className="p-6 text-center">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="space-y-1">
-                                  <p className="text-purple-600 dark:text-purple-400 text-sm font-bold uppercase tracking-wider">Densidade</p>
-                                  <p className="text-3xl font-black text-gray-900 dark:text-white">{calculations.bodyDensity}</p>
+                        {/* Densidade */}
+                        {/* <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl sm:rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+                              <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
+                                <div className="space-y-0.5 sm:space-y-1">
+                                  <p className="text-purple-600 dark:text-purple-400 text-xs sm:text-sm font-bold uppercase tracking-wider">Densidade</p>
+                                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
+                                    {calculations.bodyDensity}
+                                  </p>
                                 </div>
-                                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
-                                  <Calculator className="h-6 w-6 text-white" />
+                                <div className="p-2 sm:p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm sm:shadow-md">
+                                  <Calculator className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
                                 </div>
                               </div>
-                              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-1 sm:h-1.5 md:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full w-3/4"></div>
                               </div>
                             </CardContent>
                           </Card>
-                        </div>
+                        </div> */}
                       </div>
 
                       {/* Observações */}

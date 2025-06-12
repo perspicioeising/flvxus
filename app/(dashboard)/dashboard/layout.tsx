@@ -96,7 +96,7 @@ export default function DashboardLayout({
 
         {/* Main Content */}
         <main className={`flex-1 overflow-y-auto transition-all duration-300 `}>
-          <div className="min-h-[calc(var(--vh, 1vh) * 100)] pt-[64px] md:pt-0 px-3 sm:px-4 md:px-6 lg:px-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+          <div className="min-h-[calc(var(--vh, 1vh) * 100)] pt-[24px] md:pt-0 px-3 sm:px-4 md:px-6 lg:px-8 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
             {children}
           </div>
         </main>
