@@ -654,11 +654,14 @@ export default function PhysicalAssessmentsPage() {
                           };
 
                           // Função para formatar o valor completo (tooltip)
-                          const formatFullValue = (value: number) => {
+                          const formatFullValue = (value: number | null | undefined) => {
+                            if (value == null) return "-"; // ou algum outro placeholder
+
                             if (item.isPercentage) return `${value.toLocaleString()}%`;
                             if (item.unit) return `${value.toLocaleString()} ${item.unit}`;
                             return value.toLocaleString();
                           };
+
 
                           const displayValue = formatDisplayValue(item.value);
                           const fullValue = formatFullValue(item.value);
