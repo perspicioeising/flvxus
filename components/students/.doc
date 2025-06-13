@@ -917,3 +917,26 @@ Esta estrutura pode ser aplicada a:
 ---
 
 > **🎉 Resultado:** Uma página de perfil completa, moderna e totalmente responsiva que oferece uma visão 360º do aluno com navegação intuitiva e ações contextuais!
+
+/components/students/
+├── StudentViewPage.tsx              # Página de VISUALIZAÇÃO (read-only)
+├── StudentDetailsPage.tsx           # Página de EDIÇÃO (com formulários)
+├── components/
+│   ├── index.ts                    # Exports centralizados
+│   │
+│   ├── # VISUALIZAÇÃO (Read-only)
+│   ├── StudentViewHeader.tsx       # Header só com "Editar" e "Reenviar"
+│   ├── StudentViewTabs.tsx         # Tabs para visualização
+│   ├── ProfileViewTab.tsx          # Perfil em modo visualização
+│   │
+│   ├── # EDIÇÃO (Edit mode)
+│   ├── StudentDetailsHeader.tsx    # Header com "Salvar" 
+│   ├── StudentDetailsTabs.tsx      # Tabs para edição
+│   ├── ProfileTab.tsx              # Perfil em modo edição
+│   │
+│   ├── # COMPARTILHADOS
+│   ├── StudentDetailsLoading.tsx   # Loading
+│   ├── TabLoading.tsx             # Loading das tabs
+│   ├── PhysicalAssessmentsTab.tsx # Avaliações físicas
+│   ├── PosturalAssessmentsTab.tsx # Avaliações posturais
+│   └── MediaTab.tsx               # Mídia
