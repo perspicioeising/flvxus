@@ -16,6 +16,20 @@ export interface StudentFormData {
   notes: string;
 }
 
+export interface Student {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  avatar_url?: string;
+  status: 'active' | 'inactive';
+  experience_level?: string;
+  goals?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+
 export interface StudentFormCarouselProps {
   initialData?: Partial<StudentFormData>;
   mode?: 'create' | 'edit';

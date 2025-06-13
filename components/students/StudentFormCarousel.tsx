@@ -16,9 +16,7 @@ import {
   Check,
   Loader2,
   Mail,
-  UserPlus,
-  Sparkles,
-  Users
+  Sparkles
 } from 'lucide-react';
 
 // Import dos componentes dos steps
@@ -39,27 +37,27 @@ interface StudentFormCarouselProps {
 const STEPS = [
   {
     id: 1,
-    title: 'Dados Pessoais',
+    title: 'Informações Pessoais',
     shortTitle: 'Pessoal',
-    description: 'Informações básicas',
+    description: 'Nome, email, telefone e dados básicos',
     icon: User,
-    color: 'from-blue-500 to-cyan-500'
+    color: 'from-blue-500 to-blue-600'
   },
   {
     id: 2,
-    title: 'Perfil de Treino',
-    shortTitle: 'Treino',
-    description: 'Objetivos e preferências',
+    title: 'Perfil Físico e Objetivos',
+    shortTitle: 'Objetivos',
+    description: 'Metas, experiência e preferências de treino',
     icon: Target,
-    color: 'from-purple-500 to-pink-500'
+    color: 'from-blue-600 to-blue-700'
   },
   {
     id: 3,
-    title: 'Informações Médicas',
+    title: 'Informações de Saúde',
     shortTitle: 'Saúde',
-    description: 'Saúde e observações',
+    description: 'Condições médicas e contato de emergência',
     icon: Heart,
-    color: 'from-green-500 to-emerald-500'
+    color: 'from-blue-700 to-blue-800'
   }
 ];
 
@@ -207,265 +205,265 @@ export function StudentFormCarousel({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black overflow-hidden">
-      
-      {/* Background Elements - Igual ao Login */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-green-500/20 to-emerald-500/10 rounded-full blur-3xl animate-pulse opacity-50" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-tl from-teal-500/15 to-transparent rounded-full blur-3xl animate-pulse delay-1000 opacity-60" />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-gradient-to-r from-blue-500/10 to-purple-500/20 rounded-full blur-3xl animate-pulse delay-500 opacity-40" />
-        <div className="absolute top-10 right-1/4 w-48 h-48 bg-gradient-to-l from-purple-500/15 to-pink-500/10 rounded-full blur-3xl animate-pulse delay-700 opacity-30" />
-      </div>
-
-      <div className="relative w-full max-w-2xl mx-4 my-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
         
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="p-3 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 transition-all duration-300"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+        {/* Header */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-blue-500/20 to-blue-600/20 dark:from-blue-500/10 dark:via-blue-400/10 dark:to-blue-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-blue-200/50 dark:border-blue-800/30 rounded-3xl p-6 lg:p-8 shadow-2xl">
+            
+            {/* Back Button + Title */}
+            <div className="flex flex-col items-center text-center gap-4 mb-6">
+              <div className="flex items-center justify-between w-full">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => router.back()}
+                  className="h-12 w-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                
+                {/* Spacer para manter o botão alinhado à esquerda */}
+                <div className="w-12"></div>
+              </div>
+              
+              <div className="flex flex-col items-center text-center">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-200 dark:to-white bg-clip-text text-transparent">
+                  {mode === 'edit' ? 'Editar Aluno' : 'Novo Aluno'}
+                </h1>
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mt-1">
+                  {currentStepData.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Steps Header */}
+            <div className="space-y-6">
+              
+              {/* Current Step Info */}
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="relative">
+                  <div className={`w-14 h-14 bg-gradient-to-br ${currentStepData.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                    <currentStepData.icon className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-3 w-3 text-white" />
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {currentStepData.title}
+                  </h2>
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <Badge className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-600 text-sm">
+                      Etapa {currentStep} de {STEPS.length}
+                    </Badge>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {Math.round(progressPercentage)}% concluído
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="relative">
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Steps Navigation */}
+              <div className="flex gap-2 sm:gap-3 justify-center">
+                {STEPS.map((step) => {
+                  const stepValidation = validation.stepValidation[step.id];
+                  const isActive = currentStep === step.id;
+                  const isCompleted = currentStep > step.id && stepValidation?.isValid;
+                  const canNavigate = step.id <= currentStep || stepValidation?.isValid;
+
+                  return (
+                    <button
+                      key={step.id}
+                      onClick={() => canNavigate && goToStep(step.id)}
+                      disabled={!canNavigate}
+                      className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 rounded-xl transition-all duration-300 ${
+                        isActive 
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105' 
+                          : isCompleted
+                          ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md hover:shadow-lg'
+                          : canNavigate
+                          ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md text-gray-700 dark:text-gray-300 hover:scale-105'
+                          : 'bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 opacity-50 cursor-not-allowed text-gray-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center w-5 h-5">
+                        {isCompleted ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <step.icon className="h-4 w-4" />
+                        )}
+                      </div>
+                      <span className="text-sm font-medium hidden sm:inline">
+                        {step.shortTitle}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Main Card */}
-        <div className="relative group">
-          {/* Background Glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-teal-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-teal-500/10 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          
-          {/* Card */}
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl shadow-2xl overflow-hidden">
-            
-            {/* Animated gradient border */}
-            <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-3xl"></div>
+        {/* Form Content */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-blue-500/10 to-blue-600/10 rounded-2xl blur-md"></div>
+          <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
+            <CardContent className="p-6 lg:p-8">
+              {renderCurrentStep()}
+            </CardContent>
+          </Card>
+        </div>
 
-            <div className="relative p-6 lg:p-8">
+        {/* Bottom Navigation */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-200/50 to-blue-200/50 dark:from-gray-700/50 dark:to-blue-700/50 rounded-2xl blur-md"></div>
+          <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-lg rounded-2xl">
+            <CardContent className="p-6">
               
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="flex justify-center mb-6">
-                  <div className="relative">
-                    <div className={`w-16 h-16 bg-gradient-to-br ${currentStepData.color} rounded-2xl flex items-center justify-center shadow-lg`}>
-                      <currentStepData.icon className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                      <Sparkles className="h-3 w-3 text-white" />
-                    </div>
-                  </div>
-                </div>
+              {/* Mobile Navigation */}
+              <div className="flex flex-col gap-3 sm:hidden">
+                {currentStep > 1 && (
+                  <Button
+                    variant="outline"
+                    onClick={prevStep}
+                    className="h-12 border-2 border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 text-blue-600 dark:text-blue-400 rounded-xl font-semibold transition-all duration-300"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Voltar
+                  </Button>
+                )}
                 
-                <h1 className="text-3xl font-black bg-gradient-to-r from-gray-600 via-gray-600 to-gray-900 dark:from-white dark:via-gray-400 dark:to-white bg-clip-text text-transparent mb-3">
-                  {mode === 'edit' ? 'Editar Aluno' : 'Adicionar Novo Aluno'}
-                </h1>
-                
-                <p className="text-gray-600 dark:text-gray-300 text-lg mb-6">
-                  {currentStepData.title} • {currentStepData.description}
-                </p>
+                <Button
+                  onClick={isLastStep ? handleSubmit : nextStep}
+                  disabled={!canAdvance || isLoading}
+                  className={`h-12 font-bold rounded-xl shadow-lg transition-all duration-300 border-0 ${
+                    isLastStep
+                      ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-green-500/25 text-white'
+                      : `bg-gradient-to-r ${currentStepData.color} hover:shadow-blue-500/25 text-white`
+                  }`}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {mode === 'edit' ? 'Salvando...' : 'Enviando...'}
+                    </>
+                  ) : isLastStep ? (
+                    <>
+                      {mode === 'edit' ? (
+                        <>
+                          <Check className="h-4 w-4 mr-2" />
+                          Salvar Alterações
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Enviar Convite
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      Próximo: {STEPS[currentStep]?.shortTitle}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
+                  )}
+                </Button>
 
-                {/* Progress Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Progresso
-                    </span>
-                    <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 text-green-800 dark:text-green-300 border-0 font-bold">
-                      {currentStep} de {STEPS.length}
-                    </Badge>
-                  </div>
-                  
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl blur opacity-50"></div>
-                    <Progress 
-                      value={progressPercentage} 
-                      className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-xl"
-                    />
-                  </div>
-
-                  {/* Steps Navigation */}
-                  <div className="flex justify-center gap-3">
-                    {STEPS.map((step) => {
-                      const stepValidation = validation.stepValidation[step.id];
-                      const isActive = currentStep === step.id;
-                      const isCompleted = currentStep > step.id && stepValidation?.isValid;
-                      const canNavigate = step.id <= currentStep || stepValidation?.isValid;
-
-                      return (
-                        <button
-                          key={step.id}
-                          onClick={() => canNavigate && goToStep(step.id)}
-                          disabled={!canNavigate}
-                          className={`relative w-12 h-12 rounded-2xl transition-all duration-300 ${
-                            isActive 
-                              ? `bg-gradient-to-br ${step.color} shadow-lg scale-110` 
-                              : isCompleted
-                              ? 'bg-gradient-to-br from-green-500 to-emerald-500 shadow-md hover:shadow-lg'
-                              : canNavigate
-                              ? 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'
-                              : 'bg-gray-100 dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 opacity-50 cursor-not-allowed'
-                          }`}
-                        >
-                          <div className="flex items-center justify-center">
-                            {isCompleted ? (
-                              <Check className="h-5 w-5 text-white" />
-                            ) : (
-                              <step.icon className={`h-5 w-5 ${
-                                isActive ? 'text-white' : canNavigate ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400'
-                              }`} />
-                            )}
-                          </div>
-                          
-                          {isActive && (
-                            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full"></div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => router.back()}
+                  className="h-12 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl font-semibold transition-all duration-300"
+                >
+                  Cancelar
+                </Button>
               </div>
 
-              {/* Step Content */}
-              <div className="mb-8">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-green-50/50 dark:from-gray-800/50 dark:to-green-900/20 rounded-2xl blur opacity-50"></div>
-                  <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-                    {renderCurrentStep()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Navigation Buttons */}
-              <div className="space-y-4">
-                {/* Mobile: Stack vertically */}
-                <div className="flex flex-col gap-3 sm:hidden">
+              {/* Desktop Navigation */}
+              <div className="hidden sm:flex sm:justify-between sm:items-center">
+                <div className="flex gap-3">
                   {currentStep > 1 && (
                     <Button
                       variant="outline"
                       onClick={prevStep}
-                      className="h-14 text-lg border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 rounded-2xl font-semibold transition-all duration-300"
+                      className="px-6 h-12 border-2 border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 text-blue-600 dark:text-blue-400 rounded-xl font-semibold transition-all duration-300"
                     >
-                      <ArrowLeft className="h-5 w-5 mr-2" />
+                      <ArrowLeft className="h-4 w-4 mr-2" />
                       Voltar
                     </Button>
                   )}
                   
                   <Button
-                    onClick={isLastStep ? handleSubmit : nextStep}
-                    disabled={!canAdvance || isLoading}
-                    className={`h-14 text-lg font-bold rounded-2xl shadow-2xl transition-all duration-500 transform hover:scale-105 border-0 ${
-                      isLastStep
-                        ? 'bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 hover:shadow-green-500/25'
-                        : `bg-gradient-to-r ${currentStepData.color} hover:shadow-lg`
-                    }`}
+                    variant="ghost"
+                    onClick={() => router.back()}
+                    className="px-6 h-12 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl font-semibold transition-all duration-300"
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        {mode === 'edit' ? 'Salvando...' : 'Enviando...'}
-                      </>
-                    ) : isLastStep ? (
-                      <>
-                        {mode === 'edit' ? (
-                          <>
-                            <Check className="h-5 w-5 mr-2" />
-                            Salvar Alterações
-                          </>
-                        ) : (
-                          <>
-                            <Mail className="h-5 w-5 mr-2" />
-                            Enviar Convite
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        Próximo
-                        <ArrowRight className="h-5 w-5 ml-2" />
-                      </>
-                    )}
+                    Cancelar
                   </Button>
                 </div>
 
-                {/* Desktop: Horizontal layout */}
-                <div className="hidden sm:flex sm:justify-between sm:items-center">
-                  <div className="flex gap-3">
-                    {currentStep > 1 && (
-                      <Button
-                        variant="outline"
-                        onClick={prevStep}
-                        className="px-6 h-12 border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 rounded-2xl font-semibold transition-all duration-300"
-                      >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Voltar
-                      </Button>
-                    )}
-                    
-                    <Button
-                      variant="ghost"
-                      onClick={() => router.back()}
-                      className="px-6 h-12 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl font-semibold transition-all duration-300"
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-
-                  <Button
-                    onClick={isLastStep ? handleSubmit : nextStep}
-                    disabled={!canAdvance || isLoading}
-                    className={`px-8 h-12 font-bold rounded-2xl shadow-2xl transition-all duration-500 transform hover:scale-105 border-0 ${
-                      isLastStep
-                        ? 'bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 hover:shadow-green-500/25'
-                        : `bg-gradient-to-r ${currentStepData.color}`
-                    }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {mode === 'edit' ? 'Salvando...' : 'Enviando...'}
-                      </>
-                    ) : isLastStep ? (
-                      <>
-                        {mode === 'edit' ? (
-                          <>
-                            <Check className="h-4 w-4 mr-2" />
-                            Salvar Alterações
-                          </>
-                        ) : (
-                          <>
-                            <Mail className="h-4 w-4 mr-2" />
-                            Enviar Convite
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        Próximo
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <Button
+                  onClick={isLastStep ? handleSubmit : nextStep}
+                  disabled={!canAdvance || isLoading}
+                  className={`px-8 h-12 font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 border-0 ${
+                    isLastStep
+                      ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-green-500/25 text-white'
+                      : `bg-gradient-to-r ${currentStepData.color} hover:shadow-blue-500/25 text-white`
+                  }`}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {mode === 'edit' ? 'Salvando...' : 'Enviando...'}
+                    </>
+                  ) : isLastStep ? (
+                    <>
+                      {mode === 'edit' ? (
+                        <>
+                          <Check className="h-4 w-4 mr-2" />
+                          Salvar Alterações
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Enviar Convite
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      Próximo: {STEPS[currentStep]?.shortTitle}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
+                  )}
+                </Button>
               </div>
 
-              {/* Footer Info */}
-              <div className="mt-6 text-center">
-                <div className="p-4 bg-gradient-to-r from-gray-50 to-green-50 dark:from-gray-800/50 dark:to-green-900/20 rounded-xl border border-gray-200/50 dark:border-green-700/50">
-                  <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Users className="h-4 w-4" />
-                    <span>
-                      {mode === 'edit' 
-                        ? 'Atualize as informações do aluno conforme necessário'
-                        : 'Um convite será enviado automaticamente por email'
-                      }
-                    </span>
-                  </div>
-                </div>
+              {/* Help Text */}
+              <div className="mt-4 pt-4 border-t border-gray-200/50 dark:border-gray-700/50 text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {mode === 'edit' 
+                    ? 'Atualize as informações necessárias e salve as alterações'
+                    : 'Preencha todos os campos obrigatórios para enviar o convite por email'
+                  }
+                </p>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
