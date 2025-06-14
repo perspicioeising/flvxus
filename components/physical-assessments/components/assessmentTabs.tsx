@@ -21,10 +21,10 @@ export function AssessmentTabs({
       {/* Mobile-Optimized Tabs */}
       <div className="relative mb-10">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl sm:rounded-2xl blur-xl opacity-20"></div>
-        <TabsList className="relative grid w-full grid-cols-2 sm:grid-cols-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl shadow-2xl rounded-xl sm:rounded-2xl p-1 sm:p-2 border-0 gap-1">
+        <TabsList className="relative grid w-full grid-cols-2 sm:grid-cols-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl shadow-2xl rounded-xl sm:rounded-2xl  border-0 gap-1">
           <TabsTrigger
             value="overview"
-            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm py-2 sm:py-3"
+            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm  "
           >
             <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -32,7 +32,7 @@ export function AssessmentTabs({
           </TabsTrigger>
           <TabsTrigger
             value="measurements"
-            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm py-2 sm:py-3"
+            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm "
           >
             <Ruler className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Medidas</span>
@@ -40,7 +40,7 @@ export function AssessmentTabs({
           </TabsTrigger>
           <TabsTrigger
             value="analysis"
-            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm py-2 sm:py-3"
+            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm "
           >
             <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Análise IA</span>
@@ -48,7 +48,7 @@ export function AssessmentTabs({
           </TabsTrigger>
           <TabsTrigger
             value="comparison"
-            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm py-2 sm:py-3"
+            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm"
           >
             <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Comparação</span>

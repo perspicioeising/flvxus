@@ -84,30 +84,7 @@ export function AssessmentOverview({ assessment, classification }: AssessmentOve
           return (
             <div key={index} className="relative group">
               <div className={`absolute inset-0 bg-gradient-to-r ${metric.color} rounded-xl sm:rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300`}></div>
-              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-xl sm:rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
-                <div className={`absolute inset-0 bg-gradient-to-r ${metric.color} rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl"></div>
-
-                <CardContent className="relative p-3 sm:p-6 text-center">
-                  <div className="flex items-center justify-between mb-2 sm:mb-4">
-                    <div className="space-y-1">
-                      <p className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${metric.color.replace('from-', 'text-').replace(' to-cyan-600', '').replace(' to-orange-600', '').replace(' to-yellow-600', '').replace(' to-emerald-600', '')} dark:opacity-80`}>
-                        {metric.label}
-                      </p>
-                      <p className="text-lg sm:text-4xl font-black text-gray-900 dark:text-white">
-                        {formatNumber(validValue, 1)}{metric.suffix}
-                      </p>
-                    </div>
-                    <div className={`p-2 sm:p-4 bg-gradient-to-br ${metric.color} rounded-lg sm:rounded-2xl shadow-lg`}>
-                      <Icon className="h-4 w-4 sm:h-8 sm:w-8 text-white" />
-                    </div>
-                  </div>
-                  <div className="h-1 sm:h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div className={`h-full bg-gradient-to-r ${metric.color} rounded-full transition-all duration-1000`}
-                      style={{ width: `${Math.min(metric.progress, 100)}%` }}></div>
-                  </div>
-                </CardContent>
-              </Card>
+              
             </div>
           );
         })}
@@ -142,9 +119,9 @@ function BodyCompositionChart({ assessment, classification }: { assessment: Asse
 
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-500/10 to-purple-600/10 rounded-2xl sm:rounded-3xl blur-2xl"></div>
+      <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-indigo-200/50 dark:border-indigo-800/30 rounded-2xl sm:rounded-3xl blur-2xl"></div>
       <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl">
-        <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-purple-50/50 via-pink-50/50 to-purple-50/50 dark:from-purple-900/10 dark:via-pink-900/10 dark:to-purple-900/10 rounded-t-2xl sm:rounded-t-3xl">
+        <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-purple-50/50 via-indigo-50/50 to-purple-50/50 dark:from-purple-900/10 dark:via-indigo-900/10 dark:to-purple-900/10 rounded-t-2xl sm:rounded-t-3xl">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="relative">
               <div className="p-3 sm:p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl sm:rounded-2xl shadow-lg">
