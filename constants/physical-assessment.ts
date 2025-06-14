@@ -112,7 +112,7 @@ export const ASSESSMENT_STEPS = [
     id: 'analysis', 
     title: 'Análise IA', 
     shortTitle: 'IA',
-    description: 'Análise inteligente',
+    description: 'Análise inteligente com IA',
     icon: 'Brain', 
     color: 'from-indigo-600 to-purple-600' 
   }
