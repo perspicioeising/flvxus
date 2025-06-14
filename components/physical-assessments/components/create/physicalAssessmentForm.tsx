@@ -6,12 +6,12 @@ import { ASSESSMENT_STEPS } from '@/constants/physical-assessment';
 
 // Import dos componentes dos steps com nova nomenclatura
 import { PhysicalAssessmentHeader } from './physicalAssessmentHeader';
-import { StepNavigation } from './steps/StepNavigation';
-import { StepBasic } from './steps/StepBasic';
-import { StepProtocol } from './steps/StepProtocol';
-import { StepMeasurements } from './steps/StepMeasurements';
-import { StepResults } from './steps/StepResults';
-import { StepAnalysis } from './steps/StepAnalysis';
+import { StepNavigation } from '../steps/StepNavigation';
+import { StepBasic } from '../steps/StepBasic';
+import { StepProtocol } from '../steps/StepProtocol';
+import { StepMeasurements } from '../steps/StepMeasurements';
+import { StepResults } from '../steps/StepResults';
+import { StepAnalysis } from '../steps/StepAnalysis';
 import { PhysicalAssessmentFormSkeleton } from './physicalAssessmentLoading';
 
 interface PhysicalAssessmentFormCarouselProps {

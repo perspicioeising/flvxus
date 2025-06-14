@@ -132,9 +132,6 @@ export function StudentsListPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black overflow-hidden">
-      
-   
-
       <div className="relative container mx-auto px-4 py-6 max-w-7xl">
         
         {/* Header */}
@@ -143,13 +140,8 @@ export function StudentsListPage() {
           onNewStudent={() => router.push('/dashboard/students/new')}
         />
 
-        {/* Stats - Only show if we have students */}
-        {!isLoading && students.length > 0 && (
-          <StudentsStats students={students} />
-        )}
+     
 
-        {/* Search and Filters */}
-        {/* Search and Filters */}
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-500/10 to-cyan-600/10 rounded-2xl blur-md"></div>
           <Card className="relative border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md shadow-xl rounded-2xl">

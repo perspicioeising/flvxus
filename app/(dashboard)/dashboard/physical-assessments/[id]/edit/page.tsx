@@ -2,7 +2,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { PhysicalAssessmentFormCarousel } from '@/components/physical-assessments/components/physicalAssessmentForm';
+import { PhysicalAssessmentFormCarousel } from '@/components/physical-assessments/components/create/physicalAssessmentForm';
 
 export default function EditAssessmentPage() {
   const params = useParams();

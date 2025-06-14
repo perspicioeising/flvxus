@@ -4,7 +4,7 @@
 import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { PhysicalAssessmentFormCarousel } from '@/components/physical-assessments/components/physicalAssessmentForm';
+import { PhysicalAssessmentFormCarousel } from '@/components/physical-assessments/components/create/physicalAssessmentForm';
 
 export default function NewPhysicalAssessmentPage() {
   const router = useRouter();
