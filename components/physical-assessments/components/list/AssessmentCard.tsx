@@ -10,6 +10,7 @@ import { AssessmentCardProps } from "@/components/physical-assessments/types/phy
 import { PROTOCOLS, ASSESSMENT_METRICS } from "@/components/physical-assessments/constants/physical-assessment";
 import { getBodyFatClassification, formatMetricValue, getMetricTooltip, getNameInitials } from "@/components/physical-assessments/components/assessmentUtils";
 
+
 export function AssessmentCard({ 
   assessment, 
   onView, 
