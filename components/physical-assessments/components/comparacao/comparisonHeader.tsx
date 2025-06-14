@@ -47,7 +47,7 @@ export function ComparisonHeader({
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-green-600/20 dark:from-green-500/10 dark:via-emerald-400/10 dark:to-green-500/10 rounded-2xl sm:rounded-3xl blur-xl"></div>
       <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-2xl">
-        <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-green-50/50 via-emerald-50/50 to-green-50/50 dark:from-green-900/10 dark:via-emerald-900/10 dark:to-green-900/10 rounded-t-2xl sm:rounded-t-3xl">
+        <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-indigo-50/50 via-emerald-50/50 to-indigo-50/50 dark:from-indigo-900/10 dark:via-emerald-900/10 dark:to-indigo-900/10 rounded-t-2xl sm:rounded-t-3xl">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="relative mx-auto sm:mx-0">
@@ -84,7 +84,7 @@ export function ComparisonHeader({
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-2 text-center sm:text-left">
-                <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                 <span className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300">
                   Comparar com:
                 </span>
@@ -101,9 +101,9 @@ export function ComparisonHeader({
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 focus:scale-105">
+                  <SelectTrigger className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-indigo-200 dark:border-indigo-700 hover:border-indigo-300 dark:hover:border-indigo-600 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 focus:scale-105">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                       <SelectValue placeholder="Selecione uma avaliação anterior">
                         {selectedAssessment && (
                           <div className="flex items-center gap-2">
@@ -118,7 +118,7 @@ export function ComparisonHeader({
                       </SelectValue>
                     </div>
                   </SelectTrigger>
-                  <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-green-200 dark:border-green-700 rounded-xl shadow-2xl">
+                  <SelectContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-2 border-indigo-200 dark:border-indigo-700 rounded-xl shadow-2xl">
                     {availableAssessments.length === 0 ? (
                       <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                         <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -132,7 +132,7 @@ export function ComparisonHeader({
                           <SelectItem
                             key={assessment.id}
                             value={assessment.id}
-                            className="p-3 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg m-1 transition-all duration-200 cursor-pointer"
+                            className="p-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg m-1 transition-all duration-200 cursor-pointer"
                           >
                             <div className="flex items-center justify-between w-full">
                               <div className="flex flex-col">
@@ -146,7 +146,7 @@ export function ComparisonHeader({
                               <div className="flex flex-col items-end">
                                 <Badge 
                                   variant="outline" 
-                                  className="text-xs border-green-300 text-green-700 dark:border-green-600 dark:text-green-400"
+                                  className="text-xs border-indigo-300 text-indigo-700 dark:border-indigo-600 dark:text-indigo-400"
                                 >
                                   {daysDiff === 0 ? 'Hoje' : 
                                    daysDiff === 1 ? 'Ontem' : 

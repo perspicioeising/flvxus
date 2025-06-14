@@ -41,7 +41,7 @@ export function AssessmentMeasurements({ measurements }: AssessmentMeasurementsP
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-emerald-500/10 to-green-600/10 rounded-2xl sm:rounded-3xl blur-2xl"></div>
       <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl">
-        <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-green-50/50 via-emerald-50/50 to-green-50/50 dark:from-green-900/10 dark:via-emerald-900/10 dark:to-green-900/10 rounded-t-2xl sm:rounded-t-3xl">
+        <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-indigo-50/50 via-emerald-50/50 to-indigo-50/50 dark:from-indigo-900/10 dark:via-emerald-900/10 dark:to-indigo-900/10 rounded-t-2xl sm:rounded-t-3xl">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="relative">
               <div className="p-3 sm:p-4 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl sm:rounded-2xl shadow-lg">
