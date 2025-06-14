@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { BodyCompositionResult } from '@/components/physical-assessments/types/physical-assessment';
-import { RESULTS_METRICS } from '@/components/constants/physical-assessment';
+import { RESULTS_METRICS } from '@/components/physical-assessments/constants/physical-assessment';
 import { 
   Scale, 
   BarChart3, 
