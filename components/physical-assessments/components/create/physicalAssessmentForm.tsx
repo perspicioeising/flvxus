@@ -1,8 +1,8 @@
 // components/physical-assessments/components/physicalAssessmentForm.tsx
 'use client';
 
-import { usePhysicalAssessmentForm } from '@/hooks/usePhysicalAssessmentForm';
-import { ASSESSMENT_STEPS } from '@/constants/physical-assessment';
+import { usePhysicalAssessmentForm } from '@/components/physical-assessments/hooks/usePhysicalAssessmentForm';
+import { ASSESSMENT_STEPS } from '@/components/constants/physical-assessment';
 
 // Import dos componentes dos steps com nova nomenclatura
 import { PhysicalAssessmentHeader } from './physicalAssessmentHeader';

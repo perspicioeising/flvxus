@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { BodyCompositionResult } from '@/types/physical-assessment';
-import { RESULTS_METRICS } from '@/constants/physical-assessment';
+import { BodyCompositionResult } from '@/components/physical-assessments/types/physical-assessment';
+import { RESULTS_METRICS } from '@/components/constants/physical-assessment';
 import { 
   Scale, 
   BarChart3, 

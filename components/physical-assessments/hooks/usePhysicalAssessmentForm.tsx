@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { PhysicalAssessmentFormData, BodyCompositionResult, Student, AIAnalysis } from '@/types/physical-assessment';
+import { PhysicalAssessmentFormData, BodyCompositionResult, Student, AIAnalysis } from '@/components/physical-assessments/types/physical-assessment';
 
 const initialFormData: PhysicalAssessmentFormData = {
   student_id: '',

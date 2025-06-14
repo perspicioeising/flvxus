@@ -257,80 +257,8 @@ export default function ExercisesPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        {filteredExercises.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-105 transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="space-y-1">
-                      <p className="text-green-600 dark:text-green-400 text-sm font-bold uppercase tracking-wider">Total</p>
-                      <p className="text-4xl font-black text-gray-900 dark:text-white">{exercises.length}</p>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl shadow-lg">
-                      <Dumbbell className="h-8 w-8 text-white" />
-                    </div>
-                  </div>
-                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full w-full"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-105 transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="space-y-1">
-                      <p className="text-blue-600 dark:text-blue-400 text-sm font-bold uppercase tracking-wider">Com Vídeo</p>
-                      <p className="text-4xl font-black text-gray-900 dark:text-white">
-                        {exercises.filter(e => e.video_url).length}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
-                      <Video className="h-8 w-8 text-white" />
-                    </div>
-                  </div>
-                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-1000"
-                      style={{ width: `${(exercises.filter(e => e.video_url).length / Math.max(exercises.length, 1)) * 100}%` }}
-                    ></div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <Card className="relative border-0 bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-105 transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="space-y-1">
-                      <p className="text-purple-600 dark:text-purple-400 text-sm font-bold uppercase tracking-wider">Grupos Musculares</p>
-                      <p className="text-4xl font-black text-gray-900 dark:text-white">
-                        {new Set(exercises.flatMap(e => e.muscle_group)).size}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
-                      <Target className="h-8 w-8 text-white" />
-                    </div>
-                  </div>
-                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-1000"
-                      style={{ width: `${Math.min((new Set(exercises.flatMap(e => e.muscle_group)).size / MUSCLE_GROUPS.length) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
+    
 
         {/* Glassmorphism Search Bar */}
         <div className="mb-8 relative">

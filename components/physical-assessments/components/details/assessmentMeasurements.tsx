@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ruler, AlertCircle, Star } from "lucide-react";
-import { AssessmentMeasurementsProps, MEASUREMENT_LABELS } from '@/types/physical-assessment-details';
+import { AssessmentMeasurementsProps, MEASUREMENT_LABELS } from '@/components/physical-assessments/types/physical-assessment-details';
 
 export function AssessmentMeasurements({ measurements }: AssessmentMeasurementsProps) {
   

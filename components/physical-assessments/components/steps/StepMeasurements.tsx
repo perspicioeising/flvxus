@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MEASUREMENT_FIELDS } from '@/constants/physical-assessment';
+import { MEASUREMENT_FIELDS } from '@/components/constants/physical-assessment';
 
 interface StepMeasurementsProps {
   measurements: Record<string, string>;

@@ -1,6 +1,6 @@
 // /components/physical-assessments/components/list/PaginationInfo.tsx
 
-import { PaginationInfoProps } from "@/types/physical-assessment";
+import { PaginationInfoProps } from "@/components/physical-assessments/types/physical-assessment";
 
 export function PaginationInfo({ currentCount, totalCount }: PaginationInfoProps) {
   return (

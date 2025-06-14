@@ -4,8 +4,8 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, User, Trophy } from "lucide-react";
-import { AssessmentComparisonProps } from '@/types/assessment-comparison';
-import { useAssessmentComparison } from '@/hooks/useAssessmentComparison';
+import { AssessmentComparisonProps } from '@/components/physical-assessments/types/assessment-comparison';
+import { useAssessmentComparison } from '@/components/physical-assessments/hooks/useAssessmentComparison';
 import { ComparisonSkeleton } from './comparisonSkeleton';
 import { ComparisonEmptyState } from './comparisonEmptyState';
 import { ComparisonHeader } from './comparisonHeader';

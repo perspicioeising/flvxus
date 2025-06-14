@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PhysicalAssessmentFormData, Student } from '@/types/physical-assessment';
+import { PhysicalAssessmentFormData, Student } from '@/components/physical-assessments/types/physical-assessment';
 import { 
   Search, 
   User, 

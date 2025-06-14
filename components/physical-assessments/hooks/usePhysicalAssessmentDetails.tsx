@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { AssessmentDetails, AssessmentClassification } from '@/types/physical-assessment-details';
+import { AssessmentDetails, AssessmentClassification } from '@/components/physical-assessments/types/physical-assessment-details';
 
 // Função auxiliar para garantir que temos um número válido
 const ensureNumber = (value: unknown): number => {

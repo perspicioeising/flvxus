@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronDown } from "lucide-react";
-import { LoadMoreButtonProps } from "@/types/physical-assessment";
+import { LoadMoreButtonProps } from "@/components/physical-assessments/types/physical-assessment";
 
 export function LoadMoreButton({
   isLoading,

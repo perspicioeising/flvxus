@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Calculator, Filter, X } from "lucide-react";
-import { AssessmentFiltersProps } from "@/types/physical-assessment";
-import { PROTOCOLS, DATE_FILTERS } from "@/constants/physical-assessment";
+import { AssessmentFiltersProps } from "@/components/physical-assessments/types/physical-assessment";
+import { PROTOCOLS, DATE_FILTERS } from "@/components/constants/physical-assessment";
 
 export function AssessmentFilters({
   filters,

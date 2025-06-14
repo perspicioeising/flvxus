@@ -19,7 +19,7 @@ import {
   Info,
   Sparkles
 } from "lucide-react";
-import { AssessmentOverviewProps, MetricCard, PROTOCOLS } from '@/types/physical-assessment-details';
+import { AssessmentOverviewProps, MetricCard, PROTOCOLS } from '@/components/physical-assessments/types/physical-assessment-details';
 
 export function AssessmentOverview({ assessment, classification }: AssessmentOverviewProps) {
 

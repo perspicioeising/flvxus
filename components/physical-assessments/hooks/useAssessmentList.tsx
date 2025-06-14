@@ -8,7 +8,7 @@ import {
   AssessmentFilters, 
   PaginationData,
   AssessmentListResponse 
-} from "@/types/physical-assessment";
+} from "@/components/physical-assessments/types/physical-assessment";
 import { calculateAssessmentStats } from "@/components/physical-assessments/components/assessmentUtils";
 
 export function useAssessmentList() {

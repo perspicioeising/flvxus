@@ -1,7 +1,7 @@
 // /utils/assessmentUtils.ts
 
-import { AssessmentClassification } from "@/types/physical-assessment";
-import { FAT_PERCENTAGE_CLASSIFICATIONS } from "@/constants/physical-assessment";
+import { AssessmentClassification } from "@/components/physical-assessments/types/physical-assessment";
+import { FAT_PERCENTAGE_CLASSIFICATIONS } from "@/components/constants/physical-assessment";
 
 /**
  * Obtém a classificação de gordura corporal baseada no percentual e gênero

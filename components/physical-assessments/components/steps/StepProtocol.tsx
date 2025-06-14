@@ -1,7 +1,7 @@
 // components/physical-assessments/components/steps/stepProtocol.tsx
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BODY_PROTOCOLS } from '@/constants/physical-assessment';
+import { BODY_PROTOCOLS } from '@/components/constants/physical-assessment';
 import { Calculator, CheckCircle2, Info } from 'lucide-react';
 
 interface StepProtocolProps {

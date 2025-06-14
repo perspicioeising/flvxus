@@ -24,7 +24,7 @@ import {
   Scale
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AssessmentHeaderProps } from '@/types/physical-assessment-details';
+import { AssessmentHeaderProps } from '@/components/physical-assessments/types/physical-assessment-details';
 
 export function AssessmentDetailsHeader({
   assessment,

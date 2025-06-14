@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Brain } from "lucide-react";
-import { AssessmentEmptyStateProps } from "@/types/physical-assessment";
+import { AssessmentEmptyStateProps } from "@/components/physical-assessments/types/physical-assessment";
 
 export function AssessmentEmptyState({ 
   userRole, 

@@ -7,7 +7,7 @@ import {
   ArrowDownCircle, 
   ArrowRightCircle 
 } from "lucide-react";
-import { ComparisonData } from '@/types/assessment-comparison';
+import { ComparisonData } from '@/components/physical-assessments/types/assessment-comparison';
 
 interface ComparisonOverviewProps {
   comparisonData: ComparisonData[];

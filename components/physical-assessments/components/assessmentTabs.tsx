@@ -3,7 +3,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Ruler, Brain, TrendingUp } from "lucide-react";
-import { AssessmentTabsProps } from '@/types/physical-assessment-details';
+import { AssessmentTabsProps } from '@/components/physical-assessments/types/physical-assessment-details';
 import { AssessmentOverview } from '@/components/physical-assessments/components/details/assessmentOverview';
 import { AssessmentMeasurements } from '@/components/physical-assessments/components/details/assessmentMeasurements';
 import AssessmentAIAnalysis from '@/components/AssessmentAIAnalysis';

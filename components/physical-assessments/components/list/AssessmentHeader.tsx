@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus, Sparkles, Book } from "lucide-react";
-import { AssessmentHeaderComponentProps } from "@/types/physical-assessment";
+import { AssessmentHeaderComponentProps } from "@/components/physical-assessments/types/physical-assessment";
 
 export function AssessmentHeader({ 
   userRole, 

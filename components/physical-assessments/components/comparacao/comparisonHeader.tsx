@@ -16,7 +16,7 @@ import {
   Clock,
   Calendar
 } from "lucide-react";
-import { ComparisonHeaderProps } from '@/types/assessment-comparison';
+import { ComparisonHeaderProps } from '@/components/physical-assessments/types/assessment-comparison';
 
 export function ComparisonHeader({
   progress,

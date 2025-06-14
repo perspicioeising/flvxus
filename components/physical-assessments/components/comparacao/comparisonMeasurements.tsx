@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { User, Ruler, Zap } from "lucide-react";
-import { Assessment, MeasurementPoint, MEASUREMENT_DATA, safeNumber } from '@/types/assessment-comparison';
+import { Assessment, MeasurementPoint, MEASUREMENT_DATA, safeNumber } from '@/components/physical-assessments/types/assessment-comparison';
 import { HumanoidFigure } from '../humanoidFigure';
 
 interface ComparisonMeasurementsProps {

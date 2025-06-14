@@ -20,7 +20,7 @@ import {
   Activity,
   Zap
 } from "lucide-react";
-import { ComparisonData, Assessment } from '@/types/assessment-comparison';
+import { ComparisonData, Assessment } from '@/components/physical-assessments/types/assessment-comparison';
 
 interface ComparisonSummaryProps {
   comparisonData: ComparisonData[];

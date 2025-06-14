@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import { HumanoidFigureProps, MEASUREMENT_DATA, safeNumber } from '@/types/assessment-comparison';
+import { HumanoidFigureProps, MEASUREMENT_DATA, safeNumber } from '@/components/physical-assessments/types/assessment-comparison';
 
 export function HumanoidFigure({ 
   measurements, 

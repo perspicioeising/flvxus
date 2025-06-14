@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AIAnalysis, BodyCompositionResult, Student } from '@/types/physical-assessment';
+import { AIAnalysis, BodyCompositionResult, Student } from '@/components/physical-assessments/types/physical-assessment';
 import { 
   Brain,
   Save,

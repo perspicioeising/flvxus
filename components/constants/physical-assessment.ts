@@ -1,6 +1,6 @@
 // /constants/physical-assessment.ts
 
-import { BodyProtocol, MeasurementFields } from '@/types/physical-assessment';
+import { BodyProtocol, MeasurementFields } from '@/components/physical-assessments/types/physical-assessment';
 
 export const BODY_PROTOCOLS: BodyProtocol[] = [
   {

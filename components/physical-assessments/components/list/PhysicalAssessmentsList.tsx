@@ -9,7 +9,7 @@ import {
   AssessmentEmptyState,
   AssessmentPageLoadingSkeleton
 } from "@/components/physical-assessments/components/list";
-import { useAssessmentList } from "@/hooks/useAssessmentList";
+import { useAssessmentList } from "@/components/physical-assessments/hooks/useAssessmentList";
 
 export default function PhysicalAssessmentsPage() {
   const router = useRouter();

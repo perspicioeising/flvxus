@@ -8,7 +8,7 @@ import {
   MeasurementPoint, 
   ProgressScore,
   safeNumber
-} from '@/types/assessment-comparison';
+} from '@/components/physical-assessments/types/assessment-comparison';
 import {
   Scale,
   BarChart3,

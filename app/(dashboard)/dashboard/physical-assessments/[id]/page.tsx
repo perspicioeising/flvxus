@@ -15,8 +15,8 @@ import {
   LoadMoreButton,
   PaginationInfo
 } from "@/components/physical-assessments/components/list";
-import { useAssessmentList } from "@/hooks/useAssessmentList";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { useAssessmentList } from "@/components/physical-assessments/hooks/useAssessmentList";
+import { useInfiniteScroll } from "@/components/physical-assessments/hooks/useInfiniteScroll";
 
 export default function PhysicalAssessmentsPage() {
   const router = useRouter();
