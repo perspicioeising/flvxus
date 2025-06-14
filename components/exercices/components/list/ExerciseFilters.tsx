@@ -78,25 +78,6 @@ export function ExerciseFilters({
                 </SelectContent>
               </Select>
 
-              {/* View Mode Toggle - Mobile */}
-              <div className="flex items-center gap-1 bg-white/80 dark:bg-gray-800/80 rounded-lg p-1 shadow-md backdrop-blur-sm">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="icon"
-                  onClick={() => onViewModeChange('grid')}
-                  className="h-8 w-8 rounded-md"
-                >
-                  <Grid className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="icon"
-                  onClick={() => onViewModeChange('list')}
-                  className="h-8 w-8 rounded-md"
-                >
-                  <LayoutList className="h-3 w-3" />
-                </Button>
-              </div>
 
               {/* Botão Limpar - Mobile */}
               {hasActiveFilters && (
