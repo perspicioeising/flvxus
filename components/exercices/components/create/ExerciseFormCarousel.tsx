@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ExerciseHeader } from './ExerciseHeader';
 import { StepNavigation } from '@/components/exercices/components/progresso/StepNavigation';
 import { StepBasicInfo } from '../steps/StepBasicInfo';
@@ -25,12 +25,14 @@ interface ExerciseFormData {
 }
 
 interface ExerciseFormCarouselProps {
-  mode?: 'create' | 'edit';
+  mode?: 'create' | 'clone' | 'edit';
   exerciseId?: string;
+  cloneId?: string;
 }
 
-export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFormCarouselProps) {
+export function ExerciseFormCarousel({ mode = 'create', exerciseId, cloneId }: ExerciseFormCarouselProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [activeStep, setActiveStep] = useState('basic');
   const [isLoading, setIsLoading] = useState(false);
@@ -52,42 +54,88 @@ export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFo
     common_errors: '',
   });
 
-  // Fetch exercise data for edit mode
+  // Detectar clonagem via query params se não for passado via props
+  const effectiveCloneId = cloneId || searchParams.get('clone');
+  const isCloning = mode === 'create' && effectiveCloneId;
+
+  // Fetch exercise data for edit mode or clone mode
   useEffect(() => {
     if (mode === 'edit' && exerciseId) {
-      fetchExerciseData();
+      fetchExerciseData(exerciseId, false);
+    } else if (isCloning && effectiveCloneId) {
+      fetchExerciseData(effectiveCloneId, true);
     }
-  }, [mode, exerciseId]);
+  }, [mode, exerciseId, isCloning, effectiveCloneId]);
 
-  const fetchExerciseData = async () => {
+  const fetchExerciseData = async (id: string, isClone: boolean = false) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/exercises/${exerciseId}`);
+      console.log(`🔄 ${isClone ? 'Clonando' : 'Carregando'} exercício:`, id);
+
+      const response = await fetch(`/api/exercises/${id}`);
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error);
 
+      console.log('📄 Dados do exercício carregados:', data.name);
+
+      // Se for clonagem, limpar campos únicos e modificar nome
+      const exerciseData = isClone
+        ? {
+          ...data,
+          name: `${data.name} (Cópia)`,
+          video_url: '', // Limpar mídia na clonagem
+          audio_url: ''  // Limpar mídia na clonagem
+        }
+        : data;
+
       setFormData({
-        name: data.name || '',
-        description: data.description || '',
-        muscle_group: data.muscle_group || [],
-        equipment: data.equipment || [],
-        variations: data.variations?.join('\n') || '',
-        video_url: data.video_url || '',
-        audio_url: data.audio_url || '',
-        tips: data.tips?.join('\n') || '',
-        common_errors: data.common_errors?.join('\n') || '',
+        name: exerciseData.name || '',
+        description: exerciseData.description || '',
+        muscle_group: exerciseData.muscle_group || [],
+        equipment: exerciseData.equipment || [],
+        variations: exerciseData.variations?.join('\n') || '',
+        video_url: exerciseData.video_url || '',
+        audio_url: exerciseData.audio_url || '',
+        tips: exerciseData.tips?.join('\n') || '',
+        common_errors: exerciseData.common_errors?.join('\n') || '',
       });
 
-      if (data.video_url) setVideoUrl(data.video_url);
-      if (data.audio_url) setAudioUrl(data.audio_url);
+      // Só definir URLs de mídia se não for clonagem
+      if (!isClone) {
+        if (exerciseData.video_url) setVideoUrl(exerciseData.video_url);
+        if (exerciseData.audio_url) setAudioUrl(exerciseData.audio_url);
+      } else {
+        // Limpar URLs de mídia na clonagem
+        setVideoUrl('');
+        setAudioUrl('');
+      }
+
+      if (isClone) {
+        toast({
+          title: "Exercício clonado! 📋",
+          description: `"${data.name}" foi carregado para clonagem. Ajuste conforme necessário.`,
+        });
+      }
 
     } catch (error: any) {
+      console.error('❌ Erro ao carregar exercício:', error);
+
+      const errorMessage = isClone
+        ? "Erro ao clonar exercício"
+        : "Erro ao carregar exercício";
+
       toast({
         variant: "destructive",
-        title: "Erro ao carregar exercício",
+        title: errorMessage,
         description: error.message,
       });
+
+      // Se for clonagem e falhou, redirecionar para criação normal
+      if (isClone) {
+        console.log('🔄 Redirecionando para criação normal...');
+        router.replace('/dashboard/exercises/new');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -152,6 +200,12 @@ export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFo
         common_errors: formData.common_errors.split('\n').filter(e => e.trim()),
       };
 
+      console.log('💾 Salvando exercício:', {
+        mode,
+        isCloning,
+        name: exerciseData.name
+      });
+
       const response = await fetch(
         mode === 'edit' ? `/api/exercises/${exerciseId}` : '/api/exercises',
         {
@@ -169,14 +223,28 @@ export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFo
         throw new Error(data.error);
       }
 
+      // Mensagem de sucesso personalizada
+      let successTitle = "Exercício criado com sucesso! 🎉";
+      let successDescription = "O exercício foi adicionado à biblioteca";
+
+      if (mode === 'edit') {
+        successTitle = "Exercício atualizado com sucesso! 🎉";
+        successDescription = "As alterações foram salvas";
+      } else if (isCloning) {
+        successTitle = "Exercício clonado com sucesso! 🎉";
+        successDescription = "Uma cópia do exercício foi criada";
+      }
+
       toast({
-        title: mode === 'edit' ? "Exercício atualizado com sucesso! 🎉" : "Exercício criado com sucesso! 🎉",
-        description: mode === 'edit' ? "As alterações foram salvas" : "O exercício foi adicionado à biblioteca",
+        title: successTitle,
+        description: successDescription,
       });
 
       router.push('/dashboard/exercises');
 
     } catch (error: any) {
+      console.error('❌ Erro ao salvar exercício:', error);
+
       toast({
         variant: "destructive",
         title: "Erro ao salvar exercício",
@@ -237,15 +305,24 @@ export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFo
   const shouldShowNextButton = activeStep !== 'review';
   const shouldShowBackButton = activeStep !== 'basic';
 
+  // Determinar título do header baseado no modo
+  const getHeaderMode = () => {
+    if (mode === 'edit') return 'edit';
+    if (isCloning) return 'clone';
+    return 'create';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
 
         {/* Header */}
         <ExerciseHeader
-          mode={mode}
+          mode={getHeaderMode()}
           currentStepData={currentStepData}
           progressPercentage={progressPercentage}
+          isCloning={!!isCloning}
+          originalName={isCloning && effectiveCloneId ? formData.name?.replace(' (Cópia)', '') : undefined}
         />
 
         {/* Step Navigation */}
@@ -265,6 +342,25 @@ export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFo
             </div>
           </div>
         </div>
+
+        {/* Clone Info Banner */}
+        {isCloning && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-bold">📋</span>
+              </div>
+              <div>
+                <h4 className="text-blue-800 dark:text-blue-300 font-semibold">
+                  Clonando Exercício
+                </h4>
+                <p className="text-blue-700 dark:text-blue-400 text-sm">
+                  Este exercício está sendo criado a partir de uma cópia. As mídias foram removidas e você pode ajustar os dados conforme necessário.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bottom Navigation */}
         <div className="relative">
@@ -288,8 +384,8 @@ export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFo
                     onClick={handleNext}
                     disabled={!canAdvanceStep()}
                     className={`h-12 font-bold rounded-xl shadow-lg transition-all duration-300 border-0 ${canAdvanceStep()
-                        ? `bg-gradient-to-r ${currentStepData?.color || 'from-purple-500 to-purple-600'} hover:shadow-purple-500/25 text-white`
-                        : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+                      ? `bg-gradient-to-r ${currentStepData?.color || 'from-purple-500 to-purple-600'} hover:shadow-purple-500/25 text-white`
+                      : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
                       }`}
                   >
                     {activeStep === 'details' ? 'Revisar' : `Próximo: ${getNextStepTitle()}`}
@@ -316,8 +412,8 @@ export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFo
                     onClick={handleNext}
                     disabled={!canAdvanceStep()}
                     className={`px-8 h-12 font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 border-0 ${canAdvanceStep()
-                        ? `bg-gradient-to-r ${currentStepData?.color || 'from-purple-500 to-purple-600'} hover:shadow-purple-500/25 text-white`
-                        : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed transform-none'
+                      ? `bg-gradient-to-r ${currentStepData?.color || 'from-purple-500 to-purple-600'} hover:shadow-purple-500/25 text-white`
+                      : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed transform-none'
                       }`}
                   >
                     {activeStep === 'details' ? 'Revisar Exercício' : `Próximo: ${getNextStepTitle()}`}
