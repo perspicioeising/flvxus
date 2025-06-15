@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, X, Grid, LayoutList } from "lucide-react";
 import { ExerciseFiltersProps } from "@/components/exercices/types/exercise";
-import { MUSCLE_GROUPS, EQUIPMENT_TYPES } from "@/components/exercices/constants/exercise";
+import { MUSCLE_GROUPS, EQUIPMENT_TYPES } from "@/components/exercices/components/constants/exercise";
 
 export function ExerciseFilters({
   filters,

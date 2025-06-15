@@ -1,7 +1,7 @@
 // /utils/exerciseUtils.ts
 
 import { Exercise, ExerciseStats, ExerciseFilters } from "@/components/exercices/types/exercise";
-import { getMuscleGroupIcon, getExerciseMainIcon } from "@/components/exercices/constants/exercise";
+import { getMuscleGroupIcon, getExerciseMainIcon } from "@/components/exercices/components/constants/exercise";
 
 /**
  * Formata valores de métricas de exercícios

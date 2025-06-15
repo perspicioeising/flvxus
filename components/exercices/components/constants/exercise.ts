@@ -17,6 +17,43 @@ export const EQUIPMENT_TYPES = [
   "Outros"
 ];
 
+// components/exercises/constants/index.ts
+
+export const EXERCISE_STEPS = [
+  {
+    id: 'basic',
+    title: 'Informações Básicas',
+    shortTitle: 'Básico',
+    description: 'Nome, descrição e categorias',
+    icon: 'FileText',
+    color: 'from-green-500 to-emerald-500'
+  },
+  {
+    id: 'media',
+    title: 'Mídia',
+    shortTitle: 'Mídia',
+    description: 'Vídeo e áudio demonstrativos',
+    icon: 'Video',
+    color: 'from-blue-500 to-cyan-500'
+  },
+  {
+    id: 'details',
+    title: 'Detalhes Avançados',
+    shortTitle: 'Detalhes',
+    description: 'Variações, dicas e erros',
+    icon: 'Target',
+    color: 'from-purple-500 to-pink-500'
+  },
+  {
+    id: 'review',
+    title: 'Revisão',
+    shortTitle: 'Revisar',
+    description: 'Confirme todas as informações',
+    icon: 'CheckCircle',
+    color: 'from-orange-500 to-red-500'
+  }
+];
+
 // Ícones e cores para grupos musculares
 export const MUSCLE_GROUP_ICONS: MuscleGroupIcon[] = [
   {

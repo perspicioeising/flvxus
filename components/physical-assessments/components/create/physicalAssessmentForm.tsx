@@ -6,7 +6,7 @@ import { ASSESSMENT_STEPS } from '@/components/physical-assessments/constants/ph
 
 // Import dos componentes dos steps com nova nomenclatura
 import { PhysicalAssessmentHeader } from './physicalAssessmentHeader';
-import { StepNavigation } from '../steps/StepNavigation';
+import { StepNavigation } from '../progresso/StepNavigation';
 import { StepBasic } from '../steps/StepBasic';
 import { StepProtocol } from '../steps/StepProtocol';
 import { StepMeasurements } from '../steps/StepMeasurements';

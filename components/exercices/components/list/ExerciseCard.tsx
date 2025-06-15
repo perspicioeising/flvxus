@@ -8,7 +8,7 @@ import {
   formatEquipmentList,
   hasMultimedia
 } from "@/components/exercices/utils/exerciseUtils";
-import { getMuscleGroupIcon } from "@/components/exercices/constants/exercise";
+import { getMuscleGroupIcon } from "@/components/exercices/components/constants/exercise";
 
 export function ExerciseCard({ 
   exercise, 
@@ -22,145 +22,104 @@ export function ExerciseCard({
 
   if (viewMode === 'grid') {
     return (
-      <div className="relative group">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-purple-600/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-        <Card className="relative border-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-xl hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden group-hover:transform group-hover:scale-[1.02] cursor-pointer"
-          onClick={() => onView(exercise.id)}>
+      <div className="relative group h-full">
+  {/* Efeito de glow no hover */}
+  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-purple-600/20 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  
+  {/* Card principal com todos os efeitos */}
+  <Card 
+    className="relative h-full border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.01] cursor-pointer"
+    onClick={() => onView(exercise.id)}
+  >
+    {/* Borda gradiente animada */}
+    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
 
-          {/* Gradient border effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="absolute inset-[2px] bg-white dark:bg-gray-900 rounded-3xl"></div>
-
-          {/* Header com ícone melhorado */}
-          <div className={`relative h-48 bg-gradient-to-br ${mainIcon.gradient} rounded-t-3xl overflow-hidden flex items-center justify-center`}>
-            {/* Background pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full transform translate-x-16 -translate-y-16"></div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full transform -translate-x-12 translate-y-12"></div>
-            </div>
-            
-            {/* Ícone principal */}
-            <div className="relative z-10">
-              <div className={`w-28 h-28 bg-gradient-to-br ${mainIcon.color} rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform duration-300`}>
-                <span className="text-5xl">{mainIcon.icon}</span>
-              </div>
-              
-              {/* Sparkle effect */}
-              <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Sparkles className="h-6 w-6 text-yellow-400 animate-pulse" />
-              </div>
-              
-              {/* Multimedia badges */}
-              {multimedia.hasAny && (
-                <div className="absolute -bottom-3 -right-3 flex gap-1">
-                  {multimedia.hasVideo && (
-                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                      <Video className="h-4 w-4 text-white" />
-                    </div>
-                  )}
-                  {multimedia.hasAudio && (
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                      <Volume2 className="h-4 w-4 text-white" />
-                    </div>
-                  )}
+    {/* Conteúdo do card */}
+    <div className="relative flex flex-col h-full">
+      {/* Header com imagem/ícone */}
+      <div className={`relative h-40 bg-gradient-to-br from-purple-500 to-purple-600 rounded-t-2xl overflow-hidden flex items-center justify-center`}>
+        {/* Efeito de partículas no fundo */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full transform translate-x-12 -translate-y-12"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full transform -translate-x-8 translate-y-8"></div>
+        </div>
+        
+        {/* Ícone principal */}
+        <div className="relative z-10">
+          <div className={`w-20 h-20 bg-gradient-to-br from-purple-400 to-purple-500 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform duration-300`}>
+            <span className="text-4xl text-white">{mainIcon.icon}</span>
+          </div>
+          
+          {/* Badges de mídia */}
+          {multimedia.hasAny && (
+            <div className="absolute -bottom-2 -right-2 flex gap-1">
+              {multimedia.hasVideo && (
+                <div className="w-7 h-7 bg-red-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                  <Video className="h-3.5 w-3.5 text-white" />
+                </div>
+              )}
+              {multimedia.hasAudio && (
+                <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                  <Volume2 className="h-3.5 w-3.5 text-white" />
                 </div>
               )}
             </div>
-
-            {/* Floating action button */}
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-              <Button
-                size="icon"
-                className="h-12 w-12 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md hover:bg-white dark:hover:bg-gray-800 shadow-xl rounded-full border-2 border-purple-200 dark:border-purple-700"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onView(exercise.id);
-                }}
-              >
-                <Eye className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </Button>
-            </div>
-          </div>
-
-          <CardContent className="relative p-6 space-y-5">
-            {/* Title e Description */}
-            <div className="space-y-3">
-              <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent line-clamp-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300">
-                {exercise.name}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed">
-                {exercise.description}
-              </p>
-            </div>
-
-            {/* Muscle Groups com melhor visual */}
-            <div className="space-y-2">
-              <div className="text-xs text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider">
-                Grupos Musculares
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {summary.muscleGroups.visible.map((group) => {
-                  const groupIcon = getMuscleGroupIcon(group);
-                  return (
-                    <Badge
-                      key={group}
-                      className={`px-3 py-1.5 bg-gradient-to-r ${groupIcon.gradient} text-purple-800 border-purple-300 dark:text-purple-300 dark:border-purple-600 rounded-full text-xs font-semibold shadow-sm hover:shadow-md transition-shadow duration-200`}
-                    >
-                      <span className="mr-1.5">{groupIcon.icon}</span>
-                      {group}
-                    </Badge>
-                  );
-                })}
-                {summary.muscleGroups.remaining > 0 && (
-                  <Badge className="px-3 py-1.5 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 rounded-full text-xs shadow-sm">
-                    +{summary.muscleGroups.remaining}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Equipment com novo design */}
-            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl border border-purple-200/50 dark:border-purple-700/50 group-hover:border-purple-300 dark:group-hover:border-purple-600 transition-colors duration-300">
-              <div className="text-xs text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider mb-2">
-                Equipamentos
-              </div>
-              <div className="text-sm text-purple-800 dark:text-purple-300 font-medium">
-                {formatEquipmentList(exercise.equipment)}
-              </div>
-            </div>
-
-            {/* Stats melhorados */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl shadow-sm">
-                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{summary.variationsCount}</div>
-                <div className="text-xs text-blue-700 dark:text-blue-300 font-medium">Variações</div>
-              </div>
-              <div className="text-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl shadow-sm">
-                <div className="text-lg font-bold text-green-600 dark:text-green-400">{summary.tipsCount}</div>
-                <div className="text-xs text-green-700 dark:text-green-300 font-medium">Dicas</div>
-              </div>
-              <div className="text-center p-3 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-xl shadow-sm">
-                <div className="text-lg font-bold text-orange-600 dark:text-orange-400">{summary.equipmentCount}</div>
-                <div className="text-xs text-orange-700 dark:text-orange-300 font-medium">Equip.</div>
-              </div>
-            </div>
-
-            {/* Action button principal */}
-            <div className="pt-2">
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onView(exercise.id);
-                }}
-                className="w-full bg-gradient-to-r from-purple-600 hover:from-purple-700  text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-semibold py-3 group-hover:transform group-hover:scale-[1.02]"
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Ver Detalhes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
+
+      {/* Corpo do card */}
+      <CardContent className="flex-1 p-5 flex flex-col">
+        {/* Título e descrição */}
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1 mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+            {exercise.name}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">
+            {exercise.description}
+          </p>
+        </div>
+        
+        {/* Grupos musculares */}
+        <div className="mb-4">
+          <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold mb-2 uppercase tracking-wider">
+            Grupos Musculares
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {summary.muscleGroups.visible.map((group) => {
+              const groupIcon = getMuscleGroupIcon(group);
+              return (
+                <span
+                  key={group}
+                  className={`px-2.5 py-1 bg-gradient-to-r ${groupIcon.gradient} text-purple-800 dark:text-purple-200 text-xs font-medium rounded-full shadow-sm`}
+                >
+                  <span className="mr-1">{groupIcon.icon}</span>
+                  {group}
+                </span>
+              );
+            })}
+            {summary.muscleGroups.remaining > 0 && (
+              <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full">
+                +{summary.muscleGroups.remaining}
+              </span>
+            )}
+          </div>
+        </div>
+        
+        {/* Equipamentos */}
+        <div className="mt-auto pt-2">
+          <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold mb-1 uppercase tracking-wider">
+            Equipamentos
+          </div>
+          <p className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">
+            {formatEquipmentList(exercise.equipment)}
+          </p>
+        </div>
+      </CardContent>
+    </div>
+  </Card>
+</div>
     );
   }
   
