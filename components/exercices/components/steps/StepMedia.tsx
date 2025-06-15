@@ -6,13 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Video, Upload, Loader2, Volume2, Play, Mic, CheckCircle, Info, Link } from 'lucide-react';
+import { Video, Upload, Loader2, Volume2, Play, Mic, CheckCircle, Info, Link, Brain } from 'lucide-react';
 
 interface StepMediaProps {
   formData: {
     video_url: string;
     audio_url: string;
     description: string;
+    tips: string;
+    common_errors: string;
   };
   onUpdateField: (field: string, value: any) => void;
   videoFile: File | null;
@@ -131,11 +133,14 @@ export function StepMedia({
   };
 
   const generateAudioWithAI = async () => {
-    if (!formData.description || formData.description.trim() === "") {
+    // Criar texto de instruções baseado nas dicas e erros comuns
+    const instructionsText = createInstructionsText();
+    
+    if (!instructionsText) {
       toast({
         variant: "destructive",
-        title: "Descrição necessária",
-        description: "Por favor, adicione uma descrição do exercício primeiro",
+        title: "Informações insuficientes",
+        description: "É necessário ter dicas de execução preenchidas para gerar o áudio",
       });
       return;
     }
@@ -147,7 +152,7 @@ export function StepMedia({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: formData.description }),
+        body: JSON.stringify({ text: instructionsText }),
       });
 
       const data = await response.json();
@@ -173,6 +178,40 @@ export function StepMedia({
     } finally {
       setIsGeneratingAudio(false);
     }
+  };
+
+  const createInstructionsText = () => {
+    let text = "";
+    
+    if (formData.tips) {
+      const tips = formData.tips
+        .split('\n')
+        .filter(tip => tip.trim())
+        .map(tip => tip.replace(/[✔️🟡❌]/g, '').trim())
+        .filter(tip => tip.length > 0);
+      
+      if (tips.length > 0) {
+        text += "Instruções de execução: " + tips.join('. ') + ". ";
+      }
+    }
+    
+    if (formData.common_errors) {
+      const errors = formData.common_errors
+        .split('\n')
+        .filter(error => error.trim())
+        .map(error => error.replace(/[✔️🟡❌]/g, '').trim())
+        .filter(error => error.length > 0);
+      
+      if (errors.length > 0) {
+        text += "Erros a evitar: " + errors.join('. ') + ".";
+      }
+    }
+    
+    return text.trim();
+  };
+
+  const hasInstructionsForAudio = () => {
+    return Boolean(formData.tips && formData.tips.trim());
   };
 
   return (
@@ -341,7 +380,7 @@ export function StepMedia({
               <Button 
                 variant="outline" 
                 onClick={generateAudioWithAI} 
-                disabled={isGeneratingAudio || !formData.description}
+                disabled={isGeneratingAudio || !hasInstructionsForAudio()}
                 className="group bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border-orange-300 dark:border-orange-600 hover:from-orange-200 hover:to-red-200 dark:hover:from-orange-800/50 dark:hover:to-red-800/50 rounded-xl h-12 px-6 font-semibold transition-all duration-300 transform hover:scale-105"
               >
                 {isGeneratingAudio ? (
@@ -351,12 +390,25 @@ export function StepMedia({
                   </>
                 ) : (
                   <>
-                    <Volume2 className="mr-3 h-5 w-5 text-orange-600 dark:text-orange-400 group-hover:animate-pulse" />
+                    <Brain className="mr-3 h-5 w-5 text-orange-600 dark:text-orange-400 group-hover:animate-pulse" />
                     <span className="text-orange-800 dark:text-orange-300">Gerar Áudio com IA</span>
                   </>
                 )}
               </Button>
             </div>
+            
+            {/* Info sobre geração de áudio */}
+            {!hasInstructionsForAudio() && (
+              <div className="mt-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Para gerar áudio com IA, preencha as <strong>dicas de execução</strong> na etapa anterior. 
+                    O áudio será criado baseado nas instruções e erros comuns.
+                  </p>
+                </div>
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="relative space-y-6">

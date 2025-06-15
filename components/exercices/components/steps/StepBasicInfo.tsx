@@ -170,8 +170,7 @@ export function StepBasicInfo({ formData, onUpdateField, isLoading }: StepBasicI
         </div>
 
         {/* Equipamentos */}
-
-         <div className="space-y-4">
+        <div className="space-y-4">
           <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
             <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             Equipamentos * 
@@ -214,6 +213,7 @@ export function StepBasicInfo({ formData, onUpdateField, isLoading }: StepBasicI
           </div>
         </div>
 
+        {/* Grupos Musculares */}
         <div className="space-y-4">
           <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
             <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />

@@ -1,11 +1,18 @@
 // components/exercises/steps/StepDetails.tsx
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Target, AlertTriangle, Lightbulb, RefreshCw, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Target, AlertTriangle, Lightbulb, RefreshCw, Info, Brain, Loader2, CheckCircle } from 'lucide-react';
 
 interface StepDetailsProps {
   formData: {
+    name: string;
+    description: string;
+    muscle_group: string[];
+    equipment: string[];
     variations: string;
     tips: string;
     common_errors: string;
@@ -14,6 +21,81 @@ interface StepDetailsProps {
 }
 
 export function StepDetails({ formData, onUpdateField }: StepDetailsProps) {
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [hasGeneratedDetails, setHasGeneratedDetails] = useState(false);
+
+  // Auto-gerar detalhes se há informações básicas mas não há detalhes
+  useEffect(() => {
+    const hasBasicInfo = formData.name && formData.description && formData.muscle_group?.length > 0;
+    const hasNoDetails = !formData.variations && !formData.tips && !formData.common_errors;
+    
+    if (hasBasicInfo && hasNoDetails && !hasGeneratedDetails) {
+      handleGenerateDetails();
+    }
+  }, [formData.name, formData.description, formData.muscle_group]);
+
+  const handleGenerateDetails = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Nome obrigatório",
+        description: "É necessário ter um nome do exercício para gerar os detalhes",
+      });
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+
+      const response = await fetch('/api/ai/exercise-suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          exerciseName: formData.name
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao gerar detalhes');
+      }
+
+      // Preencher os campos de detalhes
+      if (data.variations && data.variations.length > 0) {
+        onUpdateField('variations', data.variations.join('\n'));
+      }
+
+      if (data.tips && data.tips.length > 0) {
+        onUpdateField('tips', data.tips.join('\n'));
+      }
+
+      if (data.common_errors && data.common_errors.length > 0) {
+        onUpdateField('common_errors', data.common_errors.join('\n'));
+      }
+
+      setHasGeneratedDetails(true);
+
+      toast({
+        title: "Detalhes gerados com sucesso! ✨",
+        description: "Variações, dicas e erros comuns foram preenchidos automaticamente",
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao gerar detalhes:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar detalhes",
+        description: error.message,
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -30,6 +112,40 @@ export function StepDetails({ formData, onUpdateField }: StepDetailsProps) {
           </p>
         </div>
       </div>
+
+      {/* Botão para gerar detalhes */}
+      {formData.name && (!formData.variations || !formData.tips || !formData.common_errors) && (
+        <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50">
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-3">
+              <Brain className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100">
+                Gerar Detalhes com IA
+              </h3>
+            </div>
+            <p className="text-purple-700 dark:text-purple-300 text-sm">
+              Nossa IA pode preencher automaticamente as variações, dicas e erros comuns baseados no exercício
+            </p>
+            <Button
+              onClick={handleGenerateDetails}
+              disabled={isGenerating}
+              className="h-12 px-8 bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 hover:from-purple-700 hover:via-purple-800 hover:to-purple-900 text-white font-bold rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 border-0"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                  Gerando detalhes...
+                </>
+              ) : (
+                <>
+                  <Brain className="h-5 w-5 mr-3" />
+                  Gerar com IA
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Info Card */}
       <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50">
@@ -76,13 +192,18 @@ export function StepDetails({ formData, onUpdateField }: StepDetailsProps) {
                   id="variations"
                   value={formData.variations}
                   onChange={(e) => onUpdateField('variations', e.target.value)}
-                  placeholder="Ex:\nSupino com halteres\nSupino inclinado\nSupino declinado\nSupino na máquina"
+                  placeholder="Ex:\nRosca Alternada Sentado com Halteres:\nFlexiona os dois braços de forma alternada, mantendo controle do movimento.\n\nRosca Scott (ou Rosca no Banco Scott):\nExercício de isolamento com apoio dos braços, proporcionando maior estabilidade."
                   className="relative min-h-[140px] text-base bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300 resize-none"
                 />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Adicione cada variação em uma nova linha
-              </p>
+              {formData.variations && (
+                <div className="mt-3 p-3 bg-purple-50/50 dark:bg-purple-900/10 rounded-lg">
+                  <p className="text-sm text-purple-700 dark:text-purple-300">
+                    <CheckCircle className="h-4 w-4 inline mr-1" />
+                    {formData.variations.split('\n').filter(v => v.trim()).length} variações adicionadas
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -122,13 +243,18 @@ export function StepDetails({ formData, onUpdateField }: StepDetailsProps) {
                   id="tips"
                   value={formData.tips}
                   onChange={(e) => onUpdateField('tips', e.target.value)}
-                  placeholder="Ex:\nMantenha o core contraído durante todo o movimento\nRespire ao descer e expire ao subir\nMantenha os cotovelos alinhados com os ombros\nUse a pegada na largura dos ombros"
+                  placeholder="Ex:\n✔️ Posição inicial:\n🟡 Sente-se em um banco com os pés firmes no chão, afastados na largura do quadril.\n🟡 Segure um halter com uma das mãos.\n\n✔️ Execução:\n🟡 Com o braço estendido, flexione o cotovelo para levantar o halter.\n🟡 Concentre-se na contração do bíceps no topo do movimento.\n\n✔️ Respiração:\n🟡 Expire ao subir o halter (fase concêntrica).\n🟡 Inspire ao descer o halter (fase excêntrica)."
                   className="relative min-h-[140px] text-base bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300 resize-none"
                 />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Adicione cada dica em uma nova linha
-              </p>
+              {formData.tips && (
+                <div className="mt-3 p-3 bg-green-50/50 dark:bg-green-900/10 rounded-lg">
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    <CheckCircle className="h-4 w-4 inline mr-1" />
+                    {formData.tips.split('\n').filter(t => t.trim()).length} dicas adicionadas
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -168,13 +294,18 @@ export function StepDetails({ formData, onUpdateField }: StepDetailsProps) {
                   id="common_errors"
                   value={formData.common_errors}
                   onChange={(e) => onUpdateField('common_errors', e.target.value)}
-                  placeholder="Ex:\nArquear demais as costas\nDescer a barra muito rápido\nNão tocar o peito com a barra\nEmpurrar com os ombros ao invés do peitoral"
+                  placeholder="Ex:\n❌ Movimentar o tronco para ajudar na subida (usar impulso).\n❌ Não apoiar o braço corretamente na coxa, perdendo isolamento do bíceps.\n❌ Flexionar o punho durante o movimento, o que pode causar desconforto.\n❌ Usar cargas excessivas que prejudiquem a execução controlada.\n❌ Realizar o movimento muito rápido, diminuindo a eficiência da contração muscular."
                   className="relative min-h-[140px] text-base bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300 resize-none"
                 />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Adicione cada erro em uma nova linha
-              </p>
+              {formData.common_errors && (
+                <div className="mt-3 p-3 bg-red-50/50 dark:bg-red-900/10 rounded-lg">
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    <CheckCircle className="h-4 w-4 inline mr-1" />
+                    {formData.common_errors.split('\n').filter(e => e.trim()).length} erros comuns adicionados
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
