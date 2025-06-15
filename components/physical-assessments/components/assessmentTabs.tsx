@@ -16,76 +16,134 @@ export function AssessmentTabs({
   classification 
 }: AssessmentTabsProps) {
   
+  const tabs = [
+    {
+      value: "overview",
+      label: "Visão Geral",
+      shortLabel: "Geral",
+      icon: Eye,
+      gradient: "from-indigo-500 to-indigo-600",
+      description: "Resumo completo da avaliação"
+    },
+    {
+      value: "measurements",
+      label: "Medidas",
+      shortLabel: "Medidas",
+      icon: Ruler,
+      gradient: "from-blue-500 to-indigo-600",
+      description: "Todas as medidas coletadas"
+    },
+    {
+      value: "analysis",
+      label: "Análise IA",
+      shortLabel: "IA",
+      icon: Brain,
+      gradient: "from-purple-500 to-indigo-600",
+      description: "Insights e recomendações"
+    },
+    {
+      value: "comparison",
+      label: "Evolução",
+      shortLabel: "Evolução",
+      icon: TrendingUp,
+      gradient: "from-teal-500 to-indigo-600",
+      description: "Compare com avaliações anteriores"
+    }
+  ];
+
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      {/* Mobile-Optimized Tabs */}
-      <div className="relative mb-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl sm:rounded-2xl blur-xl opacity-20"></div>
-        <TabsList className="relative grid w-full grid-cols-2 sm:grid-cols-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl shadow-2xl rounded-xl sm:rounded-2xl  border-0 gap-1">
-          <TabsTrigger
-            value="overview"
-            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm  "
-          >
-            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Visão Geral</span>
-            <span className="sm:hidden">Geral</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="measurements"
-            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm "
-          >
-            <Ruler className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Medidas</span>
-            <span className="sm:hidden">Medidas</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="analysis"
-            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm "
-          >
-            <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Análise IA</span>
-            <span className="sm:hidden">IA</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="comparison"
-            className="flex items-center gap-1 sm:gap-2 rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300 font-semibold text-xs sm:text-sm"
-          >
-            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Comparação</span>
-            <span className="sm:hidden">Compare</span>
-          </TabsTrigger>
-        </TabsList>
+    <div className="space-y-6">
+      {/* Tab Navigation */}
+      <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+        <div className="relative">
+          {/* Background Glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 rounded-2xl blur-2xl"></div>
+          
+          {/* Tab List */}
+          <TabsList className="relative grid w-full grid-cols-2 lg:grid-cols-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl p-2 border-0 gap-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.value;
+              
+              return (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className={`
+                    relative flex items-center justify-center gap-2 rounded-xl font-semibold 
+                    transition-all duration-300 py-3 px-4 group
+                    ${isActive 
+                      ? 'bg-gradient-to-br ' + tab.gradient + ' text-white shadow-lg scale-105' 
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                    }
+                  `}
+                >
+                  {/* Active Indicator Glow */}
+                  {isActive && (
+                    <div className={`absolute inset-0 bg-gradient-to-br ${tab.gradient} rounded-xl blur-md opacity-50`}></div>
+                  )}
+                  
+                  {/* Content */}
+                  <div className="relative flex items-center gap-2">
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-600 dark:text-gray-400'} transition-colors`} />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.shortLabel}</span>
+                  </div>
+                  
+                  {/* Hover Effect */}
+                  {!isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-transparent dark:from-gray-800/30 dark:to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  )}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </div>
+
+        {/* Tab Content Area */}
+        <div className="mt-16">
+          <TabsContent value="overview" className="space-y-6 animate-fadeIn">
+            <AssessmentOverview 
+              assessment={assessment} 
+              classification={classification} 
+            />
+          </TabsContent>
+
+          <TabsContent value="measurements" className="space-y-6 animate-fadeIn">
+            <AssessmentMeasurements 
+              measurements={assessment.measurements} 
+            />
+          </TabsContent>
+
+          <TabsContent value="analysis" className="space-y-6 animate-fadeIn">
+            <AssessmentAIAnalysis
+              aiAnalysis={assessment.ai_analysis}
+              aiRecommendations={assessment.ai_recommendations}
+              className="enhanced-ui"
+            />
+          </TabsContent>
+
+          <TabsContent value="comparison" className="space-y-6 animate-fadeIn">
+            <AssessmentComparison
+              currentAssessment={assessment}
+              studentId={assessment.student_id}
+              className="enhanced-ui"
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
+
+      {/* Tab Description Card - Mobile Optimized */}
+      <div className="sm:hidden">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 rounded-xl blur-xl"></div>
+          <div className="relative p-4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-indigo-200/30 dark:border-indigo-700/30">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+              {tabs.find(t => t.value === activeTab)?.description}
+            </p>
+          </div>
+        </div>
       </div>
-
-      {/* Tab Contents */}
-      <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-        <AssessmentOverview 
-          assessment={assessment} 
-          classification={classification} 
-        />
-      </TabsContent>
-
-      <TabsContent value="measurements" className="space-y-4 sm:space-y-6">
-        <AssessmentMeasurements 
-          measurements={assessment.measurements} 
-        />
-      </TabsContent>
-
-      <TabsContent value="analysis" className="space-y-4 sm:space-y-6">
-        <AssessmentAIAnalysis
-          aiAnalysis={assessment.ai_analysis}
-          aiRecommendations={assessment.ai_recommendations}
-          className="mobile-optimized"
-        />
-      </TabsContent>
-
-      <TabsContent value="comparison" className="space-y-4 sm:space-y-6">
-        <AssessmentComparison
-          currentAssessment={assessment}
-          studentId={assessment.student_id}
-          className="mobile-optimized"
-        />
-      </TabsContent>
-    </Tabs>
+    </div>
   );
 }

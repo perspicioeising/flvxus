@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 // types/physical-assessment-details.ts
 export interface AssessmentDetails {
   id: string;
@@ -34,6 +36,7 @@ export interface AssessmentClassification {
 }
 
 export interface MetricCard {
+  description: ReactNode;
   value: number;
   label: string;
   color: string;
