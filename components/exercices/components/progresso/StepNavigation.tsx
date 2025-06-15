@@ -30,8 +30,8 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
       {/* Mobile Version */}
       <div className="block sm:hidden">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-emerald-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-2xl p-4 shadow-xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-purple-500/10 to-purple-600/10 rounded-2xl blur-xl"></div>
+          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-purple-200/50 dark:border-purple-800/30 rounded-2xl p-4 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`p-3 bg-gradient-to-br ${steps[currentStepIndex]?.color || 'from-green-500 to-emerald-500'} rounded-xl shadow-lg`}>
@@ -53,7 +53,7 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Etapa
                 </p>
-                <p className="text-lg font-black text-green-600 dark:text-green-400">
+                <p className="text-lg font-black text-purple-600 dark:text-purple-400">
                   {currentStepIndex + 1}/{steps.length}
                 </p>
               </div>
@@ -79,8 +79,8 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
       {/* Desktop Version */}
       <div className="hidden sm:block">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-emerald-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-2xl p-4 lg:p-6 shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-purple-500/10 to-purple-600/10 rounded-2xl blur-xl"></div>
+          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-purple-200/50 dark:border-purple-800/30 rounded-2xl p-4 lg:p-6 shadow-2xl">
             
             {/* Progress Header */}
             <div className="text-center mb-4 lg:mb-6">
@@ -88,8 +88,8 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
                 <h2 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-white">
                   Criar Novo Exercício
                 </h2>
-                <div className="px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-300">
+                <div className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                  <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
                     {currentStepIndex + 1}/{steps.length}
                   </span>
                 </div>

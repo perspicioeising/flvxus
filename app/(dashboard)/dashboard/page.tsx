@@ -105,9 +105,9 @@ export default function DashboardPage() {
       description: "Crie e gerencie treinos",
       href: "/dashboard/workouts",
       icon: Activity,
-      color: "from-yellow-500 to-yellow-600",
-      hoverColor: "hover:from-yellow-600 hover:to-yellow-700",
-      shadowColor: "hover:shadow-yellow-500/25",
+      color: "from-pink-500 to-pink-600",
+      hoverColor: "hover:from-pink-600 hover:to-pink-700",
+      shadowColor: "hover:shadow-pink-500/25",
       stats: "32 treinos"
     },
     {
@@ -115,9 +115,9 @@ export default function DashboardPage() {
       description: "Organize rotinas completas",
       href: "/dashboard/workout-plans",
       icon: ClipboardList,
-      color: "from-pink-500 to-pink-600",
-      hoverColor: "hover:from-pink-600 hover:to-pink-700",
-      shadowColor: "hover:shadow-pink-500/25",
+      color: "from-red-500 to-red-600",
+      hoverColor: "hover:from-red-600 hover:to-red-700",
+      shadowColor: "hover:shadow-red-500/25",
       stats: "12 planos"
     },
     {
@@ -199,9 +199,9 @@ export default function DashboardPage() {
       description: "Histórico de avaliações físicas",
       href: "/dashboard/progress",
       icon: Heart,
-      color: "from-red-500 to-red-600",
-      hoverColor: "hover:from-red-600 hover:to-red-700",
-      shadowColor: "hover:shadow-red-500/25",
+      color: "from-pink-500 to-pink-600",
+      hoverColor: "hover:from-pink-600 hover:to-pink-700",
+      shadowColor: "hover:shadow-pink-500/25",
       stats: "Última: 15/11"
     },
     {

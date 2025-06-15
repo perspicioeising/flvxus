@@ -1,16 +1,16 @@
 // components/exercises/ExerciseFormCarousel.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ExerciseHeader } from './ExerciseHeader';
-import { StepNavigation } from '../progresso/StepNavigation';
+import { StepNavigation } from '@/components/exercices/components/progresso/StepNavigation';
 import { StepBasicInfo } from '../steps/StepBasicInfo';
 import { StepMedia } from '../steps/StepMedia';
 import { StepDetails } from '../steps/StepDetails';
 import { StepReview } from '../steps/StepReview';
 import { useToast } from '@/hooks/use-toast';
-import { EXERCISE_STEPS } from '../constants/exercise';
+import { EXERCISE_STEPS } from '@/components/exercices/components/constants/exercise';
 
 interface ExerciseFormData {
   name: string;
@@ -24,7 +24,12 @@ interface ExerciseFormData {
   common_errors: string;
 }
 
-export function ExerciseFormCarousel() {
+interface ExerciseFormCarouselProps {
+  mode?: 'create' | 'edit';
+  exerciseId?: string;
+}
+
+export function ExerciseFormCarousel({ mode = 'create', exerciseId }: ExerciseFormCarouselProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [activeStep, setActiveStep] = useState('basic');
@@ -34,7 +39,7 @@ export function ExerciseFormCarousel() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
-  
+
   const [formData, setFormData] = useState<ExerciseFormData>({
     name: '',
     description: '',
@@ -47,42 +52,93 @@ export function ExerciseFormCarousel() {
     common_errors: '',
   });
 
+  // Fetch exercise data for edit mode
+  useEffect(() => {
+    if (mode === 'edit' && exerciseId) {
+      fetchExerciseData();
+    }
+  }, [mode, exerciseId]);
+
+  const fetchExerciseData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/exercises/${exerciseId}`);
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error);
+
+      setFormData({
+        name: data.name || '',
+        description: data.description || '',
+        muscle_group: data.muscle_group || [],
+        equipment: data.equipment || [],
+        variations: data.variations?.join('\n') || '',
+        video_url: data.video_url || '',
+        audio_url: data.audio_url || '',
+        tips: data.tips?.join('\n') || '',
+        common_errors: data.common_errors?.join('\n') || '',
+      });
+
+      if (data.video_url) setVideoUrl(data.video_url);
+      if (data.audio_url) setAudioUrl(data.audio_url);
+
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar exercício",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const updateFormField = (field: keyof ExerciseFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const currentStepData = EXERCISE_STEPS.find(step => step.id === activeStep);
-  const progressPercentage = ((EXERCISE_STEPS.findIndex(s => s.id === activeStep) + 1) / EXERCISE_STEPS.length) * 100;
+  const currentStepData = EXERCISE_STEPS.find((step: { id: string; }) => step.id === activeStep);
+  const progressPercentage = ((EXERCISE_STEPS.findIndex((s: { id: string; }) => s.id === activeStep) + 1) / EXERCISE_STEPS.length) * 100;
 
   const canAdvanceStep = (): boolean => {
     switch (activeStep) {
       case 'basic':
-        return Boolean(formData.name && formData.description && formData.muscle_group.length > 0 && formData.equipment.length > 0);
+        // Campos obrigatórios: nome, descrição, pelo menos 1 grupo muscular e 1 equipamento
+        return Boolean(
+          formData.name.trim() &&
+          formData.description.trim() &&
+          formData.muscle_group.length > 0 &&
+          formData.equipment.length > 0
+        );
       case 'media':
         return true; // Media is optional
       case 'details':
-        return true; // Details are optional but recommended
+        // Campos obrigatórios: dicas e erros comuns
+        return Boolean(
+          formData.tips.trim() &&
+          formData.common_errors.trim()
+        );
       default:
         return true;
     }
   };
 
   const handleNext = () => {
-    const currentIndex = EXERCISE_STEPS.findIndex(s => s.id === activeStep);
+    const currentIndex = EXERCISE_STEPS.findIndex((s: { id: string; }) => s.id === activeStep);
     if (currentIndex < EXERCISE_STEPS.length - 1 && canAdvanceStep()) {
       setActiveStep(EXERCISE_STEPS[currentIndex + 1].id);
     }
   };
 
   const handleBack = () => {
-    const currentIndex = EXERCISE_STEPS.findIndex(s => s.id === activeStep);
+    const currentIndex = EXERCISE_STEPS.findIndex((s: { id: string; }) => s.id === activeStep);
     if (currentIndex > 0) {
       setActiveStep(EXERCISE_STEPS[currentIndex - 1].id);
     }
   };
 
   const getNextStepTitle = () => {
-    const currentIndex = EXERCISE_STEPS.findIndex(s => s.id === activeStep);
+    const currentIndex = EXERCISE_STEPS.findIndex((s: { id: string; }) => s.id === activeStep);
     const nextStep = EXERCISE_STEPS[currentIndex + 1];
     return nextStep?.shortTitle || 'Próximo';
   };
@@ -100,23 +156,26 @@ export function ExerciseFormCarousel() {
         common_errors: formData.common_errors.split('\n').filter(e => e.trim()),
       };
 
-      const response = await fetch('/api/exercises', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(exerciseData),
-      });
+      const response = await fetch(
+        mode === 'edit' ? `/api/exercises/${exerciseId}` : '/api/exercises',
+        {
+          method: mode === 'edit' ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(exerciseData),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
 
       toast({
-        title: "Exercício criado com sucesso! 🎉",
-        description: "O exercício foi adicionado à biblioteca",
+        title: mode === 'edit' ? "Exercício atualizado com sucesso! 🎉" : "Exercício criado com sucesso! 🎉",
+        description: mode === 'edit' ? "As alterações foram salvas" : "O exercício foi adicionado à biblioteca",
       });
 
       router.push('/dashboard/exercises');
@@ -138,15 +197,16 @@ export function ExerciseFormCarousel() {
         return (
           <StepBasicInfo
             formData={formData}
-            onUpdateField={updateFormField}
+            onUpdateField={updateFormField as (field: string, value: any) => void}
             isLoading={isLoading}
           />
+
         );
       case 'media':
         return (
           <StepMedia
             formData={formData}
-            onUpdateField={updateFormField}
+            onUpdateField={updateFormField as (field: string, value: any) => void}
             videoFile={videoFile}
             audioFile={audioFile}
             videoUrl={videoUrl}
@@ -161,7 +221,7 @@ export function ExerciseFormCarousel() {
         return (
           <StepDetails
             formData={formData}
-            onUpdateField={updateFormField}
+            onUpdateField={updateFormField as (field: string, value: any) => void}
           />
         );
       case 'review':
@@ -185,9 +245,10 @@ export function ExerciseFormCarousel() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        
+
         {/* Header */}
         <ExerciseHeader
+          mode={mode}
           currentStepData={currentStepData}
           progressPercentage={progressPercentage}
         />
@@ -215,7 +276,7 @@ export function ExerciseFormCarousel() {
           <div className="absolute inset-0 bg-gradient-to-r from-gray-200/50 to-green-200/50 dark:from-gray-700/50 dark:to-green-700/50 rounded-2xl blur-md"></div>
           <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-0 rounded-2xl shadow-lg">
             <div className="p-6">
-              
+
               {/* Mobile Navigation */}
               <div className="flex flex-col gap-3 sm:hidden">
                 {shouldShowBackButton && (
@@ -226,16 +287,15 @@ export function ExerciseFormCarousel() {
                     ← Voltar
                   </button>
                 )}
-                
+
                 {shouldShowNextButton && (
                   <button
                     onClick={handleNext}
                     disabled={!canAdvanceStep()}
-                    className={`h-12 font-bold rounded-xl shadow-lg transition-all duration-300 border-0 ${
-                      canAdvanceStep()
+                    className={`h-12 font-bold rounded-xl shadow-lg transition-all duration-300 border-0 ${canAdvanceStep()
                         ? `bg-gradient-to-r ${currentStepData?.color || 'from-green-500 to-emerald-600'} hover:shadow-green-500/25 text-white`
                         : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
-                    }`}
+                      }`}
                   >
                     {activeStep === 'details' ? 'Revisar' : `Próximo: ${getNextStepTitle()}`}
                     <span className="ml-2">→</span>
@@ -260,11 +320,10 @@ export function ExerciseFormCarousel() {
                   <button
                     onClick={handleNext}
                     disabled={!canAdvanceStep()}
-                    className={`px-8 h-12 font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 border-0 ${
-                      canAdvanceStep()
+                    className={`px-8 h-12 font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 border-0 ${canAdvanceStep()
                         ? `bg-gradient-to-r ${currentStepData?.color || 'from-green-500 to-emerald-600'} hover:shadow-green-500/25 text-white`
                         : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed transform-none'
-                    }`}
+                      }`}
                   >
                     {activeStep === 'details' ? 'Revisar Exercício' : `Próximo: ${getNextStepTitle()}`}
                     <span className="ml-2">→</span>

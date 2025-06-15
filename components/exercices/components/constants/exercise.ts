@@ -19,6 +19,8 @@ export const EQUIPMENT_TYPES = [
 
 // components/exercises/constants/index.ts
 
+// components/exercises/constants/index.ts
+
 export const EXERCISE_STEPS = [
   {
     id: 'basic',
@@ -26,7 +28,7 @@ export const EXERCISE_STEPS = [
     shortTitle: 'Básico',
     description: 'Nome, descrição e categorias',
     icon: 'FileText',
-    color: 'from-green-500 to-emerald-500'
+    color: 'from-purple-500 to-purple-600'
   },
   {
     id: 'media',
@@ -34,7 +36,7 @@ export const EXERCISE_STEPS = [
     shortTitle: 'Mídia',
     description: 'Vídeo e áudio demonstrativos',
     icon: 'Video',
-    color: 'from-blue-500 to-cyan-500'
+    color: 'from-purple-600 to-purple-700'
   },
   {
     id: 'details',
@@ -42,7 +44,7 @@ export const EXERCISE_STEPS = [
     shortTitle: 'Detalhes',
     description: 'Variações, dicas e erros',
     icon: 'Target',
-    color: 'from-purple-500 to-pink-500'
+    color: 'from-purple-700 to-purple-800'
   },
   {
     id: 'review',
@@ -50,7 +52,7 @@ export const EXERCISE_STEPS = [
     shortTitle: 'Revisar',
     description: 'Confirme todas as informações',
     icon: 'CheckCircle',
-    color: 'from-orange-500 to-red-500'
+    color: 'from-purple-800 to-purple-900'
   }
 ];
 

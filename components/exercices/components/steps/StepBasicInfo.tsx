@@ -134,8 +134,8 @@ export function StepBasicInfo({ formData, onUpdateField, isLoading }: StepBasicI
         {/* Nome */}
         <div className="space-y-3">
           <Label htmlFor="name" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
-            <Dumbbell className="h-4 w-4 text-green-600 dark:text-green-400" />
-            Nome do Exercício *
+            <Dumbbell className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            Nome do Exercício <span className="text-red-500">*</span>
           </Label>
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-xl blur opacity-50"></div>
@@ -169,8 +169,9 @@ export function StepBasicInfo({ formData, onUpdateField, isLoading }: StepBasicI
           </div>
         </div>
 
-        {/* Grupos Musculares */}
-        <div className="space-y-4">
+        {/* Equipamentos */}
+
+         <div className="space-y-4">
           <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
             <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             Equipamentos * 
@@ -204,6 +205,49 @@ export function StepBasicInfo({ formData, onUpdateField, isLoading }: StepBasicI
                   />
                   <span className={`text-sm font-medium ${
                     formData.equipment.includes(type)
+                      ? 'text-blue-800 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}>{type}</span>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
+            <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            Grupos musculares * 
+            {formData.muscle_group.length > 0 && (
+              <Badge className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">
+                {formData.muscle_group.length} selecionado{formData.muscle_group.length > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {MUSCLE_GROUPS.map((type) => (
+              <div key={type} className="relative group/checkbox">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl blur opacity-0 group-hover/checkbox:opacity-100 transition-opacity duration-300"></div>
+                <label className={`relative flex items-center space-x-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 backdrop-blur-sm ${
+                  formData.muscle_group.includes(type)
+                    ? 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-400 dark:border-blue-600 shadow-lg'
+                    : 'bg-white/60 dark:bg-gray-800/60 border-gray-200/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={formData.muscle_group.includes(type)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        onUpdateField('muscle_group', [...formData.muscle_group, type]);
+                      } else {
+                        onUpdateField('muscle_group', formData.muscle_group.filter(eq => eq !== type));
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    disabled={isLoading}
+                  />
+                  <span className={`text-sm font-medium ${
+                    formData.muscle_group.includes(type)
                       ? 'text-blue-800 dark:text-blue-300'
                       : 'text-gray-700 dark:text-gray-300'
                   }`}>{type}</span>
