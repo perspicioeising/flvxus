@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
     }
 
     const totalPages = Math.ceil((count || 0) / limit);
+    const currentPageItems = workouts?.length || 0;
+    const totalLoaded = offset + currentPageItems;
+    const hasMore = totalLoaded < (count || 0);
 
     const response = {
       workouts: workouts || [],
@@ -76,7 +79,10 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total: count || 0,
-        totalPages
+        totalPages,
+        hasMore,
+        offset,
+        currentPageItems
       }
     };
 
