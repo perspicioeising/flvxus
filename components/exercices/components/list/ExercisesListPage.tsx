@@ -92,24 +92,38 @@ export function ExercisesPage() {
               {/* Lista de exercícios */}
               {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {exercises.map((exercise) => (
-                    <ExerciseCard
+                  {exercises.map((exercise, index) => (
+                     <div
                       key={exercise.id}
+                      style={{
+                        animation: `fadeInUp 0.5s ease-out ${index * 0.05}s both`
+                      }}
+                    >
+                    <ExerciseCard
+                      key={exercise.id} 
                       exercise={exercise}
                       viewMode={viewMode}
                       onView={handleViewExercise}
                     />
+                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {exercises.map((exercise) => (
+                  {exercises.map((exercise, index) => (
+                     <div
+                      key={exercise.id}
+                      style={{
+                        animation: `fadeInUp 0.5s ease-out ${index * 0.05}s both`
+                      }}
+                    >
                     <ExerciseCard
                       key={exercise.id}
                       exercise={exercise}
                       viewMode={viewMode}
                       onView={handleViewExercise}
                     />
+                    </div>
                   ))}
                 </div>
               )}
@@ -167,6 +181,19 @@ export function ExercisesPage() {
           )}
         </div>
       </div>
+           {/* CSS para animações */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }
