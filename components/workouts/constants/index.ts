@@ -9,10 +9,48 @@ import {
   Shield,
   TrendingUp,
   Award,
-  Clock,
-  Users
+  Info,
+  User,
+  Settings,
+  CheckCircle2
 } from "lucide-react";
-import type { WorkoutFormData, SelectedExercise, Exercise } from '../types';
+import type { WorkoutFormData, SelectedExercise, Exercise, WorkoutStep } from '../types';
+
+// Workout creation steps
+export const WORKOUT_STEPS: WorkoutStep[] = [
+  {
+    id: 'basic',
+    title: 'Informações Básicas',
+    shortTitle: 'Básico',
+    description: 'Nome e descrição do treino',
+    icon: 'Info',
+    color: 'from-red-500 to-red-600'
+  },
+  {
+    id: 'goal',
+    title: 'Nível e Objetivo',
+    shortTitle: 'Objetivo',
+    description: 'Defina o nível e objetivo do treino',
+    icon: 'Target',
+    color: 'from-red-500 to-red-600'
+  },
+  {
+    id: 'exercises',
+    title: 'Exercícios',
+    shortTitle: 'Exercícios',
+    description: 'Selecione e configure os exercícios',
+    icon: 'Dumbbell',
+    color: 'from-red-500 to-red-600'
+  },
+  {
+    id: 'review',
+    title: 'Revisão',
+    shortTitle: 'Revisão',
+    description: 'Revise e finalize o treino',
+    icon: 'CheckCircle2',
+    color: 'from-red-500 to-red-600'
+  }
+];
 
 // Workout difficulty levels
 export const DIFFICULTY_LEVELS = [
@@ -20,19 +58,22 @@ export const DIFFICULTY_LEVELS = [
     value: "iniciante", 
     label: "Iniciante", 
     color: "from-green-500 to-emerald-600",
-    description: "Para quem está começando"
+    description: "Para quem está começando",
+    icon: User
   },
   { 
     value: "intermediario", 
     label: "Intermediário", 
     color: "from-yellow-500 to-orange-600",
-    description: "Para quem já tem experiência"
+    description: "Para quem já tem experiência",
+    icon: Activity
   },
   { 
     value: "avancado", 
     label: "Avançado", 
     color: "from-red-500 to-red-600",
-    description: "Para atletas experientes"
+    description: "Para atletas experientes",
+    icon: Award
   }
 ] as const;
 
@@ -84,18 +125,20 @@ export const WORKOUT_GOALS = [
 
 // Muscle groups
 export const MUSCLE_GROUPS = [
-  { value: "peito", label: "Peitoral", icon: Target },
-  { value: "costas", label: "Costas", icon: Target },
-  { value: "pernas", label: "Pernas", icon: Target },
-  { value: "ombros", label: "Ombros", icon: Target },
-  { value: "bracos", label: "Braços", icon: Target },
-  { value: "core", label: "Core", icon: Target },
-  { value: "gluteos", label: "Glúteos", icon: Target },
-  { value: "panturrilhas", label: "Panturrilhas", icon: Target }
+  { value: "all", label: "Todos os Grupos" },
+  { value: "peito", label: "Peitoral" },
+  { value: "costas", label: "Costas" },
+  { value: "pernas", label: "Pernas" },
+  { value: "ombros", label: "Ombros" },
+  { value: "bracos", label: "Braços" },
+  { value: "core", label: "Core" },
+  { value: "gluteos", label: "Glúteos" },
+  { value: "panturrilhas", label: "Panturrilhas" }
 ] as const;
 
 // Equipment types
 export const EQUIPMENT_TYPES = [
+  { value: "all", label: "Todos os Equipamentos" },
   { value: "peso_livre", label: "Peso Livre" },
   { value: "maquinas", label: "Máquinas" },
   { value: "peso_corporal", label: "Peso Corporal" },
@@ -106,59 +149,18 @@ export const EQUIPMENT_TYPES = [
   { value: "cabo", label: "Cabo" }
 ] as const;
 
-// Sort options
-export const SORT_OPTIONS = [
-  { value: "name", label: "Nome" },
-  { value: "created_at", label: "Data de Criação" },
-  { value: "updated_at", label: "Última Modificação" },
-  { value: "level", label: "Nível" },
-  { value: "goal", label: "Objetivo" }
-] as const;
-
 // Color scheme for workouts module
 export const WORKOUT_COLORS = {
-  primary: "from-pink-500 to-pink-600",
-  primaryHover: "hover:from-pink-600 hover:to-pink-700",
-  primaryShadow: "hover:shadow-pink-500/25",
-  secondary: "from-rose-500 to-pink-600",
-  secondaryHover: "hover:from-rose-600 hover:to-pink-700",
-  accent: "from-purple-500 to-pink-600",
-  accentHover: "hover:from-purple-600 hover:to-pink-700",
-  background: "from-pink-600/10 via-rose-500/10 to-purple-600/10",
-  backgroundDark: "dark:from-pink-500/10 dark:via-rose-400/10 dark:to-purple-500/10"
+  primary: "from-red-500 to-red-600",
+  primaryHover: "hover:from-red-600 hover:to-red-700",
+  primaryShadow: "hover:shadow-red-500/25",
+  secondary: "from-rose-500 to-red-600",
+  secondaryHover: "hover:from-rose-600 hover:to-red-700",
+  accent: "from-orange-500 to-red-600",
+  accentHover: "hover:from-orange-600 hover:to-red-700",
+  background: "from-red-600/10 via-rose-500/10 to-orange-600/10",
+  backgroundDark: "dark:from-red-500/10 dark:via-rose-400/10 dark:to-orange-500/10"
 } as const;
-
-// Statistics icons
-export const STATS_CONFIG = [
-  {
-    key: "total",
-    label: "Total",
-    icon: Activity,
-    color: "from-pink-500 to-rose-600",
-    description: "Treinos criados"
-  },
-  {
-    key: "exercises",
-    label: "Exercícios",
-    icon: Target,
-    color: "from-purple-500 to-pink-600",
-    description: "Total de exercícios"
-  },
-  {
-    key: "average",
-    label: "Média",
-    icon: TrendingUp,
-    color: "from-rose-500 to-pink-600",
-    description: "Exercícios por treino"
-  },
-  {
-    key: "levels",
-    label: "Níveis",
-    icon: Award,
-    color: "from-indigo-500 to-purple-600",
-    description: "Diferentes dificuldades"
-  }
-] as const;
 
 // Default form values
 export const DEFAULT_WORKOUT_FORM: WorkoutFormData = {
@@ -173,16 +175,9 @@ export const DEFAULT_EXERCISE_PARAMS: Omit<SelectedExercise, keyof Exercise> = {
   sets: 3,
   reps: 12,
   rest: 60,
-  notes: ""
+  notes: "",
+  order: 1
 };
-
-// Pagination defaults
-export const PAGINATION_DEFAULTS = {
-  page: 1,
-  limit: 12,
-  total: 0,
-  totalPages: 1
-} as const;
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -193,14 +188,6 @@ export const API_ENDPOINTS = {
 } as const;
 
 // Filter defaults
-export const DEFAULT_FILTERS = {
-  search: "",
-  level: "all",
-  goal: "all",
-  sortBy: "created_at",
-  sortOrder: "desc" as const
-};
-
 export const DEFAULT_EXERCISE_FILTERS = {
   search: "",
   muscleGroup: "all",
@@ -261,9 +248,12 @@ export const SUCCESS_MESSAGES = {
   WORKOUT_DELETED: "Treino removido com sucesso! 🗑️"
 } as const;
 
-// Animation delays for staggered loading
-export const ANIMATION_DELAYS = {
-  stagger: 0.1,
-  card: 0.3,
-  skeleton: 1.5
-} as const;
+// Step icons mapping
+export const STEP_ICONS = {
+  Info,
+  Target,
+  Dumbbell,
+  CheckCircle2,
+  User,
+  Settings
+};

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Infinity } from "lucide-react";
-import { 
+import {
   WorkoutHeader,
   WorkoutFilters,
   WorkoutCard,
@@ -21,7 +21,7 @@ import { Workout } from "./types";
 export default function WorkoutsListPage() {
   const router = useRouter();
   const [infiniteScrollEnabled, setInfiniteScrollEnabled] = useState(false);
-  
+
   const {
     workouts,
     isLoading,
@@ -108,7 +108,7 @@ export default function WorkoutsListPage() {
             onFiltersChange={updateFilters}
             onViewModeChange={setViewMode}
             onClearFilters={clearFilters}
-          />          
+          />
         </div>
 
         {/* Workouts List */}
@@ -138,9 +138,9 @@ export default function WorkoutsListPage() {
                   ))}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 sm:space-y-6">
                   {workouts.map((workout, index) => (
-                    <div
+                    <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                       key={workout.id}
                       style={{
                         animation: `fadeInUp 0.5s ease-out ${index * 0.05}s both`
