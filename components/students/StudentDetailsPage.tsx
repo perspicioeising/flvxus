@@ -3,9 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Student } from '@/types/student';
 
-// Import dos componentes
+// Import dos componentes modernizados
 import { StudentDetailsHeader } from '@/components/students/components/StudentDetailsHeader';
 import { StudentDetailsTabs } from '@/components/students/components/StudentDetailsTabs';
 import { StudentDetailsLoading } from '@/components/students/components/StudentDetailsLoading';
@@ -132,6 +131,30 @@ export function StudentDetailsPage() {
     }
   }, [params.id, toast]);
 
+  const fetchMediaFiles = useCallback(async () => {
+    if (!params.id) return;
+
+    try {
+      setLoadingStates(prev => ({ ...prev, media: true }));
+      const response = await fetch(`/api/students/${params.id}/media`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      setMediaFiles(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar arquivos de mídia",
+        description: error.message,
+      });
+    } finally {
+      setLoadingStates(prev => ({ ...prev, media: false }));
+    }
+  }, [params.id, toast]);
+
   useEffect(() => {
     fetchStudentDetails();
   }, [fetchStudentDetails]);
@@ -145,10 +168,13 @@ export function StudentDetailsPage() {
         case 'postural':
           if (posturalAssessments.length === 0) await fetchPosturalAssessments();
           break;
+        case 'media':
+          if (mediaFiles.length === 0) await fetchMediaFiles();
+          break;
       }
     };
     fetchTabData();
-  }, [activeTab, fetchPhysicalAssessments, fetchPosturalAssessments]);
+  }, [activeTab, fetchPhysicalAssessments, fetchPosturalAssessments, fetchMediaFiles]);
 
   const handleSave = async () => {
     try {
@@ -183,11 +209,12 @@ export function StudentDetailsPage() {
       }
 
       toast({
-        title: "Alterações salvas",
-        description: "O perfil do aluno foi atualizado.",
+        title: "✅ Alterações salvas",
+        description: "O perfil do aluno foi atualizado com sucesso.",
       });
 
-      router.push('/dashboard/students')
+      // Opcional: redirecionar após salvar
+      // router.push('/dashboard/students')
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -202,7 +229,7 @@ export function StudentDetailsPage() {
   const handleResendInvite = async () => {
     try {
       setIsResendingInvite(true);
-      const response = await fetch(`/api/students/${params.id}`, {
+      const response = await fetch(`/api/students/${params.id}/invite`, {
         method: 'POST',
       });
 
@@ -213,8 +240,8 @@ export function StudentDetailsPage() {
       }
 
       toast({
-        title: "Convite reenviado",
-        description: "Um novo email foi enviado para o aluno.",
+        title: "📧 Convite reenviado",
+        description: "Um novo email de convite foi enviado para o aluno.",
       });
     } catch (error: any) {
       toast({
@@ -224,6 +251,86 @@ export function StudentDetailsPage() {
       });
     } finally {
       setIsResendingInvite(false);
+    }
+  };
+
+  const handleEdit = () => {
+    // Implementar lógica de edição se necessário
+    setActiveTab('profile');
+  };
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Perfil de ${student.name}`,
+          text: `Confira o perfil completo de ${student.name}`,
+          url: window.location.href
+        });
+      } else {
+        // Fallback: copiar para clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "🔗 Link copiado",
+          description: "O link foi copiado para a área de transferência.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao compartilhar",
+        description: "Não foi possível compartilhar o perfil.",
+      });
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      // Implementar geração de relatório PDF
+      toast({
+        title: "📄 Gerando relatório",
+        description: "O relatório será baixado em breve.",
+      });
+      
+      // Aqui você implementaria a lógica real de geração do PDF
+      // Por exemplo, usando jsPDF ou uma API backend
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar relatório",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja remover este aluno? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/students/${params.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "🗑️ Aluno removido",
+        description: "O aluno foi removido com sucesso.",
+      });
+
+      router.push('/dashboard/students');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao remover aluno",
+        description: error.message,
+      });
     }
   };
 
@@ -247,6 +354,11 @@ export function StudentDetailsPage() {
           onSave={handleSave}
           onResendInvite={handleResendInvite}
           onBack={() => router.back()}
+          onEdit={handleEdit}
+          onShare={handleShare}
+          onDownload={handleDownload}
+          onDelete={handleDelete}
+          userRole="trainer"
         />
 
         {/* Tabs Content */}
