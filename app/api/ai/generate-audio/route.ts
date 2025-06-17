@@ -326,7 +326,7 @@ async function generateAudioWithGeminiGenAI(text: string, userId: string, exerci
       .replace(/-+/g, '-')
       .substring(0, 30);
     
-    const filename = `exercise-${safeExerciseName}-${Date.now()}.wav`;
+    const filename = `exercise-${safeExerciseName}-${Date.now()}.mp3`;
     
     // Tentar upload direto com melhor tratamento de erro
     const cookieStore = cookies();
@@ -338,7 +338,7 @@ async function generateAudioWithGeminiGenAI(text: string, userId: string, exerci
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('exercise-audios')
         .upload(filename, audioBuffer, {
-          contentType: 'audio/wav',
+          contentType: 'audio/mp3',
           cacheControl: '3600',
           upsert: true
         });
@@ -511,7 +511,7 @@ async function uploadAudioToSupabaseStorage(audioBuffer: Buffer, filename: strin
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('exercise-audios')
       .upload(filename, audioBuffer, {
-        contentType: 'audio/wav',
+        contentType: 'audio/mp3',
         cacheControl: '3600',
         upsert: true // Permitir sobrescrever se já existir
       });

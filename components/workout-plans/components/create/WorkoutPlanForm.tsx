@@ -1,12 +1,12 @@
-// components/workout-plans/components/form/WorkoutPlanForm.tsx
+// components/workout-plans/components/create/WorkoutPlanForm.tsx
 'use client';
 
-import { useCreateWorkoutPlan } from '@/components/workout-plans/hooks';
-import { WORKOUT_PLAN_STEPS } from '@/components/workout-plans/constants';
+import { useCreateWorkoutPlan } from '../../hooks/useWorkoutPlanForm';
+import { WORKOUT_PLAN_STEPS } from '../../constants';
 
 // Import dos componentes
-import { WorkoutPlanFormHeader } from '../create/WorkoutPlanFormHeader';
-import { WorkoutPlanStepNavigation } from '../create/WorkoutPlanStepNavigation';
+import { WorkoutPlanFormHeader } from './WorkoutPlanFormHeader';
+import { WorkoutPlanStepNavigation } from './WorkoutPlanStepNavigation';
 import { StepBasicInfo } from '../steps/StepBasicInfo';
 import { StepSchedule } from '../steps/StepSchedule';
 import { StepWorkouts } from '../steps/StepWorkouts';

@@ -1,19 +1,11 @@
-// index.ts - Barrel exports para facilitar importações
+// /components/workout-plans/components/list/index.ts
 
-// Types
-export * from './../../types';
-
-// Constants
-export * from './../../constants';
-
-// Hooks
-export * from './../../hooks';
-
-// Components
 export { default as WorkoutPlansPage } from './WorkoutPlans';
 export { WorkoutPlansHeader } from './WorkoutPlansHeader';
-export { WorkoutPlansStats } from './WorkoutPlansStats';
 export { WorkoutPlansFilters } from './WorkoutPlansFilters';
 export { WorkoutPlansList } from './WorkoutPlansList';
 export { WorkoutPlanCard } from './WorkoutPlanCard';
-export { LoadingSkeleton, PlansListSkeleton } from './LoadingSkeleton';
+export { WorkoutPlansEmptyState } from './WorkoutPlansEmptyState';
+export { WorkoutPlansLoadMore } from './WorkoutPlansLoadMore';
+export { WorkoutPlansPaginationInfo } from './WorkoutPlansPaginationInfo';
+export { LoadingSkeleton } from './LoadingSkeleton';

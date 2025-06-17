@@ -1,22 +1,25 @@
+// /components/workout-plans/components/list/WorkoutPlans.tsx - ATUALIZADO
+
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   useWorkoutPlans, 
   useCreateWorkoutPlan, 
   useWorkoutPlanData,
   useWorkoutPlanNavigation 
-} from '../list';
+} from '../../hooks';
 
 import { WorkoutPlansHeader } from './WorkoutPlansHeader';
-import { WorkoutPlansStats } from './WorkoutPlansStats';
 import { WorkoutPlansFilters } from './WorkoutPlansFilters';
 import { WorkoutPlansList } from './WorkoutPlansList';
 import { LoadingSkeleton } from './LoadingSkeleton';
 
 export default function WorkoutPlansPage() {
+  const router = useRouter();
   const navigation = useWorkoutPlanNavigation();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list'); // Padrão list como nos exercícios
   
   const {
     plans,
@@ -47,7 +50,7 @@ export default function WorkoutPlansPage() {
     startCloning,
     openModal,
     handleCancel,
-  } = useCreateWorkoutPlan();
+  } = useCreateWorkoutPlan('create', undefined, undefined);
 
   const {
     workouts,
@@ -55,18 +58,26 @@ export default function WorkoutPlansPage() {
     isLoading: isDataLoading,
   } = useWorkoutPlanData();
 
-  // Handler para criar plano com refresh
-  const handleCreatePlan = async () => {
-    const success = await createPlan();
-    if (success) {
-      refreshPlans();
-    }
+  // Handler para criar plano - navegar para formulário
+  const handleCreatePlan = () => {
+    router.push('/dashboard/workout-plans/new');
   };
 
   // Handler para clonar plano
   const handleClonePlan = (plan: any) => {
     startCloning(plan);
   };
+
+  // Clear filters
+  const handleClearFilters = () => {
+    updateFilters({ searchQuery: '', statusFilter: 'all' });
+  };
+
+  // Check if has active filters
+  const hasActiveFilters = Boolean(
+    filters.searchQuery || 
+    filters.statusFilter !== 'all'
+  );
 
   // Loading inicial com skeleton
   if (isInitialLoading) {
@@ -80,11 +91,9 @@ export default function WorkoutPlansPage() {
         {/* Header */}
         <WorkoutPlansHeader 
           userRole="trainer" // TODO: Get from context
-          stats={{ total: plans.length }}
-          onCreateNew={openModal}
+          stats={{ total: pagination.total }}
+          onCreateNew={handleCreatePlan}
         />
-
-      
 
         {/* Filters */}
         <WorkoutPlansFilters 
@@ -99,6 +108,7 @@ export default function WorkoutPlansPage() {
           plans={plans}
           isLoading={isLoading}
           pagination={pagination}
+          hasMore={hasMorePlans}
           hasMorePlans={hasMorePlans}
           onLoadMore={loadMorePlans}
           onPageChange={() => {}} // Não usado com infinite scroll
@@ -107,10 +117,11 @@ export default function WorkoutPlansPage() {
           onEdit={navigation.goToEdit}
           onClone={handleClonePlan}
           onDelete={deletePlan}
+          viewMode={viewMode}
+          hasFilters={hasActiveFilters}
+          onCreateNew={handleCreatePlan}
+          onClearFilters={handleClearFilters}
         />
-
-        {/* Create/Clone Modal */}
-       
       </div>
     </div>
   );

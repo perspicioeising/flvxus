@@ -15,7 +15,7 @@ interface ExtendedWorkoutPlanFiltersProps extends WorkoutPlanFiltersProps {
 export function WorkoutPlansFilters({ 
   filters, 
   onFiltersChange,
-  viewMode = 'grid',
+  viewMode = 'list',
   onViewModeChange 
 }: ExtendedWorkoutPlanFiltersProps) {
   const hasActiveFilters = filters.searchQuery !== '' || filters.statusFilter !== 'all';
@@ -77,34 +77,7 @@ export function WorkoutPlansFilters({
               </Select>
 
               {/* View Mode Toggle */}
-              {onViewModeChange && (
-                <div className="flex rounded-xl overflow-hidden shadow-lg">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="icon"
-                    onClick={() => onViewModeChange('grid')}
-                    className={`h-12 w-12 rounded-none ${
-                      viewMode === 'grid'
-                        ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg'
-                        : 'bg-white/80 dark:bg-gray-800/80 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 dark:text-orange-400'
-                    }`}
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="icon"
-                    onClick={() => onViewModeChange('list')}
-                    className={`h-12 w-12 rounded-none ${
-                      viewMode === 'list'
-                        ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg'
-                        : 'bg-white/80 dark:bg-gray-800/80 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-orange-600 dark:text-orange-400'
-                    }`}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+              
 
               {/* Clear filters */}
               {hasActiveFilters && (

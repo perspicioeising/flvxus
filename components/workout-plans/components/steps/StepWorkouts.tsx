@@ -6,27 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DAYS_OF_WEEK } from '../../constants';
-
-interface Workout {
-  id: string;
-  name: string;
-  description: string;
-  level: string;
-  goal: string;
-  exercises_count?: number;
-  estimated_duration?: number;
-}
-
-interface SelectedWorkout {
-  workout: Workout;
-  day_of_week: number;
-}
+import { FormWorkout, FormSelectedWorkout } from '../../hooks/form-types';
 
 interface StepWorkoutsProps {
-  availableWorkouts: Workout[];
-  selectedWorkouts: SelectedWorkout[];
+  availableWorkouts: FormWorkout[];
+  selectedWorkouts: FormSelectedWorkout[];
   schedule: number[];
-  onWorkoutSelect: (workout: Workout, day: number) => void;
+  onWorkoutSelect: (workout: FormWorkout, day: number) => void;
   onWorkoutRemove: (workoutId: string, day: number) => void;
   isLoading: boolean;
 }
@@ -61,7 +47,7 @@ export function StepWorkouts({
   // Filter workouts
   const filteredWorkouts = availableWorkouts.filter(workout => {
     const matchesSearch = workout.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         workout.description?.toLowerCase().includes(searchTerm.toLowerCase());
+                         workout.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = filterLevel === 'all' || workout.level === filterLevel;
     const matchesGoal = filterGoal === 'all' || workout.goal === filterGoal;
     
@@ -72,9 +58,9 @@ export function StepWorkouts({
   const workoutsByDay = schedule.reduce((acc, day) => {
     acc[day] = selectedWorkouts.filter(sw => sw.day_of_week === day);
     return acc;
-  }, {} as Record<number, SelectedWorkout[]>);
+  }, {} as Record<number, FormSelectedWorkout[]>);
 
-  const handleWorkoutClick = (workout: Workout) => {
+  const handleWorkoutClick = (workout: FormWorkout) => {
     if (selectedDay !== null) {
       onWorkoutSelect(workout, selectedDay);
       setSelectedDay(null);
@@ -281,11 +267,6 @@ export function StepWorkouts({
                               <Badge variant="secondary" className="text-xs">
                                 {workout.level}
                               </Badge>
-                              {workout.exercises_count && (
-                                <Badge variant="outline" className="text-xs">
-                                  {workout.exercises_count} exercícios
-                                </Badge>
-                              )}
                             </div>
                           </div>
                         </div>

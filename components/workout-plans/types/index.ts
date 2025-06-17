@@ -76,6 +76,7 @@ export interface WorkoutPlanResponse {
 }
 
 export interface SelectedWorkout extends Workout {
+  workout: any;
   day_of_week: number;
 }
 
