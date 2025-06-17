@@ -8,8 +8,6 @@ import { format, addDays } from 'date-fns';
 import { WORKOUT_PLAN_ERRORS, VALIDATION_RULES } from '../constants';
 import { FormWorkout, FormSelectedWorkout, FormData } from '../../workout-plans/hooks/form-types';
 
-
-
 interface UseWorkoutPlanFormReturn {
   // Estados
   formData: FormData;
@@ -60,11 +58,88 @@ export function useCreateWorkoutPlan(
 
   const [selectedWorkouts, setSelectedWorkouts] = useState<FormSelectedWorkout[]>([]);
 
+  // Carregar dados do plano para edição
+  useEffect(() => {
+    if (mode === 'edit' && workoutPlanId) {
+      const fetchPlanData = async () => {
+        try {
+          setIsLoading(true);
+          console.log('🔍 Carregando dados do plano para edição:', workoutPlanId);
+
+          const response = await fetch(`/api/workout-plans/${workoutPlanId}`);
+          
+          if (!response.ok) {
+            throw new Error('Plano não encontrado');
+          }
+
+          const planData = await response.json();
+          console.log('✅ Dados do plano carregados:', planData);
+
+          // Extrair e validar o schedule com tipagem explícita
+          const workoutDays = planData.workouts?.map((w: any) => w.day_of_week) || [];
+          const validDays: number[] = [];
+          
+          workoutDays.forEach((day: any) => {
+            if (typeof day === 'number' && !isNaN(day) && day >= 1 && day <= 7) {
+              validDays.push(day);
+            }
+          });
+          
+          const uniqueSchedule: number[] = [...new Set(validDays)];
+
+          // Preencher dados básicos
+          setFormData({
+            name: planData.name || '',
+            description: planData.description || '',
+            student_id: planData.student_id || '',
+            start_date: planData.start_date || '',
+            end_date: planData.end_date || '',
+            schedule: uniqueSchedule
+          });
+
+          // Preencher workouts selecionados
+          const workouts = planData.workouts || [];
+          const formattedWorkouts: FormSelectedWorkout[] = workouts
+            .filter((item: any) => item.workout && item.workout.id) // Filtrar items válidos
+            .map((item: any) => ({
+              workout: {
+                id: item.workout.id,
+                name: item.workout.name || 'Treino sem nome',
+                description: item.workout.description || 'Sem descrição',
+                level: item.workout.level || 'intermediate',
+                goal: item.workout.goal || 'general_fitness'
+              },
+              day_of_week: item.day_of_week
+            }));
+
+          setSelectedWorkouts(formattedWorkouts);
+          console.log('✅ Workouts formatados:', formattedWorkouts);
+
+        } catch (error) {
+          console.error('❌ Erro ao carregar dados do plano:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar plano",
+            description: "Não foi possível carregar os dados do plano para edição."
+          });
+          router.push('/dashboard/workout-plans');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchPlanData();
+    }
+  }, [mode, workoutPlanId, toast, router]);
+
   // Carregar workouts disponíveis
   useEffect(() => {
     const fetchWorkouts = async () => {
       try {
-        setIsLoading(true);
+        // Só mostrar loading se não estiver carregando dados do plano
+        if (mode !== 'edit') {
+          setIsLoading(true);
+        }
 
         const { data, error } = await supabase
           .from('workouts')
@@ -122,18 +197,20 @@ export function useCreateWorkoutPlan(
           description: "Não foi possível carregar a lista de treinos.",
         });
       } finally {
-        setIsLoading(false);
+        if (mode !== 'edit') {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchWorkouts();
-  }, [supabase, toast]);
+  }, [supabase, toast, mode]);
 
   // Função para atualizar campo do formulário
   const updateFormField = useCallback((field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Limpar erro do campo quando o usuário começar a digitir
+    // Limpar erro do campo quando o usuário começar a digitar
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -146,6 +223,11 @@ export function useCreateWorkoutPlan(
   // Função para atualizar agendamento
   const handleScheduleUpdate = useCallback((days: number[]) => {
     setFormData(prev => ({ ...prev, schedule: days }));
+    
+    // Remover workouts de dias que não estão mais selecionados
+    setSelectedWorkouts(prev => 
+      prev.filter(sw => days.includes(sw.day_of_week))
+    );
     
     if (errors.schedule) {
       setErrors(prev => {
@@ -283,8 +365,16 @@ export function useCreateWorkoutPlan(
         }))
       };
 
-      const response = await fetch('/api/workout-plans', {
-        method: mode === 'create' ? 'POST' : 'PUT',
+      console.log('💾 Salvando plano:', { mode, workoutPlanId, planData });
+
+      const url = mode === 'edit' && workoutPlanId 
+        ? `/api/workout-plans/${workoutPlanId}`
+        : '/api/workout-plans';
+      
+      const method = mode === 'edit' ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -297,10 +387,13 @@ export function useCreateWorkoutPlan(
       }
 
       const result = await response.json();
+      console.log('✅ Plano salvo:', result);
 
       toast({
-        title: mode === 'create' ? "Plano criado!" : "Plano atualizado!",
-        description: "O plano de treino foi salvo com sucesso.",
+        title: mode === 'edit' ? "Plano atualizado!" : "Plano criado!",
+        description: mode === 'edit' 
+          ? "O plano foi atualizado com sucesso."
+          : "O plano de treino foi criado com sucesso.",
       });
 
       // Redirecionar para lista
@@ -316,7 +409,7 @@ export function useCreateWorkoutPlan(
     } finally {
       setIsSaving(false);
     }
-  }, [formData, selectedWorkouts, mode, validateStep, toast, router]);
+  }, [formData, selectedWorkouts, mode, workoutPlanId, validateStep, toast, router]);
 
   return {
     // Estados
