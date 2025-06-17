@@ -1,4 +1,4 @@
-// components/exercises/steps/StepMedia.tsx
+// components/exercises/steps/StepMedia.tsx - CORRIGIDO
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Video, Upload, Loader2, Volume2, Play, Mic, CheckCircle, Info, Link, Br
 
 interface StepMediaProps {
   formData: {
+    name?: string; // Adicionar nome do exercício
     video_url: string;
     audio_url: string;
     description: string;
@@ -133,10 +134,8 @@ export function StepMedia({
   };
 
   const generateAudioWithAI = async () => {
-    // Criar texto de instruções baseado nas dicas e erros comuns
-    const instructionsText = createInstructionsText();
-    
-    if (!instructionsText) {
+    // Validar se temos informações suficientes
+    if (!hasInstructionsForAudio()) {
       toast({
         variant: "destructive",
         title: "Informações insuficientes",
@@ -147,12 +146,18 @@ export function StepMedia({
 
     try {
       setIsGeneratingAudio(true);
+      
+      // CORREÇÃO: Enviar estrutura correta para a API
       const response = await fetch('/api/ai/generate-audio', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: instructionsText }),
+        body: JSON.stringify({
+          exerciseName: formData.name || "Exercício", // Nome do exercício
+          tips: formData.tips,                        // Dicas de execução
+          common_errors: formData.common_errors       // Erros comuns
+        }),
       });
 
       const data = await response.json();
@@ -170,6 +175,7 @@ export function StepMedia({
       });
 
     } catch (error: any) {
+      console.error('Erro na geração de áudio:', error);
       toast({
         variant: "destructive",
         title: "Erro ao gerar áudio",
@@ -180,6 +186,7 @@ export function StepMedia({
     }
   };
 
+  // Função auxiliar não é mais necessária, mas manter para compatibilidade
   const createInstructionsText = () => {
     let text = "";
     
@@ -407,6 +414,16 @@ export function StepMedia({
                     O áudio será criado baseado nas instruções e erros comuns.
                   </p>
                 </div>
+              </div>
+            )}
+            
+            {/* Debug info (apenas para desenvolvimento) */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs">
+                <p><strong>Debug:</strong></p>
+                <p>Nome: {formData.name || "Não definido"}</p>
+                <p>Tips: {formData.tips ? "✅" : "❌"}</p>
+                <p>Errors: {formData.common_errors ? "✅" : "❌"}</p>
               </div>
             )}
           </CardHeader>

@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     let genAI, model;
     try {
       genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }); // Usar modelo mais recente
+      model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }); // Usar modelo mais recente
       console.log('✅ Modelo Gemini inicializado com sucesso');
     } catch (initError) {
       console.error('❌ Erro ao inicializar Gemini:', initError);

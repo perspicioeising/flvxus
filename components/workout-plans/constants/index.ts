@@ -1,4 +1,51 @@
 // constants/index.ts - Constantes centralizadas do módulo
+// components/workout-plans/constants/index.ts
+
+export const WORKOUT_PLAN_STEPS = [
+  {
+    id: 'basic',
+    title: 'Informações',
+    description: 'Dados básicos do plano',
+    icon: 'FileCheck',
+    color: 'from-orange-500 to-amber-500',
+    shortTitle: 'Informações'
+  },
+  {
+    id: 'schedule',
+    title: 'Agendamento',
+    description: 'Período e frequência',
+    icon: 'Clock',
+    color: 'from-amber-500 to-orange-500',
+    shortTitle: 'Agenda'
+  },
+  {
+    id: 'workouts',
+    title: 'Treinos',
+    description: 'Selecione os treinos',
+    icon: 'Dumbbell',
+    color: 'from-orange-500 to-red-500',
+    shortTitle: 'Treinos'
+  },
+  {
+    id: 'review',
+    title: 'Revisão',
+    description: 'Confirme e salve',
+    icon: 'CheckCircle2',
+    color: 'from-green-500 to-emerald-500',
+    shortTitle: 'Finalizar'
+  }
+];
+
+export const WORKOUT_PLAN_ERRORS = {
+  NAME_REQUIRED: 'Nome do plano é obrigatório',
+  DESCRIPTION_REQUIRED: 'Descrição é obrigatória',
+  START_DATE_REQUIRED: 'Data de início é obrigatória',
+  END_DATE_REQUIRED: 'Data de término é obrigatória',
+  INVALID_DATE_RANGE: 'Data de término deve ser posterior à data de início',
+  STUDENT_REQUIRED: 'Selecione um aluno',
+  NO_WORKOUTS_SELECTED: 'Selecione pelo menos um treino',
+  NO_SCHEDULE_SELECTED: 'Configure pelo menos um dia da semana'
+};
 
 export const DAYS_OF_WEEK = [
   { value: 1, label: "Segunda-feira", short: "Seg" },

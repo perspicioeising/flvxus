@@ -2,9 +2,10 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { GoogleGenAI } from "@google/genai";
 
 export async function POST(request: Request) {
-  console.log('🎤 Iniciando geração de áudio...');
+  console.log('🎤 Iniciando geração de áudio com Gemini GenAI...');
   
   try {
     const cookieStore = cookies();
@@ -20,22 +21,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const { text, tips, common_errors } = await request.json();
+    const { text, tips, common_errors, exerciseName, name } = await request.json();
     console.log('📝 Dados recebidos:', { 
       text: text?.substring(0, 50), 
       tips: tips?.substring(0, 50), 
-      common_errors: common_errors?.substring(0, 50) 
+      common_errors: common_errors?.substring(0, 50),
+      exerciseName: exerciseName?.substring(0, 30),
+      name: name?.substring(0, 30)
     });
+
+    // Usar exerciseName ou name como fallback
+    const exerciseTitle = exerciseName || name || "Exercício";
 
     // Priorizar tips e common_errors sobre text genérico
     let finalText = '';
     
     if (tips && tips.trim()) {
       console.log('✅ Usando dicas de execução para áudio');
-      finalText = createAudioFromTips(tips, common_errors);
+      finalText = createAudioFromTips(tips, common_errors, exerciseTitle);
     } else if (text && text.trim()) {
       console.log('✅ Usando texto genérico para áudio');
-      finalText = text;
+      finalText = `${exerciseTitle}. ${text}`;
     } else {
       return NextResponse.json(
         { error: 'É necessário fornecer dicas de execução ou texto para gerar áudio' },
@@ -62,8 +68,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Gerar áudio usando API de TTS
-    const audioUrl = await generateAudioWithTTS(cleanedText, session.user.id);
+    // Gerar áudio usando Gemini TTS
+    const audioUrl = await generateAudioWithGeminiGenAI(cleanedText, session.user.id, exerciseTitle);
     
     console.log('🎉 Áudio gerado com sucesso:', audioUrl);
     return NextResponse.json({ 
@@ -75,24 +81,45 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('❌ Erro ao gerar áudio:', error);
     
-    // Retornar erro específico baseado no tipo
-    if (error.message?.includes('quota') || error.message?.includes('QUOTA_EXCEEDED')) {
+    // Tratamento de erros mais específicos
+    if (error.message === 'API_KEY_ERROR') {
+      return NextResponse.json(
+        { error: 'Chave da API do Gemini inválida ou não configurada.' },
+        { status: 500 }
+      );
+    }
+    
+    if (error.message === 'QUOTA_EXCEEDED') {
       return NextResponse.json(
         { error: 'Limite de uso da API atingido. Tente novamente mais tarde.' },
         { status: 429 }
       );
     }
     
-    if (error.message?.includes('invalid') || error.message?.includes('INVALID')) {
+    if (error.message === 'SAFETY_ERROR') {
       return NextResponse.json(
-        { error: 'Texto inválido para síntese de voz.' },
+        { error: 'Conteúdo rejeitado pelos filtros de segurança. Tente um texto mais simples.' },
         { status: 400 }
       );
     }
-
-    if (error.message?.includes('API_KEY')) {
+    
+    if (error.message === 'MODEL_NOT_AVAILABLE') {
       return NextResponse.json(
-        { error: 'Configuração da API de áudio ausente ou inválida.' },
+        { error: 'Modelo de TTS não disponível. Verifique se o Gemini 2.0 Flash está habilitado.' },
+        { status: 503 }
+      );
+    }
+    
+    if (error.message === 'INVALID_REQUEST') {
+      return NextResponse.json(
+        { error: 'Requisição inválida. Verifique o formato do texto.' },
+        { status: 400 }
+      );
+    }
+    
+    if (error.message?.includes('GEMINI_API_ERROR')) {
+      return NextResponse.json(
+        { error: `Erro na API do Gemini: ${error.message.replace('GEMINI_API_ERROR: ', '')}` },
         { status: 500 }
       );
     }
@@ -107,12 +134,17 @@ export async function POST(request: Request) {
 /**
  * Cria um texto otimizado para áudio baseado nas dicas e erros comuns
  */
-function createAudioFromTips(tips: string, commonErrors?: string): string {
+function createAudioFromTips(tips: string, commonErrors?: string, exerciseName?: string): string {
   let audioText = '';
+  
+  // Adicionar nome do exercício se fornecido
+  if (exerciseName && exerciseName.trim()) {
+    audioText += `Exercício: ${exerciseName}. `;
+  }
   
   // Processar dicas de execução
   if (tips && tips.trim()) {
-    audioText += 'Instruções de execução do exercício:\n\n';
+    audioText += 'Instruções de execução: ';
     
     const tipsLines = tips.split('\n')
       .map(line => line.trim())
@@ -124,21 +156,21 @@ function createAudioFromTips(tips: string, commonErrors?: string): string {
       if (line.includes('✔️')) {
         // Nova seção (ex: ✔️ Posição inicial:)
         currentSection = line.replace('✔️', '').replace(':', '').trim();
-        audioText += `${currentSection}:\n`;
+        audioText += `${currentSection}: `;
       } else if (line.includes('🟡')) {
         // Item da seção (ex: 🟡 Sente-se em um banco...)
         const item = line.replace('🟡', '').trim();
-        audioText += `${item}\n`;
+        audioText += `${item}. `;
       } else if (line.length > 5) {
         // Linha genérica
-        audioText += `${line}\n`;
+        audioText += `${line}. `;
       }
     }
   }
   
   // Processar erros comuns
   if (commonErrors && commonErrors.trim()) {
-    audioText += '\n\nErros que devem ser evitados:\n';
+    audioText += 'Erros que devem ser evitados: ';
     
     const errorLines = commonErrors.split('\n')
       .map(line => line.trim())
@@ -147,9 +179,9 @@ function createAudioFromTips(tips: string, commonErrors?: string): string {
     for (const line of errorLines) {
       if (line.includes('❌')) {
         const error = line.replace('❌', '').trim();
-        audioText += `Evite ${error}\n`;
+        audioText += `Evite ${error}. `;
       } else if (line.length > 5) {
-        audioText += `Evite ${line}\n`;
+        audioText += `Evite ${line}. `;
       }
     }
   }
@@ -185,172 +217,217 @@ function cleanTextForAudio(text: string): string {
 }
 
 /**
- * Gera áudio usando API de Text-to-Speech
+ * Gera áudio usando Google GenAI TTS
  */
-async function generateAudioWithTTS(text: string, userId: string): Promise<string> {
+async function generateAudioWithGeminiGenAI(text: string, userId: string, exerciseName?: string): Promise<string> {
+  console.log('🤖 Usando Google GenAI TTS...');
+  console.log('📝 Texto original recebido:', text);
   
-  // OPÇÃO 1: OpenAI TTS (Recomendado - boa qualidade e fácil de configurar)
-  if (process.env.OPENAI_API_KEY) {
-    console.log('🤖 Usando OpenAI TTS...');
-    
-    try {
-      const response = await fetch('https://api.openai.com/v1/audio/speech', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'tts-1-hd', // Modelo HD para melhor qualidade
-          input: text,
-          voice: 'nova', // Vozes disponíveis: alloy, echo, fable, onyx, nova, shimmer
-          response_format: 'mp3',
-          speed: 0.85 // Um pouco mais devagar para exercícios
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Erro OpenAI TTS:', response.status, errorData);
-        throw new Error(`Falha na API da OpenAI TTS: ${response.status}`);
-      }
-
-      console.log('✅ Áudio gerado pela OpenAI');
-      const audioBuffer = await response.arrayBuffer();
-      
-      return await uploadAudioToSupabaseStorage(
-        Buffer.from(audioBuffer), 
-        `exercise-audio-${userId}-${Date.now()}.mp3`
-      );
-      
-    } catch (error) {
-      console.error('❌ Erro na OpenAI TTS:', error);
-      throw error;
-    }
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY não configurada');
   }
 
-  // OPÇÃO 2: Google Cloud Text-to-Speech
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_TTS_API_KEY) {
-    console.log('🤖 Usando Google Cloud TTS...');
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    
+    // Simplificar o texto para evitar rejeições
+    const simpleText = text
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 500); // Limitar tamanho
+    
+    console.log('📤 Texto simplificado:', simpleText);
+    
+    // Tentar diferentes modelos que suportam TTS
+    const ttsModels = [
+      "gemini-2.5-flash-preview-tts",
+      "gemini-2.0-flash-thinking-exp", 
+      "gemini-exp-1206"
+    ];
+    
+    let response;
+    let usedModel = '';
+    
+    for (const model of ttsModels) {
+      try {
+        console.log(`🧪 Tentando modelo: ${model}`);
+        
+        response = await ai.models.generateContent({
+          model: model,
+          contents: simpleText,
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: "Aoede" }
+              }
+            }
+          }
+        });
+        
+        // Se chegou aqui, o modelo funcionou
+        usedModel = model;
+        console.log(`✅ Modelo ${model} funcionou!`);
+        break;
+        
+      } catch (modelError: any) {
+        console.log(`❌ Modelo ${model} falhou:`, modelError.message);
+        
+        if (modelError.message?.includes('does not support requested modality')) {
+          console.log(`⚠️ Modelo ${model} não suporta AUDIO, tentando próximo...`);
+          continue;
+        }
+        
+        // Se for outro tipo de erro, pode ser mais sério
+        if (modelError.message?.includes('API key') || modelError.message?.includes('quota')) {
+          throw modelError;
+        }
+      }
+    }
+    
+    if (!response || !usedModel) {
+      throw new Error('Nenhum modelo de TTS disponível. Os modelos gemini-2.5-flash-preview-tts, gemini-2.0-flash-thinking-exp e gemini-exp-1206 não estão acessíveis.');
+    }
+
+    console.log('📋 Resposta completa do Gemini:', {
+      model: usedModel,
+      candidates: response.candidates?.length,
+      hasContent: !!response.candidates?.[0]?.content,
+      hasParts: !!response.candidates?.[0]?.content?.parts,
+      hasAudio: !!response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+    });
+
+    // Extrair dados de áudio da resposta
+    const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    
+    if (!audioData) {
+      console.error('❌ Estrutura da resposta:', JSON.stringify(response, null, 2));
+      
+      // Verificar se há texto na resposta (fallback)
+      const textResponse = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (textResponse) {
+        console.log('📝 Resposta em texto:', textResponse);
+        throw new Error(`Modelo ${usedModel} retornou texto em vez de áudio. TTS pode não estar habilitado.`);
+      }
+      
+      throw new Error('Nenhum dado de áudio retornado pelo Gemini');
+    }
+
+    console.log(`✅ Áudio gerado pelo Gemini GenAI (${usedModel}), tamanho:`, audioData.length, 'chars');
+    
+    // Converter base64 para buffer
+    const audioBuffer = Buffer.from(audioData, 'base64');
+    console.log('📦 Buffer de áudio criado, tamanho:', audioBuffer.length, 'bytes');
+    
+    // Nome de arquivo mais limpo para exercícios
+    const safeExerciseName = (exerciseName || 'exercise')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .substring(0, 30);
+    
+    const filename = `exercise-${safeExerciseName}-${Date.now()}.wav`;
+    
+    // Tentar upload direto com melhor tratamento de erro
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     
     try {
-      // Se tiver API key direta (mais simples)
-      if (process.env.GOOGLE_TTS_API_KEY) {
-        const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${process.env.GOOGLE_TTS_API_KEY}`, {
+      console.log('📤 Tentando upload direto no bucket exercise-audios...');
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('exercise-audios')
+        .upload(filename, audioBuffer, {
+          contentType: 'audio/wav',
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('❌ Erro no upload direto:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('✅ Upload direto bem-sucedido:', uploadData);
+
+      // Obter URL pública
+      const { data: urlData } = supabase.storage
+        .from('exercise-audios')
+        .getPublicUrl(filename);
+
+      console.log('🌐 URL pública gerada:', urlData.publicUrl);
+      return urlData.publicUrl;
+      
+    } catch (directError: any) {
+      console.warn('⚠️ Upload direto falhou:', directError.message);
+      
+      // Fallback: usar rota alternativa que tenta múltiplos buckets
+      try {
+        const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/exercises/simple-audio-upload`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Cookie': cookieStore.toString()
           },
           body: JSON.stringify({
-            input: { text: text },
-            voice: { 
-              languageCode: 'pt-BR', 
-              name: 'pt-BR-Neural2-A',
-              ssmlGender: 'FEMALE' 
-            },
-            audioConfig: { 
-              audioEncoding: 'MP3',
-              speakingRate: 0.85,
-              pitch: -2.0,
-              volumeGainDb: 2.0
-            }
-          }),
+            audioData: audioData,
+            filename: filename
+          })
         });
 
         if (!response.ok) {
-          throw new Error(`Google TTS API error: ${response.status}`);
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Falha no upload alternativo');
         }
 
-        const data = await response.json();
-        const audioBuffer = Buffer.from(data.audioContent, 'base64');
+        const result = await response.json();
+        console.log('✅ Upload alternativo bem-sucedido:', result.url);
         
-        return await uploadAudioToSupabaseStorage(
-          audioBuffer, 
-          `exercise-audio-${userId}-${Date.now()}.mp3`
-        );
+        if (result.warning) {
+          console.warn('⚠️', result.warning);
+        }
+        
+        return result.url;
+        
+      } catch (alternativeError: any) {
+        console.error('❌ Upload alternativo também falhou:', alternativeError);
+        throw new Error(`Falha completa no upload: ${directError.message}`);
       }
-      
-      // Usar client library (se tiver credenciais)
-      const textToSpeech = require('@google-cloud/text-to-speech');
-      const client = new textToSpeech.TextToSpeechClient();
-
-      const request = {
-        input: { text: text },
-        voice: { 
-          languageCode: 'pt-BR', 
-          name: 'pt-BR-Neural2-A',
-          ssmlGender: 'FEMALE' 
-        },
-        audioConfig: { 
-          audioEncoding: 'MP3',
-          speakingRate: 0.85,
-          pitch: -2.0,
-          volumeGainDb: 2.0
-        },
-      };
-
-      const [response] = await client.synthesizeSpeech(request);
-      
-      return await uploadAudioToSupabaseStorage(
-        response.audioContent as Buffer, 
-        `exercise-audio-${userId}-${Date.now()}.mp3`
-      );
-      
-    } catch (error) {
-      console.error('❌ Erro na Google TTS:', error);
-      throw error;
     }
-  }
-
-  // OPÇÃO 3: Eleven Labs (Melhor qualidade, mas mais caro)
-  if (process.env.ELEVEN_LABS_API_KEY) {
-    console.log('🤖 Usando Eleven Labs...');
     
-    try {
-      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': process.env.ELEVEN_LABS_API_KEY,
-        },
-        body: JSON.stringify({
-          text: text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.6,
-            similarity_boost: 0.7,
-            style: 0.2,
-            use_speaker_boost: true
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Eleven Labs API error: ${response.status}`);
-      }
-
-      const audioBuffer = await response.arrayBuffer();
-      
-      return await uploadAudioToSupabaseStorage(
-        Buffer.from(audioBuffer), 
-        `exercise-audio-${userId}-${Date.now()}.mp3`
-      );
-      
-    } catch (error) {
-      console.error('❌ Erro na Eleven Labs:', error);
-      throw error;
+  } catch (error: any) {
+    console.error('❌ Erro detalhado na Gemini GenAI TTS:', {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      details: error.details,
+      stack: error.stack?.split('\n')[0]
+    });
+    
+    if (error.message?.includes('API key') || error.message?.includes('api_key') || error.status === 401) {
+      throw new Error('API_KEY_ERROR');
     }
+    
+    if (error.message?.includes('quota') || error.message?.includes('QUOTA') || error.status === 429) {
+      throw new Error('QUOTA_EXCEEDED');
+    }
+    
+    if (error.message?.includes('SAFETY') || error.message?.includes('safety') || error.message?.includes('blocked')) {
+      throw new Error('SAFETY_ERROR');
+    }
+    
+    if (error.message?.includes('does not support requested modality')) {
+      throw new Error('MODEL_NOT_AVAILABLE');
+    }
+    
+    if (error.status === 400) {
+      throw new Error('INVALID_REQUEST');
+    }
+    
+    // Log completo do erro para debug
+    console.error('❌ Erro completo:', error);
+    throw new Error(`GEMINI_API_ERROR: ${error.message}`);
   }
-
-  // FALLBACK: Se nenhuma API configurada
-  console.log('⚠️ Nenhuma API de TTS configurada - usando áudio temporário');
-  
-  // Simular processamento
-  await new Promise(resolve => setTimeout(resolve, 3000));
-  
-  // Retornar URL de áudio de exemplo
-  return 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3';
 }
 
 /**
@@ -358,35 +435,132 @@ async function generateAudioWithTTS(text: string, userId: string): Promise<strin
  */
 async function uploadAudioToSupabaseStorage(audioBuffer: Buffer, filename: string): Promise<string> {
   console.log('📤 Fazendo upload do áudio:', filename);
+  console.log('📦 Tamanho do buffer:', audioBuffer.length, 'bytes');
   
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
   try {
-    // Upload para o bucket de áudios
-    const { data, error } = await supabase.storage
-      .from('exercise-audios')
-      .upload(filename, audioBuffer, {
-        contentType: 'audio/mpeg',
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (error) {
-      console.error('❌ Erro no upload:', error);
-      throw new Error(`Erro no upload: ${error.message}`);
+    // Verificar autenticação do usuário
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError || !session) {
+      console.error('❌ Erro de autenticação no upload:', authError);
+      throw new Error('Usuário não autenticado para upload');
     }
 
+    console.log('✅ Usuário autenticado:', session.user.id);
+
+    // Verificar perfil do usuário
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, tenant_id')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (profileError) {
+      console.error('❌ Erro ao buscar perfil:', profileError);
+      throw new Error(`Erro ao verificar perfil: ${profileError.message}`);
+    }
+
+    console.log('✅ Perfil do usuário:', { role: profile.role, tenant_id: profile.tenant_id });
+
+    if (profile.role !== 'trainer') {
+      throw new Error('Apenas treinadores podem fazer upload de áudios');
+    }
+
+    // Listar buckets existentes para debug
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    console.log('📁 Buckets disponíveis:', buckets?.map(b => b.name));
+    
+    if (listError) {
+      console.warn('⚠️ Erro ao listar buckets:', listError);
+    }
+
+    // Verificar se o bucket exercise-audios existe
+    const exerciseAudiosBucket = buckets?.find(bucket => bucket.name === 'exercise-audios');
+    
+    if (!exerciseAudiosBucket) {
+      console.log('📁 Bucket exercise-audios não existe, tentando criar...');
+      
+      // Tentar criar bucket (pode falhar se não tiver permissão)
+      const { data: createData, error: bucketError } = await supabase.storage.createBucket('exercise-audios', {
+        public: true,
+        allowedMimeTypes: ['audio/wav', 'audio/flac', 'audio/mpeg', 'audio/mp3'],
+        fileSizeLimit: 52428800 // 50MB
+      });
+      
+      if (bucketError) {
+        console.error('❌ Erro ao criar bucket:', bucketError);
+        
+        // Se o bucket já existe, tentar continuar
+        if (bucketError.message?.includes('already exists')) {
+          console.log('✅ Bucket já existe, continuando...');
+        } else {
+          throw new Error(`Erro ao criar bucket: ${bucketError.message}`);
+        }
+      } else {
+        console.log('✅ Bucket criado com sucesso:', createData);
+      }
+    } else {
+      console.log('✅ Bucket exercise-audios já existe');
+    }
+
+    // Tentar fazer upload do arquivo
+    console.log('📤 Iniciando upload do arquivo...');
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('exercise-audios')
+      .upload(filename, audioBuffer, {
+        contentType: 'audio/wav',
+        cacheControl: '3600',
+        upsert: true // Permitir sobrescrever se já existir
+      });
+
+    if (uploadError) {
+      console.error('❌ Erro detalhado no upload:', {
+        message: uploadError.message,
+        details: uploadError,
+        filename: filename,
+        bufferSize: audioBuffer.length,
+        userRole: profile.role,
+        userId: session.user.id
+      });
+      
+      // Diagnóstico específico para RLS
+      if (uploadError.message?.includes('row-level security policy') || uploadError.message?.includes('policy')) {
+        throw new Error('Política de segurança do Storage não configurada corretamente. Verifique as políticas RLS do bucket exercise-audios.');
+      }
+      
+      if (uploadError.message?.includes('size')) {
+        throw new Error(`Arquivo muito grande: ${audioBuffer.length} bytes. Limite pode ser menor.`);
+      }
+      
+      if (uploadError.message?.includes('type')) {
+        throw new Error('Tipo de arquivo não permitido. Verifique as configurações de MIME types do bucket.');
+      }
+      
+      throw new Error(`Erro no upload: ${uploadError.message}`);
+    }
+
+    console.log('✅ Upload realizado com sucesso:', uploadData);
+
     // Obter URL pública
-    const { data: { publicUrl } } = supabase.storage
+    const { data: urlData } = supabase.storage
       .from('exercise-audios')
       .getPublicUrl(filename);
 
-    console.log('✅ Upload concluído:', publicUrl);
+    const publicUrl = urlData.publicUrl;
+    console.log('🌐 URL pública gerada:', publicUrl);
+
     return publicUrl;
 
-  } catch (error) {
-    console.error('❌ Erro no upload do áudio:', error);
-    throw new Error('Falha no upload do áudio');
+  } catch (error: any) {
+    console.error('❌ Erro completo no upload do áudio:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    throw new Error(`Falha no upload do áudio: ${error.message}`);
   }
 }

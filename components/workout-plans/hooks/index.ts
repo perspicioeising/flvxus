@@ -208,7 +208,7 @@ export function useWorkoutPlans() {
 }
 
 // Hook para criar/editar planos
-export function useCreateWorkoutPlan() {
+export function useCreateWorkoutPlan(mode: string, workoutPlanId: string | undefined, studentId: string | undefined) {
   const router = useRouter();
   const { toast } = useToast();
   

@@ -34,6 +34,7 @@ export interface WorkoutPlan {
   updated_at: string;
   workouts: WorkoutPlanItem[];
   student?: Student;
+   hasMore: boolean;
 }
 
 export interface CreateWorkoutPlanData {
@@ -61,6 +62,7 @@ export interface WorkoutPlanStats {
 }
 
 export interface PaginationData {
+  hasMore: boolean;
   page: number;
   limit: number;
   total: number;
@@ -68,6 +70,7 @@ export interface PaginationData {
 }
 
 export interface WorkoutPlanResponse {
+  error: string;
   plans: WorkoutPlan[];
   pagination: PaginationData;
 }
@@ -126,6 +129,7 @@ export interface WorkoutPlanListProps {
   plans: WorkoutPlan[];
   isLoading: boolean;
   pagination: PaginationData;
+   hasMore: boolean;
   hasMorePlans: boolean;
   onLoadMore: () => void;
   onPageChange: (page: number) => void;

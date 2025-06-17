@@ -1,4 +1,4 @@
-// app/api/exercises/route.ts - VERSÃO ATUALIZADA
+// app/api/exercises/route.ts - VERSÃO COM GERAÇÃO DE ÁUDIO
 
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
@@ -175,7 +175,41 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
+    console.log('📝 Criando exercício:', data.name);
 
+    // Gerar áudio se as informações necessárias estiverem presentes
+    let audioUrl = data.audio_url; // Usar URL existente se fornecida
+    
+    if (!audioUrl && data.generateAudio && (data.tips || data.common_errors)) {
+      console.log('🎤 Gerando áudio automaticamente...');
+      
+      try {
+        const audioResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/exercises/generate-audio`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': cookieStore.toString() // Passar cookies para autenticação
+          },
+          body: JSON.stringify({
+            exerciseName: data.name,
+            tips: data.tips,
+            commonErrors: data.common_errors
+          })
+        });
+
+        if (audioResponse.ok) {
+          const audioData = await audioResponse.json();
+          audioUrl = audioData.audioUrl;
+          console.log('✅ Áudio gerado automaticamente:', audioUrl);
+        } else {
+          console.warn('⚠️ Falha na geração automática de áudio, continuando sem áudio');
+        }
+      } catch (audioError) {
+        console.warn('⚠️ Erro na geração de áudio, continuando sem áudio:', audioError);
+      }
+    }
+
+    // Criar o exercício
     const { data: exercise, error } = await supabase
       .from('exercises')
       .insert({
@@ -185,7 +219,7 @@ export async function POST(request: Request) {
         equipment: data.equipment,
         variations: data.variations,
         video_url: data.video_url,
-        audio_url: data.audio_url,
+        audio_url: audioUrl, // Usar URL gerada ou fornecida
         tips: data.tips,
         common_errors: data.common_errors,
         tenant_id: profile.tenant_id
@@ -200,7 +234,9 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('✅ Exercício criado com sucesso:', exercise.id);
     return NextResponse.json(exercise);
+    
   } catch (error: any) {
     console.error('❌ API Create Error:', error);
     return NextResponse.json(

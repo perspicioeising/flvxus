@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, CalendarCheck, Loader2 } from 'lucide-react';
 import { WorkoutPlanCard } from './WorkoutPlanCard';
 import { WorkoutPlanListProps } from '../../types';
 import { MODULE_COLORS } from '../../constants';
+import { useInfiniteScroll }  from '@/hooks/useInfiniteScroll';
 
 export function WorkoutPlansList({
   plans,
@@ -18,6 +19,7 @@ export function WorkoutPlansList({
   onDelete,
 }: WorkoutPlanListProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [infiniteScrollEnabled, setInfiniteScrollEnabled] = useState(false);
 
   // Intersection Observer para infinite scroll
   useEffect(() => {
@@ -72,24 +74,18 @@ export function WorkoutPlansList({
             ))}
 
             {/* Load More Trigger */}
-            {hasMorePlans && (
-              <div ref={loadMoreRef} className="flex justify-center py-8">
-                {isLoading ? (
-                  <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm font-medium">Carregando mais planos...</span>
+             {loadMoreRef && infiniteScrollEnabled && (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg">
+                    <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                      Carregando mais rotinas...
+                    </span>
                   </div>
-                ) : (
-                  <Button
-                    onClick={onLoadMore}
-                    variant="outline"
-                    className="bg-white/80 dark:bg-gray-800/80 border-2 border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600 rounded-xl px-6 py-3 font-semibold transition-all duration-300"
-                  >
-                    Carregar mais planos
-                  </Button>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+
+
           </div>
 
           {/* Empty State */}
