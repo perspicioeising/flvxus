@@ -11,12 +11,12 @@ import { PROTOCOLS, ASSESSMENT_METRICS } from "@/components/physical-assessments
 import { getBodyFatClassification, formatMetricValue, getMetricTooltip, getNameInitials } from "@/components/physical-assessments/components/assessmentUtils";
 
 
-export function AssessmentCard({ 
-  assessment, 
-  onView, 
-  onViewAnalysis 
+export function AssessmentCard({
+  assessment,
+  onView,
+  onViewAnalysis
 }: AssessmentCardProps) {
-  
+
   const getClassificationBadge = (fatPercentage: number, gender: string) => {
     const classification = getBodyFatClassification(fatPercentage, gender);
     return (
@@ -39,7 +39,13 @@ export function AssessmentCard({
   return (
     <div className="relative group">
       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.01]">
+      <Card className="relative h-full border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.01] cursor-pointer"
+        onClick={() => onView(assessment.id)}
+      >
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full transform translate-x-12 -translate-y-12"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full transform -translate-x-8 translate-y-8"></div>
+        </div>
         <CardContent className="p-4 sm:p-6">
 
           {/* Mobile Layout */}
@@ -148,7 +154,7 @@ export function AssessmentCard({
             </div>
 
             {/* Metrics Desktop - Grid 1x4 */}
-            <div className="grid grid-cols-4 gap-3 w-80">
+            {/* <div className="grid grid-cols-4 gap-3 w-80">
               {ASSESSMENT_METRICS.map((metric, index) => (
                 <div
                   key={index}
@@ -163,10 +169,10 @@ export function AssessmentCard({
                   </div>
                 </div>
               ))}
-            </div>
+            </div> */}
 
             {/* Actions Desktop */}
-            <div className="flex gap-3 flex-col w-36">
+            {/* <div className="flex gap-3 flex-col w-36">
               <Button
                 onClick={() => onView(assessment.id)}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-blue-500/25 transition-all duration-300 rounded-xl font-semibold border-0"
@@ -184,7 +190,7 @@ export function AssessmentCard({
                   Análise IA
                 </Button>
               )}
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
