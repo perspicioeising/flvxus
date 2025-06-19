@@ -114,25 +114,7 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
           bgColor: "bg-gray-100 dark:bg-gray-900/30",
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
-        {
-          name: "Dietas",
-          href: "/dashboard/diets",
-          icon: Utensils,
-          isActive: pathname.startsWith("/dashboard/diets"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
-        },
-        {
-          name: "Conquistas",
-          href: "/dashboard/achievements",
-          icon: Trophy,
-          isActive: pathname.startsWith("/dashboard/achievements"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
-        },
-        {
+         {
           name: "Exercícios",
           href: "/dashboard/exercises",
           icon: Dumbbell,
@@ -159,6 +141,25 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
           bgColor: "bg-gray-100 dark:bg-gray-900/30",
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
+        {
+          name: "Dietas",
+          href: "/dashboard/diets",
+          icon: Utensils,
+          isActive: pathname.startsWith("/dashboard/diets"),
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+        },
+        {
+          name: "Conquistas",
+          href: "/dashboard/achievements",
+          icon: Trophy,
+          isActive: pathname.startsWith("/dashboard/achievements"),
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+        },
+            
       ];
     } else {
       return [

@@ -1,4 +1,5 @@
-// app/api/exercises/route.ts
+// app/api/exercises/route.ts - VERSÃO COM GERAÇÃO DE ÁUDIO
+
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -8,10 +9,18 @@ export async function GET(request: Request) {
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
   const { searchParams } = new URL(request.url);
   
-  // Get pagination parameters
+  // Verificar se é requisição para buscar todos os exercícios
+  const fetchAll = searchParams.get('all') === 'true';
+  
+  // Get pagination parameters (para compatibilidade)
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '10');
   const offset = (page - 1) * limit;
+
+  // Filtros (para caso precise no futuro)
+  const search = searchParams.get('search') || '';
+  const muscle = searchParams.get('muscle') || '';
+  const equipment = searchParams.get('equipment') || '';
 
   try {
     const { data: { session }, error: authError } = await supabase.auth.getSession();
@@ -35,44 +44,103 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get total count
-    const { count: totalCount, error: countError } = await supabase
-      .from('exercises')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', profile.tenant_id);
+    if (fetchAll) {
+      // BUSCAR TODOS OS EXERCÍCIOS (para filtros locais)
+      console.log('🔍 API: Buscando todos os exercícios...');
+      
+      let query = supabase
+        .from('exercises')
+        .select('*')
+        .eq('tenant_id', profile.tenant_id)
+        .order('name');
 
-    if (countError) {
-      return NextResponse.json(
-        { error: countError.message },
-        { status: 500 }
-      );
-    }
-
-    // Get paginated exercises
-    const { data: exercises, error } = await supabase
-      .from('exercises')
-      .select('*')
-      .eq('tenant_id', profile.tenant_id)
-      .order('name')
-      .range(offset, offset + limit - 1);
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      exercises,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil((totalCount || 0) / limit)
+      // Aplicar filtros se fornecidos (opcional - pode ser removido)
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
       }
-    });
+
+      if (muscle && muscle !== 'all') {
+        query = query.contains('muscle_group', [muscle]);
+      }
+
+      if (equipment && equipment !== 'all') {
+        query = query.contains('equipment', [equipment]);
+      }
+
+      const { data: exercises, error } = await query;
+
+      if (error) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 500 }
+        );
+      }
+
+      console.log(`📊 API: Retornando ${exercises?.length || 0} exercícios`);
+
+      // Retornar array simples para compatibilidade
+      return NextResponse.json(exercises || []);
+      
+    } else {
+      // PAGINAÇÃO TRADICIONAL (para compatibilidade com código antigo)
+      console.log(`📄 API: Buscando página ${page} (${limit} itens)...`);
+      
+      // Get total count
+      const { count: totalCount, error: countError } = await supabase
+        .from('exercises')
+        .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', profile.tenant_id);
+
+      if (countError) {
+        return NextResponse.json(
+          { error: countError.message },
+          { status: 500 }
+        );
+      }
+
+      // Get paginated exercises
+      let query = supabase
+        .from('exercises')
+        .select('*')
+        .eq('tenant_id', profile.tenant_id)
+        .order('name')
+        .range(offset, offset + limit - 1);
+
+      // Aplicar filtros se fornecidos
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+
+      if (muscle && muscle !== 'all') {
+        query = query.contains('muscle_group', [muscle]);
+      }
+
+      if (equipment && equipment !== 'all') {
+        query = query.contains('equipment', [equipment]);
+      }
+
+      const { data: exercises, error } = await query;
+
+      if (error) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        exercises,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil((totalCount || 0) / limit),
+          hasMore: page < Math.ceil((totalCount || 0) / limit)
+        }
+      });
+    }
   } catch (error: any) {
+    console.error('❌ API Error:', error);
     return NextResponse.json(
       { error: error.message || 'An error occurred while fetching exercises' },
       { status: 500 }
@@ -107,7 +175,41 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
+    console.log('📝 Criando exercício:', data.name);
 
+    // Gerar áudio se as informações necessárias estiverem presentes
+    let audioUrl = data.audio_url; // Usar URL existente se fornecida
+    
+    if (!audioUrl && data.generateAudio && (data.tips || data.common_errors)) {
+      console.log('🎤 Gerando áudio automaticamente...');
+      
+      try {
+        const audioResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/exercises/generate-audio`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': cookieStore.toString() // Passar cookies para autenticação
+          },
+          body: JSON.stringify({
+            exerciseName: data.name,
+            tips: data.tips,
+            commonErrors: data.common_errors
+          })
+        });
+
+        if (audioResponse.ok) {
+          const audioData = await audioResponse.json();
+          audioUrl = audioData.audioUrl;
+          console.log('✅ Áudio gerado automaticamente:', audioUrl);
+        } else {
+          console.warn('⚠️ Falha na geração automática de áudio, continuando sem áudio');
+        }
+      } catch (audioError) {
+        console.warn('⚠️ Erro na geração de áudio, continuando sem áudio:', audioError);
+      }
+    }
+
+    // Criar o exercício
     const { data: exercise, error } = await supabase
       .from('exercises')
       .insert({
@@ -117,7 +219,7 @@ export async function POST(request: Request) {
         equipment: data.equipment,
         variations: data.variations,
         video_url: data.video_url,
-        audio_url: data.audio_url,
+        audio_url: audioUrl, // Usar URL gerada ou fornecida
         tips: data.tips,
         common_errors: data.common_errors,
         tenant_id: profile.tenant_id
@@ -132,8 +234,11 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('✅ Exercício criado com sucesso:', exercise.id);
     return NextResponse.json(exercise);
+    
   } catch (error: any) {
+    console.error('❌ API Create Error:', error);
     return NextResponse.json(
       { error: error.message || 'An error occurred while creating the exercise' },
       { status: 500 }

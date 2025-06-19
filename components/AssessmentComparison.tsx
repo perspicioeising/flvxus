@@ -807,12 +807,12 @@ const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
           {/* Medidas Corporais com Figura Humanoide - TOTALMENTE RESPONSIVO */}
           <TabsContent value="measurements">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-500/10 to-purple-600/10 rounded-2xl sm:rounded-3xl blur-2xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-indigo-500/10 to-purple-600/10 rounded-2xl sm:rounded-3xl blur-2xl"></div>
               <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-2xl">
-                <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-purple-50/50 via-pink-50/50 to-purple-50/50 dark:from-purple-900/10 dark:via-pink-900/10 dark:to-purple-900/10 rounded-t-2xl sm:rounded-t-3xl">
+                <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-purple-50/50 via-indigo-50/50 to-purple-50/50 dark:from-purple-900/10 dark:via-indigo-900/10 dark:to-purple-900/10 rounded-t-2xl sm:rounded-t-3xl">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div className="relative mx-auto sm:mx-0">
-                      <div className="p-3 sm:p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl sm:rounded-2xl shadow-lg">
+                      <div className="p-3 sm:p-4 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl sm:rounded-2xl shadow-lg">
                         <User className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                       </div>
                       <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
@@ -867,15 +867,15 @@ const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                       {/* Figura Humanoide 3D - RESPONSIVA */}
                       <div className="lg:col-span-1 order-1 lg:order-first">
                         <div className="relative">
-                          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-indigo-600/20 rounded-xl sm:rounded-2xl blur-xl"></div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-indigo-500/20 to-indigo-600/20 rounded-xl sm:rounded-2xl blur-xl"></div>
                           <Card className="relative border-0 bg-gradient-to-br from-white/95 via-gray-50/95 to-white/95 dark:from-gray-900/95 dark:via-gray-800/95 dark:to-gray-900/95 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden">
                             <CardContent className="p-4 sm:p-6">
-                              <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-6 text-center bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+                              <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-6 text-center bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-600 bg-clip-text text-transparent">
                                 Mapa Corporal 3D
                               </h4>
                               
                               {/* Container com efeitos 3D */}
-                              <div className="relative bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl p-4 shadow-inner border border-purple-200/30 dark:border-purple-700/30">
+                              <div className="relative bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-4 shadow-inner border border-purple-200/30 dark:border-purple-700/30">
                                 <HumanoidFigure
                                   measurements={currentAssessment.measurements}
                                   previousMeasurements={selectedPreviousAssessment.measurements}
@@ -907,7 +907,7 @@ const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                                 
                                 {/* Dica de interação */}
                                 <div className="text-center">
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 italic bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 px-3 py-2 rounded-lg border border-purple-200/30 dark:border-purple-700/30">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 italic bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 px-3 py-2 rounded-lg border border-purple-200/30 dark:border-purple-700/30">
                                     💡 Clique nos pontos para ver detalhes
                                   </p>
                                 </div>
