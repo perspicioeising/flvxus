@@ -5,6 +5,5 @@ export { WorkoutCard } from './ WorkoutCard';
 export { WorkoutEmptyState } from './WorkoutEmptyState';
 export { WorkoutPageLoadingSkeleton } from './WorkoutPageLoadingSkeleton';
 export { WorkoutLoadMore } from './WorkoutLoadMore';
-export { WorkoutStats } from './WorkoutStats';
 export { WorkoutPaginationInfo } from './WorkoutPaginationInfo';
 

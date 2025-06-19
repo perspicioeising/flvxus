@@ -161,6 +161,52 @@ export interface StepReviewProps {
   mode: 'create' | 'edit';
 }
 
+// ADICIONANDO AS INTERFACES FALTANTES PARA OS COMPONENTES DE LISTA
+
+export interface WorkoutCardProps {
+  workout: Workout;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onClone: (workout: Workout) => void;
+  onDelete: (workout: Workout) => void;
+  isLoading?: boolean;
+  viewMode?: 'grid' | 'list';
+}
+
+export interface WorkoutEmptyStateProps {
+  userRole: 'trainer' | 'student';
+  hasFilters: boolean;
+  onCreateNew: () => void;
+}
+
+export interface WorkoutFiltersProps {
+  filters: WorkoutFilters;
+  onFiltersChange: (filters: Partial<WorkoutFilters>) => void;
+  onClearFilters: () => void;
+  viewMode?: 'grid' | 'list';
+  onViewModeChange?: (mode: 'grid' | 'list') => void;
+}
+
+export interface WorkoutHeaderProps {
+  userRole: 'trainer' | 'student';
+  stats: WorkoutStats;
+  onCreateNew: () => void;
+}
+
+export interface WorkoutLoadMoreProps {
+  isLoading: boolean;
+  hasMore: boolean;
+  totalLoaded: number;
+  totalAvailable: number;
+  itemsPerPage: number;
+  onLoadMore: () => void;
+}
+
+export interface WorkoutPaginationInfoProps {
+  currentCount: number;
+  totalCount: number;
+}
+
 // Hook Return Types
 export interface UseWorkoutFormReturn {
   // Form state

@@ -84,7 +84,7 @@ export function useWorkoutPlans() {
   // Função para carregar mais planos (infinite scroll)
   const loadMorePlans = useCallback(() => {
     if (pagination.page < pagination.totalPages && !isLoading) {
-      fetchPlans(pagination.page + 1, pagination.limit, true);
+      fetchPlans(pagination.page + 1, INFINITE_SCROLL_CONFIG.pageSize, true);
     }
   }, [pagination, isLoading, fetchPlans]);
 
@@ -231,7 +231,11 @@ export function useCreateWorkoutPlan(mode: string, workoutPlanId: string | undef
   const selectWorkout = useCallback((workout: Workout) => {
     if (!selectedWorkouts.find(w => w.id === workout.id)) {
       setSelectedWorkouts(prev => [...prev, {
-        ...workout,
+        id: workout.id, // Add id
+        name: workout.name, // Add name
+        workout: { // Keep workout object for full details if needed
+          ...workout,
+        },
         day_of_week: 1,
       }]);
     }
@@ -312,8 +316,10 @@ export function useCreateWorkoutPlan(mode: string, workoutPlanId: string | undef
     
     // Mapear workouts do plano
     setSelectedWorkouts(plan.workouts.map(w => ({
-      ...w.workout,
+      id: w.workout.id,
+      name: w.workout.name,
       day_of_week: w.day_of_week,
+      workout: w.workout, // Keep the full workout object
     })));
     
     setIsCloning(true);

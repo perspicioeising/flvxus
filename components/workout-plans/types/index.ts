@@ -6,7 +6,7 @@ export interface Workout {
   description?: string;
   level?: string;
   goal?: string;
-  day_of_week?: number;
+  day_of_week: number;
 }
 
 export interface Student {

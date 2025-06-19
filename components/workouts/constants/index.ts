@@ -14,7 +14,45 @@ import {
   Settings,
   CheckCircle2
 } from "lucide-react";
-import type { WorkoutFormData, SelectedExercise, Exercise, WorkoutStep } from '../types';
+import type { WorkoutFormData, SelectedExercise, Exercise, WorkoutStep, WorkoutFilters, ExerciseFilters } from '../types';
+
+// DEFAULT VALUES - Movendo para o topo para evitar problemas de hoisting
+export const DEFAULT_FILTERS: WorkoutFilters = {
+  search: "",
+  level: "all",
+  goal: "all",
+  sortBy: "created_at",
+  sortOrder: "desc"
+};
+
+export const PAGINATION_DEFAULTS = {
+  page: 1,
+  limit: 12,
+  total: 0,
+  totalPages: 1
+};
+
+export const DEFAULT_WORKOUT_FORM: WorkoutFormData = {
+  name: "",
+  description: "",
+  level: "",
+  goal: "",
+  exercises: []
+};
+
+export const DEFAULT_EXERCISE_PARAMS: Omit<SelectedExercise, keyof Exercise> = {
+  sets: 3,
+  reps: 12,
+  rest: 60,
+  notes: "",
+  order: 1
+};
+
+export const DEFAULT_EXERCISE_FILTERS: ExerciseFilters = {
+  search: "",
+  muscleGroup: "all",
+  equipment: "all"
+};
 
 // Workout creation steps
 export const WORKOUT_STEPS: WorkoutStep[] = [
@@ -162,23 +200,6 @@ export const WORKOUT_COLORS = {
   backgroundDark: "dark:from-red-500/10 dark:via-rose-400/10 dark:to-orange-500/10"
 } as const;
 
-// Default form values
-export const DEFAULT_WORKOUT_FORM: WorkoutFormData = {
-  name: "",
-  description: "",
-  level: "",
-  goal: "",
-  exercises: []
-};
-
-export const DEFAULT_EXERCISE_PARAMS: Omit<SelectedExercise, keyof Exercise> = {
-  sets: 3,
-  reps: 12,
-  rest: 60,
-  notes: "",
-  order: 1
-};
-
 // API endpoints
 export const API_ENDPOINTS = {
   workouts: "/api/workouts",
@@ -186,13 +207,6 @@ export const API_ENDPOINTS = {
   workout: (id: string) => `/api/workouts/${id}`,
   workoutClone: (id: string) => `/api/workouts/${id}/clone`
 } as const;
-
-// Filter defaults
-export const DEFAULT_EXERCISE_FILTERS = {
-  search: "",
-  muscleGroup: "all",
-  equipment: "all"
-};
 
 // Validation rules
 export const VALIDATION_RULES = {

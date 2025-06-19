@@ -1,6 +1,8 @@
 // constants/index.ts - Constantes centralizadas do módulo
 // components/workout-plans/constants/index.ts
 
+import { PaginationData } from "../types";
+
 export const WORKOUT_PLAN_STEPS = [
   {
     id: 'basic',
@@ -63,12 +65,13 @@ export const PLAN_STATUS_OPTIONS = [
   { value: 'completed', label: 'Concluído' },
 ] as const;
 
-export const DEFAULT_PAGINATION = {
+export const DEFAULT_PAGINATION: PaginationData = {
   page: 1,
   limit: 10,
   total: 0,
   totalPages: 1,
-} as const;
+  hasMore: false,
+};
 
 export const DEFAULT_FORM_DATA = {
   name: '',
