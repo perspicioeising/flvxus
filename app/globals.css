@@ -2,6 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Adicionar ao seu globals.css */
+
+/* Safe Area Insets para iOS */
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Ajustes para o bottom navigation com safe area */
+.bottom-nav-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+}
+
+/* Prevenir zoom no iOS */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Melhorar scrolling no iOS */
+.ios-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desabilitar seleção de texto em elementos de UI */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Prevenir pull-to-refresh indesejado */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Ajustes para status bar no iOS */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .ios-status-bar-padding {
+    padding-top: calc(env(safe-area-inset-top) + 0.5rem);
+  }
+}
+
+/* Transições suaves para mudanças de orientação */
+* {
+  transition: padding 0.3s ease-in-out;
+}
+
+/* Fix para input focus no mobile */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 0 0% 3.9%;

@@ -1,23 +1,22 @@
-// /opt/flvxus/app/api/physical-assessments/[id]/route.ts - VERSÃO CORRIGIDA
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
 // Interfaces para type safety
-interface Profile {
+ type Profile = {
   id: string;
   tenant_id: string;
   role: 'trainer' | 'student';
 }
 
-interface RouteParams {
+ type RouteParams = {
   params: {
     id: string;
   };
 }
 
 // FUNÇÃO PARA CONSTRUIR OBJETO MEASUREMENTS A PARTIR DAS COLUNAS
-function buildMeasurementsObject(row: any): Record<string, number> {
+ function buildMeasurementsObject(row: any): Record<string, number> {
   const measurements: Record<string, number> = {};
   
   // Lista de todas as medidas possíveis
