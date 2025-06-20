@@ -134,7 +134,7 @@ export function StudentCard({ student, onViewProfile }: StudentCardProps) {
                     </div>
                   )}
                   <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full"></div>
                     <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">
                       {student.goals?.length || 0} objetivos
                     </span>

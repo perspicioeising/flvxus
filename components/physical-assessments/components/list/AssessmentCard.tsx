@@ -105,10 +105,9 @@ export function AssessmentCard({
             <div className="flex items-start gap-3">
               <div className="relative shrink-0">
                 {/* Multi-layered avatar effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-green-500/20 to-emerald-500/20 rounded-2xl blur-sm group-hover:blur-md transition-all duration-500"></div>
                 
-                <div className="relative w-14 h-14 bg-gradient-to-br from-blue-600 via-green-600 to-emerald-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:shadow-xl transition-all duration-300">
-                  
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Book className="h-8 w-8 sm:h-9 sm:w-9 text-white" />
                   {/* Inner glow */}
                   <div className="absolute inset-1 border border-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
@@ -129,10 +128,7 @@ export function AssessmentCard({
                   </h3>
                   
                   {/* Assessment type indicator - Moved to avoid overlap */}
-                  <div className="flex items-center gap-1 ml-2 shrink-0">
-                    <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
-                    <span className="text-xs text-blue-600 dark:text-blue-300 font-medium">COMPLETA</span>
-                  </div>
+                 
                 </div>
                 
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate mb-3 flex items-center gap-1.5">
@@ -143,7 +139,7 @@ export function AssessmentCard({
                 {/* Quick metrics preview - Better contrast for dark mode */}
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full"></div>
                     <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">IMC: {(assessment.weight / Math.pow(assessment.height / 100, 2)).toFixed(1)}</span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -198,14 +194,11 @@ export function AssessmentCard({
                   
                   {/* Assessment completeness indicator */}
                   <div className="flex items-center gap-2 ml-4">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">COMPLETA</span>
-                    </div>
+
                     {assessment.ai_analysis && (
                       <div className="flex items-center gap-1">
                         <Brain className="h-3 w-3 text-green-600 dark:text-green-400" />
-                        <span className="text-xs text-green-600 dark:text-green-400 font-medium">IA</span>
+                        <span className="text-xs text-green-600 dark:text-green-400 font-medium"></span>
                       </div>
                     )}
                   </div>
