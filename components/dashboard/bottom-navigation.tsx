@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSupabase } from "@/app/providers";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useCapacitor } from "@/hooks/useCapacitor";
 
 interface BottomNavigationProps {
   userRole: 'trainer' | 'student' | null;
@@ -40,6 +41,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
   const { supabase, session } = useSupabase();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { hapticFeedback } = useCapacitor();
 
   useEffect(() => {
     fetchProfile();
@@ -63,12 +65,18 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
   const userInitial = profile?.full_name?.charAt(0).toUpperCase() || session?.user?.email?.charAt(0).toUpperCase() || "U";
 
   async function handleSignOut() {
+    await hapticFeedback('medium');
     await supabase.auth.signOut();
     router.push("/login");
   }
 
-  const toggleTheme = () => {
+  const toggleTheme = async () => {
+    await hapticFeedback('light');
     setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleNavClick = async () => {
+    await hapticFeedback('light');
   };
 
   // Navegação principal para trainers
@@ -154,14 +162,15 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-white via-white/95 to-white/80 dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50"></div>
         
         {/* Navigation Content */}
-        <nav className="relative px-4 py-2 pb-safe">
+        <nav className="relative px-4 py-2 pb-safe-bottom">
           <div className="flex items-center justify-around">
             {/* Main Navigation Items */}
             {mainNavigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="group flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-0 flex-1"
+                onClick={handleNavClick}
+                className="group flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-0 flex-1 no-select"
               >
                 <div className={`relative p-2 rounded-full transition-all duration-300 ${
                   item.isActive 
@@ -195,7 +204,8 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
               <SheetTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="group flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-0 flex-1 hover:bg-transparent"
+                  onClick={handleNavClick}
+                  className="group flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-0 flex-1 hover:bg-transparent no-select"
                 >
                   <div className="relative p-2 rounded-full bg-gray-100 dark:bg-gray-800/50 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 group-hover:scale-105 transition-all duration-300">
                     <Menu className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200" />
@@ -208,7 +218,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
               
               <SheetContent 
                 side="bottom" 
-                className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 rounded-t-3xl max-h-[80vh] overflow-y-auto"
+                className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 rounded-t-3xl max-h-[80vh] overflow-y-auto ios-scroll"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -246,8 +256,11 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                       <Link
                         key={item.name}
                         href={item.href}
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`group flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 ${
+                        onClick={async () => {
+                          await hapticFeedback('light');
+                          setIsMenuOpen(false);
+                        }}
+                        className={`group flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 no-select ${
                           pathname.startsWith(item.href)
                             ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
                             : "bg-gray-50 dark:bg-gray-800/50 hover:bg-green-50 dark:hover:bg-green-900/20 text-gray-700 dark:text-gray-200"
@@ -278,8 +291,11 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <Link
                       href="/dashboard/profile"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 transition-all duration-200 group"
+                      onClick={async () => {
+                        await hapticFeedback('light');
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 transition-all duration-200 group no-select"
                     >
                       <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-all duration-200">
                         <User className="h-5 w-5" />
@@ -289,8 +305,11 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                     
                     <Link
                       href="/dashboard/settings"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center gap-3 p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300 transition-all duration-200 group"
+                      onClick={async () => {
+                        await hapticFeedback('light');
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-purple-700 dark:text-purple-300 transition-all duration-200 group no-select"
                     >
                       <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/30 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-all duration-200">
                         <Settings className="h-5 w-5" />
@@ -303,7 +322,8 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                   <div className="grid grid-cols-2 gap-3">
                     <Button
                       variant="ghost"
-                      className="flex items-center gap-3 p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300 transition-all duration-200 group border-0 h-auto"
+                      onClick={() => hapticFeedback('light')}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300 transition-all duration-200 group border-0 h-auto no-select"
                     >
                       <div className="relative p-2 rounded-xl bg-orange-100 dark:bg-orange-900/30 group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition-all duration-200">
                         <Bell className="h-5 w-5" />
@@ -317,7 +337,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                     <Button
                       onClick={toggleTheme}
                       variant="ghost"
-                      className="flex items-center gap-3 p-4 rounded-2xl bg-yellow-50 dark:bg-gray-800/50 hover:bg-yellow-100 dark:hover:bg-gray-700/50 text-yellow-700 dark:text-yellow-300 transition-all duration-200 group border-0 h-auto"
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-yellow-50 dark:bg-gray-800/50 hover:bg-yellow-100 dark:hover:bg-gray-700/50 text-yellow-700 dark:text-yellow-300 transition-all duration-200 group border-0 h-auto no-select"
                     >
                       <div className="p-2 rounded-xl bg-yellow-100 dark:bg-gray-700/30 group-hover:bg-yellow-200 dark:group-hover:bg-gray-600/50 transition-all duration-200">
                         {theme === "dark" ? (
@@ -338,7 +358,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                       setIsMenuOpen(false);
                       handleSignOut();
                     }}
-                    className="w-full flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-700 dark:text-red-300 transition-all duration-200 group border-0 h-auto"
+                    className="w-full flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-700 dark:text-red-300 transition-all duration-200 group border-0 h-auto no-select"
                     variant="ghost"
                   >
                     <div className="p-2 rounded-xl bg-red-100 dark:bg-red-900/30 group-hover:bg-red-200 dark:group-hover:bg-red-900/50 transition-all duration-200">
@@ -349,7 +369,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 pb-safe-bottom">
                   <p className="text-center text-xs text-gray-500 dark:text-gray-400">
                     FLVXUS Personal Training Platform
                   </p>
