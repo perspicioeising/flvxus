@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Brain, Activity, Calendar, Users, TrendingUp } from "lucide-react";
+import { Eye, Brain, Activity, Calendar, Users, TrendingUp, Book } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AssessmentCardProps } from "@/components/physical-assessments/types/physical-assessment";
@@ -34,12 +34,11 @@ export function AssessmentCard({
     return getMetricTooltip(value, label, format as any);
   };
 
-  const studentInitials = getNameInitials(assessment.profiles.full_name);
 
   return (
     <div className="relative group">
       {/* Sophisticated hover effect */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 rounded-3xl blur opacity-0 group-hover:opacity-20 transition-all duration-700"></div>
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 via-green-600 to-emerald-600 rounded-3xl blur opacity-0 group-hover:opacity-20 transition-all duration-700"></div>
       
       <Card className="relative h-full bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800/60 shadow-sm hover:shadow-xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:border-gray-300/80 dark:group-hover:border-gray-700/80 cursor-pointer"
         onClick={() => onView(assessment.id)}
@@ -60,14 +59,14 @@ export function AssessmentCard({
           
           {/* Static geometric shapes - Hidden on mobile, visible on desktop */}
           <div className="hidden lg:block absolute top-4 right-6 w-8 h-8 border border-blue-400/15 dark:border-blue-500/20 rounded-lg rotate-12 group-hover:rotate-45 transition-transform duration-1000"></div>
-          <div className="hidden lg:block absolute bottom-6 left-8 w-6 h-6 border border-purple-400/15 dark:border-purple-500/20 rounded-full group-hover:scale-110 transition-transform duration-1000"></div>
-          <div className="hidden lg:block absolute top-12 left-1/3 w-4 h-4 bg-cyan-400/8 dark:bg-cyan-500/10 rounded-sm rotate-45 group-hover:rotate-90 transition-transform duration-1000"></div>
+          <div className="hidden lg:block absolute bottom-6 left-8 w-6 h-6 border border-green-400/15 dark:border-green-500/20 rounded-full group-hover:scale-110 transition-transform duration-1000"></div>
+          <div className="hidden lg:block absolute top-12 left-1/3 w-4 h-4 bg-emerald-400/8 dark:bg-emerald-500/10 rounded-sm rotate-45 group-hover:rotate-90 transition-transform duration-1000"></div>
           
           {/* Data visualization inspired lines - Desktop only */}
           <div className="hidden lg:block absolute bottom-8 right-12 flex gap-1">
             <div className="w-1 h-8 bg-gradient-to-t from-blue-400/15 dark:from-blue-500/20 to-transparent rounded-full"></div>
-            <div className="w-1 h-6 bg-gradient-to-t from-purple-400/15 dark:from-purple-500/20 to-transparent rounded-full"></div>
-            <div className="w-1 h-10 bg-gradient-to-t from-cyan-400/15 dark:from-cyan-500/20 to-transparent rounded-full"></div>
+            <div className="w-1 h-6 bg-gradient-to-t from-green-400/15 dark:from-green-500/20 to-transparent rounded-full"></div>
+            <div className="w-1 h-10 bg-gradient-to-t from-emerald-400/15 dark:from-emerald-500/20 to-transparent rounded-full"></div>
             <div className="w-1 h-4 bg-gradient-to-t from-blue-400/15 dark:from-blue-500/20 to-transparent rounded-full"></div>
           </div>
         </div>
@@ -106,11 +105,9 @@ export function AssessmentCard({
             <div className="flex items-start gap-3">
               <div className="relative shrink-0">
                 {/* Multi-layered avatar effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-cyan-500/20 rounded-2xl blur-sm group-hover:blur-md transition-all duration-500"></div>
                 
-                <div className="relative w-14 h-14 bg-gradient-to-br from-blue-600 via-purple-600 to-cyan-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:shadow-xl transition-all duration-300">
-                  {studentInitials}
-                  
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Book className="h-8 w-8 sm:h-9 sm:w-9 text-white" />
                   {/* Inner glow */}
                   <div className="absolute inset-1 border border-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </div>
@@ -131,10 +128,7 @@ export function AssessmentCard({
                   </h3>
                   
                   {/* Assessment type indicator - Moved to avoid overlap */}
-                  <div className="flex items-center gap-1 ml-2 shrink-0">
-                    <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
-                    <span className="text-xs text-blue-600 dark:text-blue-300 font-medium">COMPLETA</span>
-                  </div>
+                 
                 </div>
                 
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate mb-3 flex items-center gap-1.5">
@@ -145,11 +139,11 @@ export function AssessmentCard({
                 {/* Quick metrics preview - Better contrast for dark mode */}
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full"></div>
                     <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">IMC: {(assessment.weight / Math.pow(assessment.height / 100, 2)).toFixed(1)}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-purple-500 dark:bg-purple-400 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full"></div>
                     <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">BF: {assessment.fat_percentage?.toFixed(1)}%</span>
                   </div>
                 </div>
@@ -159,7 +153,7 @@ export function AssessmentCard({
                     <Calendar className="h-3 w-3 mr-1.5" />
                     {format(new Date(assessment.date), 'dd/MM/yyyy', { locale: ptBR })}
                   </Badge>
-                  <Badge className="bg-purple-50 text-purple-700 border border-purple-200/70 dark:bg-purple-950/60 dark:text-purple-200 dark:border-purple-800/60 text-xs px-2.5 py-1 font-medium hover:bg-purple-100 dark:hover:bg-purple-900/70 transition-colors duration-200">
+                  <Badge className="bg-green-50 text-green-700 border border-green-200/70 dark:bg-green-950/60 dark:text-green-200 dark:border-green-800/60 text-xs px-2.5 py-1 font-medium hover:bg-green-100 dark:hover:bg-green-900/70 transition-colors duration-200">
                     <TrendingUp className="h-3 w-3 mr-1.5" />
                     {PROTOCOLS[assessment.protocol as keyof typeof PROTOCOLS]}
                   </Badge>
@@ -174,11 +168,9 @@ export function AssessmentCard({
             <div className="flex items-center gap-5 flex-1">
               <div className="relative">
                 {/* Enhanced multi-layer avatar */}
-                <div className="absolute -inset-1 bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-cyan-500/30 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
-                
-                <div className="relative w-16 h-16 bg-gradient-to-br from-blue-600 via-purple-600 to-cyan-600 rounded-3xl flex items-center justify-center text-white font-black text-xl shadow-lg group-hover:shadow-2xl transition-all duration-500">
-                  {studentInitials}
-                  
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Book className="h-8 w-8 sm:h-9 sm:w-9 text-white" />
+           
                   {/* Sophisticated inner details */}
                   <div className="absolute inset-2 border border-white/15 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent rounded-3xl"></div>
@@ -202,14 +194,11 @@ export function AssessmentCard({
                   
                   {/* Assessment completeness indicator */}
                   <div className="flex items-center gap-2 ml-4">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">COMPLETA</span>
-                    </div>
+
                     {assessment.ai_analysis && (
                       <div className="flex items-center gap-1">
-                        <Brain className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                        <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">IA</span>
+                        <Brain className="h-3 w-3 text-green-600 dark:text-green-400" />
+                        <span className="text-xs text-green-600 dark:text-green-400 font-medium"></span>
                       </div>
                     )}
                   </div>
@@ -228,7 +217,7 @@ export function AssessmentCard({
                     <Calendar className="h-3 w-3 mr-2" />
                     {format(new Date(assessment.date), 'dd/MM/yyyy', { locale: ptBR })}
                   </Badge>
-                  <Badge className="bg-purple-50 text-purple-700 border border-purple-200/70 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/50 text-xs px-3 py-1.5 font-medium hover:bg-purple-100 dark:hover:bg-purple-900/60 hover:shadow-sm transition-all duration-200">
+                  <Badge className="bg-purple-50 text-purple-700 border border-purple-200/70 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/50 text-xs px-3 py-1.5 font-medium hover:bg-green-100 dark:hover:bg-green-900/60 hover:shadow-sm transition-all duration-200">
                     <TrendingUp className="h-3 w-3 mr-2" />
                     {PROTOCOLS[assessment.protocol as keyof typeof PROTOCOLS]}
                   </Badge>
@@ -240,7 +229,7 @@ export function AssessmentCard({
         </CardContent>
 
         {/* Elegant bottom highlight */}
-        <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-transparent via-blue-500/40 via-purple-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
+        <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-transparent via-blue-500/40 via-green-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
       </Card>
     </div>
   );

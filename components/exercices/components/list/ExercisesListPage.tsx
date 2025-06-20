@@ -62,7 +62,7 @@ export function ExercisesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-4 max-w-7xl">
 
         {/* Header */}
@@ -132,7 +132,7 @@ export function ExercisesPage() {
               {isLoadingMore && infiniteScrollEnabled && (
                 <div className="text-center py-8">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg">
-                    <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
                     <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                       Carregando mais exercícios...
                     </span>
@@ -163,9 +163,9 @@ export function ExercisesPage() {
               {/* Indicador de fim da lista */}
               {!pagination.hasMore && exercises.length > 0 && (
                 <div className="text-center py-8">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <span className="text-sm text-purple-700 dark:text-purple-300 font-medium">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-green-700 dark:text-green-300 font-medium">
                       Todos os exercícios foram carregados
                     </span>
                   </div>

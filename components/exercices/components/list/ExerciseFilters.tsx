@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, X, Grid, LayoutList } from "lucide-react";
+import { Search, Filter, X, Dumbbell, Zap } from "lucide-react";
 import { ExerciseFiltersProps } from "@/components/exercices/types/exercise";
 import { MUSCLE_GROUPS, EQUIPMENT_TYPES } from "@/components/exercices/components/constants/exercise";
 
@@ -16,172 +16,302 @@ export function ExerciseFilters({
   onClearFilters
 }: ExerciseFiltersProps) {
   const hasActiveFilters = filters.searchQuery || filters.muscleFilter !== 'all' || filters.equipmentFilter !== 'all';
+  const activeFiltersCount = [
+    filters.searchQuery,
+    filters.muscleFilter !== 'all',
+    filters.equipmentFilter !== 'all'
+  ].filter(Boolean).length;
 
   return (
-    <div className="relative mb-6">
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-500/10 to-purple-600/10 rounded-2xl blur-md"></div>
-      <Card className="relative border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md shadow-xl rounded-2xl">
-        <CardContent className="p-3 sm:p-6">
-          {/* Mobile: Layout em Stack */}
-          <div className="lg:hidden">
-            {/* Campo de Busca - Mobile */}
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-600 dark:text-purple-400 z-10" />
-              <Input
-                placeholder="Buscar exercícios..."
-                className="pl-10 h-11 text-sm bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300 w-full"
-                value={filters.searchQuery}
-                onChange={(e) => onFiltersChange({ searchQuery: e.target.value })}
-              />
-            </div>
-            
-            {/* Filtros - Mobile */}
-            <div className="flex gap-2 mb-3">
-              <Select 
-                value={filters.muscleFilter} 
-                onValueChange={(value) => onFiltersChange({ muscleFilter: value })}
+    <div className="mb-6 space-y-4">
+      {/* Desktop: Search + Filters na mesma linha */}
+      <div className="hidden lg:flex lg:items-center lg:gap-4">
+        {/* Search Bar - Desktop (flexível) */}
+        <div className="relative flex-1">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-2xl blur-lg"></div>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
+            <Input
+              placeholder="Buscar por nome do exercício, descrição..."
+              className="pl-12 h-14 text-base bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm hover:shadow-md focus:shadow-lg focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 w-full"
+              value={filters.searchQuery}
+              onChange={(e) => onFiltersChange({ searchQuery: e.target.value })}
+            />
+            {filters.searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onFiltersChange({ searchQuery: '' })}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                <SelectTrigger className="flex-1 h-10 bg-white/80 dark:bg-gray-800/80 border-0 rounded-lg shadow-md backdrop-blur-sm">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm font-medium truncate">
-                      {filters.muscleFilter === 'all' ? 'Músculo' : filters.muscleFilter}
-                    </span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 dark:bg-gray-900/95 border-0 rounded-xl shadow-2xl backdrop-blur-md">
-                  <SelectItem value="all">Todos</SelectItem>
-                  {MUSCLE_GROUPS.map((group) => (
-                    <SelectItem key={group} value={group}>{group}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
 
-              <Select 
-                value={filters.equipmentFilter} 
-                onValueChange={(value) => onFiltersChange({ equipmentFilter: value })}
-              >
-                <SelectTrigger className="flex-1 h-10 bg-white/80 dark:bg-gray-800/80 border-0 rounded-lg shadow-md backdrop-blur-sm">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-pink-600 dark:text-pink-400" />
-                    <span className="text-sm font-medium truncate">
-                      {filters.equipmentFilter === 'all' ? 'Equip.' : 
-                       EQUIPMENT_TYPES.find(e => e === filters.equipmentFilter) || 'Equip.'}
-                    </span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 dark:bg-gray-900/95 border-0 rounded-xl shadow-2xl backdrop-blur-md">
-                  <SelectItem value="all">Todos</SelectItem>
-                  {EQUIPMENT_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-
-              {/* Botão Limpar - Mobile */}
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onClearFilters}
-                  className="h-10 w-10 bg-white/80 dark:bg-gray-800/80 border-0 rounded-lg shadow-md hover:shadow-lg backdrop-blur-sm transition-all duration-200 shrink-0"
-                >
-                  <X className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                </Button>
-              )}
-            </div>
-
-            {/* Indicadores Mobile */}
-            {hasActiveFilters && (
-              <div className="pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    Filtros ativos
-                  </span>
-                  <div className="flex gap-1">
-                    {filters.searchQuery && <div className="w-2 h-2 bg-purple-500 rounded-full"></div>}
-                    {filters.muscleFilter !== 'all' && <div className="w-2 h-2 bg-purple-500 rounded-full"></div>}
-                    {filters.equipmentFilter !== 'all' && <div className="w-2 h-2 bg-pink-500 rounded-full"></div>}
-                  </div>
+        {/* Filters Desktop - mesma linha */}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Muscle Group Filter */}
+          <Select 
+            value={filters.muscleFilter} 
+            onValueChange={(value) => onFiltersChange({ muscleFilter: value })}
+          >
+            <SelectTrigger className={`
+              w-14 h-14 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center
+              ${filters.muscleFilter !== 'all' 
+                ? 'bg-green-50 border-green-200 shadow-md dark:bg-green-900/20 dark:border-green-700' 
+                : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:hover:border-gray-600'
+              }
+            `}>
+              <Dumbbell className={`h-6 w-6 ${filters.muscleFilter !== 'all' ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`} />
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl">
+              <SelectItem value="all" className="focus:bg-gray-50 dark:focus:bg-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                  Todos os Grupos
                 </div>
-              </div>
+              </SelectItem>
+              {MUSCLE_GROUPS.map((group) => (
+                <SelectItem key={group} value={group} className="focus:bg-green-50 dark:focus:bg-green-900/20">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    {group}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Equipment Filter */}
+          <Select 
+            value={filters.equipmentFilter} 
+            onValueChange={(value) => onFiltersChange({ equipmentFilter: value })}
+          >
+            <SelectTrigger className={`
+              w-14 h-14 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center
+              ${filters.equipmentFilter !== 'all' 
+                ? 'bg-emerald-50 border-emerald-200 shadow-md dark:bg-emerald-900/20 dark:border-emerald-700' 
+                : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:hover:border-gray-600'
+              }
+            `}>
+              <Zap className={`h-6 w-6 ${filters.equipmentFilter !== 'all' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}`} />
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl">
+              <SelectItem value="all" className="focus:bg-gray-50 dark:focus:bg-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                  Todos Equipamentos
+                </div>
+              </SelectItem>
+              {EQUIPMENT_TYPES.map((type) => (
+                <SelectItem key={type} value={type} className="focus:bg-emerald-50 dark:focus:bg-emerald-900/20">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    {type}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Clear All Button Desktop */}
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              onClick={onClearFilters}
+              className="h-14 px-4 rounded-2xl border-2 border-gray-200 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:hover:border-red-700 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-all duration-200 group"
+            >
+              <X className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-200" />
+              Limpar
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile: Layout melhorado */}
+      <div className="lg:hidden">
+        {/* Search Bar - Mobile */}
+        <div className="relative mb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-2xl blur-lg"></div>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
+            <Input
+              placeholder="Buscar exercício..."
+              className="pl-12 h-12 text-base bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md focus:shadow-lg focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 w-full"
+              value={filters.searchQuery}
+              onChange={(e) => onFiltersChange({ searchQuery: e.target.value })}
+            />
+            {filters.searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onFiltersChange({ searchQuery: '' })}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             )}
           </div>
+        </div>
 
-          {/* Desktop: Layout Inline */}
-          <div className="hidden lg:flex lg:items-center lg:gap-4">
-            {/* Campo de Busca - Desktop */}
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-purple-600 dark:text-purple-400 z-10" />
-              <Input
-                placeholder="Buscar exercícios por nome ou descrição..."
-                className="pl-12 h-14 text-lg bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300 w-full"
-                value={filters.searchQuery}
-                onChange={(e) => onFiltersChange({ searchQuery: e.target.value })}
-              />
-            </div>
-
-            {/* Filtro Grupo Muscular - Desktop */}
-            <div className="shrink-0">
-              <Select 
-                value={filters.muscleFilter} 
-                onValueChange={(value) => onFiltersChange({ muscleFilter: value })}
-              >
-                <SelectTrigger className="w-[220px] h-14 bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm">
-                  <div className="flex items-center gap-3">
-                    <Filter className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                    <span className="font-semibold">Grupo Muscular</span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 dark:bg-gray-900/95 border-0 rounded-xl shadow-2xl backdrop-blur-md">
-                  <SelectItem value="all">Todos os grupos</SelectItem>
-                  {MUSCLE_GROUPS.map((group) => (
-                    <SelectItem key={group} value={group}>{group}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Filtro Equipamento - Desktop */}
-            <div className="shrink-0">
-              <Select 
-                value={filters.equipmentFilter} 
-                onValueChange={(value) => onFiltersChange({ equipmentFilter: value })}
-              >
-                <SelectTrigger className="w-[220px] h-14 bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm">
-                  <div className="flex items-center gap-3">
-                    <Filter className="h-5 w-5 text-pink-600 dark:text-pink-400" />
-                    <span className="font-semibold">Equipamento</span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 dark:bg-gray-900/95 border-0 rounded-xl shadow-2xl backdrop-blur-md">
-                  <SelectItem value="all">Todos os equipamentos</SelectItem>
-                  {EQUIPMENT_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-        
-
-            {/* Botão Limpar - Desktop */}
-            {hasActiveFilters && (
-              <div className="shrink-0">
-                <Button
-                  variant="outline"
-                  onClick={onClearFilters}
-                  className="h-14 px-5 bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg hover:shadow-xl backdrop-blur-sm transition-all duration-200 font-semibold text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 group"
-                >
-                  <X className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-200" />
-                  Limpar
-                </Button>
+        {/* Filter Row - Mobile - Grid layout */}
+        <div className="grid grid-cols-4 gap-3">
+          {/* Muscle Group Filter - Expandido */}
+          <Select 
+            value={filters.muscleFilter} 
+            onValueChange={(value) => onFiltersChange({ muscleFilter: value })}
+          >
+            <SelectTrigger className={`
+              col-span-1 h-14 rounded-xl border-2 transition-all duration-200 flex items-center justify-center p-0
+              ${filters.muscleFilter !== 'all' 
+                ? 'bg-green-50 border-green-200 shadow-md dark:bg-green-900/20 dark:border-green-700' 
+                : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm dark:bg-gray-800 dark:border-gray-700'
+              }
+            `}>
+              <div className="flex flex-col items-center gap-1">
+                <Dumbbell className={`h-5 w-5 ${filters.muscleFilter !== 'all' ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                {filters.muscleFilter !== 'all' && (
+                  <div className="w-1 h-1 rounded-full bg-green-500"></div>
+                )}
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl">
+              <SelectItem value="all" className="focus:bg-gray-50 dark:focus:bg-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                  Todos
+                </div>
+              </SelectItem>
+              {MUSCLE_GROUPS.map((group) => (
+                <SelectItem key={group} value={group} className="focus:bg-green-50 dark:focus:bg-green-900/20">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    {group}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Equipment Filter - Expandido */}
+          <Select 
+            value={filters.equipmentFilter} 
+            onValueChange={(value) => onFiltersChange({ equipmentFilter: value })}
+          >
+            <SelectTrigger className={`
+              col-span-1 h-14 rounded-xl border-2 transition-all duration-200 flex items-center justify-center p-0
+              ${filters.equipmentFilter !== 'all' 
+                ? 'bg-emerald-50 border-emerald-200 shadow-md dark:bg-emerald-900/20 dark:border-emerald-700' 
+                : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm dark:bg-gray-800 dark:border-gray-700'
+              }
+            `}>
+              <div className="flex flex-col items-center gap-1">
+                <Zap className={`h-5 w-5 ${filters.equipmentFilter !== 'all' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                {filters.equipmentFilter !== 'all' && (
+                  <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
+                )}
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl">
+              <SelectItem value="all" className="focus:bg-gray-50 dark:focus:bg-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                  Todos
+                </div>
+              </SelectItem>
+              {EQUIPMENT_TYPES.map((type) => (
+                <SelectItem key={type} value={type} className="focus:bg-emerald-50 dark:focus:bg-emerald-900/20">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    {type}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Status Badge - Expandido */}
+          {hasActiveFilters ? (
+            <div className="col-span-1 h-14 rounded-xl border-2 border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-1">
+                <Filter className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-xs font-bold text-blue-700 dark:text-blue-300">{activeFiltersCount}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="col-span-1 h-14 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center">
+              <Filter className="h-4 w-4 text-gray-400" />
+            </div>
+          )}
+
+          {/* Clear Button - Expandido */}
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              onClick={onClearFilters}
+              className="col-span-1 h-14 rounded-xl border-2 border-red-200 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:hover:bg-red-900/20 dark:hover:border-red-700 transition-all duration-200 group flex items-center justify-center"
+            >
+              <div className="flex flex-col items-center gap-1">
+                <X className="h-4 w-4 text-red-600 dark:text-red-400 group-hover:rotate-90 transition-transform duration-200" />
+                <span className="text-xs font-medium text-red-600 dark:text-red-400">Limpar</span>
+              </div>
+            </Button>
+          ) : (
+            <div className="col-span-1 h-14 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-1">
+                <X className="h-4 w-4 text-gray-400" />
+                <span className="text-xs text-gray-400">Limpar</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Active Filters Summary */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap gap-2">
+          {filters.searchQuery && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm dark:bg-blue-900/20 dark:text-blue-300">
+              <Search className="h-3 w-3" />
+              <span>"{filters.searchQuery}"</span>
+              <button 
+                onClick={() => onFiltersChange({ searchQuery: '' })}
+                className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          
+          {filters.muscleFilter !== 'all' && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm dark:bg-green-900/20 dark:text-green-300">
+              <Dumbbell className="h-3 w-3" />
+              <span>{filters.muscleFilter}</span>
+              <button 
+                onClick={() => onFiltersChange({ muscleFilter: 'all' })}
+                className="hover:bg-green-200 dark:hover:bg-green-800 rounded-full p-0.5 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          
+          {filters.equipmentFilter !== 'all' && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm dark:bg-emerald-900/20 dark:text-emerald-300">
+              <Zap className="h-3 w-3" />
+              <span>{filters.equipmentFilter}</span>
+              <button 
+                onClick={() => onFiltersChange({ equipmentFilter: 'all' })}
+                className="hover:bg-emerald-200 dark:hover:bg-emerald-800 rounded-full p-0.5 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
