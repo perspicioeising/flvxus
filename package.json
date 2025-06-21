@@ -3,24 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start",
-  "lint": "next lint",
-
-  "cap:init": "cap init",
-  "cap:sync": "next build && cap sync",
-  "cap:copy": "next build && cap copy",
-  "cap:update": "next build && cap update",
-
-  "cap:android": "npm run cap:sync && cap open android",
-  "cap:ios": "npm run cap:sync && cap open ios",
-  "cap:run:android": "npm run cap:sync && cap run android",
-  "cap:run:ios": "npm run cap:sync && cap run ios",
-
-  "build:android": "next build && cap sync android && cd android && ./gradlew assembleRelease",
-  "build:ios": "next build && cap sync ios"
-},
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "cap:init": "cap init",
+    "cap:sync": "next build && cap sync",
+    "cap:copy": "next build && cap copy",
+    "cap:update": "next build && cap update",
+    "cap:android": "npm run cap:sync && cap open android",
+    "cap:ios": "npm run cap:sync && cap open ios",
+    "cap:run:android": "npm run cap:sync && cap run android",
+    "cap:run:ios": "npm run cap:sync && cap run ios",
+    "build:android": "next build && cap sync android && cd android && ./gradlew assembleRelease",
+    "build:ios": "next build && cap sync ios"
+  },
   "dependencies": {
     "@capacitor/android": "^7.4.0",
     "@capacitor/app": "^7.0.1",
@@ -73,6 +70,7 @@
     "cmdk": "^0.2.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.0.0",
+    "framer-motion": "^12.18.1",
     "i": "^0.3.7",
     "input-otp": "^1.1.0",
     "lucide-react": "^0.350.0",
