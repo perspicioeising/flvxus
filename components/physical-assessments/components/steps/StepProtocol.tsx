@@ -97,13 +97,13 @@ export function StepProtocol({
 
       {/* Informações dos Campos Obrigatórios */}
       {selectedProtocol && gender && (
-        <div className="p-6 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-2xl border border-indigo-200 dark:border-indigo-700 shadow-lg">
+        <div className="p-6 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-2xl border border-green-200 dark:border-green-700 shadow-lg">
           <div className="flex items-start gap-4">
-            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl shadow-lg shrink-0">
+            <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-lg shrink-0">
               <Info className="h-6 w-6 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h5 className="font-bold text-indigo-800 dark:text-indigo-300 mb-3 text-lg">
+              <h5 className="font-bold text-green-800 dark:text-green-300 mb-3 text-lg">
                 Campos obrigatórios para {BODY_PROTOCOLS.find(p => p.value === selectedProtocol)?.label}:
               </h5>
               <div className="flex flex-wrap gap-3">

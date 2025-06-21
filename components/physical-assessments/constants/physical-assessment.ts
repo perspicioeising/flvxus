@@ -8,60 +8,60 @@ export const BODY_PROTOCOLS: BodyProtocol[] = [
     label: "Jackson & Pollock (3 dobras)",
     gender: "both",
     description: "Protocolo padrão - H: peito, abdômen, coxa / M: tríceps, supra-ilíaca, coxa",
-    color: "from-indigo-500 to-indigo-600"
+    color: "from-green-500 to-green-600"
   },
   {
     value: "jackson_pollock_7",
     label: "Jackson & Pollock (7 dobras)",
     gender: "both", 
     description: "Protocolo mais preciso com 7 pontos de medição",
-    color: "from-indigo-600 to-indigo-700"
+    color: "from-green-600 to-green-700"
   },
   {
     value: "durnin_womersley",
     label: "Durnin & Womersley",
     gender: "both",
     description: "4 dobras: tríceps, bíceps, subescapular, supra-ilíaca",
-    color: "from-indigo-500 to-blue-600"
+    color: "from-green-500 to-emerald-600"
   },
   {
     value: "slaughter",
     label: "Slaughter et al.",
     gender: "both",
     description: "Para crianças/adolescentes: tríceps e subescapular",
-    color: "from-blue-500 to-indigo-600"
+    color: "from-emerald-500 to-green-600"
   },
   {
     value: "boileau", 
     label: "Boileau et al.",
     gender: "youth",
     description: "Para jovens: tríceps e subescapular",
-    color: "from-blue-600 to-indigo-700"
+    color: "from-emerald-600 to-green-700"
   },
   {
     value: "guedes_1994",
     label: "Guedes 1994",
     gender: "both",
     description: "H: tríceps, supra-ilíaca, abdominal / M: subescapular, supra-ilíaca, coxa",
-    color: "from-indigo-500 to-purple-600"
+    color: "from-green-500 to-emerald-600"
   }
 ];
 
 export const MEASUREMENT_FIELDS: MeasurementFields = {
   circumferences: [
-    { key: 'neck', label: 'Pescoço', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'shoulders', label: 'Ombros', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'chest', label: 'Tórax', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'chest_circ', label: 'Circunf. Tórax', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'waist', label: 'Cintura', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'abdomen', label: 'Abdômen', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'hips', label: 'Quadril', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'left_arm', label: 'Braço Esquerdo', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'right_arm', label: 'Braço Direito', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'left_thigh', label: 'Coxa Esquerda', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'right_thigh', label: 'Coxa Direita', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'left_calf', label: 'Panturrilha Esq.', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' },
-    { key: 'right_calf', label: 'Panturrilha Dir.', unit: 'cm', icon: '🔵', color: 'from-indigo-500 to-indigo-600' }
+    { key: 'neck', label: 'Pescoço', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'shoulders', label: 'Ombros', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'chest', label: 'Tórax', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'chest_circ', label: 'Circunf. Tórax', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'waist', label: 'Cintura', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'abdomen', label: 'Abdômen', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'hips', label: 'Quadril', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'left_arm', label: 'Braço Esquerdo', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'right_arm', label: 'Braço Direito', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'left_thigh', label: 'Coxa Esquerda', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'right_thigh', label: 'Coxa Direita', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'left_calf', label: 'Panturrilha Esq.', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' },
+    { key: 'right_calf', label: 'Panturrilha Dir.', unit: 'cm', icon: '🔵', color: 'from-green-500 to-green-600' }
   ],
   skinfolds: [
     { key: 'triceps', label: 'Tríceps', unit: 'mm', icon: '🟡', required: ['jackson_pollock_3', 'jackson_pollock_7', 'durnin_womersley', 'guedes_1994'], color: 'from-yellow-500 to-orange-500' },
@@ -82,7 +82,7 @@ export const ASSESSMENT_STEPS = [
     shortTitle: 'Básico',
     description: 'Selecionar aluno e dados iniciais',
     icon: 'User', 
-    color: 'from-indigo-500 to-indigo-600' 
+    color: 'from-green-500 to-green-600' 
   },
   { 
     id: 'protocol', 
@@ -90,7 +90,7 @@ export const ASSESSMENT_STEPS = [
     shortTitle: 'Protocolo',
     description: 'Escolher método de avaliação',
     icon: 'Calculator', 
-    color: 'from-indigo-600 to-indigo-700' 
+    color: 'from-green-600 to-green-700' 
   },
   { 
     id: 'measurements', 
@@ -98,7 +98,7 @@ export const ASSESSMENT_STEPS = [
     shortTitle: 'Medidas',
     description: 'Inserir medidas corporais',
     icon: 'Ruler', 
-    color: 'from-indigo-500 to-blue-600' 
+    color: 'from-green-500 to-emerald-600' 
   },
   { 
     id: 'results', 
@@ -106,7 +106,7 @@ export const ASSESSMENT_STEPS = [
     shortTitle: 'Resultados',
     description: 'Ver composição corporal',
     icon: 'BarChart3', 
-    color: 'from-blue-500 to-indigo-600' 
+    color: 'from-emerald-500 to-green-600' 
   },
   { 
     id: 'analysis', 
@@ -114,7 +114,7 @@ export const ASSESSMENT_STEPS = [
     shortTitle: 'IA',
     description: 'Análise inteligente com IA',
     icon: 'Brain', 
-    color: 'from-indigo-600 to-purple-600' 
+    color: 'from-green-600 to-emerald-600' 
   }
 ];
 
@@ -122,14 +122,14 @@ export const RESULTS_METRICS = [
   {
     key: 'bmi',
     label: 'IMC',
-    color: 'from-indigo-500 to-indigo-600',
+    color: 'from-green-500 to-green-600',
     icon: 'Scale',
     maxValue: 35
   },
   {
     key: 'fatPercentage', 
     label: '% Gordura',
-    color: 'from-blue-500 to-indigo-600',
+    color: 'from-emerald-500 to-green-600',
     icon: 'BarChart3',
     maxValue: 35,
     suffix: '%'
@@ -137,14 +137,14 @@ export const RESULTS_METRICS = [
   {
     key: 'fatMass',
     label: 'M. Gorda', 
-    color: 'from-indigo-600 to-blue-600',
+    color: 'from-green-600 to-emerald-600',
     icon: 'Weight',
     suffix: 'kg'
   },
   {
     key: 'leanMass',
     label: 'M. Magra',
-    color: 'from-blue-600 to-indigo-700', 
+    color: 'from-emerald-600 to-green-700', 
     icon: 'Activity',
     suffix: 'kg'
   }
@@ -191,8 +191,8 @@ export const ASSESSMENT_METRICS = [
   {
     key: 'bmi',
     label: "IMC",
-    colors: "from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20",
-    text: "text-blue-600 dark:text-blue-400",
+    colors: "from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20",
+    text: "text-emerald-600 dark:text-emerald-400",
     icon: "📊",
     format: "decimal" as const
   },
@@ -215,8 +215,8 @@ export const ASSESSMENT_METRICS = [
   {
     key: 'weight',
     label: "Peso",
-    colors: "from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20",
-    text: "text-purple-600 dark:text-purple-400",
+    colors: "from-emerald-50 to-pink-50 dark:from-emerald-900/20 dark:to-pink-900/20",
+    text: "text-emerald-600 dark:text-emerald-400",
     icon: "⚖️",
     format: "kg" as const
   }
@@ -235,14 +235,14 @@ export const FAT_PERCENTAGE_CLASSIFICATIONS = {
   male: [
     { min: 0, max: 6, label: 'Muito Baixo', color: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800' },
     { min: 6, max: 14, label: 'Atlético', color: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800' },
-    { min: 14, max: 18, label: 'Fitness', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800' },
+    { min: 14, max: 18, label: 'Fitness', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800' },
     { min: 18, max: 25, label: 'Aceitável', color: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800' },
     { min: 25, max: 100, label: 'Elevado', color: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800' }
   ],
   female: [
     { min: 0, max: 16, label: 'Muito Baixo', color: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800' },
     { min: 16, max: 21, label: 'Atlético', color: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800' },
-    { min: 21, max: 25, label: 'Fitness', color: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800' },
+    { min: 21, max: 25, label: 'Fitness', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800' },
     { min: 25, max: 32, label: 'Aceitável', color: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800' },
     { min: 32, max: 100, label: 'Elevado', color: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800' }
   ]
