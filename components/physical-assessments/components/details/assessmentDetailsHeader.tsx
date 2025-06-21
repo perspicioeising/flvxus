@@ -79,7 +79,7 @@ export function AssessmentDetailsHeader({
         icon = Crown;
       } else if (validFatPercentage < 18) {
         classification = 'Bom';
-        badgeColor = 'from-blue-500 to-indigo-600';
+        badgeColor = 'from-blue-500 to-green-600';
       } else if (validFatPercentage < 25) {
         classification = 'Regular';
         badgeColor = 'from-yellow-500 to-orange-600';
@@ -97,7 +97,7 @@ export function AssessmentDetailsHeader({
         icon = Crown;
       } else if (validFatPercentage < 25) {
         classification = 'Bom';
-        badgeColor = 'from-blue-500 to-indigo-600';
+        badgeColor = 'from-blue-500 to-green-600';
       } else if (validFatPercentage < 32) {
         classification = 'Regular';
         badgeColor = 'from-yellow-500 to-orange-600';
@@ -115,10 +115,10 @@ export function AssessmentDetailsHeader({
   return (
     <div className="relative mb-8">
       {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 via-indigo-500/20 to-indigo-600/20 dark:from-indigo-500/10 dark:via-indigo-400/10 dark:to-indigo-500/10 rounded-3xl blur-xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-green-500/20 to-green-600/20 dark:from-green-500/10 dark:via-green-400/10 dark:to-green-500/10 rounded-3xl blur-xl"></div>
       
       {/* Main Header Card */}
-      <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-indigo-200/50 dark:border-indigo-800/30 rounded-3xl shadow-2xl">
+      <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl shadow-2xl">
         
         {/* Top Section with Actions */}
         <div className="p-6 sm:p-8 pb-0">
@@ -127,7 +127,7 @@ export function AssessmentDetailsHeader({
               variant="outline"
               size="icon"
               onClick={() => router.back()}
-              className="h-12 w-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-indigo-200 dark:border-indigo-700 hover:border-indigo-300 dark:hover:border-indigo-600 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+              className="h-12 w-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -138,13 +138,13 @@ export function AssessmentDetailsHeader({
                 <Button
                   variant="outline"
                   onClick={onEdit}
-                  className="h-11 px-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-indigo-200 dark:border-indigo-700 hover:border-indigo-300 dark:hover:border-indigo-600 rounded-xl font-semibold shadow-lg transition-all duration-300 hover:scale-105 group"
+                  className="h-11 px-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 rounded-xl font-semibold shadow-lg transition-all duration-300 hover:scale-105 group"
                 >
                   <Edit className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform" />
                   Editar
                 </Button>
                 
-                <Button
+                {/* <Button
                   variant="outline"
                   onClick={onShare}
                   className="h-11 px-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 rounded-xl font-semibold shadow-lg transition-all duration-300 hover:scale-105 group"
@@ -160,7 +160,7 @@ export function AssessmentDetailsHeader({
                 >
                   <Download className="h-4 w-4 mr-2 group-hover:translate-y-0.5 transition-transform" />
                   Relatório
-                </Button>
+                </Button> */}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -190,7 +190,7 @@ export function AssessmentDetailsHeader({
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-12 w-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-indigo-200 dark:border-indigo-700 hover:border-indigo-300 dark:hover:border-indigo-600 rounded-xl shadow-lg transition-all duration-300"
+                      className="h-12 w-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 rounded-xl shadow-lg transition-all duration-300"
                     >
                       <MoreVertical className="h-5 w-5" />
                     </Button>
@@ -200,14 +200,14 @@ export function AssessmentDetailsHeader({
                       <Edit className="h-4 w-4 mr-2" />
                       Editar
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onShare} className="rounded-lg">
+                    {/* <DropdownMenuItem onClick={onShare} className="rounded-lg">
                       <Share2 className="h-4 w-4 mr-2" />
                       Compartilhar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={onDownload} className="rounded-lg">
                       <Download className="h-4 w-4 mr-2" />
                       Relatório
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={onDelete} className="text-red-600 rounded-lg">
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -222,7 +222,7 @@ export function AssessmentDetailsHeader({
           {/* Title Section */}
           <div className="text-center mb-8">
             <div className="relative inline-flex items-center justify-center mb-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-xl">
                 <Activity className="h-10 w-10 text-white" />
               </div>
               <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
@@ -246,14 +246,14 @@ export function AssessmentDetailsHeader({
         {/* Student Info Section */}
         <div className="p-6 ">
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 rounded-2xl blur-lg"></div>
-            <div className="relative p-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-indigo-200/50 dark:border-indigo-700/50 shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-500/10 to-green-600/10 rounded-2xl blur-lg"></div>
+            <div className="relative p-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl">
               
               {/* Student Profile Row */}
               <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
                 {/* Avatar */}
                 <div className="relative">
-                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-xl">
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-xl">
                     {assessment.profiles.full_name.substring(0, 2).toUpperCase()}
                   </div>
                   <Badge className={`absolute -bottom-2 -right-2 px-3 py-1.5 bg-gradient-to-r ${badgeColor} text-white rounded-full text-xs font-bold border-0 shadow-lg`}>
