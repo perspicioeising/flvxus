@@ -88,7 +88,7 @@ export function StepBasic({
       {/* Seleção de Aluno */}
       <div className="space-y-3">
         <Label className="text-base font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-          <Search className="h-4 w-4 text-indigo-600" />
+          <Search className="h-4 w-4 text-green-600" />
           Selecionar Aluno
         </Label>
         <Select
@@ -104,7 +104,7 @@ export function StepBasic({
             <SelectValue placeholder="Selecione um aluno para avaliação...">
               {selectedStudent && (
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
                     {selectedStudent.full_name.substring(0, 2).toUpperCase()}
                   </div>
                   <span className="truncate">{selectedStudent.full_name}</span>
@@ -130,10 +130,10 @@ export function StepBasic({
                 <SelectItem
                   key={student.id}
                   value={student.id}
-                  className="cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-3 rounded-lg"
+                  className="cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 p-3 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm shrink-0">
                       {student.full_name.substring(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -154,10 +154,10 @@ export function StepBasic({
       {selectedStudent && (
         <div className="space-y-6">
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl sm:rounded-2xl blur-xl opacity-75"></div>
+            <div className="absolute inset-0 bg-gradient-to-r  rounded-xl sm:rounded-2xl blur-xl opacity-75"></div>
             <div className="relative p-4 sm:p-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-xl">
               <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black text-sm sm:text-xl shadow-lg shrink-0">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black text-sm sm:text-xl shadow-lg shrink-0">
                   {selectedStudent.full_name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -166,22 +166,22 @@ export function StepBasic({
                   </h3>
                   <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                     <div className="flex items-center gap-1 sm:gap-2">
-                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 shrink-0" />
+                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 shrink-0" />
                       <span className="font-medium truncate">{formData.age} anos</span>
                     </div>
                     <div className="flex items-center gap-1 sm:gap-2">
-                      <User className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 shrink-0" />
+                      <User className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 shrink-0" />
                       <span className="font-medium truncate">{selectedStudent.gender === 'male' ? 'Masculino' : 'Feminino'}</span>
                     </div>
                     {selectedStudent.height && (
                       <div className="flex items-center gap-1 sm:gap-2">
-                        <Ruler className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 shrink-0" />
+                        <Ruler className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 shrink-0" />
                         <span className="font-medium">{selectedStudent.height}cm</span>
                       </div>
                     )}
                     {selectedStudent.weight && (
                       <div className="flex items-center gap-1 sm:gap-2">
-                        <Weight className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 shrink-0" />
+                        <Weight className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 shrink-0" />
                         <span className="font-medium">{selectedStudent.weight}kg</span>
                       </div>
                     )}
@@ -190,7 +190,7 @@ export function StepBasic({
                     <div className="mt-3 sm:mt-4">
                       <div className="flex flex-wrap gap-1 sm:gap-2">
                         {selectedStudent.goals.slice(0, 3).map((goal, index) => (
-                          <Badge key={index} className="px-2 py-1 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 border-0 rounded-full text-xs font-semibold dark:from-indigo-900/30 dark:to-purple-900/30 dark:text-indigo-300">
+                          <Badge key={index} className="px-2 py-1 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-0 rounded-full text-xs font-semibold dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-300">
                             <Target className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                             <span className="truncate max-w-20 sm:max-w-none">{goal}</span>
                           </Badge>
@@ -213,7 +213,7 @@ export function StepBasic({
                     onUpdateField('height', '');
                     onUpdateField('weight', '');
                   }}
-                  className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-600 dark:text-indigo-400 dark:hover:bg-indigo-900/20 rounded-xl shadow-lg shrink-0 text-xs sm:text-sm px-2 sm:px-4"
+                  className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-600 dark:text-green-400 dark:hover:bg-green-900/20 rounded-xl shadow-lg shrink-0 text-xs sm:text-sm px-2 sm:px-4"
                 >
                   Alterar
                 </Button>
@@ -225,7 +225,7 @@ export function StepBasic({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <div className="space-y-2 sm:space-y-3">
               <Label className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                <Weight className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600" />
+                <Weight className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                 Peso Atual (kg)
               </Label>
               <Input
@@ -239,7 +239,7 @@ export function StepBasic({
             </div>
             <div className="space-y-2 sm:space-y-3">
               <Label className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                <Ruler className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+                <Ruler className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600" />
                 Altura (cm)
               </Label>
               <Input

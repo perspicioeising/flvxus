@@ -162,12 +162,12 @@ function CategorySelector({
             flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold 
             transition-all duration-300 group
             ${activeCategory === 'skinfolds'
-              ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg transform scale-105'
+              ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg transform scale-105'
               : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
             }
           `}
         >
-          <Target className={`h-4 w-4 ${activeCategory === 'skinfolds' ? 'text-white' : 'text-purple-600'}`} />
+          <Target className={`h-4 w-4 ${activeCategory === 'skinfolds' ? 'text-white' : 'text-teal-600'}`} />
           <span>Dobras Cutâneas</span>
           {activeCategory === 'skinfolds' && (
             <Sparkles className="h-3 w-3 text-white/80 animate-pulse ml-1" />
