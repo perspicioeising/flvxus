@@ -812,7 +812,7 @@ const AssessmentComparison: React.FC<AssessmentComparisonProps> = ({
                 <CardHeader className="p-4 sm:p-8 bg-gradient-to-r from-purple-50/50 via-indigo-50/50 to-purple-50/50 dark:from-purple-900/10 dark:via-indigo-900/10 dark:to-purple-900/10 rounded-t-2xl sm:rounded-t-3xl">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div className="relative mx-auto sm:mx-0">
-                      <div className="p-3 sm:p-4 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl sm:rounded-2xl shadow-lg">
+                      <div className="p-3 sm:p-4 bg-gradient-to-br from-teal-500 to-teal-500 rounded-xl sm:rounded-2xl shadow-lg">
                         <User className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                       </div>
                       <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">

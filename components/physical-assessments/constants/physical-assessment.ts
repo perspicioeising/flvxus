@@ -98,7 +98,7 @@ export const ASSESSMENT_STEPS = [
     shortTitle: 'Medidas',
     description: 'Inserir medidas corporais',
     icon: 'Ruler', 
-    color: 'from-green-500 to-emerald-600' 
+    color: 'from-green-600 to-green-700' 
   },
   { 
     id: 'results', 

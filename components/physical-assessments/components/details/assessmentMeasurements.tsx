@@ -67,8 +67,8 @@ export function AssessmentMeasurements({ measurements }: AssessmentMeasurementsP
           icon={Target}
           measurements={skinFolds}
           unit="mm"
-          gradient="from-purple-500 to-indigo-600"
-          bgGradient="from-purple-50 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-800/20"
+          gradient="from-teal-500 to-teal-600"
+          bgGradient="from-teal-50 to-indigo-100 dark:from-teal-900/20 dark:to-indigo-800/20"
           borderColor="border-purple-200/50 dark:border-purple-700/50"
           iconBg="from-purple-500 to-indigo-600"
         />
@@ -91,13 +91,13 @@ function MeasurementsHeader({
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 rounded-3xl blur-2xl"></div>
       <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden">
-        <CardHeader className="p-8 bg-gradient-to-r from-indigo-50/50 via-purple-50/50 to-indigo-50/50 dark:from-indigo-900/10 dark:via-purple-900/10 dark:to-indigo-900/10">
+        <CardHeader className="p-8 bg-gradient-to-r from-indigo-50/50 via-teal-50/50 to-teal-50/50 dark:from-indigo-900/10 dark:via-teal-900/10 dark:to-teal-900/10">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="p-4 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg">
+              <div className="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
                 <Ruler className="h-8 w-8 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-teal-400 to-teal-500 rounded-full flex items-center justify-center animate-pulse">
                 <Sparkles className="h-3 w-3 text-white" />
               </div>
             </div>
@@ -118,22 +118,22 @@ function MeasurementsHeader({
               label="Total de Medidas"
               value={totalMeasurements}
               icon={TrendingUp}
-              gradient="from-indigo-500 to-indigo-600"
-              bgColor="from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20"
+              gradient="from-teal-500 to-teal-600"
+              bgColor="from-teal-50 to-teal-100 dark:from-teal-900/80 dark:to-teal-800/80"
             />
             <StatCard
               label="Circunferências"
               value={circumferencesCount}
               icon={Activity}
-              gradient="from-blue-500 to-indigo-600"
-              bgColor="from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-800/20"
+              gradient="from-emerald-500 to-emerald-600"
+              bgColor="from-emerald-50 to-emerald-100 dark:from-emerald-900/80 dark:to-emerald-800/80"
             />
             <StatCard
               label="Dobras Cutâneas"
               value={skinFoldsCount}
               icon={Target}
-              gradient="from-purple-500 to-indigo-600"
-              bgColor="from-purple-50 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-800/20"
+              gradient="from-green-500 to-green-600"
+              bgColor="from-green-50 to-green-100 dark:from-green-900/80 dark:to-green-800/80"
             />
           </div>
         </CardContent>
@@ -222,7 +222,7 @@ function MeasurementSection({
               <div className={`p-4 bg-gradient-to-br ${iconBg} rounded-2xl shadow-lg`}>
                 <Icon className="h-8 w-8 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full flex items-center justify-center">
                 <Star className="h-3 w-3 text-white" />
               </div>
             </div>
@@ -311,7 +311,7 @@ function EmptyMeasurements() {
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 rounded-3xl blur-2xl"></div>
       <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden">
-        <CardHeader className="p-8 bg-gradient-to-r from-indigo-50/50 via-purple-50/50 to-indigo-50/50 dark:from-indigo-900/10 dark:via-purple-900/10 dark:to-indigo-900/10">
+        <CardHeader className="p-8 bg-gradient-to-r from-teal-50/50 via-teal-50/50 to-indigo-50/50 dark:from-indigo-900/10 dark:via-purple-900/10 dark:to-indigo-900/10">
           <div className="flex items-center gap-4">
             <div className="relative">
               <div className="p-4 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg">
