@@ -61,26 +61,7 @@ export function DietFormHeader({
           </div>
         </div>
 
-        {/* Progress Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-              Progresso
-            </span>
-            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-600 text-sm font-semibold">
-              {Math.round(progressPercentage)}% concluído
-            </Badge>
-          </div>
-          
-          <div className="relative">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   );
