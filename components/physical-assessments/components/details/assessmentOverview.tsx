@@ -44,7 +44,7 @@ export function AssessmentOverview({ assessment, classification }: AssessmentOve
     {
       value: assessment.bmi,
       label: "IMC",
-      color: 'from-indigo-500 to-indigo-600',
+      color: 'from-green-500 to-green-600',
       icon: Scale,
       progress: Math.min((ensureNumber(assessment.bmi) / 35) * 100, 100),
       suffix: "",
@@ -53,7 +53,7 @@ export function AssessmentOverview({ assessment, classification }: AssessmentOve
     {
       value: assessment.fat_percentage,
       label: "% Gordura",
-      color: 'from-blue-500 to-indigo-600',
+      color: 'from-emerald-500 to-green-600',
       icon: BarChart3,
       progress: Math.min((ensureNumber(assessment.fat_percentage) / 35) * 100, 100),
       suffix: "%",
@@ -62,7 +62,7 @@ export function AssessmentOverview({ assessment, classification }: AssessmentOve
     {
       value: assessment.fat_mass,
       label: "Massa Gorda",
-      color: 'from-purple-500 to-indigo-600',
+      color: 'from-emerald-500 to-green-600',
       icon: Weight,
       progress: ensureNumber(assessment.weight) > 0 ? (ensureNumber(assessment.fat_mass) / ensureNumber(assessment.weight)) * 100 : 0,
       suffix: "kg",
@@ -71,7 +71,7 @@ export function AssessmentOverview({ assessment, classification }: AssessmentOve
     {
       value: assessment.lean_mass,
       label: "Massa Magra",
-      color: 'from-teal-500 to-indigo-600',
+      color: 'from-teal-500 to-green-600',
       icon: Activity,
       progress: ensureNumber(assessment.weight) > 0 ? (ensureNumber(assessment.lean_mass) / ensureNumber(assessment.weight)) * 100 : 0,
       suffix: "kg",
@@ -193,15 +193,15 @@ function BodyCompositionSection({ assessment, classification }: { assessment: As
 
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 rounded-3xl blur-2xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-3xl blur-2xl"></div>
       <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden">
-        <CardHeader className="p-8 bg-gradient-to-r from-indigo-50/50 via-purple-50/50 to-indigo-50/50 dark:from-indigo-900/10 dark:via-purple-900/10 dark:to-indigo-900/10">
+        <CardHeader className="p-8 bg-gradient-to-r from-green-50/50 via-purple-50/50 to-green-50/50 dark:from-green-900/10 dark:via-purple-900/10 dark:to-indigo-900/10">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+              <div className="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
                 <PieChart className="h-8 w-8 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse">
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-indigo-400 to-teal-500 rounded-full flex items-center justify-center animate-pulse">
                 <Star className="h-3 w-3 text-white" />
               </div>
             </div>
@@ -278,7 +278,7 @@ function BodyCompositionSection({ assessment, classification }: { assessment: As
             {/* Reference Cards */}
             <div className="space-y-4">
               <h4 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                <Award className="h-5 w-5 text-indigo-600" />
+                <Award className="h-5 w-5 text-green-600" />
                 Indicadores de Referência
               </h4>
 
@@ -387,15 +387,15 @@ function ProtocolInformationSection({ assessment }: { assessment: AssessmentOver
 
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 rounded-3xl blur-2xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-3xl blur-2xl"></div>
       <Card className="relative border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden">
-        <CardHeader className="p-8 bg-gradient-to-r from-blue-50/50 via-indigo-50/50 to-purple-50/50 dark:from-blue-900/10 dark:via-indigo-900/10 dark:to-purple-900/10">
+        <CardHeader className="p-8 bg-gradient-to-r from-blue-50/50 via-green-50/50 to-purple-50/50 dark:from-blue-900/10 dark:via-green-900/10 dark:to-green-900/10">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+              <div className="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
                 <Calculator className="h-8 w-8 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-indigo-400 to-teal-500 rounded-full flex items-center justify-center">
                 <CheckCircle2 className="h-3 w-3 text-white" />
               </div>
             </div>

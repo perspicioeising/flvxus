@@ -142,77 +142,7 @@ export function WorkoutCard({
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onView(workout.id);
-                        }}
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Ver</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(workout.id);
-                        }}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Editar</TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-lg"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onClone(workout);
-                        }}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Clonar</TooltipContent>
-                  </Tooltip>
-                </div>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(workout);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Excluir</TooltipContent>
-                </Tooltip>
-              </div>
+             
             </div>
           </CardContent>
 

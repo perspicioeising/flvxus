@@ -160,7 +160,7 @@ export function PhysicalAssessmentFormCarousel({
   const shouldShowBackButton = activeStep !== 'basic';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         
         {/* Header */}
@@ -180,7 +180,7 @@ export function PhysicalAssessmentFormCarousel({
 
         {/* Step Content */}
         <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-indigo-500/10 to-indigo-600/10 rounded-2xl blur-md"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-green-500/10 to-green-600/10 rounded-2xl blur-md"></div>
           <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-0 rounded-2xl shadow-xl">
             <div className="p-6 lg:p-8">
               {renderCurrentStep()}
@@ -190,7 +190,7 @@ export function PhysicalAssessmentFormCarousel({
 
         {/* Bottom Navigation - Corrigido para Mobile */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-200/50 to-indigo-200/50 dark:from-gray-700/50 dark:to-indigo-700/50 rounded-2xl blur-md"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-200/50 to-green-200/50 dark:from-gray-700/50 dark:to-green-700/50 rounded-2xl blur-md"></div>
           <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-0 rounded-2xl shadow-lg">
             <div className="p-6">
               
@@ -199,7 +199,7 @@ export function PhysicalAssessmentFormCarousel({
                 {shouldShowBackButton && (
                   <button
                     onClick={handleBack}
-                    className="h-12 px-4 border-2 border-indigo-200 dark:border-indigo-700 hover:border-indigo-300 dark:hover:border-indigo-600 text-indigo-600 dark:text-indigo-400 rounded-xl font-semibold transition-all duration-300 bg-white/80 dark:bg-gray-800/80"
+                    className="h-12 px-4 border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 text-green-600 dark:text-green-400 rounded-xl font-semibold transition-all duration-300 bg-white/80 dark:bg-gray-800/80"
                   >
                     ← Voltar
                   </button>
@@ -211,7 +211,7 @@ export function PhysicalAssessmentFormCarousel({
                     disabled={!canAdvanceStep()}
                     className={`h-12 font-bold rounded-xl shadow-lg transition-all duration-300 border-0 ${
                       canAdvanceStep()
-                        ? `bg-gradient-to-r ${currentStepData?.color || 'from-indigo-500 to-indigo-600'} hover:shadow-indigo-500/25 text-white`
+                        ? `bg-gradient-to-r ${currentStepData?.color || 'from-green-500 to-green-600'} hover:shadow-green-500/25 text-white`
                         : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
                     }`}
                   >
@@ -227,7 +227,7 @@ export function PhysicalAssessmentFormCarousel({
                   {shouldShowBackButton && (
                     <button
                       onClick={handleBack}
-                      className="px-6 h-12 border-2 border-indigo-200 dark:border-indigo-700 hover:border-indigo-300 dark:hover:border-indigo-600 text-indigo-600 dark:text-indigo-400 rounded-xl font-semibold transition-all duration-300 bg-white/80 dark:bg-gray-800/80"
+                      className="px-6 h-12 border-2 border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 text-green-600 dark:text-green-400 rounded-xl font-semibold transition-all duration-300 bg-white/80 dark:bg-gray-800/80"
                     >
                       ← Voltar
                     </button>
@@ -240,7 +240,7 @@ export function PhysicalAssessmentFormCarousel({
                     disabled={!canAdvanceStep()}
                     className={`px-8 h-12 font-bold rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 border-0 ${
                       canAdvanceStep()
-                        ? `bg-gradient-to-r ${currentStepData?.color || 'from-indigo-500 to-indigo-600'} hover:shadow-indigo-500/25 text-white`
+                        ? `bg-gradient-to-r ${currentStepData?.color || 'from-green-500 to-green-600'} hover:shadow-green-500/25 text-white`
                         : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed transform-none'
                     }`}
                   >

@@ -97,7 +97,7 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
           hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
         },
         {
-          name: "Alunos",
+          name: "Atletas",
           href: "/dashboard/students",
           icon: Users,
           isActive: pathname.startsWith("/dashboard/students"),

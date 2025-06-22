@@ -31,11 +31,11 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
       {/* Mobile Version - Horizontal Scroll */}
       <div className="block sm:hidden">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-500/10 to-indigo-600/10 rounded-2xl blur-xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-indigo-200/50 dark:border-indigo-800/30 rounded-2xl p-4 shadow-xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-emerald-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
+          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-2xl p-4 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className={`p-3 bg-gradient-to-br ${steps[currentStepIndex]?.color || 'from-indigo-500 to-purple-500'} rounded-xl shadow-lg`}>
+                <div className={`p-3 bg-gradient-to-br ${steps[currentStepIndex]?.color || 'from-green-500 to-emerald-500'} rounded-xl shadow-lg`}>
                   {(() => {
                     const StepIcon = STEP_ICONS[steps[currentStepIndex]?.icon as keyof typeof STEP_ICONS] || User;
                     return <StepIcon className="h-6 w-6 text-white" />;
@@ -54,7 +54,7 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Etapa
                 </p>
-                <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">
+                <p className="text-lg font-black text-green-600 dark:text-green-400">
                   {currentStepIndex + 1}/{steps.length}
                 </p>
               </div>
@@ -68,7 +68,7 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
               </div>
               <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div 
-                  className={`h-full bg-gradient-to-r ${steps[currentStepIndex]?.color || 'from-indigo-500 to-purple-500'} rounded-full transition-all duration-700 ease-out`}
+                  className={`h-full bg-gradient-to-r ${steps[currentStepIndex]?.color || 'from-green-500 to-emerald-500'} rounded-full transition-all duration-700 ease-out`}
                   style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
                 />
               </div>
@@ -80,8 +80,8 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
       {/* Desktop Version - Optimized Hybrid */}
       <div className="hidden sm:block">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-500/10 to-indigo-600/10 rounded-2xl blur-xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-indigo-200/50 dark:border-indigo-800/30 rounded-2xl p-4 lg:p-6 shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-emerald-500/10 to-green-600/10 rounded-2xl blur-xl"></div>
+          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-2xl p-4 lg:p-6 shadow-2xl">
             
             {/* Compact Progress Header */}
             <div className="text-center mb-4 lg:mb-6">
@@ -89,8 +89,8 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
                 <h2 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-white">
                   Progresso da Avaliação
                 </h2>
-                <div className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
-                  <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+                <div className="px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                  <span className="text-sm font-semibold text-green-700 dark:text-green-300">
                     {currentStepIndex + 1}/{steps.length}
                   </span>
                 </div>
@@ -130,7 +130,7 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
                           ? `bg-gradient-to-br ${step.color} text-white shadow-xl scale-105`
                           : isCompleted
                           ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg'
-                          : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 shadow-md'
+                          : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600 shadow-md'
                       }`}
                     >
                       {/* Compact Icon */}
@@ -200,7 +200,7 @@ export const StepNavigation = ({ steps, activeStep, onStepChange, canAdvance }: 
               </div>
               <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 rounded-full transition-all duration-1000 ease-out"
+                  className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
                 />
               </div>

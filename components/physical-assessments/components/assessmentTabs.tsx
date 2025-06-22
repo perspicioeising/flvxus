@@ -22,7 +22,7 @@ export function AssessmentTabs({
       label: "Visão Geral",
       shortLabel: "Geral",
       icon: Eye,
-      gradient: "from-indigo-500 to-indigo-600",
+      gradient: "from-green-500 to-teal-600",
       description: "Resumo completo da avaliação"
     },
     {
@@ -30,7 +30,7 @@ export function AssessmentTabs({
       label: "Medidas",
       shortLabel: "Medidas",
       icon: Ruler,
-      gradient: "from-blue-500 to-indigo-600",
+      gradient: "from-green-500 to-teal-600",
       description: "Todas as medidas coletadas"
     },
     {
@@ -38,7 +38,7 @@ export function AssessmentTabs({
       label: "Análise IA",
       shortLabel: "IA",
       icon: Brain,
-      gradient: "from-purple-500 to-indigo-600",
+      gradient: "from-green-500 to-teal-600",
       description: "Insights e recomendações"
     },
     {
@@ -46,7 +46,7 @@ export function AssessmentTabs({
       label: "Evolução",
       shortLabel: "Evolução",
       icon: TrendingUp,
-      gradient: "from-teal-500 to-indigo-600",
+      gradient: "from-green-500 to-teal-600",
       description: "Compare com avaliações anteriores"
     }
   ];
@@ -56,8 +56,7 @@ export function AssessmentTabs({
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
         <div className="relative">
-          {/* Background Glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 rounded-2xl blur-2xl"></div>
+
           
           {/* Tab List */}
           <TabsList className="relative grid w-full grid-cols-2 lg:grid-cols-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl p-2 border-0 gap-2">
@@ -136,8 +135,8 @@ export function AssessmentTabs({
       {/* Tab Description Card - Mobile Optimized */}
       <div className="sm:hidden">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 rounded-xl blur-xl"></div>
-          <div className="relative p-4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-indigo-200/30 dark:border-indigo-700/30">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-green-600/10 rounded-xl blur-xl"></div>
+          <div className="relative p-4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-green-200/30 dark:border-green-700/30">
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
               {tabs.find(t => t.value === activeTab)?.description}
             </p>
