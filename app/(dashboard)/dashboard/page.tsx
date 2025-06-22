@@ -71,8 +71,8 @@ export default function DashboardPage() {
 
   const getTrainerActions = () => [
     {
-      name: "Alunos",
-      description: "Gerencie seus alunos",
+      name: "Atletas",
+      description: "Gerencie seus atletas",
       href: "/dashboard/students",
       icon: Users,
       color: "from-blue-500 to-blue-600",

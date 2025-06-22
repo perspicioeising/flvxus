@@ -19,7 +19,7 @@ export function AssessmentHeader({
         {/* Subtle decorative elements */}
         <div className="absolute inset-0 opacity-5">
           {/* Top right circle */}
-          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-500 to-green-500 rounded-full transform translate-x-16 -translate-y-16"></div>
+          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-teal-500 to-teal-500 rounded-full transform translate-x-16 -translate-y-16"></div>
           
           {/* Bottom left smaller circle */}
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-500 to-cyan-500 rounded-full transform -translate-x-8 translate-y-8"></div>
@@ -41,7 +41,7 @@ export function AssessmentHeader({
                 </div>
                 
                 {/* Small accent badge */}
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-teal-400 to-teal-500 rounded-full flex items-center justify-center">
                   <Sparkles className="h-2.5 w-2.5 text-white" />
                 </div>
               </div>

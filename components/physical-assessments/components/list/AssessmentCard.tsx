@@ -114,8 +114,8 @@ export function AssessmentCard({
                 
                 {/* Pulsing status indicator */}
                 <div className="absolute -bottom-1 -right-1 w-5 h-5">
-                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
-                  <div className="relative w-5 h-5 bg-gradient-to-r from-emerald-400 to-green-500 border-2 border-white dark:border-gray-900 rounded-full flex items-center justify-center shadow-lg">
+                  <div className="absolute inset-0 bg-teal-500 rounded-full animate-ping opacity-20"></div>
+                  <div className="relative w-5 h-5 bg-gradient-to-r from-teal-400 to-teal-500 border-2 border-white dark:border-gray-900 rounded-full flex items-center justify-center shadow-lg">
                     <Activity className="h-2.5 w-2.5 text-white" />
                   </div>
                 </div>
@@ -178,9 +178,9 @@ export function AssessmentCard({
                 
                 {/* Advanced status indicator */}
                 <div className="absolute -bottom-1 -right-1 w-6 h-6">
-                  <div className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-25"></div>
-                  <div className="absolute inset-0.5 bg-emerald-400 rounded-full animate-pulse opacity-40"></div>
-                  <div className="relative w-6 h-6 bg-gradient-to-r from-emerald-400 to-green-500 border-3 border-white dark:border-gray-900 rounded-full flex items-center justify-center shadow-xl">
+                  <div className="absolute inset-0 bg-teal-400 rounded-full animate-ping opacity-25"></div>
+                  <div className="absolute inset-0.5 bg-teal-400 rounded-full animate-pulse opacity-40"></div>
+                  <div className="relative w-6 h-6 bg-gradient-to-r from-teal-400 to-teal-500 border-3 border-white dark:border-gray-900 rounded-full flex items-center justify-center shadow-xl">
                     <Activity className="h-3 w-3 text-white" />
                   </div>
                 </div>
