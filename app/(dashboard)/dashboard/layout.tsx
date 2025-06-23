@@ -63,29 +63,37 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      {/* Mobile Header - Hidden on desktop */}
-      <Header userRole={userRole} />
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-50 via-green-50/40 to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
+      {/* Mobile Layout */}
+      <div className="flex flex-col h-full md:hidden">
+        {/* Mobile Header */}
+        <Header userRole={userRole} />
+        
+        {/* Mobile Main Content */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="pb-20">
+            {children}
+          </div>
+        </main>
+        
+        {/* Bottom Navigation */}
+        <BottomNavigation userRole={userRole} />
+      </div>
       
-      <div className="flex h-screen">
-        {/* Desktop Sidebar - Hidden on mobile */}
+      {/* Desktop Layout */}
+      <div className="hidden md:flex h-full">
+        {/* Desktop Sidebar */}
         <Sidebar 
           userRole={userRole} 
           isCollapsed={isSidebarCollapsed}
           toggleCollapse={toggleSidebar}
         />
         
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-auto">
-          {/* Add padding-bottom for mobile to account for bottom navigation */}
-          <div className="pb-20 md:pb-0">
-            {children}
-          </div>
+        {/* Desktop Main Content */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          {children}
         </main>
       </div>
-      
-      {/* Bottom Navigation - Visible only on mobile */}
-      <BottomNavigation userRole={userRole} />
     </div>
   );
 }
