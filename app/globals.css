@@ -79,16 +79,17 @@
   }
 
   .dark {
-    /* Cores de Background - Modo Escuro (Quase Preto com Verde Escuro) */
-    --background-primary: 2 6 12; /* quase preto com leve toque verde escuro */
-    --background-secondary: 3 8 15; /* preto esverdeado */
-    --background-accent: 1 7 12; /* verde muito escuro */
-    --background-card: 4 9 16; /* cinza esverdeado muito escuro para cards */
-    --background-overlay: 3 8 15; /* overlay escuro esverdeado */
-    --background-gradient-start: 2 6 12; /* início quase preto */
-    --background-gradient-middle: 2 8 14; /* meio com verde muito escuro */
-    --background-gradient-end: 3 12 20; /* fim um pouco mais verde escuro */
+    /* Cores de Background - Modo Escuro (Cinza Escuro) */
+    --background-primary: 15 15 20; /* cinza muito escuro */
+    --background-secondary: 20 20 25; /* cinza escuro */
+    --background-accent: 10 10 15; /* quase preto */
+    --background-card: 25 25 30; /* cinza escuro para cards */
+    --background-overlay: 20 20 25; /* overlay cinza escuro */
+    --background-gradient-start: 15 15 20; /* início cinza escuro */
+    --background-gradient-middle: 20 20 25; /* meio cinza escuro */
+    --background-gradient-end: 25 25 30; /* fim cinza um pouco mais claro */
     
+    /* Mantendo as outras cores como estão */
     /* Cores dos Botões - Modo Escuro */
     --button-primary: 52 211 153; /* emerald-400 */
     --button-primary-hover: 16 185 129; /* emerald-500 */
@@ -108,9 +109,9 @@
     --text-accent: 52 211 153; /* emerald-400 */
     --text-heading: 248 250 252; /* branco para títulos */
     
-    /* Cores de Bordas - Modo Escuro */
-    --border-default: 31 41 55; /* gray-700 com toque verde */
-    --border-muted: 17 24 39; /* gray-800 esverdeado */
+    /* Cores de Bordas - Modo Escuro (ajustadas para cinza) */
+    --border-default: 55 65 75; /* gray-700 */
+    --border-muted: 40 50 60; /* gray-800 */
     --border-accent: 6 78 59; /* emerald-800 */
     
     /* Sombras - Modo Escuro */
@@ -145,7 +146,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 94.0%;
-  }
+}
 }
 
 /* Classes utilitárias customizadas */
