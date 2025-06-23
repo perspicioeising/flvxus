@@ -159,3 +159,117 @@ export interface DietStepData {
   color: string;
   shortTitle: string;
 }
+
+// /components/diets/types/index.ts
+
+export interface Diet {
+  id: string;
+  name: string;
+  description?: string;
+  goal: 'muscle_gain' | 'fat_loss' | 'reeducation' | 'performance' | 'maintenance';
+  meals_per_day: number;
+  activity_level: 'sedentary' | 'light' | 'moderate' | 'intense' | 'athlete';
+  budget_profile: 'economic' | 'intermediate' | 'free';
+  target_calories?: number;
+  target_protein?: number;
+  target_carbs?: number;
+  target_fat?: number;
+  status: 'draft' | 'active' | 'completed';
+  used_physical_assessment: boolean;
+  student_id: string;
+  trainer_id: string;
+  tenant_id: string;
+  created_at: string;
+  updated_at: string;
+  student?: {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+  };
+}
+
+export interface DietFilters {
+  searchQuery: string;
+  statusFilter: 'all' | 'draft' | 'active' | 'completed';
+  goalFilter: 'all' | 'muscle_gain' | 'fat_loss' | 'reeducation' | 'performance' | 'maintenance';
+}
+
+export interface DietFiltersProps {
+  filters: DietFilters;
+  onFiltersChange: (filters: DietFilters) => void;
+}
+
+export interface DietCardProps {
+  diet: Diet;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onClone: (diet: Diet) => void;
+  onDelete: (diet: Diet) => void;
+  isLoading?: boolean;
+  viewMode?: 'grid' | 'list';
+}
+
+export interface DietsListProps {
+  userRole: 'trainer' | 'student';
+  viewMode?: 'grid' | 'list';
+  onCreateNew: () => void;
+  onViewDiet: (id: string) => void;
+  onEditDiet: (id: string) => void;
+  onCloneDiet: (diet: Diet) => void;
+  onDeleteDiet: (diet: Diet) => void;
+}
+
+export interface DietsHeaderProps {
+  userRole: 'trainer' | 'student';
+  stats: {
+    total: number;
+    active: number;
+    students: number;
+    aiGenerated: number;
+  };
+  onCreateNew: () => void;
+}
+
+export interface DietsEmptyStateProps {
+  hasFilters: boolean;
+  onCreateNew: () => void;
+  onClearFilters: () => void;
+}
+
+export interface DietsLoadMoreProps {
+  isLoading: boolean;
+  hasMore: boolean;
+  totalLoaded: number;
+  totalAvailable: number;
+  itemsPerPage: number;
+  onLoadMore: () => void;
+}
+
+export interface DietsPaginationInfoProps {
+  currentCount: number;
+  totalCount: number;
+}
+
+export interface DietFormData {
+  name: string;
+  description: string;
+  goal: string;
+  meals_per_day: number;
+  activity_level: string;
+  budget_profile: string;
+  target_calories?: number;
+  target_protein?: number;
+  target_carbs?: number;
+  target_fat?: number;
+  student_id: string;
+  used_physical_assessment: boolean;
+}
+
+export interface DietStatistics {
+  total: number;
+  active: number;
+  completed: number;
+  draft: number;
+  students: number;
+  aiGenerated: number;
+}
