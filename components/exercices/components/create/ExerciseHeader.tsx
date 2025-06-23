@@ -19,12 +19,12 @@ interface ExerciseHeaderProps {
   originalName?: string;
 }
 
-export function ExerciseHeader({ 
-  mode, 
-  currentStepData, 
-  progressPercentage, 
+export function ExerciseHeader({
+  mode,
+  currentStepData,
+  progressPercentage,
   isCloning = false,
-  originalName 
+  originalName
 }: ExerciseHeaderProps) {
   const router = useRouter();
 
@@ -61,9 +61,9 @@ export function ExerciseHeader({
     <div className="relative mb-6 sm:mb-8">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/10 via-app-btn-primary/10 to-app-text-accent/10 rounded-2xl sm:rounded-3xl blur-xl"></div>
-      
+
       <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/30 rounded-2xl sm:rounded-3xl overflow-hidden shadow-app-xl">
-        
+
         {/* Decorative elements */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-achievement-consecutive rounded-full transform translate-x-8 sm:translate-x-12 -translate-y-8 sm:-translate-y-12"></div>
@@ -71,25 +71,11 @@ export function ExerciseHeader({
         </div>
 
         <div className="relative p-4 sm:p-6 lg:p-8">
-          
+
           {/* Mobile Layout */}
           <div className="block sm:hidden">
             {/* Header Row */}
             <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className={`p-3 ${headerInfo.color} rounded-xl shadow-app-medium`}>
-                  <HeaderIcon className="h-5 w-5 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-lg font-black text-app-heading truncate">
-                    {headerInfo.title}
-                  </h1>
-                  <p className="text-xs text-app-text-secondary truncate">
-                    {headerInfo.subtitle}
-                  </p>
-                </div>
-              </div>
-              
               <Button
                 variant="outline"
                 size="sm"
@@ -98,52 +84,35 @@ export function ExerciseHeader({
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg font-black text-app-heading truncate">
+                    {headerInfo.title}
+                  </h1>
+                  <p className="text-xs text-app-text-secondary truncate">
+                    {headerInfo.subtitle}
+                  </p>
+                </div>
+              </div><div className={`p-3 ${headerInfo.color} rounded-xl shadow-app-medium`}>
+                <HeaderIcon className="h-5 w-5 text-white" />
+              </div>
+
             </div>
 
             {/* Progress Section */}
-            {currentStepData && (
-              <>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-bold text-app-text-primary truncate">
-                      {currentStepData.title}
-                    </h3>
-                    <p className="text-xs text-app-text-secondary truncate">
-                      {currentStepData.description}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0 ml-3">
-                    <div className="text-lg font-black text-app-text-primary">
-                      {Math.round(progressPercentage)}%
-                    </div>
-                    <div className="text-xs text-app-text-muted">
-                      Progresso
-                    </div>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="relative mb-3">
-                  <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/20 to-app-btn-primary/20 rounded-full blur"></div>
-                  <Progress 
-                    value={progressPercentage} 
-                    className="relative h-2 bg-app-bg-secondary rounded-full overflow-hidden"
-                  />
-                </div>
-              </>
-            )}
+           
           </div>
 
           {/* Desktop Layout */}
           <div className="hidden sm:block">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
-              
+
               {/* Header Info */}
               <div className="flex items-center gap-4">
                 <div className={`p-4 ${headerInfo.color} rounded-2xl shadow-app-large`}>
                   <HeaderIcon className="h-8 w-8 text-white" />
                 </div>
-                
                 <div>
                   <h1 className="text-2xl lg:text-3xl font-black text-app-heading">
                     {headerInfo.title}
@@ -163,52 +132,7 @@ export function ExerciseHeader({
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 Voltar
               </Button>
-            </div>
-
-            {/* Progress Section */}
-            {currentStepData && (
-              <div className="space-y-4">
-                
-                {/* Step Info */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-app-text-primary">
-                      {currentStepData.title}
-                    </h3>
-                    <p className="text-sm text-app-text-secondary">
-                      {currentStepData.description}
-                    </p>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="text-2xl font-black text-app-text-primary">
-                      {Math.round(progressPercentage)}%
-                    </div>
-                    <div className="text-xs text-app-text-muted">
-                      Progresso
-                    </div>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/20 to-app-btn-primary/20 rounded-full blur"></div>
-                  <Progress 
-                    value={progressPercentage} 
-                    className="relative h-3 bg-app-bg-secondary rounded-full overflow-hidden"
-                  />
-                </div>
-
-                {/* Step Indicator */}
-                <div className="flex items-center justify-center gap-2 text-sm text-app-text-muted">
-                  <span>Etapa atual:</span>
-                  <span className="font-semibold text-app-text-accent">
-                    {currentStepData.title}
-                  </span>
-                  <Sparkles className="h-4 w-4 text-app-text-accent" />
-                </div>
-              </div>
-            )}
+            </div>           
           </div>
 
           {/* Clone Info Banner - Mobile Optimized */}
@@ -223,7 +147,7 @@ export function ExerciseHeader({
                     Modo Clonagem Ativo
                   </h4>
                   <p className="text-indigo-700 dark:text-indigo-400 text-xs sm:text-sm mt-1">
-                    {originalName 
+                    {originalName
                       ? `Todos os dados de "${originalName}" foram copiados. As mídias foram removidas para evitar duplicação.`
                       : 'Os dados do exercício original foram copiados. Ajuste conforme necessário.'
                     }
