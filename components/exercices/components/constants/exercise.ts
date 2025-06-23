@@ -30,14 +30,7 @@ export const EXERCISE_STEPS = [
     icon: 'FileText',
     color: 'from-purple-500 to-purple-600'
   },
-  {
-    id: 'media',
-    title: 'Mídia',
-    shortTitle: 'Mídia',
-    description: 'Vídeo e áudio demonstrativos',
-    icon: 'Video',
-    color: 'from-purple-600 to-purple-700'
-  },
+  
   {
     id: 'details',
     title: 'Detalhes Avançados',
@@ -45,6 +38,14 @@ export const EXERCISE_STEPS = [
     description: 'Variações, dicas e erros',
     icon: 'Target',
     color: 'from-purple-700 to-purple-800'
+  },
+  {
+    id: 'media',
+    title: 'Mídia',
+    shortTitle: 'Mídia',
+    description: 'Vídeo e áudio demonstrativos',
+    icon: 'Video',
+    color: 'from-purple-600 to-purple-700'
   },
   {
     id: 'review',

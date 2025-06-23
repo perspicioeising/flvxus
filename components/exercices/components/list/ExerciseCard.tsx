@@ -23,45 +23,45 @@ export function ExerciseCard({
   if (viewMode === 'grid') {
     return (
       <div className="relative group h-full">
-        {/* Efeito de glow no hover */}
-        <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-pink-500/20 to-green-600/20 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        {/* Hover glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/20 via-app-achievement-exercise/20 to-app-text-accent/20 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-        {/* Card principal com todos os efeitos */}
+        {/* Main card */}
         <Card
-          className="relative h-full border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.01] cursor-pointer"
+          className="relative h-full border-0 card-app transition-all duration-300 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.01] cursor-pointer"
           onClick={() => onView(exercise.id)}
         >
-          {/* Borda gradiente animada */}
-          <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+          {/* Animated gradient border */}
+          <div className="absolute inset-0 bg-achievement-exercise rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="absolute inset-[1px] bg-app-bg-card rounded-2xl"></div>
 
-          {/* Conteúdo do card */}
+          {/* Card content */}
           <div className="relative flex flex-col h-full">
-            {/* Header com imagem/ícone */}
-            <div className={`relative h-40 bg-gradient-to-br from-green-500 to-green-600 rounded-t-2xl overflow-hidden flex items-center justify-center`}>
-              {/* Efeito de partículas no fundo */}
+            {/* Header with image/icon */}
+            <div className="relative h-32 sm:h-36 bg-achievement-exercise rounded-t-2xl overflow-hidden flex items-center justify-center">
+              {/* Background particles effect */}
               <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full transform translate-x-12 -translate-y-12"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full transform -translate-x-8 translate-y-8"></div>
+                <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-full transform translate-x-8 sm:translate-x-12 -translate-y-8 sm:-translate-y-12"></div>
+                <div className="absolute bottom-0 left-0 w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-full transform -translate-x-6 sm:-translate-x-8 translate-y-6 sm:translate-y-8"></div>
               </div>
 
-              {/* Ícone principal */}
+              {/* Main icon */}
               <div className="relative z-10">
-                <div className={`w-20 h-20 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform duration-300`}>
-                  <span className="text-4xl text-white">{mainIcon.icon}</span>
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/20 rounded-full flex items-center justify-center shadow-app-xl transform group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-2xl sm:text-3xl text-white">{mainIcon.icon}</span>
                 </div>
 
-                {/* Badges de mídia */}
+                {/* Media badges */}
                 {multimedia.hasAny && (
-                  <div className="absolute -bottom-2 -right-2 flex gap-1">
+                  <div className="absolute -bottom-1 -right-1 flex gap-1">
                     {multimedia.hasVideo && (
-                      <div className="w-7 h-7 bg-red-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                        <Video className="h-3.5 w-3.5 text-white" />
+                      <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shadow-app-medium animate-bounce">
+                        <Video className="h-3 w-3 text-white" />
                       </div>
                     )}
                     {multimedia.hasAudio && (
-                      <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                        <Volume2 className="h-3.5 w-3.5 text-white" />
+                      <div className="w-6 h-6 bg-achievement-workout rounded-full flex items-center justify-center shadow-app-medium animate-bounce">
+                        <Volume2 className="h-3 w-3 text-white" />
                       </div>
                     )}
                   </div>
@@ -69,21 +69,21 @@ export function ExerciseCard({
               </div>
             </div>
 
-            {/* Corpo do card */}
-            <CardContent className="flex-1 p-5 flex flex-col">
-              {/* Título e descrição */}
-              <div className="mb-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1 mb-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+            {/* Card body */}
+            <CardContent className="flex-1 p-4 sm:p-5 flex flex-col">
+              {/* Title and description */}
+              <div className="mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-bold text-app-text-primary line-clamp-1 mb-2 group-hover:text-app-text-accent transition-colors">
                   {exercise.name}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">
+                <p className="text-app-text-secondary text-sm line-clamp-2">
                   {exercise.description}
                 </p>
               </div>
 
-              {/* Grupos musculares */}
-              <div className="mb-4">
-                <div className="text-xs text-green-600 dark:text-green-400 font-semibold mb-2 uppercase tracking-wider">
+              {/* Muscle groups */}
+              <div className="mb-3 sm:mb-4">
+                <div className="text-xs text-app-text-accent font-semibold mb-2 uppercase tracking-wider">
                   Grupos Musculares
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -92,7 +92,7 @@ export function ExerciseCard({
                     return (
                       <span
                         key={group}
-                        className={`px-2.5 py-1 bg-gradient-to-r ${groupIcon.gradient} text-green-800 dark:text-green-200 text-xs font-medium rounded-full shadow-sm`}
+                        className="px-2 py-1 bg-achievement-consecutive/10 text-achievement-consecutive text-xs font-medium rounded-full border border-app-border-accent"
                       >
                         <span className="mr-1">{groupIcon.icon}</span>
                         {group}
@@ -100,19 +100,19 @@ export function ExerciseCard({
                     );
                   })}
                   {summary.muscleGroups.remaining > 0 && (
-                    <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-app-bg-secondary text-app-text-muted text-xs rounded-full border border-app-border-muted">
                       +{summary.muscleGroups.remaining}
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Equipamentos */}
+              {/* Equipment */}
               <div className="mt-auto pt-2">
-                <div className="text-xs text-green-600 dark:text-green-400 font-semibold mb-1 uppercase tracking-wider">
+                <div className="text-xs text-app-text-accent font-semibold mb-1 uppercase tracking-wider">
                   Equipamentos
                 </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300 font-medium truncate">
+                <p className="text-sm text-app-text-primary font-medium truncate">
                   {formatEquipmentList(exercise.equipment)}
                 </p>
               </div>
@@ -123,4 +123,75 @@ export function ExerciseCard({
     );
   }
 
+  // List view version (if needed)
+  return (
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/10 via-app-achievement-exercise/10 to-app-text-accent/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      
+      <Card
+        className="relative border-0 card-app cursor-pointer transition-all duration-300 group-hover:scale-[1.01]"
+        onClick={() => onView(exercise.id)}
+      >
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center gap-4">
+            {/* Icon */}
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-achievement-exercise rounded-xl flex items-center justify-center shadow-app-medium">
+                <span className="text-lg sm:text-2xl text-white">{mainIcon.icon}</span>
+              </div>
+              
+              {multimedia.hasAny && (
+                <div className="absolute -top-1 -right-1 flex gap-1">
+                  {multimedia.hasVideo && (
+                    <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <Video className="h-2.5 w-2.5 text-white" />
+                    </div>
+                  )}
+                  {multimedia.hasAudio && (
+                    <div className="w-5 h-5 bg-achievement-workout rounded-full flex items-center justify-center">
+                      <Volume2 className="h-2.5 w-2.5 text-white" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-app-text-primary mb-1 group-hover:text-app-text-accent transition-colors truncate">
+                {exercise.name}
+              </h3>
+              <p className="text-app-text-secondary text-sm line-clamp-2 mb-2">
+                {exercise.description}
+              </p>
+              
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1">
+                {summary.muscleGroups.visible.slice(0, 2).map((group) => (
+                  <span
+                    key={group}
+                    className="px-2 py-1 bg-achievement-consecutive/10 text-achievement-consecutive text-xs rounded-full border border-app-border-accent"
+                  >
+                    {group}
+                  </span>
+                ))}
+                {summary.muscleGroups.remaining > 0 && (
+                  <span className="px-2 py-1 bg-app-bg-secondary text-app-text-muted text-xs rounded-full border border-app-border-muted">
+                    +{summary.muscleGroups.remaining}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Arrow */}
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-app-bg-secondary rounded-full flex items-center justify-center group-hover:bg-app-text-accent group-hover:text-white transition-all duration-300">
+                <Eye className="h-4 w-4" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

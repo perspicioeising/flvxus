@@ -1,4 +1,4 @@
-// components/exercises/steps/StepMedia.tsx - CORRIGIDO
+// components/exercises/steps/StepMedia.tsx
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Video, Upload, Loader2, Volume2, Play, Mic, CheckCircle, Info, Link, Br
 
 interface StepMediaProps {
   formData: {
-    name?: string; // Adicionar nome do exercício
+    name?: string;
     video_url: string;
     audio_url: string;
     description: string;
@@ -134,7 +134,6 @@ export function StepMedia({
   };
 
   const generateAudioWithAI = async () => {
-    // Validar se temos informações suficientes
     if (!hasInstructionsForAudio()) {
       toast({
         variant: "destructive",
@@ -147,16 +146,15 @@ export function StepMedia({
     try {
       setIsGeneratingAudio(true);
       
-      // CORREÇÃO: Enviar estrutura correta para a API
       const response = await fetch('/api/ai/generate-audio', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          exerciseName: formData.name || "Exercício", // Nome do exercício
-          tips: formData.tips,                        // Dicas de execução
-          common_errors: formData.common_errors       // Erros comuns
+          exerciseName: formData.name || "Exercício",
+          tips: formData.tips,
+          common_errors: formData.common_errors
         }),
       });
 
@@ -186,37 +184,6 @@ export function StepMedia({
     }
   };
 
-  // Função auxiliar não é mais necessária, mas manter para compatibilidade
-  const createInstructionsText = () => {
-    let text = "";
-    
-    if (formData.tips) {
-      const tips = formData.tips
-        .split('\n')
-        .filter(tip => tip.trim())
-        .map(tip => tip.replace(/[✔️🟡❌]/g, '').trim())
-        .filter(tip => tip.length > 0);
-      
-      if (tips.length > 0) {
-        text += "Instruções de execução: " + tips.join('. ') + ". ";
-      }
-    }
-    
-    if (formData.common_errors) {
-      const errors = formData.common_errors
-        .split('\n')
-        .filter(error => error.trim())
-        .map(error => error.replace(/[✔️🟡❌]/g, '').trim())
-        .filter(error => error.length > 0);
-      
-      if (errors.length > 0) {
-        text += "Erros a evitar: " + errors.join('. ') + ".";
-      }
-    }
-    
-    return text.trim();
-  };
-
   const hasInstructionsForAudio = () => {
     return Boolean(formData.tips && formData.tips.trim());
   };
@@ -225,14 +192,14 @@ export function StepMedia({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
+        <div className="p-3 achievement-exercise rounded-2xl shadow-app-large">
           <Video className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+          <h2 className="text-xl sm:text-2xl font-bold text-app-heading">
             Mídia Demonstrativa
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-app-text-secondary">
             Adicione vídeo e áudio para melhor demonstração
           </p>
         </div>
@@ -241,7 +208,7 @@ export function StepMedia({
       {/* Info Card */}
       <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200/50 dark:border-amber-700/50">
         <div className="flex items-start gap-3">
-          <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+          <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-amber-800 dark:text-amber-300">
             <p className="font-semibold mb-1">Mídia é opcional mas recomendada!</p>
             <p>Vídeos e áudios ajudam os alunos a executar os exercícios corretamente. Você pode fazer upload ou usar links externos.</p>
@@ -251,21 +218,20 @@ export function StepMedia({
 
       {/* Video Section */}
       <div className="relative group">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-cyan-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-cyan-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <Card className="relative border-0 bg-app-card backdrop-blur-xl shadow-app-xl hover:shadow-app-xl transition-all duration-500 rounded-2xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
           <CardHeader className="relative pb-4">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-md">
+              <div className="p-3 achievement-exercise rounded-xl shadow-app-medium">
                 <Video className="h-5 w-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                <CardTitle className="text-lg sm:text-xl font-bold text-app-text-primary">
                   Vídeo Demonstrativo
                 </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-400">
+                <CardDescription className="text-app-text-secondary">
                   Upload de arquivo ou URL externa
                 </CardDescription>
               </div>
@@ -275,26 +241,26 @@ export function StepMedia({
           <CardContent className="relative space-y-6">
             {/* URL Input */}
             <div className="space-y-3">
-              <Label htmlFor="video_url" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                <Link className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Label htmlFor="video_url" className="text-sm font-bold text-app-text-primary uppercase tracking-wider flex items-center gap-2">
+                <Link className="h-4 w-4 text-app-text-accent" />
                 URL do Vídeo
               </Label>
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl blur opacity-50"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/20 to-app-btn-primary/20 rounded-xl blur opacity-50"></div>
                 <Input
                   id="video_url"
                   placeholder="ex.: https://youtube.com/watch?v=..."
                   value={formData.video_url}
                   onChange={(e) => onUpdateField('video_url', e.target.value)}
-                  className="relative h-12 bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                  className="relative h-12 bg-app-card border-0 rounded-xl shadow-app-large backdrop-blur-sm focus:shadow-app-xl transition-all duration-300"
                 />
               </div>
             </div>
 
             <div className="relative">
-              <div className="absolute inset-x-0 top-1/2 h-px bg-gray-200 dark:bg-gray-700"></div>
+              <div className="absolute inset-x-0 top-1/2 h-px bg-app-border-muted"></div>
               <div className="relative flex justify-center">
-                <span className="px-4 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900">
+                <span className="px-4 text-sm text-app-text-muted bg-app-card">
                   ou
                 </span>
               </div>
@@ -302,7 +268,7 @@ export function StepMedia({
 
             {/* Upload Button */}
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <input
                   type="file"
                   accept="video/*"
@@ -317,7 +283,7 @@ export function StepMedia({
                 <Button 
                   asChild 
                   disabled={isUploadingVideo}
-                  className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl h-12 px-6 font-bold shadow-xl hover:shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 border-0"
+                  className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl h-12 px-6 font-bold shadow-app-xl hover:shadow-app-xl transition-all duration-300 transform hover:scale-105 border-0"
                 >
                   <label htmlFor="video-upload" className="cursor-pointer flex items-center">
                     {isUploadingVideo ? (
@@ -337,7 +303,7 @@ export function StepMedia({
 
               {/* Progress Bar */}
               {uploadProgress > 0 && (
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-app-bg-secondary rounded-full h-3 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
                     style={{ width: `${uploadProgress}%` }}
@@ -363,22 +329,21 @@ export function StepMedia({
 
       {/* Audio Section */}
       <div className="relative group">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-orange-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-orange-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <Card className="relative border-0 bg-app-card backdrop-blur-xl shadow-app-xl hover:shadow-app-xl transition-all duration-500 rounded-2xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-pink-500/5 to-orange-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
           <CardHeader className="relative pb-4">
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-md">
+                <div className="p-3 achievement-exercise rounded-xl shadow-app-medium">
                   <Mic className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                  <CardTitle className="text-lg sm:text-xl font-bold text-app-text-primary">
                     Áudio de Instruções
                   </CardTitle>
-                  <CardDescription className="text-gray-600 dark:text-gray-400">
+                  <CardDescription className="text-app-text-secondary">
                     Upload, URL ou gere com IA
                   </CardDescription>
                 </div>
@@ -388,7 +353,7 @@ export function StepMedia({
                 variant="outline" 
                 onClick={generateAudioWithAI} 
                 disabled={isGeneratingAudio || !hasInstructionsForAudio()}
-                className="group bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border-orange-300 dark:border-orange-600 hover:from-orange-200 hover:to-red-200 dark:hover:from-orange-800/50 dark:hover:to-red-800/50 rounded-xl h-12 px-6 font-semibold transition-all duration-300 transform hover:scale-105"
+                className="group bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 border-orange-300 dark:border-orange-600 hover:from-orange-100 hover:to-red-100 dark:hover:from-orange-800/50 dark:hover:to-red-800/50 rounded-xl h-12 px-6 font-semibold transition-all duration-300 transform hover:scale-105"
               >
                 {isGeneratingAudio ? (
                   <>
@@ -416,41 +381,31 @@ export function StepMedia({
                 </div>
               </div>
             )}
-            
-            {/* Debug info (apenas para desenvolvimento) */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs">
-                <p><strong>Debug:</strong></p>
-                <p>Nome: {formData.name || "Não definido"}</p>
-                <p>Tips: {formData.tips ? "✅" : "❌"}</p>
-                <p>Errors: {formData.common_errors ? "✅" : "❌"}</p>
-              </div>
-            )}
           </CardHeader>
 
           <CardContent className="relative space-y-6">
             {/* URL Input */}
             <div className="space-y-3">
-              <Label htmlFor="audio_url" className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                <Link className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <Label htmlFor="audio_url" className="text-sm font-bold text-app-text-primary uppercase tracking-wider flex items-center gap-2">
+                <Link className="h-4 w-4 text-app-text-accent" />
                 URL do Áudio
               </Label>
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl blur opacity-50"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/20 to-app-btn-primary/20 rounded-xl blur opacity-50"></div>
                 <Input
                   id="audio_url"
                   placeholder="ex.: https://example.com/audio.mp3"
                   value={formData.audio_url}
                   onChange={(e) => onUpdateField('audio_url', e.target.value)}
-                  className="relative h-12 bg-white/80 dark:bg-gray-800/80 border-0 rounded-xl shadow-lg backdrop-blur-sm focus:bg-white dark:focus:bg-gray-800 transition-all duration-300"
+                  className="relative h-12 bg-app-card border-0 rounded-xl shadow-app-large backdrop-blur-sm focus:shadow-app-xl transition-all duration-300"
                 />
               </div>
             </div>
 
             <div className="relative">
-              <div className="absolute inset-x-0 top-1/2 h-px bg-gray-200 dark:bg-gray-700"></div>
+              <div className="absolute inset-x-0 top-1/2 h-px bg-app-border-muted"></div>
               <div className="relative flex justify-center">
-                <span className="px-4 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900">
+                <span className="px-4 text-sm text-app-text-muted bg-app-card">
                   ou
                 </span>
               </div>
@@ -458,7 +413,7 @@ export function StepMedia({
 
             {/* Upload Button */}
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <input
                   type="file"
                   accept="audio/*"
@@ -473,7 +428,7 @@ export function StepMedia({
                 <Button 
                   asChild 
                   disabled={isUploadingAudio}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl h-12 px-6 font-bold shadow-xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 border-0"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl h-12 px-6 font-bold shadow-app-xl hover:shadow-app-xl transition-all duration-300 transform hover:scale-105 border-0"
                 >
                   <label htmlFor="audio-upload" className="cursor-pointer flex items-center">
                     {isUploadingAudio ? (
@@ -493,7 +448,7 @@ export function StepMedia({
 
               {/* Progress Bar */}
               {audioUploadProgress > 0 && (
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-app-bg-secondary rounded-full h-3 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
                     style={{ width: `${audioUploadProgress}%` }}

@@ -21,19 +21,19 @@ export function ThemeToggle() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="relative p-2 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all duration-300 group"
+          className="relative p-2 rounded-xl hover:bg-app-border-accent/20 transition-all duration-300 group"
         >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0 text-orange-600 dark:text-orange-400" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100 text-blue-600 dark:text-blue-400" />
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0 text-app-btn-accent" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100 text-app-achievement-workout" />
           <span className="sr-only">Toggle theme</span>
           
           {/* Subtle glow effect */}
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm -z-10"></div>
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-app-btn-accent/20 to-app-achievement-workout/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm -z-10"></div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="end" 
-        className="w-48 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-800 shadow-2xl rounded-2xl p-2"
+        className="w-48 bg-app-overlay backdrop-blur-xl border border-app-border-default shadow-app-xl rounded-2xl p-2"
       >
         <DropdownMenuItem 
           onClick={() => setTheme("light")}
@@ -41,18 +41,18 @@ export function ThemeToggle() {
         >
           <div className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all w-full ${
             theme === 'light' 
-              ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300' 
-              : 'hover:bg-orange-50 dark:hover:bg-orange-900/20'
+              ? 'bg-app-btn-accent/10 text-app-btn-accent' 
+              : 'hover:bg-app-border-accent/20'
           }`}>
-            <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <Sun className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            <div className="w-8 h-8 bg-app-btn-accent/20 rounded-lg flex items-center justify-center">
+              <Sun className="h-4 w-4 text-app-btn-accent" />
             </div>
             <div className="flex flex-col">
               <span className="font-medium text-sm">Claro</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Tema light</span>
+              <span className="text-xs text-app-text-secondary">Tema light</span>
             </div>
             {theme === 'light' && (
-              <div className="ml-auto w-2 h-2 bg-orange-500 rounded-full"></div>
+              <div className="ml-auto w-2 h-2 bg-app-btn-accent rounded-full"></div>
             )}
           </div>
         </DropdownMenuItem>
@@ -63,18 +63,18 @@ export function ThemeToggle() {
         >
           <div className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all w-full ${
             theme === 'dark' 
-              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-              : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
+              ? 'bg-app-achievement-workout/10 text-app-achievement-workout' 
+              : 'hover:bg-app-border-accent/20'
           }`}>
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <Moon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <div className="w-8 h-8 bg-app-achievement-workout/20 rounded-lg flex items-center justify-center">
+              <Moon className="h-4 w-4 text-app-achievement-workout" />
             </div>
             <div className="flex flex-col">
               <span className="font-medium text-sm">Escuro</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Tema dark</span>
+              <span className="text-xs text-app-text-secondary">Tema dark</span>
             </div>
             {theme === 'dark' && (
-              <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="ml-auto w-2 h-2 bg-app-achievement-workout rounded-full"></div>
             )}
           </div>
         </DropdownMenuItem>
@@ -85,18 +85,18 @@ export function ThemeToggle() {
         >
           <div className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all w-full ${
             theme === 'system' 
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' 
-              : 'hover:bg-green-50 dark:hover:bg-green-900/20'
+              ? 'bg-app-text-accent/10 text-app-text-accent' 
+              : 'hover:bg-app-border-accent/20'
           }`}>
-            <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-              <Monitor className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <div className="w-8 h-8 bg-app-text-accent/20 rounded-lg flex items-center justify-center">
+              <Monitor className="h-4 w-4 text-app-text-accent" />
             </div>
             <div className="flex flex-col">
               <span className="font-medium text-sm">Sistema</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Auto detect</span>
+              <span className="text-xs text-app-text-secondary">Auto detect</span>
             </div>
             {theme === 'system' && (
-              <div className="ml-auto w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="ml-auto w-2 h-2 bg-app-text-accent rounded-full"></div>
             )}
           </div>
         </DropdownMenuItem>

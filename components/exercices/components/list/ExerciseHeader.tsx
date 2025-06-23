@@ -9,50 +9,43 @@ export function ExerciseHeader({
   onCreateNew 
 }: ExerciseHeaderProps) {
   return (
-    <div className="relative mb-8">
-      {/* Subtle background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-emerald-500/10 to-cyan-600/10 dark:from-blue-500/5 dark:via-green-400/5 dark:to-cyan-500/5 rounded-3xl blur-2xl"></div>
+    <div className="relative mb-6">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/10 via-app-btn-primary/10 to-app-text-accent/10 rounded-2xl sm:rounded-3xl blur-xl"></div>
       
-      <div className="relative bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/60 dark:border-gray-800/60 rounded-3xl overflow-hidden shadow-xl">
+      <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/30 rounded-2xl sm:rounded-3xl overflow-hidden shadow-app-xl">
         
-        {/* Subtle decorative elements */}
+        {/* Decorative elements */}
         <div className="absolute inset-0 opacity-5">
-          {/* Top right circle */}
-          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-500 to-green-500 rounded-full transform translate-x-16 -translate-y-16"></div>
-          
-          {/* Bottom left smaller circle */}
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-500 to-cyan-500 rounded-full transform -translate-x-8 translate-y-8"></div>
-          
-          {/* Subtle line accent */}
-          <div className="absolute top-1/2 right-12 w-20 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent transform -translate-y-1/2"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-achievement-consecutive rounded-full transform translate-x-12 sm:translate-x-16 -translate-y-12 sm:-translate-y-16"></div>
+          <div className="absolute bottom-0 left-0 w-20 h-20 sm:w-24 sm:h-24 bg-achievement-exercise rounded-full transform -translate-x-6 sm:-translate-x-8 translate-y-6 sm:translate-y-8"></div>
         </div>
 
-        <div className="relative p-6 lg:p-8">
-          <div className="flex items-center justify-between gap-6">
+        <div className="relative p-4 sm:p-6 lg:p-8">
+          <div className="flex items-center justify-between gap-4">
             
             {/* Left side - Icon and content */}
-            <div className="flex items-center gap-5 min-w-0 flex-1">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
               
-              {/* Clean icon container */}
+              {/* Icon container */}
               <div className="relative shrink-0">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Dumbbell className="h-8 w-8 sm:h-9 sm:w-9 text-white" />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-achievement-exercise rounded-xl sm:rounded-2xl flex items-center justify-center shadow-app-large">
+                  <Dumbbell className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 
-                {/* Small accent badge */}
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
-                  <Sparkles className="h-2.5 w-2.5 text-white" />
+                <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-achievement-consecutive rounded-full flex items-center justify-center">
+                  <Sparkles className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-white" />
                 </div>
               </div>
 
               {/* Content */}
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-app-heading mb-1">
                   Exercícios
                 </h1>
                 
-                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-                  <span className="font-semibold text-green-600 dark:text-green-400">{exerciseCount}</span> exercícios registrados
+                <p className="text-app-text-secondary text-sm sm:text-base">
+                  <span className="font-semibold text-app-text-accent">{exerciseCount}</span> exercícios disponíveis
                 </p>
               </div>
             </div>
@@ -60,15 +53,15 @@ export function ExerciseHeader({
             {/* Right side - Action button */}
             <Button
               onClick={onCreateNew}
-              className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-green-600 to-green-600 hover:from-green-700 hover:to-green-700 border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shrink-0"
+              className="h-12 w-12 sm:h-14 sm:w-14 btn-gradient-primary rounded-xl shadow-app-large hover:shadow-app-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shrink-0"
             >
               <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </Button>
           </div>
         </div>
 
-        {/* Subtle bottom accent line */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/30 to-transparent"></div>
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-app-text-accent/30 to-transparent"></div>
       </div>
     </div>
   );
