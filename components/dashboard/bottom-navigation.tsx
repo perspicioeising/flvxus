@@ -218,7 +218,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
               
               <SheetContent 
                 side="bottom" 
-                className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 rounded-t-3xl max-h-[80vh] overflow-y-auto ios-scroll"
+                className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 rounded-t-3xl max-h-[80vh] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
