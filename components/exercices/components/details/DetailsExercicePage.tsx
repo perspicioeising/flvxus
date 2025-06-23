@@ -9,8 +9,8 @@ import { ExerciseDetailsHeader } from '@/components/exercices/components/details
 import { ExerciseDetailsContent } from '@/components/exercices/components/details/ExerciseDetailsContent';
 import { ExerciseDetailsActions } from '@/components/exercices/components/details/ExerciseDetailsActions';
 import { ExerciseDetailsSkeleton } from '@/components/exercices/components/details/ExerciseDetailsSkeleton';
-import { Loader2 } from 'lucide-react';
-
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Dumbbell, Edit } from 'lucide-react';
 
 export function ExerciseViewPage() {
   const router = useRouter();
@@ -52,7 +52,6 @@ export function ExerciseViewPage() {
         description: error.message,
       });
       
-      // Redirecionar para lista se não encontrou
       router.push('/dashboard/exercises');
     } finally {
       setIsLoading(false);
@@ -64,7 +63,6 @@ export function ExerciseViewPage() {
   };
 
   const handleClone = () => {
-    // Redirecionar para criar novo exercício com dados pré-preenchidos
     const searchParams = new URLSearchParams({
       clone: exerciseId,
     });
@@ -124,29 +122,39 @@ export function ExerciseViewPage() {
 
   if (!exercise) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="text-6xl">😵</div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Exercício não encontrado
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            O exercício que você procura não existe ou foi removido.
-          </p>
-          <button
+      <div className="min-h-screen bg-app-gradient flex items-center justify-center p-4">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="relative">
+            <div className="w-24 h-24 mx-auto bg-app-bg-secondary rounded-full flex items-center justify-center shadow-app-large">
+              <Dumbbell className="h-12 w-12 text-app-text-muted" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-app-text-muted/30 via-app-achievement-exercise/30 to-app-text-muted/30 rounded-full blur-2xl animate-pulse"></div>
+          </div>
+          
+          <div>
+            <h2 className="text-2xl font-bold text-app-heading mb-2">
+              Exercício não encontrado
+            </h2>
+            <p className="text-app-text-secondary leading-relaxed">
+              O exercício que você procura não existe ou foi removido.
+            </p>
+          </div>
+          
+          <Button
             onClick={handleBack}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors"
+            className="btn-gradient-primary px-6 py-3 rounded-xl font-semibold shadow-app-large hover:shadow-app-xl transition-all duration-300 transform hover:scale-105"
           >
+            <ArrowLeft className="h-5 w-5 mr-2" />
             Voltar à Lista
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+    <div className="min-h-screen bg-app-gradient">
+      <div className="container mx-auto px-3 sm:px-4 py-4 max-w-6xl">
         
         {/* Header com título e ações principais */}
         <ExerciseDetailsHeader
@@ -169,6 +177,20 @@ export function ExerciseViewPage() {
           onDelete={handleDelete}
           isDeleting={isDeleting}
         />
+
+        {/* Floating Action Buttons - Mobile Only */}
+        <div className="fixed bottom-24 right-4 sm:hidden z-40 space-y-3">
+          {/* Edit FAB */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-achievement-exercise/30 rounded-full blur-xl animate-pulse"></div>
+            <Button
+              onClick={handleEdit}
+              className="relative w-14 h-14 bg-achievement-exercise hover:bg-achievement-exercise/90 rounded-full shadow-app-xl hover:shadow-app-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
+            >
+              <Edit className="h-6 w-6 text-white" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Exercise } from '@/components/exercices/types/exercise';
-import { Edit, Copy, Trash2, Loader2, Share2, Download } from 'lucide-react';
+import { Edit, Copy, Trash2, Loader2, Share2, Download, BarChart3, Info } from 'lucide-react';
 
 interface ExerciseDetailsActionsProps {
   exercise: Exercise;
@@ -34,9 +34,7 @@ export function ExerciseDetailsActions({
         console.log('Erro ao compartilhar:', error);
       }
     } else {
-      // Fallback: copiar URL para clipboard
       navigator.clipboard.writeText(window.location.href);
-      // Aqui você poderia mostrar um toast de sucesso
     }
   };
 
@@ -66,122 +64,176 @@ export function ExerciseDetailsActions({
   };
 
   return (
-    <div className="lg:hidden mt-8">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-200/50 to-purple-200/50 dark:from-gray-700/50 dark:to-purple-700/50 rounded-2xl blur-md"></div>
-        <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-lg rounded-2xl">
-          <CardContent className="p-6">
+    <div className="lg:hidden mt-6">
+      <Card className="border-0 card-app">
+        <CardContent className="p-4 sm:p-6">
+          
+          {/* Quick Stats */}
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-app-heading mb-4 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-app-text-accent" />
+              Estatísticas do Exercício
+            </h3>
             
-            {/* Ações Principais */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Ações do Exercício
-              </h3>
-              
-              {/* Grid de ações principais */}
-              <div className="grid grid-cols-1 gap-3">
-                <Button
-                  onClick={onEdit}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl h-12 font-bold shadow-lg hover:shadow-purple-500/25 transition-all duration-300 border-0"
-                >
-                  <Edit className="h-5 w-5 mr-3" />
-                  Editar Exercício
-                </Button>
-                
-                <Button
-                  onClick={onClone}
-                  variant="outline"
-                  className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 text-blue-600 dark:text-blue-400 rounded-xl h-12 font-semibold transition-all duration-300"
-                >
-                  <Copy className="h-5 w-5 mr-3" />
-                  Clonar Exercício
-                </Button>
-                
-                <Button
-                  onClick={onDelete}
-                  disabled={isDeleting}
-                  variant="outline"
-                  className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-red-200 dark:border-red-700 hover:border-red-300 dark:hover:border-red-600 text-red-600 dark:text-red-400 rounded-xl h-12 font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                      Deletando...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="h-5 w-5 mr-3" />
-                      Deletar Exercício
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Separador */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-achievement-workout/10 border border-app-border-accent rounded-xl p-3 text-center">
+                <div className="text-xl font-bold text-achievement-workout">
+                  {exercise.muscle_group?.length || 0}
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
-                    Ações Secundárias
+                <div className="text-xs text-app-text-secondary">Grupos Musculares</div>
+              </div>
+              
+              <div className="bg-achievement-exercise/10 border border-app-border-accent rounded-xl p-3 text-center">
+                <div className="text-xl font-bold text-achievement-exercise">
+                  {exercise.equipment?.length || 0}
+                </div>
+                <div className="text-xs text-app-text-secondary">Equipamentos</div>
+              </div>
+              
+              <div className="bg-achievement-consecutive/10 border border-app-border-accent rounded-xl p-3 text-center">
+                <div className="text-xl font-bold text-achievement-consecutive">
+                  {exercise.variations?.length || 0}
+                </div>
+                <div className="text-xs text-app-text-secondary">Variações</div>
+              </div>
+              
+              <div className="bg-achievement-weight/10 border border-app-border-accent rounded-xl p-3 text-center">
+                <div className="text-xl font-bold text-achievement-weight">
+                  {exercise.tips?.length || 0}
+                </div>
+                <div className="text-xs text-app-text-secondary">Dicas</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Primary Actions */}
+          <div className="space-y-3 mb-6">
+            <h4 className="text-base font-semibold text-app-text-primary mb-3">
+              Ações Principais
+            </h4>
+            
+            <div className="space-y-3">
+              <Button
+                onClick={onEdit}
+                className="w-full btn-gradient-primary h-12 rounded-xl font-bold shadow-app-medium hover:shadow-app-large transition-all duration-300 transform active:scale-95"
+              >
+                <Edit className="h-5 w-5 mr-3" />
+                Editar Exercício
+              </Button>
+              
+              <Button
+                onClick={onClone}
+                variant="outline"
+                className="w-full h-12 bg-app-card border-app-border-accent text-app-text-primary hover:bg-app-border-accent/20 rounded-xl font-semibold transition-all duration-300"
+              >
+                <Copy className="h-5 w-5 mr-3" />
+                Clonar Exercício
+              </Button>
+              
+              <Button
+                onClick={onDelete}
+                disabled={isDeleting}
+                variant="outline"
+                className="w-full h-12 bg-app-card border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                    Deletando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-5 w-5 mr-3" />
+                    Deletar Exercício
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-app-border-muted"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-app-bg-card text-app-text-muted">
+                Ações Secundárias
+              </span>
+            </div>
+          </div>
+
+          {/* Secondary Actions */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={handleShare}
+              variant="outline"
+              className="h-11 bg-app-card border-app-border-muted text-app-text-primary hover:bg-app-border-accent/20 rounded-xl font-medium transition-all duration-300"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Compartilhar
+            </Button>
+            
+            <Button
+              onClick={handleExport}
+              variant="outline"
+              className="h-11 bg-app-card border-app-border-muted text-app-text-primary hover:bg-app-border-accent/20 rounded-xl font-medium transition-all duration-300"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          </div>
+
+          {/* Additional Info */}
+          <div className="mt-6 p-4 bg-app-bg-secondary rounded-xl border border-app-border-muted">
+            <div className="flex items-center gap-2 mb-3">
+              <Info className="h-4 w-4 text-app-text-accent" />
+              <h5 className="text-sm font-semibold text-app-text-primary">
+                Informações Detalhadas
+              </h5>
+            </div>
+            
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-app-text-secondary">Grupos Musculares:</span>
+                <span className="font-medium text-app-text-primary">{exercise.muscle_group?.length || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-app-text-secondary">Equipamentos:</span>
+                <span className="font-medium text-app-text-primary">{exercise.equipment?.length || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-app-text-secondary">Variações:</span>
+                <span className="font-medium text-app-text-primary">{exercise.variations?.length || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-app-text-secondary">Dicas:</span>
+                <span className="font-medium text-app-text-primary">{exercise.tips?.length || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-app-text-secondary">Erros Comuns:</span>
+                <span className="font-medium text-app-text-primary">{exercise.common_errors?.length || 0}</span>
+              </div>
+              
+              {/* Multimedia indicators */}
+              <div className="pt-2 border-t border-app-border-muted">
+                <div className="flex justify-between items-center">
+                  <span className="text-app-text-secondary">Tem Vídeo:</span>
+                  <span className={`font-medium ${exercise.video_url ? 'text-achievement-consecutive' : 'text-app-text-muted'}`}>
+                    {exercise.video_url ? 'Sim' : 'Não'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-app-text-secondary">Tem Áudio:</span>
+                  <span className={`font-medium ${exercise.audio_url ? 'text-achievement-consecutive' : 'text-app-text-muted'}`}>
+                    {exercise.audio_url ? 'Sim' : 'Não'}
                   </span>
                 </div>
               </div>
-
-              {/* Ações secundárias */}
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={handleShare}
-                  variant="outline"
-                  className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl h-11 font-medium transition-all duration-300"
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Compartilhar
-                </Button>
-                
-                <Button
-                  onClick={handleExport}
-                  variant="outline"
-                  className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl h-11 font-medium transition-all duration-300"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-              </div>
-
-              {/* Informações adicionais */}
-              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Informações Rápidas
-                </h4>
-                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <div className="flex justify-between">
-                    <span>Grupos Musculares:</span>
-                    <span className="font-medium">{exercise.muscle_group?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Equipamentos:</span>
-                    <span className="font-medium">{exercise.equipment?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Variações:</span>
-                    <span className="font-medium">{exercise.variations?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Dicas:</span>
-                    <span className="font-medium">{exercise.tips?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Erros Comuns:</span>
-                    <span className="font-medium">{exercise.common_errors?.length || 0}</span>
-                  </div>
-                </div>
-              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

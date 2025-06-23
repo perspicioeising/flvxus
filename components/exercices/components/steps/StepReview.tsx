@@ -51,7 +51,7 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
     {
       title: "Informações Básicas",
       icon: FileText,
-      color: "from-green-500 to-emerald-500",
+      color: "achievement-exercise",
       complete: Boolean(formData.name && formData.description && formData.muscle_group.length > 0 && formData.equipment.length > 0),
       items: [
         { label: "Nome", value: formData.name || "Não informado", required: true },
@@ -63,7 +63,7 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
     {
       title: "Mídia",
       icon: Video,
-      color: "from-blue-500 to-cyan-500",
+      color: "achievement-workout",
       complete: hasVideo || hasAudio,
       optional: true,
       items: [
@@ -74,7 +74,7 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
     {
       title: "Detalhes Avançados",
       icon: Target,
-      color: "from-purple-500 to-pink-500",
+      color: "achievement-weight",
       complete: variationsCount > 0 || tipsCount > 0 || errorsCount > 0,
       optional: true,
       items: [
@@ -89,23 +89,23 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg">
+        <div className="p-3 achievement-exercise rounded-2xl shadow-app-large">
           <CheckCircle className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+          <h2 className="text-xl sm:text-2xl font-bold text-app-heading">
             Revisão Final
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-app-text-secondary">
             Revise todas as informações antes de salvar
           </p>
         </div>
       </div>
 
       {/* Success Card */}
-      <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200/50 dark:border-green-700/50">
+      <div className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200/50 dark:border-green-700/50">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-md">
+          <div className="p-3 achievement-exercise rounded-xl shadow-app-medium">
             <Sparkles className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1">
@@ -123,29 +123,29 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
       <div className="space-y-4">
         {sections.map((section, index) => (
           <div key={index} className="relative group">
-            <div className={`absolute inset-0 bg-gradient-to-r ${section.color} rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500`}></div>
-            <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
+            <div className={`absolute inset-0 ${section.color} rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500`}></div>
+            <Card className="relative border-0 bg-app-card backdrop-blur-xl shadow-app-xl hover:shadow-app-xl transition-all duration-500 rounded-2xl overflow-hidden">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 bg-gradient-to-br ${section.color} rounded-xl shadow-md`}>
+                    <div className={`p-2 ${section.color} rounded-xl shadow-app-medium`}>
                       <section.icon className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
+                      <CardTitle className="text-lg font-bold text-app-text-primary">
                         {section.title}
                       </CardTitle>
                       {section.optional && (
-                        <Badge variant="secondary" className="mt-1 text-xs">
+                        <Badge variant="secondary" className="mt-1 text-xs bg-app-bg-secondary text-app-text-muted">
                           Opcional
                         </Badge>
                       )}
                     </div>
                   </div>
                   {section.complete ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <CheckCircle2 className="h-5 w-5 text-achievement-consecutive" />
                   ) : section.optional ? (
-                    <Badge variant="outline" className="text-gray-600 dark:text-gray-400">
+                    <Badge variant="outline" className="text-app-text-muted border-app-border-muted">
                       Não preenchido
                     </Badge>
                   ) : (
@@ -159,8 +159,8 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
               <CardContent className="pt-0">
                 <div className="space-y-3">
                   {section.items.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <div key={itemIndex} className="flex items-center justify-between py-2 border-b border-app-border-muted last:border-0">
+                      <span className="text-sm font-medium text-app-text-secondary">
                         {item.label}
                         {item.required && <span className="text-red-500 ml-1">*</span>}
                       </span>
@@ -168,29 +168,29 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
                         {item.type === 'count' ? (
                           <Badge className={`px-3 py-1 ${
                             Number(item.value) > 0 
-                              ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-300'
-                              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                              ? 'bg-gradient-to-r from-achievement-consecutive/10 to-achievement-workout/10 text-achievement-consecutive border border-app-border-accent'
+                              : 'bg-app-bg-secondary text-app-text-muted border border-app-border-muted'
                           }`}>
                             {item.value} {Number(item.value) === 1 ? 'item' : 'itens'}
                           </Badge>
                         ) : 'status' in item && item.status !== undefined ? (
                           item.status ? (
                             <div className="flex items-center gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                              <span className="text-sm font-semibold text-green-800 dark:text-green-300">
+                              <CheckCircle className="h-4 w-4 text-achievement-consecutive" />
+                              <span className="text-sm font-semibold text-achievement-consecutive">
                                 {item.value}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                            <span className="text-sm text-app-text-muted">
                               {item.value}
                             </span>
                           )
                         ) : (
                           <span className={`text-sm font-semibold ${
                             item.value && item.value !== "Não informado" && item.value !== "Não informada"
-                              ? 'text-gray-900 dark:text-white'
-                              : 'text-gray-500 dark:text-gray-400'
+                              ? 'text-app-text-primary'
+                              : 'text-app-text-muted'
                           }`}>
                             {item.value}
                           </span>
@@ -205,7 +205,7 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
                   <div className="mt-4 space-y-3">
                     {formData.muscle_group.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                        <p className="text-xs font-semibold text-app-text-muted mb-2">
                           Grupos Musculares:
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -226,15 +226,14 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
                     
                     {formData.equipment.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                        <p className="text-xs font-semibold text-app-text-muted mb-2">
                           Equipamentos:
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {formData.equipment.map((equip) => (
                             <Badge
                               key={equip}
-                              variant="secondary"
-                              className="px-3 py-1"
+                              className="px-3 py-1 bg-app-bg-secondary text-app-text-primary border border-app-border-muted"
                             >
                               {equip}
                             </Badge>
@@ -252,11 +251,11 @@ export function StepReview({ formData, videoUrl, audioUrl, onSave, isSaving }: S
 
       {/* Save Button */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-2xl blur-xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-app-text-accent/20 to-app-btn-primary/20 rounded-2xl blur-xl"></div>
         <Button
           onClick={onSave}
           disabled={isSaving || !formData.name || !formData.description || formData.muscle_group.length === 0 || formData.equipment.length === 0}
-          className="relative w-full h-14 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white font-bold rounded-2xl shadow-2xl hover:shadow-green-500/25 disabled:shadow-none transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100 border-0 text-lg"
+          className="relative w-full h-14 btn-gradient-primary disabled:bg-app-bg-secondary disabled:text-app-text-muted text-white font-bold rounded-2xl shadow-app-xl hover:shadow-app-xl disabled:shadow-none transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100 border-0 text-lg"
         >
           {isSaving ? (
             <>
