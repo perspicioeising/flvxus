@@ -3,27 +3,73 @@
 @tailwind utilities;
 
 
-/* ===========================================
-   🎨 ENHANCED ORIGINAL STYLES
-   =========================================== */
+/* Adicione estas regras ao seu arquivo globals.css ou app.css */
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Previne scrollbars duplicadas no mobile */
+@media (max-width: 768px) {
+  html {
+    overflow: hidden;
+    height: 100%;
+  }
+  
+  body {
+    overflow: hidden;
+    height: 100%;
+    position: fixed;
+    width: 100%;
+  }
+  
+  /* Remove scrollbar padrão do webkit no mobile */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
 }
 
-::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800 rounded-lg;
+/* Estilização customizada da scrollbar para desktop */
+@media (min-width: 769px) {
+  /* Scrollbar customizada */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  /* Dark mode scrollbar */
+  .dark ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
 }
 
-::-webkit-scrollbar-thumb {
-  @apply bg-green-300 dark:bg-green-700 rounded-lg hover:bg-green-400 dark:hover:bg-green-600 transition-colors;
+/* Classe utilitária para esconder scrollbar mantendo funcionalidade */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
-::-webkit-scrollbar-corner {
-  @apply bg-gray-100 dark:bg-gray-800;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 }
-
 
 

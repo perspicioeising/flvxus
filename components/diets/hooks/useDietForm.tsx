@@ -34,7 +34,10 @@ const INITIAL_FORM_DATA: DietFormData = {
   restrictions: [],
   custom_restrictions: '',
   use_physical_assessment: false,
-  physical_assessment_id: ''
+  physical_assessment_id: '',
+  name: '',
+  description: '',
+  used_physical_assessment: false
 };
 
 export function useDietForm(config: DietFormConfig): UseDietFormReturn {
