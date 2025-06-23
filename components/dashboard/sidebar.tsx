@@ -24,7 +24,6 @@ import {
   Bell,
   Moon,
   Sun,
-  X,
   Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -92,74 +91,57 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
           href: "/dashboard",
           icon: LayoutDashboard,
           isActive: pathname === "/dashboard",
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-consecutive",
         },
         {
           name: "Atletas",
           href: "/dashboard/students",
           icon: Users,
           isActive: pathname.startsWith("/dashboard/students"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-workout",
         },
         {
           name: "Avaliações",
           href: "/dashboard/physical-assessments",
-          icon: Users,
+          icon: BarChart4,
           isActive: pathname.startsWith("/dashboard/physical-assessments"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-weight",
         },
          {
           name: "Exercícios",
           href: "/dashboard/exercises",
           icon: Dumbbell,
           isActive: pathname.startsWith("/dashboard/exercises"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-exercise",
         },
         {
           name: "Treinos",
           href: "/dashboard/workouts",
           icon: Activity,
           isActive: pathname.startsWith("/dashboard/workouts"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-consecutive",
         },
         {
           name: "Rotinas",
           href: "/dashboard/workout-plans",
           icon: ClipboardList,
           isActive: pathname.startsWith("/dashboard/workout-plans"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-weight",
         },
         {
           name: "Dietas",
           href: "/dashboard/diets",
           icon: Utensils,
           isActive: pathname.startsWith("/dashboard/diets"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-exercise",
         },
         {
           name: "Conquistas",
           href: "/dashboard/achievements",
           icon: Trophy,
           isActive: pathname.startsWith("/dashboard/achievements"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-workout",
         },
-            
       ];
     } else {
       return [
@@ -168,45 +150,35 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
           href: "/dashboard/my-workouts",
           icon: Activity,
           isActive: pathname.startsWith("/dashboard/my-workouts"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-green-100 dark:bg-green-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-consecutive",
         },
         {
           name: "Dietas",
           href: "/dashboard/diets",
-          icon: Calendar,
+          icon: Utensils,
           isActive: pathname.startsWith("/dashboard/diets"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-gray-100 dark:bg-gray-900/30",
-          hoverColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+          color: "achievement-weight",
         },
         {
           name: "Meu Progresso",
           href: "/dashboard/my-progress",
           icon: BarChart4,
           isActive: pathname.startsWith("/dashboard/my-progress"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-blue-100 dark:bg-blue-900/30",
-          hoverColor: "hover:bg-blue-50 dark:hover:bg-blue-900/20",
+          color: "achievement-workout",
         },
         {
           name: "Minhas Conquistas",
           href: "/dashboard/my-achievements",
           icon: Trophy,
           isActive: pathname.startsWith("/dashboard/my-achievements"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
-          hoverColor: "hover:bg-yellow-50 dark:hover:bg-yellow-900/20",
+          color: "achievement-exercise",
         },
         {
           name: "Avaliações",
           href: "/dashboard/progress",
           icon: Heart,
           isActive: pathname.startsWith("/dashboard/progress"),
-          color: "text-green-600 dark:text-green-400",
-          bgColor: "bg-red-100 dark:bg-red-900/30",
-          hoverColor: "hover:bg-red-50 dark:hover:bg-red-900/20",
+          color: "achievement-weight",
         }
       ];
     }
@@ -220,25 +192,21 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
       href: "/dashboard/settings",
       icon: Settings,
       isActive: pathname.startsWith("/dashboard/settings"),
-      color: "text-gray-600 dark:text-gray-400",
-      bgColor: "bg-gray-100 dark:bg-gray-900/30",
-      hoverColor: "hover:bg-gray-50 dark:hover:bg-gray-900/20",
+      color: "bg-gray-500",
     },
     {
       name: "Ajuda",
       href: "/dashboard/help",
       icon: HelpCircle,
       isActive: pathname.startsWith("/dashboard/help"),
-      color: "text-emerald-600 dark:text-emerald-400",
-      bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
-      hoverColor: "hover:bg-emerald-50 dark:hover:bg-emerald-900/20",
+      color: "achievement-consecutive",
     },
   ];
 
   return (
     <aside
       className={cn(
-        "relative hidden md:flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 transition-all duration-300 ease-in-out h-[calc(var(--vh, 1vh) * 100)]",
+        "relative hidden md:flex flex-col bg-app-overlay backdrop-blur-xl border-r border-app-border-muted transition-all duration-300 ease-in-out h-[calc(var(--vh, 1vh) * 100)]",
         isCollapsed ? "w-[70px]" : "w-64",
         className
       )}
@@ -247,33 +215,33 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
       <Button
         variant="ghost"
         size="icon"
-        className="absolute -right-4 top-6 h-8 w-8 rounded-full border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg hover:shadow-xl transition-all duration-300 z-10"
+        className="absolute -right-4 top-6 h-8 w-8 rounded-full border-2 border-app-border-default bg-app-bg-secondary shadow-app-large hover:shadow-app-xl transition-all duration-300 z-10"
         onClick={toggleCollapse}
       >
         {isCollapsed ? (
-          <ChevronRight className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <ChevronRight className="h-4 w-4 text-app-text-accent" />
         ) : (
-          <ChevronLeft className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <ChevronLeft className="h-4 w-4 text-app-text-accent" />
         )}
       </Button>
 
       {/* Header */}
       {!isCollapsed && (
-        <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+        <div className="p-6 border-b border-app-border-muted">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-achievement-consecutive rounded-xl flex items-center justify-center shadow-app-large">
                 <Dumbbell className="h-6 w-6 text-white" />
               </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-achievement-exercise rounded-full flex items-center justify-center">
                 <Zap className="h-2 w-2 text-white" />
               </div>
             </div>
             <div>
-              <h2 className="font-black text-lg bg-gradient-to-r from-gray-900 via-green-600 to-gray-900 dark:from-white dark:via-green-400 dark:to-white bg-clip-text text-transparent">
+              <h2 className="font-black text-lg text-app-heading">
                 FLVXUS
               </h2>
-              <p className="text-xs text-gray-600 dark:text-gray-400 -mt-1">
+              <p className="text-xs text-app-text-secondary -mt-1">
                 {userRole === 'trainer' ? 'Personal Trainer' : 'Dashboard'}
               </p>
             </div>
@@ -283,12 +251,12 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
 
       {/* Collapsed Header */}
       {isCollapsed && (
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-center">
+        <div className="p-4 border-b border-app-border-muted flex justify-center">
           <div className="relative">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 bg-achievement-consecutive rounded-xl flex items-center justify-center shadow-app-large">
               <Dumbbell className="h-6 w-6 text-white" />
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-achievement-exercise rounded-full flex items-center justify-center">
               <Zap className="h-2 w-2 text-white" />
             </div>
           </div>
@@ -306,23 +274,23 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
                 "group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200 relative overflow-hidden",
                 isCollapsed && "justify-center px-2",
                 route.isActive
-                  ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
-                  : `text-gray-700 dark:text-gray-200 ${route.hoverColor}`
+                  ? `bg-${route.color} text-white shadow-app-large`
+                  : "text-app-text-primary hover:bg-app-border-accent/20"
               )}
               title={isCollapsed ? route.name : undefined}
             >
               {route.isActive && (
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 blur-xl -z-10"></div>
+                <div className={`absolute inset-0 bg-${route.color}/20 blur-xl -z-10`}></div>
               )}
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200",
                 route.isActive
-                  ? "bg-white/20 shadow-sm"
-                  : route.bgColor
+                  ? "bg-white/20 shadow-app-medium"
+                  : "bg-app-bg-secondary group-hover:bg-app-border-accent/30"
               )}>
                 <route.icon className={cn(
                   "h-5 w-5 transition-all duration-200",
-                  route.isActive ? "text-white" : route.color
+                  route.isActive ? "text-white" : "text-app-text-secondary group-hover:text-app-text-accent"
                 )} />
               </div>
               {!isCollapsed && (
@@ -335,57 +303,57 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
         </div>
       </div>
 
-      <div className="border-t border-gray-200 dark:border-gray-800">
+      <div className="border-t border-app-border-muted">
         {!isCollapsed && (
-          <div className="p-3 border-b border-gray-200 dark:border-gray-800">
+          <div className="p-3 border-b border-app-border-muted">
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="flex-1 h-10 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all relative"
+                className="flex-1 h-10 rounded-xl hover:bg-app-border-accent/20 transition-all relative"
                 title="Notificações"
               >
-                <Bell className="h-4 w-4 text-gray-700 dark:text-gray-200" />
+                <Bell className="h-4 w-4 text-app-text-secondary" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </Button>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="flex-1 h-10 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all"
+                className="flex-1 h-10 rounded-xl hover:bg-app-border-accent/20 transition-all"
                 onClick={toggleTheme}
                 title="Alternar tema"
               >
                 {theme === "dark" ? (
-                  <Sun className="h-4 w-4 text-yellow-500" />
+                  <Sun className="h-4 w-4 text-app-btn-accent" />
                 ) : (
-                  <Moon className="h-4 w-4 text-blue-600" />
+                  <Moon className="h-4 w-4 text-app-achievement-workout" />
                 )}
               </Button>
             </div>
           </div>
         )}
         {isCollapsed && (
-          <div className="p-2 border-b border-gray-200 dark:border-gray-800 space-y-2">
+          <div className="p-2 border-b border-app-border-muted space-y-2">
             <Button 
               variant="ghost" 
               size="icon" 
-              className="w-full h-10 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-all relative"
+              className="w-full h-10 rounded-xl hover:bg-app-border-accent/20 transition-all relative"
               title="Notificações"
             >
-              <Bell className="h-4 w-4 text-gray-700 dark:text-gray-200" />
+              <Bell className="h-4 w-4 text-app-text-secondary" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </Button>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="w-full h-10 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all"
+              className="w-full h-10 rounded-xl hover:bg-app-border-accent/20 transition-all"
               onClick={toggleTheme}
               title="Alternar tema"
             >
               {theme === "dark" ? (
-                <Sun className="h-4 w-4 text-yellow-500" />
+                <Sun className="h-4 w-4 text-app-btn-accent" />
               ) : (
-                <Moon className="h-4 w-4 text-blue-600" />
+                <Moon className="h-4 w-4 text-app-achievement-workout" />
               )}
             </Button>
           </div>
@@ -400,20 +368,20 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
                   "group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
                   isCollapsed && "justify-center px-2",
                   route.isActive
-                    ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
-                    : `text-gray-700 dark:text-gray-200 ${route.hoverColor}`
+                    ? `bg-${route.color} text-white shadow-app-large`
+                    : "text-app-text-primary hover:bg-app-border-accent/20"
                 )}
                 title={isCollapsed ? route.name : undefined}
               >
                 <div className={cn(
                   "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200",
                   route.isActive
-                    ? "bg-white/20 shadow-sm"
-                    : route.bgColor
+                    ? "bg-white/20 shadow-app-medium"
+                    : "bg-app-bg-secondary group-hover:bg-app-border-accent/30"
                 )}>
                   <route.icon className={cn(
                     "h-5 w-5 transition-all duration-200",
-                    route.isActive ? "text-white" : route.color
+                    route.isActive ? "text-white" : "text-app-text-secondary group-hover:text-app-text-accent"
                   )} />
                 </div>
                 {!isCollapsed && (
@@ -425,65 +393,65 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
           {!isCollapsed && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-all cursor-pointer group">
-                  <Avatar className="h-10 w-10 border-2 border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-3 p-3 bg-app-card rounded-xl hover:bg-app-border-accent/20 transition-all cursor-pointer group">
+                  <Avatar className="h-10 w-10 border-2 border-app-border-accent">
                     <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
-                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold">
+                    <AvatarFallback className="bg-achievement-consecutive text-white font-bold">
                       {userInitial}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-semibold text-app-text-primary truncate">
                       {profile?.full_name || "Usuário"}
                     </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                    <p className="text-xs text-app-text-secondary truncate">
                       {userRole === 'trainer' ? 'Personal Trainer' : 'Aluno'}
                     </p>
                   </div>
                   {profile?.status === 'active' && (
-                    <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+                    <div className="w-3 h-3 bg-app-text-accent rounded-full flex-shrink-0"></div>
                   )}
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
                 side="top"
-                className="w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-800 shadow-2xl rounded-2xl p-2 mb-2"
+                className="w-64 bg-app-overlay backdrop-blur-xl border border-app-border-default shadow-app-xl rounded-2xl p-2 mb-2"
               >
                 <DropdownMenuLabel className="p-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12 border-2 border-green-200 dark:border-green-800">
+                    <Avatar className="h-12 w-12 border-2 border-app-border-accent">
                       <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
-                      <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold">
+                      <AvatarFallback className="bg-achievement-consecutive text-white font-bold">
                         {userInitial}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">
+                      <p className="font-semibold text-app-text-primary truncate">
                         {profile?.full_name || "Usuário"}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                      <p className="text-sm text-app-text-secondary truncate">
                         {profile?.email}
                       </p>
-                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      <p className="text-xs text-app-text-accent font-medium">
                         {userRole === 'trainer' ? 'Personal Trainer' : 'Aluno'}
                       </p>
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuSeparator className="bg-app-border-muted" />
                 <DropdownMenuItem asChild className="p-0 m-1">
                   <Link 
                     href="/dashboard/profile" 
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-app-border-accent/20 transition-all"
                   >
-                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <div className="w-8 h-8 bg-achievement-consecutive/20 rounded-lg flex items-center justify-center">
+                      <User className="h-4 w-4 text-achievement-consecutive" />
                     </div>
                     <span className="font-medium">Meu Perfil</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuSeparator className="bg-app-border-muted" />
                 <DropdownMenuItem 
                   onClick={handleSignOut}
                   className="p-0 m-1"
@@ -501,10 +469,10 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
           {isCollapsed && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all">
-                  <Avatar className="h-8 w-8 border-2 border-green-200 dark:border-green-800">
+                <Button variant="ghost" className="w-full p-2 rounded-xl hover:bg-app-border-accent/20 transition-all">
+                  <Avatar className="h-8 w-8 border-2 border-app-border-accent">
                     <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
-                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold text-sm">
+                    <AvatarFallback className="bg-achievement-consecutive text-white font-bold text-sm">
                       {userInitial}
                     </AvatarFallback>
                   </Avatar>
@@ -513,42 +481,42 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
               <DropdownMenuContent 
                 align="end" 
                 side="right"
-                className="w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-800 shadow-2xl rounded-2xl p-2"
+                className="w-64 bg-app-overlay backdrop-blur-xl border border-app-border-default shadow-app-xl rounded-2xl p-2"
               >
                 <DropdownMenuLabel className="p-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12 border-2 border-green-200 dark:border-green-800">
+                    <Avatar className="h-12 w-12 border-2 border-app-border-accent">
                       <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
-                      <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-bold">
+                      <AvatarFallback className="bg-achievement-consecutive text-white font-bold">
                         {userInitial}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">
+                      <p className="font-semibold text-app-text-primary truncate">
                         {profile?.full_name || "Usuário"}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                      <p className="text-sm text-app-text-secondary truncate">
                         {profile?.email}
                       </p>
-                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      <p className="text-xs text-app-text-accent font-medium">
                         {userRole === 'trainer' ? 'Personal Trainer' : 'Aluno'}
                       </p>
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuSeparator className="bg-app-border-muted" />
                 <DropdownMenuItem asChild className="p-0 m-1">
                   <Link 
                     href="/dashboard/profile" 
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-app-border-accent/20 transition-all"
                   >
-                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <div className="w-8 h-8 bg-achievement-consecutive/20 rounded-lg flex items-center justify-center">
+                      <User className="h-4 w-4 text-achievement-consecutive" />
                     </div>
                     <span className="font-medium">Meu Perfil</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuSeparator className="bg-app-border-muted" />
                 <DropdownMenuItem 
                   onClick={handleSignOut}
                   className="p-0 m-1"

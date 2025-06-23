@@ -3,6 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Exercise } from '@/components/exercices/types/exercise';
 import { 
   FileText, 
@@ -12,15 +13,32 @@ import {
   Lightbulb, 
   AlertTriangle,
   Play,
-  ExternalLink
+  ExternalLink,
+  Expand,
+  Sparkles,
+  ListCollapse
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface ExerciseDetailsContentProps {
   exercise: Exercise;
 }
 
 export function ExerciseDetailsContent({ exercise }: ExerciseDetailsContentProps) {
-  
+  const [expandedSections, setExpandedSections] = useState({
+    description: true,
+    variations: false,
+    tips: false,
+    errors: false
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   const handleVideoClick = () => {
     if (exercise.video_url) {
       window.open(exercise.video_url, '_blank');
@@ -37,288 +55,372 @@ export function ExerciseDetailsContent({ exercise }: ExerciseDetailsContentProps
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       
-      {/* Descrição Principal */}
-      <div className="relative group">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-500/20 to-blue-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-
-          <CardHeader className="relative pb-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl shadow-md">
-                <FileText className="h-6 w-6 text-white" />
+      {/* Description Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-text-accent/10 to-app-achievement-workout/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <Card className="relative border-0 card-app">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-achievement-workout rounded-lg flex items-center justify-center">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                </div>
+                <CardTitle className="text-lg sm:text-xl font-bold text-app-heading">
+                  Descrição
+                </CardTitle>
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-                Descrição do Exercício
-              </CardTitle>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleSection('description')}
+                className="h-8 w-8 p-0 sm:hidden"
+              >
+                {expandedSections.description ? (
+                  <ListCollapse className="h-4 w-4" />
+                ) : (
+                  <Expand className="h-4 w-4" />
+                )}
+              </Button>
             </div>
           </CardHeader>
 
-          <CardContent className="relative">
-            <div className="prose prose-gray dark:prose-invert max-w-none">
-              <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+          {(expandedSections.description || window.innerWidth >= 640) && (
+            <CardContent>
+              <p className="text-sm sm:text-base leading-relaxed text-app-text-primary whitespace-pre-wrap">
                 {exercise.description}
               </p>
-            </div>
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
       </div>
 
-      {/* Grid de Mídia */}
+      {/* Media Section */}
       {(exercise.video_url || exercise.audio_url) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4">
           
-          {/* Vídeo */}
+          {/* Video */}
           {exercise.video_url && (
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 via-pink-500/20 to-red-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-pink-500 to-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-
-                <CardHeader className="relative pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg shadow-md">
-                        <Video className="h-5 w-5 text-white" />
-                      </div>
-                      <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
-                        Vídeo Demonstrativo
-                      </CardTitle>
-                    </div>
-                    <button
-                      onClick={handleVideoClick}
-                      className="p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                      <ExternalLink className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    </button>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="relative p-0">
-                  {isYouTubeUrl(exercise.video_url) ? (
-                    <div 
-                      className="relative aspect-video bg-gray-900 rounded-b-2xl overflow-hidden cursor-pointer group/video"
-                      onClick={handleVideoClick}
-                    >
-                      <img
-                        src={getYouTubeThumbnail(exercise.video_url) || '/api/placeholder/640/360'}
-                        alt="Thumbnail do vídeo"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover/video:bg-black/50 transition-colors">
-                        <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover/video:scale-110 transition-transform">
-                          <Play className="h-8 w-8 text-white ml-1" />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-6">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Vídeo Externo
-                        </span>
-                        <button
-                          onClick={handleVideoClick}
-                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
-                        >
-                          Assistir
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Áudio */}
-          {exercise.audio_url && (
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-green-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-
-                <CardHeader className="relative pb-4">
+            <Card className="border-0 card-app overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg shadow-md">
-                      <Volume2 className="h-5 w-5 text-white" />
+                    <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+                      <Video className="h-4 w-4 text-white" />
                     </div>
-                    <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
-                      Áudio de Instruções
+                    <CardTitle className="text-lg font-bold text-app-heading">
+                      Vídeo Demonstrativo
                     </CardTitle>
                   </div>
-                </CardHeader>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleVideoClick}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
 
-                <CardContent className="relative">
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Ouça as instruções de execução e erros a evitar:
-                    </p>
-                    <audio 
-                      controls 
-                      className="w-full h-12 rounded-xl"
-                      preload="metadata"
-                    >
-                      <source src={exercise.audio_url} type="audio/mpeg" />
-                      Seu navegador não suporta o elemento de áudio.
-                    </audio>
+              <CardContent className="p-0">
+                {isYouTubeUrl(exercise.video_url) ? (
+                  <div 
+                    className="relative aspect-video bg-gray-900 cursor-pointer group/video"
+                    onClick={handleVideoClick}
+                  >
+                    <img
+                      src={getYouTubeThumbnail(exercise.video_url) || '/api/placeholder/640/360'}
+                      alt="Thumbnail do vídeo"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover/video:bg-black/50 transition-colors">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-600 rounded-full flex items-center justify-center shadow-app-large group-hover/video:scale-110 transition-transform">
+                        <Play className="h-6 w-6 sm:h-8 sm:w-8 text-white ml-1" />
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                ) : (
+                  <div className="p-4">
+                    <div className="flex items-center justify-between p-3 bg-app-bg-secondary rounded-xl">
+                      <span className="text-sm text-app-text-secondary">
+                        Vídeo Externo
+                      </span>
+                      <Button
+                        onClick={handleVideoClick}
+                        className="btn-gradient-primary px-4 py-2 rounded-lg font-semibold"
+                      >
+                        Assistir
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Audio */}
+          {exercise.audio_url && (
+            <Card className="border-0 card-app">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-achievement-consecutive rounded-lg flex items-center justify-center">
+                    <Volume2 className="h-4 w-4 text-white" />
+                  </div>
+                  <CardTitle className="text-lg font-bold text-app-heading">
+                    Áudio de Instruções
+                  </CardTitle>
+                </div>
+              </CardHeader>
+
+              <CardContent>
+                <div className="space-y-3">
+                  <p className="text-sm text-app-text-secondary">
+                    Ouça as instruções de execução:
+                  </p>
+                  <audio 
+                    controls 
+                    className="w-full h-10 rounded-xl"
+                    preload="metadata"
+                  >
+                    <source src={exercise.audio_url} type="audio/mpeg" />
+                    Seu navegador não suporta o elemento de áudio.
+                  </audio>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
 
-      {/* Grid de Detalhes */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Details Grid - Mobile Stacked */}
+      <div className="space-y-4 sm:grid sm:grid-cols-1 lg:grid-cols-3 sm:gap-4 sm:space-y-0">
         
-        {/* Variações */}
+        {/* Variations */}
         {exercise.variations && exercise.variations.length > 0 && (
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-indigo-500/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden h-full">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-
-              <CardHeader className="relative pb-4">
+          <Card className="border-0 card-app">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg shadow-md">
-                    <RefreshCw className="h-5 w-5 text-white" />
+                  <div className="w-8 h-8 bg-achievement-exercise rounded-lg flex items-center justify-center">
+                    <RefreshCw className="h-4 w-4 text-white" />
                   </div>
-                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
+                  <CardTitle className="text-base sm:text-lg font-bold text-app-heading">
                     Variações
                   </CardTitle>
-                  <Badge className="ml-auto px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full text-xs">
+                  <Badge className="px-2 py-1 bg-achievement-exercise/10 text-achievement-exercise border border-app-border-accent rounded-full text-xs">
                     {exercise.variations.length}
                   </Badge>
                 </div>
-              </CardHeader>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleSection('variations')}
+                  className="h-8 w-8 p-0 sm:hidden"
+                >
+                  {expandedSections.variations ? (
+                    <ListCollapse className="h-4 w-4" />
+                  ) : (
+                    <Expand className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
 
-              <CardContent className="relative">
+            {(expandedSections.variations || window.innerWidth >= 640) && (
+              <CardContent>
                 <div className="space-y-3">
                   {exercise.variations.map((variation, index) => (
-                    <div key={index} className="p-3 bg-purple-50/50 dark:bg-purple-900/10 rounded-lg">
-                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                        {variation}
-                      </p>
+                    <div key={index} className="p-3 bg-achievement-exercise/5 border border-app-border-accent rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <div className="w-5 h-5 bg-achievement-exercise rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-xs font-bold text-white">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <p className="text-sm text-app-text-primary leading-relaxed">
+                          {variation}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
-            </Card>
-          </div>
+            )}
+          </Card>
         )}
 
-        {/* Dicas */}
+        {/* Tips */}
         {exercise.tips && exercise.tips.length > 0 && (
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-emerald-500/20 to-green-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden h-full">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-
-              <CardHeader className="relative pb-4">
+          <Card className="border-0 card-app">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg shadow-md">
-                    <Lightbulb className="h-5 w-5 text-white" />
+                  <div className="w-8 h-8 bg-achievement-consecutive rounded-lg flex items-center justify-center">
+                    <Lightbulb className="h-4 w-4 text-white" />
                   </div>
-                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
-                    Dicas de Execução
+                  <CardTitle className="text-base sm:text-lg font-bold text-app-heading">
+                    Dicas
                   </CardTitle>
-                  <Badge className="ml-auto px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full text-xs">
+                  <Badge className="px-2 py-1 bg-achievement-consecutive/10 text-achievement-consecutive border border-app-border-accent rounded-full text-xs">
                     {exercise.tips.length}
                   </Badge>
                 </div>
-              </CardHeader>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleSection('tips')}
+                  className="h-8 w-8 p-0 sm:hidden"
+                >
+                  {expandedSections.tips ? (
+                    <ListCollapse className="h-4 w-4" />
+                  ) : (
+                    <Expand className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
 
-              <CardContent className="relative">
+            {(expandedSections.tips || window.innerWidth >= 640) && (
+              <CardContent>
                 <div className="space-y-3">
                   {exercise.tips.map((tip, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mt-0.5">
-                        <span className="text-xs font-bold text-green-600 dark:text-green-400">
-                          {index + 1}
-                        </span>
+                      <div className="flex-shrink-0 w-6 h-6 bg-achievement-consecutive/20 border border-app-border-accent rounded-full flex items-center justify-center mt-0.5">
+                        <Lightbulb className="h-3 w-3 text-achievement-consecutive" />
                       </div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <p className="text-sm text-app-text-primary leading-relaxed">
                         {tip.replace(/[✔️🟡]/g, '').trim()}
                       </p>
                     </div>
                   ))}
                 </div>
               </CardContent>
-            </Card>
-          </div>
+            )}
+          </Card>
         )}
 
-        {/* Erros Comuns */}
+        {/* Common Errors */}
         {exercise.common_errors && exercise.common_errors.length > 0 && (
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 via-orange-500/20 to-red-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-500 rounded-2xl overflow-hidden h-full">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-orange-500 to-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-2xl"></div>
-
-              <CardHeader className="relative pb-4">
+          <Card className="border-0 card-app">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg shadow-md">
-                    <AlertTriangle className="h-5 w-5 text-white" />
+                  <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="h-4 w-4 text-white" />
                   </div>
-                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
+                  <CardTitle className="text-base sm:text-lg font-bold text-app-heading">
                     Erros Comuns
                   </CardTitle>
-                  <Badge className="ml-auto px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full text-xs">
+                  <Badge className="px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-full text-xs">
                     {exercise.common_errors.length}
                   </Badge>
                 </div>
-              </CardHeader>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleSection('errors')}
+                  className="h-8 w-8 p-0 sm:hidden"
+                >
+                  {expandedSections.errors ? (
+                    <ListCollapse className="h-4 w-4" />
+                  ) : (
+                    <Expand className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
 
-              <CardContent className="relative">
+            {(expandedSections.errors || window.innerWidth >= 640) && (
+              <CardContent>
                 <div className="space-y-3">
                   {exercise.common_errors.map((error, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mt-0.5">
+                      <div className="flex-shrink-0 w-6 h-6 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-full flex items-center justify-center mt-0.5">
                         <AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" />
                       </div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <p className="text-sm text-app-text-primary leading-relaxed">
                         {error.replace(/❌/g, '').trim()}
                       </p>
                     </div>
                   ))}
                 </div>
               </CardContent>
-            </Card>
-          </div>
+            )}
+          </Card>
         )}
       </div>
 
-      {/* Estado vazio para detalhes */}
+      {/* Empty State */}
       {(!exercise.variations || exercise.variations.length === 0) && 
        (!exercise.tips || exercise.tips.length === 0) && 
        (!exercise.common_errors || exercise.common_errors.length === 0) && (
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-200/50 to-gray-300/50 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl blur-xl"></div>
-          <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
-            <CardContent className="text-center py-12">
-              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 to-gray-700 rounded-full flex items-center justify-center mb-4">
-                <FileText className="h-10 w-10 text-gray-400 dark:text-gray-500" />
+        <Card className="border-0 card-app">
+          <CardContent className="text-center py-12 sm:py-16">
+            <div className="relative mb-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-app-bg-secondary rounded-full flex items-center justify-center shadow-app-large">
+                <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-app-text-muted" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Detalhes Não Disponíveis
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                Este exercício não possui variações, dicas de execução ou erros comuns cadastrados.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-app-text-muted/30 via-app-achievement-exercise/30 to-app-text-muted/30 rounded-full blur-2xl animate-pulse"></div>
+            </div>
+            
+            <h3 className="text-lg sm:text-xl font-bold text-app-heading mb-2">
+              Detalhes Não Disponíveis
+            </h3>
+            <p className="text-app-text-secondary max-w-md mx-auto leading-relaxed">
+              Este exercício não possui variações, dicas de execução ou erros comuns cadastrados.
+            </p>
+          </CardContent>
+        </Card>
       )}
+
+      {/* Quick Action Cards - Mobile Only */}
+      <div className="grid grid-cols-2 gap-3 sm:hidden">
+        <Button
+          onClick={() => window.navigator.share?.({
+            title: `Exercício: ${exercise.name}`,
+            text: exercise.description.substring(0, 100) + '...',
+            url: window.location.href,
+          })}
+          variant="outline"
+          className="h-12 bg-app-card border-app-border-muted text-app-text-primary rounded-xl"
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Compartilhar
+        </Button>
+        
+        <Button
+          onClick={() => {
+            const exerciseData = {
+              name: exercise.name,
+              description: exercise.description,
+              muscle_group: exercise.muscle_group,
+              equipment: exercise.equipment,
+            };
+            const dataStr = JSON.stringify(exerciseData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `exercicio-${exercise.name.toLowerCase().replace(/\s+/g, '-')}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }}
+          variant="outline"
+          className="h-12 bg-app-card border-app-border-muted text-app-text-primary rounded-xl"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          Exportar
+        </Button>
+      </div>
     </div>
   );
 }

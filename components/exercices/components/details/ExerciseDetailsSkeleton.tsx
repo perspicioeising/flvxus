@@ -3,75 +3,56 @@
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
+// components/exercises/details/ExerciseDetailsSkeleton.tsx
+
 export function ExerciseDetailsSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+    <div className="min-h-screen bg-app-gradient">
+      <div className="container mx-auto px-3 sm:px-4 py-4 max-w-6xl">
         
         {/* Header Skeleton */}
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-purple-500/10 to-purple-600/10 rounded-3xl blur-xl"></div>
-          <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-0 rounded-3xl shadow-2xl">
-            <div className="p-6 lg:p-8">
-              
-              {/* Botão Voltar */}
-              <div className="mb-6">
-                <div className="h-12 w-24 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+        <div className="relative mb-6">
+          <div className="bg-app-card rounded-2xl sm:rounded-3xl shadow-app-xl p-4 sm:p-6 lg:p-8">
+            
+            {/* Navigation Bar */}
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <div className="h-10 w-20 sm:w-24 bg-app-bg-secondary rounded-xl animate-pulse"></div>
+              <div className="h-10 w-10 bg-app-bg-secondary rounded-xl animate-pulse sm:hidden"></div>
+              <div className="hidden sm:flex items-center gap-3">
+                <div className="h-10 w-20 bg-app-bg-secondary rounded-xl animate-pulse"></div>
+                <div className="h-10 w-20 bg-app-bg-secondary rounded-xl animate-pulse"></div>
+                <div className="h-10 w-20 bg-app-bg-secondary rounded-xl animate-pulse"></div>
               </div>
+            </div>
 
-              {/* Header Principal */}
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-                
-                {/* Informações do Exercício */}
-                <div className="flex-1 space-y-4">
-                  
-                  {/* Título e ícone */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse"></div>
-                    
-                    <div className="flex-1 space-y-3">
-                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-                      <div className="flex gap-4">
-                        <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Badges Skeleton */}
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                      <div className="flex flex-wrap gap-2">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                      <div className="flex flex-wrap gap-2">
-                        {[1, 2].map((i) => (
-                          <div key={i} className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ações Principais (Desktop) */}
-                <div className="hidden lg:flex lg:flex-col gap-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 w-32 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
-                  ))}
-                </div>
+            {/* Title and Icon */}
+            <div className="flex items-start gap-3 sm:gap-4 mb-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-app-bg-secondary rounded-xl animate-pulse flex-shrink-0"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-6 sm:h-8 bg-app-bg-secondary rounded w-3/4 animate-pulse"></div>
+                <div className="h-4 bg-app-bg-secondary rounded w-1/2 animate-pulse"></div>
               </div>
+            </div>
 
-              {/* Ações Principais (Mobile) */}
-              <div className="lg:hidden mt-6 grid grid-cols-3 gap-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-app-bg-secondary rounded-xl p-3 animate-pulse">
+                  <div className="h-6 w-8 bg-app-border-muted rounded mx-auto mb-1"></div>
+                  <div className="h-3 w-12 bg-app-border-muted rounded mx-auto"></div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-app-bg-secondary rounded animate-pulse"></div>
+                <div className="h-4 w-24 bg-app-bg-secondary rounded animate-pulse"></div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-6 w-16 bg-app-bg-secondary rounded-full animate-pulse"></div>
                 ))}
               </div>
             </div>
@@ -79,76 +60,85 @@ export function ExerciseDetailsSkeleton() {
         </div>
 
         {/* Content Skeleton */}
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-6">
           
-          {/* Descrição Principal */}
-          <Card className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
-            <CardHeader>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse"></div>
-                <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          {/* Description */}
+          <div className="bg-app-card rounded-xl shadow-app-medium p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-app-bg-secondary rounded-lg animate-pulse"></div>
+              <div className="h-5 w-20 bg-app-bg-secondary rounded animate-pulse"></div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 bg-app-bg-secondary rounded w-full animate-pulse"></div>
+              <div className="h-4 bg-app-bg-secondary rounded w-5/6 animate-pulse"></div>
+              <div className="h-4 bg-app-bg-secondary rounded w-4/6 animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Media Skeleton */}
+          <div className="bg-app-card rounded-xl shadow-app-medium overflow-hidden">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-app-bg-secondary rounded-lg animate-pulse"></div>
+                <div className="h-5 w-32 bg-app-bg-secondary rounded animate-pulse"></div>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="aspect-video bg-app-bg-secondary animate-pulse"></div>
+          </div>
+
+          {/* Details Grid */}
+          <div className="space-y-4 sm:grid sm:grid-cols-1 lg:grid-cols-3 sm:gap-4 sm:space-y-0">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-app-card rounded-xl shadow-app-medium p-4 sm:p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-app-bg-secondary rounded-lg animate-pulse"></div>
+                  <div className="h-5 w-20 bg-app-bg-secondary rounded animate-pulse"></div>
+                  <div className="h-5 w-8 bg-app-bg-secondary rounded-full animate-pulse ml-auto"></div>
+                </div>
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, j) => (
+                    <div key={j} className="p-3 bg-app-bg-secondary rounded-lg animate-pulse">
+                      <div className="h-4 bg-app-border-muted rounded w-full"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile Actions Skeleton */}
+          <div className="lg:hidden bg-app-card rounded-xl shadow-app-medium p-4 sm:p-6">
+            <div className="space-y-4">
+              <div className="h-5 w-32 bg-app-bg-secondary rounded animate-pulse"></div>
+              
+              {/* Primary actions */}
               <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-12 bg-app-bg-secondary rounded-xl animate-pulse"></div>
                 ))}
-                <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Grid de Mídia */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {[1, 2].map((i) => (
-              <Card key={i} className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-                    <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-b-2xl animate-pulse"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+              {/* Divider */}
+              <div className="border-t border-app-border-muted my-6"></div>
 
-          {/* Grid de Detalhes */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-xl rounded-2xl h-64">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-                    <div className="h-5 w-28 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                    <div className="w-8 h-6 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse ml-auto"></div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {[1, 2, 3, 4].map((j) => (
-                      <div key={j} className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse flex-shrink-0"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                          <div className="h-3 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+              {/* Secondary actions */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-11 bg-app-bg-secondary rounded-xl animate-pulse"></div>
+                <div className="h-11 bg-app-bg-secondary rounded-xl animate-pulse"></div>
+              </div>
 
-        {/* Loading Indicator */}
-        <div className="fixed bottom-8 right-8 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-full p-4 shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+              {/* Info section */}
+              <div className="p-4 bg-app-bg-secondary rounded-xl animate-pulse">
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex justify-between">
+                      <div className="h-4 w-24 bg-app-border-muted rounded"></div>
+                      <div className="h-4 w-8 bg-app-border-muted rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
