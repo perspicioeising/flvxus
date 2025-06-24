@@ -14,14 +14,14 @@ interface PhysicalProfileStepProps {
 }
 
 const GOALS = [
-  { value: 'weight_loss', label: 'Perda de Peso', icon: '🔥', color: 'from-red-500 to-orange-500' },
-  { value: 'muscle_gain', label: 'Ganho de Massa', icon: '💪', color: 'from-blue-500 to-purple-500' },
-  { value: 'strength', label: 'Força', icon: '⚡', color: 'from-yellow-500 to-orange-500' },
-  { value: 'endurance', label: 'Resistência', icon: '🏃', color: 'from-green-500 to-emerald-500' },
-  { value: 'flexibility', label: 'Flexibilidade', icon: '🤸', color: 'from-pink-500 to-purple-500' },
-  { value: 'general_fitness', label: 'Condicionamento Geral', icon: '🎯', color: 'from-cyan-500 to-blue-500' },
-  { value: 'sports_performance', label: 'Performance Esportiva', icon: '🏆', color: 'from-amber-500 to-yellow-500' },
-  { value: 'rehabilitation', label: 'Reabilitação', icon: '🩺', color: 'from-teal-500 to-green-500' }
+  { value: 'weight_loss', label: 'Perda de Peso', icon: '🔥', bgClass: 'bg-gradient-to-br from-red-500 to-orange-500' },
+  { value: 'muscle_gain', label: 'Ganho de Massa', icon: '💪', bgClass: 'bg-gradient-to-br from-app-achievement-exercise to-app-achievement-consecutive' },
+  { value: 'strength', label: 'Força', icon: '⚡', bgClass: 'bg-gradient-to-br from-yellow-500 to-orange-500' },
+  { value: 'endurance', label: 'Resistência', icon: '🏃', bgClass: 'bg-achievement-workout' },
+  { value: 'flexibility', label: 'Flexibilidade', icon: '🤸', bgClass: 'bg-gradient-to-br from-pink-500 to-purple-500' },
+  { value: 'general_fitness', label: 'Condicionamento Geral', icon: '🎯', bgClass: 'bg-achievement-weight' },
+  { value: 'sports_performance', label: 'Performance Esportiva', icon: '🏆', bgClass: 'bg-gradient-to-br from-amber-500 to-yellow-500' },
+  { value: 'rehabilitation', label: 'Reabilitação', icon: '🩺', bgClass: 'bg-achievement-consecutive' }
 ];
 
 const EXPERIENCE_LEVELS = [
@@ -53,8 +53,8 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
       {/* Altura e Peso */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-3">
-          <Label htmlFor="height" className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-            <Ruler className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <Label htmlFor="height" className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+            <Ruler className="h-4 w-4 text-app-text-accent" />
             Altura (cm)
           </Label>
           <div className="relative">
@@ -65,17 +65,17 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
               placeholder="170"
               value={data.height}
               onChange={(e) => onChange({ height: e.target.value })}
-              className="h-11 md:h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 transition-all text-base pr-12"
+              className="h-11 md:h-12 bg-app-bg-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-achievement-exercise transition-all text-base pr-12"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-app-text-muted">
               cm
             </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="weight" className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-            <Scale className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <Label htmlFor="weight" className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+            <Scale className="h-4 w-4 text-app-text-accent" />
             Peso (kg)
           </Label>
           <div className="relative">
@@ -86,9 +86,9 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
               placeholder="70"
               value={data.weight}
               onChange={(e) => onChange({ weight: e.target.value })}
-              className="h-11 md:h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 transition-all text-base pr-12"
+              className="h-11 md:h-12 bg-app-bg-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-achievement-exercise transition-all text-base pr-12"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-app-text-muted">
               kg
             </div>
           </div>
@@ -97,8 +97,8 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
 
       {/* Objetivos de Treino */}
       <div className="space-y-4">
-        <Label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-          <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        <Label className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+          <Target className="h-4 w-4 text-app-text-accent" />
           Objetivos de Treino
         </Label>
         
@@ -114,20 +114,20 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
               />
               <label
                 htmlFor={goal.value}
-                className="flex items-center gap-3 p-3 md:p-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 peer-checked:bg-gradient-to-r peer-checked:from-purple-50 peer-checked:to-pink-50 dark:peer-checked:from-purple-900/20 dark:peer-checked:to-pink-900/20 peer-checked:border-purple-500 dark:peer-checked:border-purple-400 peer-checked:shadow-lg group-hover:scale-[1.02] active:scale-[0.98] min-h-[60px]"
+                className="flex items-center gap-3 p-3 md:p-4 bg-app-card border-2 border-app-border-muted rounded-xl cursor-pointer transition-all hover:bg-app-bg-secondary peer-checked:bg-app-achievement-exercise/10 peer-checked:border-app-border-accent peer-checked:shadow-app-medium group-hover:scale-[1.02] active:scale-[0.98] min-h-[60px]"
               >
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${goal.color} flex items-center justify-center text-white font-bold shadow-lg`}>
+                <div className={`w-10 h-10 rounded-xl ${goal.bgClass} flex items-center justify-center text-white font-bold shadow-app-medium`}>
                   <span className="text-lg">{goal.icon}</span>
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 dark:text-white">
+                  <h4 className="font-semibold text-app-text-primary">
                     {goal.label}
                   </h4>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 transition-all ${
                   data.goals?.includes(goal.value)
-                    ? 'bg-purple-500 border-purple-500'
-                    : 'border-gray-300 dark:border-gray-600'
+                    ? 'bg-app-achievement-exercise border-app-achievement-exercise'
+                    : 'border-app-border-muted'
                 }`}>
                   {data.goals?.includes(goal.value) && (
                     <div className="w-full h-full rounded-full bg-white scale-50"></div>
@@ -141,8 +141,8 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
 
       {/* Nível de Experiência */}
       <div className="space-y-3">
-        <Label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-          <Award className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        <Label className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+          <Award className="h-4 w-4 text-app-text-accent" />
           Nível de Experiência
         </Label>
         
@@ -159,23 +159,23 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
               />
               <label
                 htmlFor={level.value}
-                className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 peer-checked:bg-gradient-to-r peer-checked:from-purple-50 peer-checked:to-blue-50 dark:peer-checked:from-purple-900/20 dark:peer-checked:to-blue-900/20 peer-checked:border-purple-500 dark:peer-checked:border-purple-400 peer-checked:shadow-lg"
+                className="flex items-center justify-between p-4 bg-app-card border-2 border-app-border-muted rounded-xl cursor-pointer transition-all hover:bg-app-bg-secondary peer-checked:bg-app-achievement-consecutive/10 peer-checked:border-app-border-accent peer-checked:shadow-app-medium"
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-3 h-3 rounded-full border-2 transition-all ${
                     data.experienceLevel === level.value
-                      ? 'bg-purple-500 border-purple-500'
-                      : 'border-gray-300 dark:border-gray-600'
+                      ? 'bg-app-achievement-consecutive border-app-achievement-consecutive'
+                      : 'border-app-border-muted'
                   }`}>
                     {data.experienceLevel === level.value && (
                       <div className="w-full h-full rounded-full bg-white scale-50"></div>
                     )}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                    <h4 className="font-semibold text-app-text-primary">
                       {level.label}
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-app-text-secondary">
                       {level.description}
                     </p>
                   </div>
@@ -188,8 +188,8 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
 
       {/* Horário Preferido */}
       <div className="space-y-3">
-        <Label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-          <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        <Label className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+          <Clock className="h-4 w-4 text-app-text-accent" />
           Horário Preferido de Treino
         </Label>
         
@@ -206,12 +206,12 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
               />
               <label
                 htmlFor={time.value}
-                className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 peer-checked:bg-gradient-to-r peer-checked:from-purple-50 peer-checked:to-blue-50 dark:peer-checked:from-purple-900/20 dark:peer-checked:to-blue-900/20 peer-checked:border-purple-500 dark:peer-checked:border-purple-400 peer-checked:shadow-lg text-center min-h-[80px]"
+                className="flex flex-col items-center justify-center p-4 bg-app-card border-2 border-app-border-muted rounded-xl cursor-pointer transition-all hover:bg-app-bg-secondary peer-checked:bg-app-achievement-weight/10 peer-checked:border-app-border-accent peer-checked:shadow-app-medium text-center min-h-[80px]"
               >
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+                <h4 className="font-semibold text-app-text-primary mb-1">
                   {time.label}
                 </h4>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <p className="text-xs text-app-text-secondary">
                   {time.time}
                 </p>
               </label>
@@ -221,14 +221,14 @@ export function PhysicalProfileStep({ data, onChange, errors }: PhysicalProfileS
       </div>
 
       {/* Info Helper */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200/50 dark:border-purple-800/30">
+      <div className="bg-app-achievement-exercise/10 rounded-xl p-4 border border-app-border-accent">
         <div className="flex items-start gap-3">
-          <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+          <Zap className="h-5 w-5 text-app-text-accent mt-0.5 flex-shrink-0" />
           <div>
-            <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-1">
+            <h4 className="font-medium text-app-text-secondary mb-1">
               Personalize o Treino
             </h4>
-            <p className="text-sm text-purple-700 dark:text-purple-300">
+            <p className="text-sm text-app-text-secondary">
               Essas informações ajudam a criar um plano de treino mais eficaz e personalizado para cada aluno.
             </p>
           </div>

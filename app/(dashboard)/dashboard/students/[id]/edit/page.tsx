@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { StudentFormCarousel } from '@/components/students/StudentFormCarousel';
+import { StudentFormCarousel } from '@/components/students/components/create/StudentFormCarousel';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, User } from 'lucide-react';
 import {StudentFormData} from '@/types/student'
@@ -119,7 +119,6 @@ export default function EditStudentPage({ params }: EditStudentPageProps) {
     <StudentFormCarousel
       mode="edit"
       studentId={params.id}
-      initialData={studentData}
     />
   );
 }
