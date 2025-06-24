@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Plus, Edit, Copy, Sparkles } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Copy, Sparkles, Dumbbell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface ExerciseHeaderProps {
@@ -48,7 +48,7 @@ export function ExerciseHeader({
         return {
           title: 'Novo Exercício',
           subtitle: 'Adicione um novo exercício à sua biblioteca',
-          icon: Plus,
+          icon: Dumbbell,
           color: 'achievement-exercise'
         };
     }
