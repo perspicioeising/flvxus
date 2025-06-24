@@ -71,7 +71,7 @@ export default function DashboardLayout({
         
         {/* Mobile Main Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="pb-20">
+          <div className="pb-0">
             {children}
           </div>
         </main>
