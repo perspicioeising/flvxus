@@ -124,7 +124,7 @@ export default function DashboardPage() {
       color: "bg-achievement-consecutive",
       gradient: "achievement-consecutive",
       stats: "8 dietas",
-      priority: "medium"
+      priority: "high"
     },
     {
       name: "Conquistas",
@@ -283,60 +283,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Stats - Mobile First */}
-        <div className="mb-6">
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            {userRole === 'trainer' ? (
-              <>
-                <div className="bg-app-card backdrop-blur-sm border border-app-border-muted rounded-xl p-3 text-center">
-                  <div className="w-8 h-8 bg-achievement-workout rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <Users className="h-4 w-4 text-white" />
-                  </div>
-                  <p className="text-lg font-bold text-app-text-primary">24</p>
-                  <p className="text-xs text-app-text-secondary">Alunos</p>
-                </div>
-                <div className="bg-app-card backdrop-blur-sm border border-app-border-muted rounded-xl p-3 text-center">
-                  <div className="w-8 h-8 bg-achievement-consecutive rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <Activity className="h-4 w-4 text-white" />
-                  </div>
-                  <p className="text-lg font-bold text-app-text-primary">8</p>
-                  <p className="text-xs text-app-text-secondary">Treinos hoje</p>
-                </div>
-                <div className="bg-app-card backdrop-blur-sm border border-app-border-muted rounded-xl p-3 text-center">
-                  <div className="w-8 h-8 bg-achievement-weight rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <TrendingUp className="h-4 w-4 text-white" />
-                  </div>
-                  <p className="text-lg font-bold text-app-text-primary">89%</p>
-                  <p className="text-xs text-app-text-secondary">Frequência</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="bg-app-card backdrop-blur-sm border border-app-border-muted rounded-xl p-3 text-center">
-                  <div className="w-8 h-8 bg-achievement-consecutive rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <Target className="h-4 w-4 text-white" />
-                  </div>
-                  <p className="text-lg font-bold text-app-text-primary">85%</p>
-                  <p className="text-xs text-app-text-secondary">Meta</p>
-                </div>
-                <div className="bg-app-card backdrop-blur-sm border border-app-border-muted rounded-xl p-3 text-center">
-                  <div className="w-8 h-8 bg-achievement-exercise rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <Award className="h-4 w-4 text-white" />
-                  </div>
-                  <p className="text-lg font-bold text-app-text-primary">12</p>
-                  <p className="text-xs text-app-text-secondary">Conquistas</p>
-                </div>
-                <div className="bg-app-card backdrop-blur-sm border border-app-border-muted rounded-xl p-3 text-center">
-                  <div className="w-8 h-8 bg-achievement-workout rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <Calendar className="h-4 w-4 text-white" />
-                  </div>
-                  <p className="text-lg font-bold text-app-text-primary">16h</p>
-                  <p className="text-xs text-app-text-secondary">Próximo</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+       
 
         {/* Priority Actions - Mobile First Grid */}
         <div className="space-y-6">
