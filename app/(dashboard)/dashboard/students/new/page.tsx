@@ -1,6 +1,6 @@
 'use client';
 
-import { StudentFormCarousel } from '@/components/students/StudentFormCarousel';
+import { StudentFormCarousel } from '@/components/students/components/create/StudentFormCarousel';
 
 export default function NewStudentPage() {
   return (

@@ -1,6 +1,6 @@
 'use client';
-import { StudentViewPage } from '@/components/students/StudentViewPage';
+import { StudentDetailsPage } from '@/components/students/components/details/StudentDetailsPage';
 
 export default function StudentDetailsPageRoute() {
-  return <StudentViewPage />;
+  return <StudentDetailsPage />;
 }
