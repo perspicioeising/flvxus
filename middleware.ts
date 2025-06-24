@@ -10,9 +10,10 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Allow access to auth callback and reset password routes
+  // Allow access to auth callback, reset password, and set-password routes
   if (req.nextUrl.pathname.startsWith('/auth/callback') || 
-      req.nextUrl.pathname.startsWith('/reset-password')) {
+      req.nextUrl.pathname.startsWith('/reset-password') ||
+      req.nextUrl.pathname.startsWith('/dashboard/profile/set-password')) {
     return res;
   }
 

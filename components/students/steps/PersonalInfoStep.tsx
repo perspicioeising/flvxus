@@ -19,8 +19,8 @@ export function PersonalInfoStep({ data, onChange, errors }: PersonalInfoStepPro
       {/* Nome e Email */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-3">
-          <Label htmlFor="name" className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-            <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Label htmlFor="name" className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+            <User className="h-4 w-4 text-app-text-accent" />
             Nome Completo *
           </Label>
           <Input
@@ -28,7 +28,7 @@ export function PersonalInfoStep({ data, onChange, errors }: PersonalInfoStepPro
             placeholder="Digite o nome completo"
             value={data.name}
             onChange={(e) => onChange({ name: e.target.value })}
-            className={`h-11 md:h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-base ${
+            className={`h-11 md:h-12 bg-app-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all text-base ${
               errors.name ? 'border-red-500 focus:ring-red-500' : ''
             }`}
             autoComplete="name"
@@ -39,8 +39,8 @@ export function PersonalInfoStep({ data, onChange, errors }: PersonalInfoStepPro
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-            <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Label htmlFor="email" className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+            <Mail className="h-4 w-4 text-app-text-accent" />
             E-mail *
           </Label>
           <Input
@@ -49,7 +49,7 @@ export function PersonalInfoStep({ data, onChange, errors }: PersonalInfoStepPro
             placeholder="exemplo@email.com"
             value={data.email}
             onChange={(e) => onChange({ email: e.target.value })}
-            className={`h-11 md:h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-base ${
+            className={`h-11 md:h-12 bg-app-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all text-base ${
               errors.email ? 'border-red-500 focus:ring-red-500' : ''
             }`}
             autoComplete="email"
@@ -63,8 +63,8 @@ export function PersonalInfoStep({ data, onChange, errors }: PersonalInfoStepPro
       {/* Telefone e Data de Nascimento */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-3">
-          <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-            <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Label htmlFor="phone" className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+            <Phone className="h-4 w-4 text-app-text-accent" />
             Telefone
           </Label>
           <Input
@@ -73,14 +73,14 @@ export function PersonalInfoStep({ data, onChange, errors }: PersonalInfoStepPro
             placeholder="(00) 00000-0000"
             value={data.phone}
             onChange={(e) => onChange({ phone: e.target.value })}
-            className="h-11 md:h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-base"
+            className="h-11 md:h-12 bg-app-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all text-base"
             autoComplete="tel"
           />
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="birthDate" className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <Label htmlFor="birthDate" className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-app-text-accent" />
             Data de Nascimento
           </Label>
           <Input
@@ -88,7 +88,7 @@ export function PersonalInfoStep({ data, onChange, errors }: PersonalInfoStepPro
             type="date"
             value={data.birthDate}
             onChange={(e) => onChange({ birthDate: e.target.value })}
-            className="h-11 md:h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-base"
+            className="h-11 md:h-12 bg-app-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all text-base"
             autoComplete="bday"
           />
         </div>
@@ -96,34 +96,34 @@ export function PersonalInfoStep({ data, onChange, errors }: PersonalInfoStepPro
 
       {/* Gênero */}
       <div className="space-y-3">
-        <Label htmlFor="gender" className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-          <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <Label htmlFor="gender" className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+          <Users className="h-4 w-4 text-app-text-accent" />
           Gênero
         </Label>
         <Select
           value={data.gender}
           onValueChange={(value) => onChange({ gender: value })}
         >
-          <SelectTrigger className="h-11 md:h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl text-base">
+          <SelectTrigger className="h-11 md:h-12 bg-app-card border-app-border-muted rounded-xl text-base focus:border-app-text-accent">
             <SelectValue placeholder="Selecione o gênero" />
           </SelectTrigger>
-          <SelectContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 rounded-xl">
-            <SelectItem value="male">Masculino</SelectItem>
-            <SelectItem value="female">Feminino</SelectItem>
-            <SelectItem value="other">Outro</SelectItem>
+          <SelectContent className="bg-app-overlay backdrop-blur-xl border border-app-border-default rounded-xl shadow-app-xl">
+            <SelectItem value="male" className="focus:bg-app-border-accent/20">Masculino</SelectItem>
+            <SelectItem value="female" className="focus:bg-app-border-accent/20">Feminino</SelectItem>
+            <SelectItem value="other" className="focus:bg-app-border-accent/20">Outro</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Info Helper */}
-      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/30">
+      <div className="bg-app-text-accent/10 rounded-xl p-4 border border-app-border-accent">
         <div className="flex items-start gap-3">
-          <User className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+          <User className="h-5 w-5 text-app-text-accent mt-0.5 flex-shrink-0" />
           <div>
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+            <h4 className="font-medium text-app-text-primary mb-1">
               Informações Básicas
             </h4>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+            <p className="text-sm text-app-text-secondary">
               Os campos marcados com * são obrigatórios. Um convite será enviado por email para o aluno acessar o sistema.
             </p>
           </div>
