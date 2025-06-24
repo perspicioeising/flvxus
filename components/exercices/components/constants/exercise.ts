@@ -17,10 +17,7 @@ export const EQUIPMENT_TYPES = [
   "Outros"
 ];
 
-// components/exercises/constants/index.ts
-
-// components/exercises/constants/index.ts
-
+// ===== EXERCISE STEPS - Nova ordem e cores atualizadas =====
 export const EXERCISE_STEPS = [
   {
     id: 'basic',
@@ -28,60 +25,63 @@ export const EXERCISE_STEPS = [
     shortTitle: 'Básico',
     description: 'Nome, descrição e categorias',
     icon: 'FileText',
-    color: 'from-purple-500 to-purple-600'
+    color: 'achievement-exercise', // Azul/Indigo
+    gradient: 'achievement-exercise'
   },
-  
   {
-    id: 'details',
+    id: 'details', // Movido para segundo lugar
     title: 'Detalhes Avançados',
     shortTitle: 'Detalhes',
-    description: 'Variações, dicas e erros',
+    description: 'Variações, dicas e erros comuns',
     icon: 'Target',
-    color: 'from-purple-700 to-purple-800'
+    color: 'achievement-workout', // Verde
+    gradient: 'achievement-workout'
   },
   {
-    id: 'media',
-    title: 'Mídia',
+    id: 'media', // Movido para terceiro lugar
+    title: 'Mídia Demonstrativa',
     shortTitle: 'Mídia',
     description: 'Vídeo e áudio demonstrativos',
     icon: 'Video',
-    color: 'from-purple-600 to-purple-700'
+    color: 'achievement-weight', // Teal
+    gradient: 'achievement-weight'
   },
   {
     id: 'review',
-    title: 'Revisão',
+    title: 'Revisão Final',
     shortTitle: 'Revisar',
-    description: 'Confirme todas as informações',
+    description: 'Verificar e salvar exercício',
     icon: 'CheckCircle',
-    color: 'from-purple-800 to-purple-900'
+    color: 'achievement-consecutive', // Verde claro
+    gradient: 'achievement-consecutive'
   }
 ];
 
-// Ícones e cores para grupos musculares
+// ===== MUSCLE GROUP ICONS - Cores atualizadas para o novo design system =====
 export const MUSCLE_GROUP_ICONS: MuscleGroupIcon[] = [
   {
     group: "Peito",
     icon: "💪",
-    color: "from-purple-500 to-pink-500",
-    gradient: "from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20"
+    color: "from-red-500 to-red-600",
+    gradient: "from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20"
   },
   {
     group: "Costas", 
-    icon: "🦵",
-    color: "from-blue-500 to-purple-500",
-    gradient: "from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20"
+    icon: "🏋️",
+    color: "from-blue-500 to-blue-600",
+    gradient: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20"
   },
   {
     group: "Pernas",
     icon: "🦵",
-    color: "from-green-500 to-blue-500", 
-    gradient: "from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20"
+    color: "from-green-500 to-green-600", 
+    gradient: "from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20"
   },
   {
     group: "Ombros",
     icon: "🏋️",
-    color: "from-orange-500 to-red-500",
-    gradient: "from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20"
+    color: "from-yellow-500 to-yellow-600",
+    gradient: "from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20"
   },
   {
     group: "Braços", 
@@ -92,22 +92,24 @@ export const MUSCLE_GROUP_ICONS: MuscleGroupIcon[] = [
   {
     group: "Core",
     icon: "⚡",
-    color: "from-yellow-500 to-orange-500",
-    gradient: "from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20"
+    color: "from-orange-500 to-orange-600",
+    gradient: "from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20"
   },
   {
     group: "Corpo Inteiro",
     icon: "🔥",
-    color: "from-red-500 to-pink-500", 
-    gradient: "from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20"
+    color: "from-pink-500 to-pink-600", 
+    gradient: "from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20"
   },
   {
     group: "Cardio",
     icon: "❤️",
-    color: "from-pink-500 to-rose-500",
-    gradient: "from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20"
+    color: "from-teal-500 to-teal-600",
+    gradient: "from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20"
   }
 ];
+
+// ===== UTILITY FUNCTIONS =====
 
 // Obter ícone e cor por grupo muscular
 export const getMuscleGroupIcon = (group: string): MuscleGroupIcon => {
@@ -127,6 +129,8 @@ export const getExerciseMainIcon = (muscleGroups: string[]): MuscleGroupIcon => 
   return getMuscleGroupIcon(muscleGroups[0]);
 };
 
+// ===== FILTERS AND VIEW OPTIONS =====
+
 // Filtros de data/período
 export const DATE_FILTERS = [
   { value: 'all', label: 'Todos os Períodos' },
@@ -141,47 +145,197 @@ export const VIEW_MODES = [
   { value: 'list', label: 'Lista', icon: 'LayoutList' }
 ] as const;
 
-// Métricas para exibição nos cards
+// ===== EXERCISE METRICS - Atualizadas com as novas cores =====
 export const EXERCISE_METRICS = [
   {
     key: 'muscle_groups',
     label: "Grupos",
-    colors: "from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20",
-    text: "text-purple-600 dark:text-purple-400",
+    colors: "from-achievement-exercise/10 to-achievement-exercise/20",
+    text: "text-achievement-exercise",
+    border: "border-achievement-exercise/30",
     icon: "💪",
     format: "count" as const
   },
   {
     key: 'equipment',
     label: "Equipamentos", 
-    colors: "from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20",
-    text: "text-blue-600 dark:text-blue-400",
+    colors: "from-achievement-workout/10 to-achievement-workout/20",
+    text: "text-achievement-workout",
+    border: "border-achievement-workout/30",
     icon: "🏋️",
     format: "count" as const
   },
   {
     key: 'variations',
     label: "Variações",
-    colors: "from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20", 
-    text: "text-green-600 dark:text-green-400",
+    colors: "from-achievement-weight/10 to-achievement-weight/20", 
+    text: "text-achievement-weight",
+    border: "border-achievement-weight/30",
     icon: "🔄",
     format: "count" as const
   },
   {
     key: 'tips',
     label: "Dicas",
-    colors: "from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20",
-    text: "text-orange-600 dark:text-orange-400", 
+    colors: "from-achievement-consecutive/10 to-achievement-consecutive/20",
+    text: "text-achievement-consecutive", 
+    border: "border-achievement-consecutive/30",
     icon: "💡",
     format: "count" as const
   }
 ];
 
-// Cores principais do módulo
+// ===== EXERCISE MODULE COLORS - Novo design system =====
 export const EXERCISE_COLORS = {
-  primary: "from-purple-500 to-purple-600",
-  secondary: "from-purple-600 to-purple-700",
-  accent: "from-pink-500 to-purple-500",
-  background: "from-purple-50/40 to-pink-50/40",
-  darkBackground: "from-purple-900 to-purple-950"
+  // Cores principais baseadas no achievement system
+  primary: "achievement-exercise",
+  secondary: "achievement-workout", 
+  accent: "achievement-weight",
+  success: "achievement-consecutive",
+  
+  // Gradientes para backgrounds
+  primaryGradient: "from-achievement-exercise/10 to-achievement-workout/10",
+  secondaryGradient: "from-achievement-workout/10 to-achievement-weight/10",
+  accentGradient: "from-achievement-weight/10 to-achievement-consecutive/10",
+  
+  // Backgrounds e overlays
+  cardBackground: "bg-app-card",
+  overlayBackground: "bg-app-overlay",
+  pageBackground: "bg-app-gradient",
+  
+  // Borders
+  defaultBorder: "border-app-border-default",
+  mutedBorder: "border-app-border-muted", 
+  accentBorder: "border-app-border-accent",
+  
+  // Texto
+  primaryText: "text-app-text-primary",
+  secondaryText: "text-app-text-secondary",
+  mutedText: "text-app-text-muted",
+  accentText: "text-app-text-accent",
+  headingText: "text-app-heading",
+  
+  // Shadows
+  lightShadow: "shadow-app-light",
+  mediumShadow: "shadow-app-medium", 
+  largeShadow: "shadow-app-large",
+  xlShadow: "shadow-app-xl"
+} as const;
+
+// ===== EXERCISE STATUS AND CATEGORIES =====
+
+// Status dos exercícios
+export const EXERCISE_STATUS = [
+  {
+    value: 'draft',
+    label: 'Rascunho',
+    color: 'from-gray-500 to-gray-600',
+    bgColor: 'bg-gray-100 dark:bg-gray-800',
+    textColor: 'text-gray-700 dark:text-gray-300',
+    icon: '📝'
+  },
+  {
+    value: 'published',
+    label: 'Publicado',
+    color: 'achievement-consecutive',
+    bgColor: 'bg-achievement-consecutive/10',
+    textColor: 'text-achievement-consecutive',
+    icon: '✅'
+  },
+  {
+    value: 'archived',
+    label: 'Arquivado',
+    color: 'from-orange-500 to-orange-600',
+    bgColor: 'bg-orange-100 dark:bg-orange-900/20',
+    textColor: 'text-orange-700 dark:text-orange-300',
+    icon: '📦'
+  }
+] as const;
+
+// Níveis de dificuldade
+export const DIFFICULTY_LEVELS = [
+  {
+    value: 'beginner',
+    label: 'Iniciante',
+    color: 'achievement-consecutive',
+    icon: '🟢',
+    description: 'Ideal para quem está começando'
+  },
+  {
+    value: 'intermediate', 
+    label: 'Intermediário',
+    color: 'achievement-workout',
+    icon: '🟡',
+    description: 'Para quem já tem experiência básica'
+  },
+  {
+    value: 'advanced',
+    label: 'Avançado',
+    color: 'achievement-weight',
+    icon: '🟠',
+    description: 'Para praticantes experientes'
+  },
+  {
+    value: 'expert',
+    label: 'Expert',
+    color: 'achievement-exercise',
+    icon: '🔴',
+    description: 'Para profissionais e atletas'
+  }
+] as const;
+
+// ===== ANIMATION AND TRANSITION CONFIGS =====
+
+// Configurações de animação
+export const ANIMATION_CONFIG = {
+  // Durações
+  fast: 'duration-200',
+  normal: 'duration-300',
+  slow: 'duration-500',
+  slower: 'duration-700',
+  
+  // Easing
+  easeOut: 'ease-out',
+  easeIn: 'ease-in',
+  easeInOut: 'ease-in-out',
+  
+  // Transforms comuns
+  scaleHover: 'hover:scale-105',
+  scaleActive: 'active:scale-95',
+  scaleCard: 'hover:scale-[1.02]',
+  
+  // Delays para animações em sequência
+  delays: {
+    item1: 'delay-0',
+    item2: 'delay-75', 
+    item3: 'delay-150',
+    item4: 'delay-300'
+  }
+} as const;
+
+// ===== RESPONSIVE BREAKPOINTS =====
+
+// Configurações responsivas específicas do módulo
+export const EXERCISE_BREAKPOINTS = {
+  // Grid columns por breakpoint
+  gridCols: {
+    mobile: 'grid-cols-1',
+    tablet: 'sm:grid-cols-2', 
+    laptop: 'lg:grid-cols-3',
+    desktop: 'xl:grid-cols-4'
+  },
+  
+  // Gaps responsivos
+  gaps: {
+    small: 'gap-3 sm:gap-4',
+    medium: 'gap-4 sm:gap-6', 
+    large: 'gap-6 sm:gap-8'
+  },
+  
+  // Padding responsivo
+  padding: {
+    container: 'px-3 sm:px-4',
+    card: 'p-4 sm:p-6',
+    section: 'py-4 sm:py-6 lg:py-8'
+  }
 } as const;
