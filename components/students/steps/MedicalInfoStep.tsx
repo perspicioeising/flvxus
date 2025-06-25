@@ -38,7 +38,7 @@ export function MedicalInfoStep({
           placeholder="Liste quaisquer condições médicas, lesões ou limitações importantes..."
           value={data.medicalConditions}
           onChange={(e) => onChange({ medicalConditions: e.target.value })}
-          className="min-h-[120px] bg-app-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all resize-none text-base"
+          className="min-h-[120px] bg-app-bg-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all resize-none text-base"
         />
         <div className="flex items-center gap-2 text-xs text-app-text-secondary">
           <Shield className="h-3 w-3" />
@@ -57,7 +57,7 @@ export function MedicalInfoStep({
           placeholder="Nome e telefone do contato de emergência"
           value={data.emergencyContact}
           onChange={(e) => onChange({ emergencyContact: e.target.value })}
-          className="h-12 bg-app-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all text-base"
+          className="h-12 bg-app-bg-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all text-base"
         />
         <p className="text-xs text-app-text-secondary">
           Ex: Maria Silva - (11) 99999-9999 (mãe)
@@ -75,7 +75,7 @@ export function MedicalInfoStep({
           placeholder="Qualquer informação adicional relevante sobre o aluno..."
           value={data.notes}
           onChange={(e) => onChange({ notes: e.target.value })}
-          className="min-h-[100px] bg-app-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all resize-none text-base"
+          className="min-h-[100px] bg-app-bg-card border-app-border-muted rounded-xl focus:ring-2 focus:ring-app-text-accent transition-all resize-none text-base"
         />
       </div>
 
