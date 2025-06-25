@@ -50,60 +50,66 @@ function RegisterContent() {
     setIsLoading(true);
     
     try {
-      // 1. Primeiro criar o usuário no Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      console.log('🚀 [REGISTER] Iniciando registro via API...');
+
+      // Usar nossa API customizada
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          businessName: values.businessName,
+          plan: plan
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro no registro');
+      }
+
+      console.log('✅ [REGISTER] Registro bem-sucedido:', data);
+
+      toast({
+        title: "Conta criada com sucesso! 🎉",
+        description: "Fazendo login automaticamente...",
+      });
+
+      // Fazer login com as credenciais
+      console.log('🔐 [REGISTER] Fazendo login...');
+      
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
-        options: {
-          data: {
-            full_name: values.name,
-          }
-        }
       });
-      
-      if (authError) {
-        throw new Error(authError.message);
-      }
-      
-      if (!authData.user) {
-        throw new Error("Falha ao criar usuário");
-      }
 
-      // 2. Aguardar um pouco para a sessão ser estabelecida
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // 3. Usar a função do banco para criar tenant e perfil
-      const { data: functionResult, error: functionError } = await supabase
-        .rpc('create_trainer_with_tenant', {
-          user_id: authData.user.id,
-          full_name: values.name,
-          email: values.email,
-          business_name: values.businessName,
-          plan: plan
+      if (loginError) {
+        console.warn('⚠️ [REGISTER] Erro no login automático:', loginError);
+        toast({
+          title: "Conta criada!",
+          description: "Redirecionando para o login...",
         });
-      
-      if (functionError) {
-        console.error('Function error:', functionError);
-        throw new Error(functionError.message || "Erro ao criar perfil da empresa");
+        setTimeout(() => {
+          router.push(`/login?email=${encodeURIComponent(values.email)}`);
+        }, 1000);
+        return;
       }
 
-      if (!functionResult?.success) {
-        console.error('Function result:', functionResult);
-        throw new Error(functionResult?.error || "Erro desconhecido ao criar perfil");
-      }
-      
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Redirecionando para o dashboard...",
-      });
-      
-      // Aguardar um pouco para garantir que tudo foi criado
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
+      console.log('✅ [REGISTER] Login bem-sucedido!');
+
+      // Aguardar um pouco para garantir que a sessão foi estabelecida
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Redirecionar para dashboard
+      router.push("/dashboard");
       
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('❌ [REGISTER] Erro no registro:', error);
       toast({
         variant: "destructive",
         title: "Falha no cadastro",
@@ -194,26 +200,26 @@ function RegisterContent() {
                 </h1>
                 
                 {/* Plan Badge */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-app-card backdrop-blur-sm rounded-2xl border border-app-border-accent/50 shadow-app-medium mb-4">
+                {/* <div className="inline-flex items-center gap-2 px-4 py-2 bg-app-card backdrop-blur-sm rounded-2xl border border-app-border-accent/50 shadow-app-medium mb-4">
                   <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${planInfo.color}`}></div>
                   <span className="text-sm font-semibold text-app-text-primary">
                     Plano {planInfo.name}
                   </span>
-                </div>
+                </div> */}
                 
-                <p className="text-app-text-secondary text-base mb-2">
+                {/* <p className="text-app-text-secondary text-base mb-2">
                   {planInfo.description}
-                </p>
+                </p> */}
                 
                 {/* Features */}
-                <div className="text-xs text-app-text-muted space-y-1">
+                {/* <div className="text-xs text-app-text-muted space-y-1">
                   {planInfo.features.map((feature, index) => (
                     <div key={index} className="flex items-center justify-center gap-1">
                       <div className="w-1 h-1 bg-app-text-accent rounded-full"></div>
                       <span>{feature}</span>
                     </div>
                   ))}
-                </div>
+                </div> */}
               </div>
 
               {/* Form */}
