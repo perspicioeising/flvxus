@@ -167,18 +167,19 @@ export async function POST(request: Request) {
 
     console.log('✅ [DEBUG] Perfil criado:', profileData.id);
 
-    // 3. 🔥 MELHORADO: Gerar Magic Link direto para set-password
-    console.log('📧 [DEBUG] Gerando Magic Link...');
+    // 3. 🔥 MELHORADO: Usar INVITE como método principal
+    console.log('📧 [DEBUG] Gerando Invite Link...');
     
     let linkGenerated = false;
     let actionLink = '';
+    let inviteMethod = '';
     
     try {
-      // Tentar gerar magic link direto para set-password
-      const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: data.email,
-        options: {
+      // 🎯 PRIMEIRO: Tentar gerar INVITE (método recomendado para novos usuários)
+      console.log('📨 [DEBUG] Tentando método INVITE...');
+      const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        data.email,
+        {
           redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/set-password?new_user=true&welcome=true`,
           data: {
             full_name: data.name,
@@ -187,26 +188,28 @@ export async function POST(request: Request) {
             is_student_creation: true
           }
         }
-      });
+      );
 
-      if (magicError) {
-        console.error('❌ [DEBUG] Erro no Magic Link:', magicError);
-        throw magicError;
-      }
-
-      if (magicData?.properties?.action_link) {
-        actionLink = magicData.properties.action_link;
+      if (!inviteError && inviteData?.user) {
         linkGenerated = true;
-        console.log('✅ [DEBUG] Magic Link gerado com sucesso!');
+        inviteMethod = 'invite';
+        console.log('✅ [DEBUG] Invite enviado com sucesso!');
+        console.log('✅ [DEBUG] User ID do invite:', inviteData.user.id);
+        
+        // O link não é retornado no invite, mas o email é enviado automaticamente
+        actionLink = `Convite enviado para ${data.email} - verifique a caixa de entrada`;
+      } else {
+        console.warn('⚠️ [DEBUG] Invite falhou:', inviteError);
+        throw inviteError;
       }
 
-    } catch (magicError) {
-      console.error('❌ [DEBUG] Magic Link falhou, tentando invite...');
+    } catch (inviteError) {
+      console.error('❌ [DEBUG] Invite falhou, tentando Magic Link como fallback...');
       
-      // Fallback: tentar invite
+      // 🔄 FALLBACK: Magic Link
       try {
-        const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
-          type: 'invite',
+        const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'magiclink',
           email: data.email,
           options: {
             redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/set-password?new_user=true&welcome=true`,
@@ -218,40 +221,86 @@ export async function POST(request: Request) {
             }
           }
         });
-        
-        if (!inviteError && inviteData?.properties?.action_link) {
-          actionLink = inviteData.properties.action_link;
-          linkGenerated = true;
-          console.log('✅ [DEBUG] Invite enviado como fallback');
-        } else {
-          console.error('❌ [DEBUG] Invite também falhou:', inviteError);
+
+        if (magicError) {
+          console.error('❌ [DEBUG] Magic Link também falhou:', magicError);
+          throw magicError;
         }
+
+        if (magicData?.properties?.action_link) {
+          actionLink = magicData.properties.action_link;
+          linkGenerated = true;
+          inviteMethod = 'magiclink';
+          console.log('✅ [DEBUG] Magic Link gerado como fallback!');
+        }
+
+      } catch (magicError) {
+        console.error('❌ [DEBUG] Ambos os métodos falharam:', { inviteError, magicError });
         
-      } catch (inviteError) {
-        console.error('❌ [DEBUG] Invite exception:', inviteError);
+        // 🆘 ÚLTIMO RECURSO: Tentar generateLink com tipo invite
+        try {
+          const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+            type: 'invite',
+            email: data.email,
+            options: {
+              redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/set-password?new_user=true&welcome=true`,
+              data: {
+                full_name: data.name,
+                role: 'student',
+                trainer_name: profile.full_name || 'Seu Personal Trainer',
+                is_student_creation: true
+              }
+            }
+          });
+          
+          if (!linkError && linkData?.properties?.action_link) {
+            actionLink = linkData.properties.action_link;
+            linkGenerated = true;
+            inviteMethod = 'generateLink-invite';
+            console.log('✅ [DEBUG] Generate Link Invite funcionou como último recurso!');
+          }
+          
+        } catch (linkError) {
+          console.error('❌ [DEBUG] Todos os métodos falharam:', linkError);
+        }
       }
     }
 
-    // 4. Log do link gerado
+    // 4. Log do resultado
     if (linkGenerated && actionLink) {
       console.log('\n' + '='.repeat(80));
-      console.log('🎯 LINK DE ACESSO GERADO:');
+      console.log('🎯 CONVITE GERADO:');
       console.log('📧 Para:', data.email);
       console.log('👤 Aluno:', data.name);
       console.log('💪 Personal:', profile.full_name);
-      console.log('🔗 Link:', actionLink);
+      console.log('📮 Método:', inviteMethod.toUpperCase());
+      
+      if (inviteMethod === 'invite') {
+        console.log('✉️ Status: Email enviado automaticamente pelo Supabase');
+        console.log('📬 Instrução: Peça ao aluno para verificar a caixa de entrada');
+      } else {
+        console.log('🔗 Link:', actionLink);
+        console.log('📬 Instrução: Envie este link diretamente para o aluno');
+      }
+      
       console.log('='.repeat(80) + '\n');
     } else {
-      console.warn('⚠️ [DEBUG] Nenhum link foi gerado!');
+      console.warn('⚠️ [DEBUG] Nenhum método de convite funcionou!');
     }
 
     return NextResponse.json({
       ...profileData,
       message: linkGenerated 
-        ? 'Aluno criado com sucesso! Um email de acesso foi enviado.' 
-        : 'Aluno criado, mas houve problema no envio do email. Gere um novo convite.',
+        ? inviteMethod === 'invite'
+          ? 'Aluno criado com sucesso! Um convite foi enviado por email.' 
+          : 'Aluno criado com sucesso! Link de acesso gerado.'
+        : 'Aluno criado, mas houve problema no envio do convite. Gere um novo convite.',
       invite_sent: linkGenerated,
-      action_link: actionLink // Para debug/teste
+      invite_method: inviteMethod,
+      action_link: inviteMethod !== 'invite' ? actionLink : undefined, // Só mostrar link se não for invite automático
+      instructions: inviteMethod === 'invite' 
+        ? 'Email enviado automaticamente - peça ao aluno para verificar a caixa de entrada'
+        : 'Use o link fornecido para dar acesso ao aluno'
     });
 
   } catch (error: any) {
