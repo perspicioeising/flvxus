@@ -1,4 +1,4 @@
-// app/api/students/route.ts - VERSÃO CORRIGIDA
+// app/api/students/route.ts - VERSÃO CORRIGIDA E MELHORADA
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
@@ -38,54 +38,69 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and name are required' }, { status: 400 });
     }
 
-    // Verificar se o email já existe na tabela profiles
+    // 🔥 MELHORADO: Verificação mais robusta de email existente
+    console.log('🔍 [DEBUG] Verificando email existente:', data.email);
+
+    // Verificar na tabela profiles
     const { data: existingProfile } = await supabase
       .from('profiles')
-      .select('email')
+      .select('email, status')
       .eq('email', data.email)
       .single();
 
-    if (existingProfile) {
-      return NextResponse.json({ error: 'Um usuário com este email já existe' }, { status: 400 });
+    if (existingProfile && existingProfile.status === 'active') {
+      return NextResponse.json({ error: 'Um usuário ativo com este email já existe' }, { status: 400 });
     }
 
-    console.log('✅ [DEBUG] Email disponível:', data.email);
-
-    // 1. Verificar se usuário já existe no Auth (e deletar se necessário)
-    let authUserId;
-    
+    // Verificar no Auth com listagem mais específica
+    let existingAuthUser = null;
     try {
-      console.log('🔍 [DEBUG] Verificando se usuário já existe no Auth...');
-      
-      // Tentar buscar usuário existente
-      const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+      const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers({
         page: 1,
         perPage: 1000
       });
       
-      const existingUser = existingUsers?.users?.find(u => u.email === data.email);
-      
-      if (existingUser) {
-        console.log('🗑️ [DEBUG] Usuário encontrado no Auth, deletando:', existingUser.id);
-        
-        // Deletar usuário existente
-        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
-        
-        if (deleteError) {
-          console.error('❌ [DEBUG] Erro ao deletar usuário existente:', deleteError);
-        } else {
-          console.log('✅ [DEBUG] Usuário deletado com sucesso');
-        }
-        
-        // Aguardar um pouco para garantir que a deleção foi processada
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!listError && authUsers?.users) {
+        existingAuthUser = authUsers.users.find(u => u.email === data.email);
       }
-      
-    } catch (checkError) {
-      console.warn('⚠️ [DEBUG] Erro ao verificar usuário existente:', checkError);
+    } catch (authCheckError) {
+      console.warn('⚠️ [DEBUG] Erro ao verificar usuário no Auth:', authCheckError);
     }
 
-    // 2. Criar novo usuário no Auth
+    console.log('✅ [DEBUG] Email disponível:', data.email);
+
+    // 🔥 NOVO: Limpeza mais segura de usuários existentes
+    if (existingAuthUser || existingProfile) {
+      console.log('🧹 [DEBUG] Limpando registros existentes...');
+      
+      // Deletar do Auth se existir
+      if (existingAuthUser) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(existingAuthUser.id);
+          console.log('✅ [DEBUG] Usuário deletado do Auth');
+        } catch (deleteError) {
+          console.error('❌ [DEBUG] Erro ao deletar do Auth:', deleteError);
+        }
+      }
+      
+      // Deletar do profiles se existir
+      if (existingProfile) {
+        try {
+          await supabase
+            .from('profiles')
+            .delete()
+            .eq('email', data.email);
+          console.log('✅ [DEBUG] Perfil deletado');
+        } catch (deleteError) {
+          console.error('❌ [DEBUG] Erro ao deletar perfil:', deleteError);
+        }
+      }
+      
+      // Aguardar limpeza
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    // 1. Criar novo usuário no Auth
     console.log('🔑 [DEBUG] Criando novo usuário no Auth...');
     
     const temporaryPassword = Math.random().toString(36).slice(-12) + 'Aa1!';
@@ -97,7 +112,8 @@ export async function POST(request: Request) {
       user_metadata: {
         full_name: data.name,
         role: 'student',
-        trainer_name: profile.full_name || 'Seu Personal Trainer'
+        trainer_name: profile.full_name || 'Seu Personal Trainer',
+        is_student_creation: true
       }
     });
 
@@ -110,10 +126,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Falha ao criar usuário de autenticação' }, { status: 500 });
     }
 
-    authUserId = authUser.user.id;
+    const authUserId = authUser.user.id;
     console.log('✅ [DEBUG] Usuário criado no Auth:', authUserId);
 
-    // 3. Criar perfil
+    // 2. Criar perfil
     const height = data.height ? parseFloat(data.height) : null;
     const weight = data.weight ? parseFloat(data.weight) : null;
     const birthDate = data.birthDate || null;
@@ -138,7 +154,7 @@ export async function POST(request: Request) {
         preferred_training_time: data.preferredTime || null,
         experience_level: data.experienceLevel || null,
         notes: data.notes || null,
-        status: 'active'
+        status: 'pending' // 🔥 MUDANÇA: Iniciar como pendente
       })
       .select()
       .single();
@@ -151,70 +167,91 @@ export async function POST(request: Request) {
 
     console.log('✅ [DEBUG] Perfil criado:', profileData.id);
 
-    // 4. Enviar Magic Link (mais confiável que invite)
-    console.log('📧 [DEBUG] Enviando Magic Link...');
+    // 3. 🔥 MELHORADO: Gerar Magic Link direto para set-password
+    console.log('📧 [DEBUG] Gerando Magic Link...');
+    
+    let linkGenerated = false;
+    let actionLink = '';
     
     try {
+      // Tentar gerar magic link direto para set-password
       const { data: magicData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
         type: 'magiclink',
         email: data.email,
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/profile/set-password?type=magic&new_user=true`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/set-password?new_user=true&welcome=true`,
           data: {
             full_name: data.name,
             role: 'student',
             trainer_name: profile.full_name || 'Seu Personal Trainer',
-            user_id: authUserId
+            is_student_creation: true
           }
         }
       });
 
       if (magicError) {
-        console.error('❌ [DEBUG] Erro ao gerar Magic Link:', magicError);
-        
-        // Fallback: tentar invite
-        console.log('🔄 [DEBUG] Tentando invite como fallback...');
+        console.error('❌ [DEBUG] Erro no Magic Link:', magicError);
+        throw magicError;
+      }
+
+      if (magicData?.properties?.action_link) {
+        actionLink = magicData.properties.action_link;
+        linkGenerated = true;
+        console.log('✅ [DEBUG] Magic Link gerado com sucesso!');
+      }
+
+    } catch (magicError) {
+      console.error('❌ [DEBUG] Magic Link falhou, tentando invite...');
+      
+      // Fallback: tentar invite
+      try {
         const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
           type: 'invite',
           email: data.email,
           options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/profile/set-password`,
+            redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/set-password?new_user=true&welcome=true`,
             data: {
               full_name: data.name,
               role: 'student',
-              trainer_name: profile.full_name || 'Seu Personal Trainer'
+              trainer_name: profile.full_name || 'Seu Personal Trainer',
+              is_student_creation: true
             }
           }
         });
         
-        if (inviteError) {
-          console.error('❌ [DEBUG] Invite também falhou:', inviteError);
-        } else {
+        if (!inviteError && inviteData?.properties?.action_link) {
+          actionLink = inviteData.properties.action_link;
+          linkGenerated = true;
           console.log('✅ [DEBUG] Invite enviado como fallback');
+        } else {
+          console.error('❌ [DEBUG] Invite também falhou:', inviteError);
         }
         
-      } else {
-        console.log('✅ [DEBUG] Magic Link enviado com sucesso!');
-        
-        if (magicData?.properties?.action_link) {
-          console.log('\n' + '='.repeat(80));
-          console.log('🎯 MAGIC LINK GERADO:');
-          console.log('📧 Para:', data.email);
-          console.log('👤 Aluno:', data.name);
-          console.log('💪 Personal:', profile.full_name);
-          console.log('🔗 Link:', magicData.properties.action_link);
-          console.log('='.repeat(80) + '\n');
-        }
+      } catch (inviteError) {
+        console.error('❌ [DEBUG] Invite exception:', inviteError);
       }
+    }
 
-    } catch (emailError) {
-      console.error('💥 [DEBUG] Exceção ao enviar email:', emailError);
+    // 4. Log do link gerado
+    if (linkGenerated && actionLink) {
+      console.log('\n' + '='.repeat(80));
+      console.log('🎯 LINK DE ACESSO GERADO:');
+      console.log('📧 Para:', data.email);
+      console.log('👤 Aluno:', data.name);
+      console.log('💪 Personal:', profile.full_name);
+      console.log('🔗 Link:', actionLink);
+      console.log('='.repeat(80) + '\n');
+    } else {
+      console.warn('⚠️ [DEBUG] Nenhum link foi gerado!');
     }
 
     return NextResponse.json({
       ...profileData,
-      message: 'Aluno criado com sucesso! Um email de acesso foi enviado.',
-      invite_sent: true
+      message: linkGenerated 
+        ? 'Aluno criado com sucesso! Um email de acesso foi enviado.' 
+        : 'Aluno criado, mas houve problema no envio do email. Gere um novo convite.',
+      invite_sent: linkGenerated,
+      action_link: actionLink // Para debug/teste
     });
 
   } catch (error: any) {
@@ -222,8 +259,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || 'An error occurred while creating the student' }, { status: 500 });
   }
 }
-
-
 
 export async function GET(request: Request) {
   const cookieStore = cookies();
@@ -311,6 +346,7 @@ export async function GET(request: Request) {
       total: totalCount || 0,
       active: students?.filter(s => s.status === 'active').length || 0,
       inactive: students?.filter(s => s.status === 'inactive').length || 0,
+      pending: students?.filter(s => s.status === 'pending').length || 0,
       beginners: students?.filter(s => s.experience_level === 'beginner').length || 0,
       intermediate: students?.filter(s => s.experience_level === 'intermediate').length || 0,
       advanced: students?.filter(s => s.experience_level === 'advanced').length || 0,
@@ -340,7 +376,6 @@ export async function GET(request: Request) {
     );
   }
 }
-
 
 // PUT method for updating students
 export async function PUT(request: Request) {
