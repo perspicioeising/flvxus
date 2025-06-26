@@ -188,11 +188,11 @@ export function Sidebar({ className, userRole, isCollapsed, toggleCollapse }: Si
 
   const bottomRoutes = [
     {
-      name: "Configurações",
-      href: "/dashboard/settings",
+      name: "Webhooks",
+      href: "/dashboard/webhooks",
       icon: Settings,
-      isActive: pathname.startsWith("/dashboard/settings"),
-      color: "bg-gray-500",
+      isActive: pathname.startsWith("/dashboard/webhooks"),
+       color: "achievement-consecutive",
     },
     {
       name: "Ajuda",

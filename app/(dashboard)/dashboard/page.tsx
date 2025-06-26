@@ -366,7 +366,7 @@ export default function DashboardPage() {
             </h3>
             
             <div className="flex gap-3">
-              <Link href="/dashboard/settings" className="flex-1">
+              <Link href="/dashboard/webhooks" className="flex-1">
                 <div className="group bg-app-card backdrop-blur-sm border border-app-border-muted rounded-xl p-3 hover:shadow-app-medium transition-all duration-300">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
@@ -374,7 +374,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-app-text-primary group-hover:text-app-text-accent transition-colors duration-300">
-                        Configurações
+                        Webhooks
                       </h4>
                     </div>
                     <ChevronRight className="h-4 w-4 text-app-text-muted group-hover:text-app-text-accent transition-colors duration-300" />
