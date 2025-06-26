@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/workout-reminders",
+      "schedule": "0 */2 * * *"
+    }
+  ]
+}
