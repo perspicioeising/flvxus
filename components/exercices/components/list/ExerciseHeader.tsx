@@ -53,7 +53,7 @@ export function ExerciseHeader({
             {/* Right side - Action button */}
             <Button
               onClick={onCreateNew}
-              className="h-12 w-12 sm:h-14 sm:w-14 btn-gradient-primary rounded-xl shadow-app-large hover:shadow-app-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shrink-0"
+              className="h-12 w-12 sm:h-14 sm:w-14 bg-achievement-exercise rounded-xl shadow-app-large hover:shadow-app-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shrink-0"
             >
               <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </Button>
