@@ -114,7 +114,7 @@ export function WorkoutDetailHeader({
                   Editar
                 </Button>
                 
-                <Button
+                {/* <Button
                   variant="outline"
                   onClick={handleShare}
                   className="h-11 px-4 bg-app-card backdrop-blur-sm border-2 border-app-achievement-consecutive hover:border-app-achievement-consecutive/80 rounded-xl font-semibold shadow-app-medium transition-all duration-300 hover:scale-105 group text-app-achievement-consecutive"
@@ -130,7 +130,7 @@ export function WorkoutDetailHeader({
                 >
                   <Download className="h-4 w-4 mr-2 group-hover:translate-y-0.5 transition-transform" />
                   Relatório
-                </Button>
+                </Button> */}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -175,14 +175,14 @@ export function WorkoutDetailHeader({
                       <Edit3 className="h-4 w-4 mr-2" />
                       Editar
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleShare} className="rounded-lg">
+                    {/* <DropdownMenuItem onClick={handleShare} className="rounded-lg">
                       <Share2 className="h-4 w-4 mr-2" />
                       Compartilhar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDownload} className="rounded-lg">
                       <Download className="h-4 w-4 mr-2" />
                       Relatório
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuItem onClick={onClone} disabled={isLoading} className="rounded-lg">
                       <Copy className="h-4 w-4 mr-2" />
                       Clonar
@@ -240,104 +240,7 @@ export function WorkoutDetailHeader({
         </div>
 
         {/* Workout Info Section */}
-        <div className="p-4 sm:p-6">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-app-achievement-workout/10 to-app-achievement-workout/20 rounded-2xl blur-lg"></div>
-            <div className="relative p-4 sm:p-6 bg-app-card/60 backdrop-blur-sm rounded-2xl border border-app-border-accent/50 shadow-app-xl">
-              
-              {/* Workout Profile Row */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mb-6">
-                {/* Workout Avatar */}
-                <div className="relative">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-achievement-workout rounded-2xl flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-app-xl">
-                    <Activity className="h-8 w-8 sm:h-10 sm:w-10" />
-                  </div>
-                  <Badge className={`absolute -bottom-2 -right-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r ${badgeColor} text-white rounded-full text-xs font-bold border-0 shadow-app-medium`}>
-                    <ClassificationIcon className="h-3 w-3 mr-1" />
-                    {classification}
-                  </Badge>
-                </div>
-
-                {/* Workout Info */}
-                <div className="flex-1 text-center sm:text-left">
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-app-text-heading mb-2">
-                    Treino {levelInfo?.label}
-                  </h2>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 text-sm text-app-text-secondary mb-4">
-                    <span className="flex items-center gap-1.5">
-                      <Target className="h-4 w-4" />
-                      {goalInfo?.label || 'Objetivo não definido'}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Activity className="h-4 w-4" />
-                      {levelInfo?.label || 'Nível não definido'}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <TrendingUp className="h-4 w-4" />
-                      {stats.totalExercises} exercícios
-                    </span>
-                  </div>
-
-                  {/* Badges */}
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3">
-                    {levelInfo && (
-                      <Badge className={`px-3 sm:px-4 py-1.5 sm:py-2 bg-achievement-workout text-white rounded-full font-semibold border-0 text-xs sm:text-sm`}>
-                        <Award className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                        {levelInfo.label}
-                      </Badge>
-                    )}
-                    {goalInfo && (
-                      <Badge className={`px-3 sm:px-4 py-1.5 sm:py-2 bg-app-achievement-consecutive text-white rounded-full font-semibold border-0 text-xs sm:text-sm`}>
-                        <goalInfo.icon className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                        {goalInfo.label}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <MetricCard
-                  icon={Activity}
-                  label="Exercícios"
-                  value={stats.totalExercises.toString()}
-                  unit=""
-                  gradient="from-app-achievement-exercise to-app-achievement-exercise"
-                  bgColor="from-app-achievement-exercise/10 to-app-achievement-exercise/20"
-                  borderColor="border-app-border-accent"
-                />
-                <MetricCard
-                  icon={Hash}
-                  label="Séries"
-                  value={stats.totalSets.toString()}
-                  unit=""
-                  gradient="from-app-achievement-consecutive to-app-achievement-consecutive"
-                  bgColor="from-app-achievement-consecutive/10 to-app-achievement-consecutive/20"
-                  borderColor="border-app-border-accent"
-                />
-                <MetricCard
-                  icon={Clock}
-                  label="Duração"
-                  value={stats.estimatedDuration.toString()}
-                  unit="min"
-                  gradient="from-app-achievement-weight to-app-achievement-weight"
-                  bgColor="from-app-achievement-weight/10 to-app-achievement-weight/20"
-                  borderColor="border-app-border-accent"
-                />
-                <MetricCard
-                  icon={TrendingUp}
-                  label="Descanso"
-                  value={stats.averageRest.toString()}
-                  unit="s"
-                  gradient="from-app-achievement-workout to-app-achievement-workout"
-                  bgColor="from-app-achievement-workout/10 to-app-achievement-workout/20"
-                  borderColor="border-app-border-accent"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   );

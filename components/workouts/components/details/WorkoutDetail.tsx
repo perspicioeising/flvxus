@@ -7,7 +7,7 @@ import { WorkoutDetailSkeleton } from './WorkoutDetailSkeleton';
 import { WorkoutDetailHeader } from './WorkoutDetailHeader';
 import { WorkoutStatsCard } from './WorkoutStatsCard';
 import { WorkoutExerciseList } from './WorkoutExerciseList';
-import { ExerciseDetailDrawer } from './ExerciseDetailModal';
+import { ExerciseDetailModal } from './ExerciseDetailModal';
 import { Exercise } from '../../types';
 
 interface WorkoutDetailProps {
@@ -18,7 +18,6 @@ interface WorkoutDetailProps {
 export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetailProps) {
   const router = useRouter();
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [isExerciseDrawerOpen, setIsExerciseDrawerOpen] = useState(false);
 
   const {
     workout,
@@ -56,22 +55,13 @@ export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetail
     router.push(`/dashboard/workouts/${workoutId}/start`);
   };
 
+  // Função simplificada - apenas abre o modal
   const handleExerciseView = (exercise: Exercise) => {
-    // Mobile: usar drawer/bottom sheet
-    // Desktop: usar modal ou página dedicada
-    const isMobile = window.innerWidth < 768;
-    
-    if (isMobile) {
-      setSelectedExercise(exercise);
-      setIsExerciseDrawerOpen(true);
-    } else {
-      // Para desktop, redirecionar para página dedicada
-      router.push(`/dashboard/exercises/${exercise.id}?from=/dashboard/workouts/${workoutId}`);
-    }
+    setSelectedExercise(exercise);
   };
 
-  const handleCloseExerciseDrawer = () => {
-    setIsExerciseDrawerOpen(false);
+  // Função para fechar o modal
+  const handleCloseExerciseModal = () => {
     setSelectedExercise(null);
   };
 
@@ -143,11 +133,11 @@ export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetail
         </div>
       </div>
 
-      {/* Drawer de detalhes do exercício para mobile */}
-      <ExerciseDetailDrawer
+      {/* Modal de detalhes do exercício - funciona em mobile e desktop */}
+      <ExerciseDetailModal
         exercise={selectedExercise}
-        isOpen={isExerciseDrawerOpen}
-        onClose={handleCloseExerciseDrawer}
+        isOpen={!!selectedExercise}
+        onClose={handleCloseExerciseModal}
       />
     </div>
   );

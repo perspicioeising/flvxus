@@ -50,8 +50,8 @@ export function WorkoutExerciseList({
         </div>
 
         {/* Exercise List */}
-        <div className="p-4 sm:p-6">
-          <div className="space-y-4">
+        <div className="p-4 sm:p-6 ">
+          <div className="space-y-4 ">
             {exercises
               .sort((a, b) => a.order - b.order)
               .map((exercise, index) => (

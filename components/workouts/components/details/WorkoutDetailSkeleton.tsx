@@ -106,7 +106,7 @@ export function WorkoutDetailSkeleton() {
                 <div className="p-6">
                   <div className="space-y-4">
                     {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="p-6 bg-gradient-to-r from-app-card to-app-bg-secondary/20 rounded-2xl border-2 border-app-border-muted">
+                      <div key={i} className="p-6  from-app-card to-app-bg-secondary/20 rounded-2xl border-2 border-app-border-muted">
                         
                         <div className="flex items-start gap-4 mb-4">
                           <div className="w-16 h-16 bg-app-achievement-workout/20 rounded-2xl animate-pulse"></div>

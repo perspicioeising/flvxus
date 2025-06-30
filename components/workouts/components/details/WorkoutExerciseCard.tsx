@@ -26,7 +26,7 @@ export function WorkoutExerciseCard({
         <div className="absolute -top-4 left-8 w-0.5 h-4 bg-gradient-to-b from-app-achievement-workout/50 to-transparent"></div>
       )}
       
-      <div className="relative p-4 sm:p-6 bg-gradient-to-r from-app-card to-app-bg-secondary/10 rounded-2xl border-2 border-app-border-muted hover:border-app-achievement-workout transition-all duration-300 shadow-app-medium hover:shadow-app-large group-hover:transform group-hover:scale-[1.02]">
+      <div className="relative p-4 sm:p-6  rounded-2xl border-2 border-app-border-muted hover:border-app-achievement-workout transition-all duration-300  hover:shadow-app-large group-hover:transform group-hover:scale-[1.02]">
         
         {/* Exercise Number & Main Info */}
         <div className="flex items-start gap-4 mb-4">
@@ -48,16 +48,14 @@ export function WorkoutExerciseCard({
                 <h3 className="text-lg sm:text-xl font-bold text-app-text-primary mb-2">
                   {exercise.exercise.name}
                 </h3>
-                <p className="text-sm text-app-text-secondary line-clamp-2 leading-relaxed">
-                  {exercise.exercise.description}
-                </p>
+               
               </div>
               
               {/* View Exercise Button */}
               <Button
                 onClick={() => onView(exercise.exercise)}
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 className="flex-shrink-0 border-2 border-app-border-accent hover:border-app-achievement-workout text-app-achievement-workout hover:bg-app-achievement-workout/10 rounded-xl transition-all duration-300"
               >
                 <Eye className="h-4 w-4 mr-2" />
@@ -67,7 +65,7 @@ export function WorkoutExerciseCard({
             </div>
 
             {/* Muscle Groups */}
-            <div className="flex flex-wrap gap-2 mb-4">
+            {/* <div className="flex flex-wrap gap-2 mb-4">
               {exercise.exercise.muscle_group.slice(0, 3).map((muscle) => (
                 <Badge
                   key={muscle}
@@ -81,7 +79,7 @@ export function WorkoutExerciseCard({
                   +{exercise.exercise.muscle_group.length - 3} mais
                 </Badge>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -163,7 +161,7 @@ export function WorkoutExerciseCard({
         )}
 
         {/* Equipment (if exists) */}
-        {exercise.exercise.equipment && exercise.exercise.equipment.length > 0 && (
+        {/* {exercise.exercise.equipment && exercise.exercise.equipment.length > 0 && (
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xs font-medium text-app-text-muted">Equipamentos:</span>
             <div className="flex flex-wrap gap-1">
@@ -183,7 +181,7 @@ export function WorkoutExerciseCard({
               )}
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Student Action Button */}
         {userRole === 'student' && (

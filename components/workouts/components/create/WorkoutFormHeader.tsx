@@ -54,27 +54,6 @@ export function WorkoutFormHeader({
             </div>
           </div>
         </div>
-
-        {/* Progress Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-app-achievement-workout uppercase tracking-wider">
-              Progresso
-            </span>
-            <Badge className="bg-app-achievement-workout/10 text-app-achievement-workout border-app-border-accent text-sm font-semibold">
-              {Math.round(progressPercentage)}% concluído
-            </Badge>
-          </div>
-          
-          <div className="relative">
-            <div className="h-2 bg-app-bg-secondary rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-achievement-workout rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
