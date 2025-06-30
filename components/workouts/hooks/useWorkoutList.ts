@@ -1,6 +1,6 @@
 // components/workouts/hooks/useWorkoutList.ts
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Workout, 
@@ -15,6 +15,23 @@ import {
   API_ENDPOINTS,
   ERROR_MESSAGES
 } from '../constants';
+
+// Debounce hook
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 // Hook for workout list with async pagination
 export const useWorkoutList = (): UseWorkoutListReturn & {
@@ -33,6 +50,12 @@ export const useWorkoutList = (): UseWorkoutListReturn & {
     ...PAGINATION_DEFAULTS,
     hasMore: true
   });
+
+  // Debounce search filter
+  const debouncedSearch = useDebounce(filters.search, 500);
+
+  // Track if it's the initial mount
+  const isInitialMount = useRef(true);
 
   // Calculate stats
   const stats = useMemo((): WorkoutStats => {
@@ -67,7 +90,8 @@ export const useWorkoutList = (): UseWorkoutListReturn & {
   const fetchWorkouts = useCallback(async (
     page = 1, 
     limit = pagination.limit, 
-    append = false
+    append = false,
+    searchTerm = debouncedSearch
   ) => {
     try {
       if (page === 1) {
@@ -79,7 +103,7 @@ export const useWorkoutList = (): UseWorkoutListReturn & {
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        ...(filters.search && { search: filters.search }),
+        ...(searchTerm && { search: searchTerm }),
         ...(filters.level !== 'all' && { level: filters.level }),
         ...(filters.goal !== 'all' && { goal: filters.goal }),
         sortBy: filters.sortBy,
@@ -135,7 +159,7 @@ export const useWorkoutList = (): UseWorkoutListReturn & {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [filters, pagination.limit, toast]);
+  }, [filters.level, filters.goal, filters.sortBy, filters.sortOrder, pagination.limit, toast, debouncedSearch]);
 
   // Load more workouts (for pagination)
   const loadMore = useCallback(async () => {
@@ -148,8 +172,12 @@ export const useWorkoutList = (): UseWorkoutListReturn & {
   // Update filters
   const updateFilters = useCallback((newFilters: Partial<WorkoutFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-    setWorkouts([]); // Clear existing workouts
-    setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
+    
+    // Only reset workouts and pagination for non-search filter changes
+    if (!('search' in newFilters)) {
+      setWorkouts([]); 
+      setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
+    }
   }, []);
 
   // Clear filters
@@ -182,10 +210,29 @@ export const useWorkoutList = (): UseWorkoutListReturn & {
     return fetchWorkouts(1, pagination.limit, false);
   }, [fetchWorkouts, pagination.limit]);
 
-  // Initial load and filter changes
+  // Effect for debounced search
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    setWorkouts([]);
+    setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
+    fetchWorkouts(1, pagination.limit, false, debouncedSearch);
+  }, [debouncedSearch]);
+
+  // Effect for other filter changes (not search)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      fetchWorkouts(1, pagination.limit, false);
+      return;
+    }
+
+    // Only fetch if it's not a search change
     fetchWorkouts(1, pagination.limit, false);
-  }, [filters]); // Re-fetch when filters change
+  }, [filters.level, filters.goal, filters.sortBy, filters.sortOrder]);
 
   return {
     workouts,

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +7,7 @@ import { WorkoutDetailSkeleton } from './WorkoutDetailSkeleton';
 import { WorkoutDetailHeader } from './WorkoutDetailHeader';
 import { WorkoutStatsCard } from './WorkoutStatsCard';
 import { WorkoutExerciseList } from './WorkoutExerciseList';
-import { ExerciseDetailModal } from './ExerciseDetailModal';
+import { ExerciseDetailDrawer } from './ExerciseDetailModal';
 import { Exercise } from '../../types';
 
 interface WorkoutDetailProps {
@@ -19,7 +18,7 @@ interface WorkoutDetailProps {
 export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetailProps) {
   const router = useRouter();
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [isExerciseDrawerOpen, setIsExerciseDrawerOpen] = useState(false);
 
   const {
     workout,
@@ -58,12 +57,21 @@ export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetail
   };
 
   const handleExerciseView = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
-    setIsExerciseModalOpen(true);
+    // Mobile: usar drawer/bottom sheet
+    // Desktop: usar modal ou página dedicada
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+      setSelectedExercise(exercise);
+      setIsExerciseDrawerOpen(true);
+    } else {
+      // Para desktop, redirecionar para página dedicada
+      router.push(`/dashboard/exercises/${exercise.id}?from=/dashboard/workouts/${workoutId}`);
+    }
   };
 
-  const handleCloseExerciseModal = () => {
-    setIsExerciseModalOpen(false);
+  const handleCloseExerciseDrawer = () => {
+    setIsExerciseDrawerOpen(false);
     setSelectedExercise(null);
   };
 
@@ -73,21 +81,21 @@ export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetail
 
   if (error || !workout) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="min-h-screen bg-app-gradient">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
           <div className="text-center py-20">
-            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 bg-app-achievement-workout/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-app-border-accent">
               <span className="text-4xl">😞</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl font-bold text-app-text-heading mb-4">
               Treino não encontrado
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
+            <p className="text-app-text-secondary mb-8">
               {error || 'O treino que você está procurando não existe ou foi removido.'}
             </p>
             <button
               onClick={() => router.push('/dashboard/workouts')}
-              className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300"
+              className="px-6 py-3 bg-achievement-workout hover:bg-app-achievement-workout/90 text-white font-semibold rounded-xl transition-all duration-300"
             >
               ← Voltar para Treinos
             </button>
@@ -98,8 +106,8 @@ export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetail
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+    <div className="min-h-screen bg-app-gradient">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         
         {/* Header com ações */}
         <WorkoutDetailHeader
@@ -113,7 +121,7 @@ export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetail
           isLoading={isCloning || isDeleting}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
           
           {/* Estatísticas do treino */}
           <div className="lg:col-span-1">
@@ -135,11 +143,11 @@ export function WorkoutDetail({ workoutId, userRole = 'trainer' }: WorkoutDetail
         </div>
       </div>
 
-      {/* Modal de detalhes do exercício */}
-      <ExerciseDetailModal
+      {/* Drawer de detalhes do exercício para mobile */}
+      <ExerciseDetailDrawer
         exercise={selectedExercise}
-        isOpen={isExerciseModalOpen}
-        onClose={handleCloseExerciseModal}
+        isOpen={isExerciseDrawerOpen}
+        onClose={handleCloseExerciseDrawer}
       />
     </div>
   );
