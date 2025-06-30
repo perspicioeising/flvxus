@@ -116,7 +116,18 @@ const VALIDATION_RULES = {
 } as const;
 
 // Hook para lista de treinos com paginação
-export const useWorkoutList = (): UseWorkoutListReturn => {
+// Adicione este import no topo do arquivo index.ts junto com os outros imports
+import { useRef } from 'react';
+
+// Substitua a implementação do useWorkoutList no arquivo index.ts por esta versão:
+
+// Hook para lista de treinos com paginação e debounce
+export const useWorkoutList = (): UseWorkoutListReturn & {
+  viewMode: 'grid' | 'list';
+  setViewMode: (mode: 'grid' | 'list') => void;
+  isLoadingMore: boolean;
+  loadMore: () => Promise<void>;
+} => {
   const { toast } = useToast();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -127,6 +138,12 @@ export const useWorkoutList = (): UseWorkoutListReturn => {
     ...PAGINATION_DEFAULTS,
     hasMore: true
   });
+
+  // Ref para controlar se é a primeira renderização
+  const isFirstRender = useRef(true);
+  
+  // Ref para timeout do debounce
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Calculate stats
   const stats = useMemo((): WorkoutStats => {
@@ -161,23 +178,24 @@ export const useWorkoutList = (): UseWorkoutListReturn => {
   const fetchWorkouts = useCallback(async (
     page = 1, 
     limit = pagination.limit, 
-    append = false
+    append = false,
+    currentFilters = filters
   ) => {
     try {
-      if (page === 1) {
+      if (page === 1 && !append) {
         setIsLoading(true);
-      } else {
+      } else if (append) {
         setIsLoadingMore(true);
       }
 
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        ...(filters.search && { search: filters.search }),
-        ...(filters.level !== 'all' && { level: filters.level }),
-        ...(filters.goal !== 'all' && { goal: filters.goal }),
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder
+        ...(currentFilters.search && { search: currentFilters.search }),
+        ...(currentFilters.level !== 'all' && { level: currentFilters.level }),
+        ...(currentFilters.goal !== 'all' && { goal: currentFilters.goal }),
+        sortBy: currentFilters.sortBy,
+        sortOrder: currentFilters.sortOrder
       });
 
       const response = await fetch(`${API_ENDPOINTS.workouts}?${queryParams}`);
@@ -229,57 +247,96 @@ export const useWorkoutList = (): UseWorkoutListReturn => {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [filters, pagination.limit, toast]);
+  }, [toast]);
+
+  // Função para buscar com debounce
+  const debouncedFetch = useCallback((newFilters: WorkoutFilters) => {
+    // Limpar timeout anterior
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Se for busca, aplicar debounce
+    if (newFilters.search !== filters.search) {
+      searchTimeoutRef.current = setTimeout(() => {
+        fetchWorkouts(1, pagination.limit, false, newFilters);
+      }, 500); // 500ms de debounce
+    } else {
+      // Para outros filtros, buscar imediatamente
+      fetchWorkouts(1, pagination.limit, false, newFilters);
+    }
+  }, [filters.search, pagination.limit, fetchWorkouts]);
 
   // Load more workouts (for pagination)
   const loadMore = useCallback(async () => {
     if (!pagination.hasMore || isLoadingMore) return;
     
     const nextPage = Math.floor(workouts.length / pagination.limit) + 1;
-    await fetchWorkouts(nextPage, pagination.limit, true);
-  }, [pagination.hasMore, pagination.limit, isLoadingMore, workouts.length, fetchWorkouts]);
+    await fetchWorkouts(nextPage, pagination.limit, true, filters);
+  }, [pagination.hasMore, pagination.limit, isLoadingMore, workouts.length, filters, fetchWorkouts]);
 
   // Update filters
   const updateFilters = useCallback((newFilters: Partial<WorkoutFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setWorkouts([]); // Clear existing workouts
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+    
+    // Resetar paginação
+    setWorkouts([]);
     setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
-  }, []);
+    
+    // Buscar com debounce
+    debouncedFetch(updatedFilters);
+  }, [filters, debouncedFetch]);
 
   // Clear filters
   const clearFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
+    const clearedFilters = DEFAULT_FILTERS;
+    setFilters(clearedFilters);
     setWorkouts([]);
     setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
-  }, []);
+    fetchWorkouts(1, pagination.limit, false, clearedFilters);
+  }, [pagination.limit, fetchWorkouts]);
 
   // Handle page change (for traditional pagination if needed)
   const handlePageChange = useCallback((page: number) => {
     if (page !== pagination.page) {
       setPagination(prev => ({ ...prev, page }));
-      fetchWorkouts(page, pagination.limit, false);
+      fetchWorkouts(page, pagination.limit, false, filters);
     }
-  }, [pagination.page, pagination.limit, fetchWorkouts]);
+  }, [pagination.page, pagination.limit, filters, fetchWorkouts]);
 
   // Handle page size change
   const handlePageSizeChange = useCallback((pageSize: number) => {
     if (pageSize !== pagination.limit) {
       setPagination(prev => ({ ...prev, limit: pageSize, page: 1, hasMore: true }));
       setWorkouts([]);
+      fetchWorkouts(1, pageSize, false, filters);
     }
-  }, [pagination.limit]);
+  }, [pagination.limit, filters, fetchWorkouts]);
 
   // Refresh workouts
   const refreshWorkouts = useCallback(() => {
     setWorkouts([]);
     setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
-    return fetchWorkouts(1, pagination.limit, false);
-  }, [fetchWorkouts, pagination.limit]);
+    return fetchWorkouts(1, pagination.limit, false, filters);
+  }, [fetchWorkouts, pagination.limit, filters]);
 
-  // Initial load and filter changes
+  // Initial load only
   useEffect(() => {
-    fetchWorkouts(1, pagination.limit, false);
-  }, [filters]); // Re-fetch when filters change
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      fetchWorkouts(1, pagination.limit, false, filters);
+    }
+  }, []); // Empty dependency array - só executa uma vez
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     workouts,
@@ -299,7 +356,6 @@ export const useWorkoutList = (): UseWorkoutListReturn => {
     loadMore
   };
 };
-
 // Hook para operações de treinos (CRUD)
 export const useWorkoutOperations = (): UseWorkoutOperationsReturn => {
   const { toast } = useToast();

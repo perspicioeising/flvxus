@@ -1,9 +1,9 @@
-
+// components/workouts/steps/StepReview.tsx
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   CheckCircle2, 
-  Dumbbell, 
+  Activity, 
   Target, 
   Clock, 
   Hash,
@@ -36,45 +36,45 @@ export function StepReview({
   return (
     <div className="space-y-8">
       <div className="text-center mb-8">
-        <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <div className="w-20 h-20 bg-achievement-workout rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-app-large">
           <CheckCircle2 className="h-10 w-10 text-white" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-app-text-heading mb-2">
           Revisão do Treino
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-app-text-secondary">
           Revise todas as informações antes de finalizar
         </p>
       </div>
 
       {/* Workout Summary Card */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 via-red-500/20 to-red-600/20 rounded-3xl blur-xl"></div>
-        <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-red-200/50 dark:border-red-800/30 rounded-3xl p-8 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/20 via-app-achievement-workout/30 to-app-achievement-workout/20 rounded-3xl blur-xl"></div>
+        <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/30 rounded-3xl p-8 shadow-app-xl">
           
           {/* Header */}
           <div className="flex items-start gap-6 mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Dumbbell className="h-10 w-10 text-white" />
+            <div className="w-20 h-20 bg-achievement-workout rounded-2xl flex items-center justify-center shadow-app-large">
+              <Activity className="h-10 w-10 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-2xl font-bold text-app-text-heading mb-2">
                 {formData.name}
               </h3>
               {formData.description && (
-                <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                <p className="text-app-text-secondary mb-4 leading-relaxed">
                   {formData.description}
                 </p>
               )}
               <div className="flex flex-wrap gap-3">
                 {selectedLevel && (
-                  <Badge className={`px-4 py-2 bg-gradient-to-r ${selectedLevel.color} text-white rounded-full font-semibold`}>
+                  <Badge className={`px-4 py-2 bg-achievement-workout text-white rounded-full font-semibold`}>
                     <Award className="h-4 w-4 mr-2" />
                     {selectedLevel.label}
                   </Badge>
                 )}
                 {selectedGoal && (
-                  <Badge className={`px-4 py-2 bg-gradient-to-r ${selectedGoal.color} text-white rounded-full font-semibold`}>
+                  <Badge className={`px-4 py-2 bg-app-achievement-consecutive text-white rounded-full font-semibold`}>
                     <Target className="h-4 w-4 mr-2" />
                     {selectedGoal.label}
                   </Badge>
@@ -85,50 +85,50 @@ export function StepReview({
 
           {/* Statistics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Dumbbell className="h-6 w-6 text-white" />
+            <div className="text-center p-4 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted">
+              <div className="w-12 h-12 bg-achievement-workout rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Activity className="h-6 w-6 text-white" />
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-app-text-primary">
                 {selectedExercises.length}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-app-text-secondary">
                 Exercícios
               </p>
             </div>
             
-            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div className="text-center p-4 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted">
+              <div className="w-12 h-12 bg-app-achievement-consecutive rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Hash className="h-6 w-6 text-white" />
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-app-text-primary">
                 {totalSets}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-app-text-secondary">
                 Séries Total
               </p>
             </div>
             
-            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div className="text-center p-4 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted">
+              <div className="w-12 h-12 bg-app-achievement-exercise rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Clock className="h-6 w-6 text-white" />
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-app-text-primary">
                 {Math.round(totalTime / 60)}min
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-app-text-secondary">
                 Tempo Est.
               </p>
             </div>
             
-            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div className="text-center p-4 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted">
+              <div className="w-12 h-12 bg-app-achievement-weight rounded-xl flex items-center justify-center mx-auto mb-3">
                 <TrendingUp className="h-6 w-6 text-white" />
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-app-text-primary">
                 {avgRestTime}s
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-app-text-secondary">
                 Descanso Médio
               </p>
             </div>
@@ -137,13 +137,13 @@ export function StepReview({
       </div>
 
       {/* Exercises List */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h4 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Dumbbell className="h-5 w-5 text-red-600 dark:text-red-400" />
+      <div className="bg-app-card rounded-2xl shadow-app-xl border border-app-border-muted">
+        <div className="p-6 border-b border-app-border-muted">
+          <h4 className="text-lg font-bold text-app-text-primary flex items-center gap-2">
+            <Activity className="h-5 w-5 text-app-achievement-workout" />
             Lista de Exercícios
           </h4>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm text-app-text-secondary mt-1">
             Sequência e configuração dos exercícios
           </p>
         </div>
@@ -153,17 +153,17 @@ export function StepReview({
             {selectedExercises.map((exercise, index) => (
               <div
                 key={exercise.id}
-                className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+                className="flex items-center gap-4 p-4 bg-app-bg-secondary/20 rounded-xl hover:bg-app-bg-secondary/30 transition-all duration-200 border border-app-border-muted"
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                <div className="w-12 h-12 bg-achievement-workout rounded-xl flex items-center justify-center text-white font-bold shadow-app-medium">
                   {index + 1}
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h5 className="font-semibold text-gray-900 dark:text-white mb-1">
+                  <h5 className="font-semibold text-app-text-primary mb-1">
                     {exercise.name}
                   </h5>
-                  <div className="flex flex-wrap gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex flex-wrap gap-2 text-sm text-app-text-secondary">
                     <span className="flex items-center gap-1">
                       <Hash className="h-3 w-3" />
                       {exercise.sets} séries
@@ -178,7 +178,7 @@ export function StepReview({
                     </span>
                   </div>
                   {exercise.notes && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 italic">
+                    <p className="text-sm text-app-text-muted mt-1 italic">
                       "{exercise.notes}"
                     </p>
                   )}
@@ -189,7 +189,7 @@ export function StepReview({
                     <Badge
                       key={muscle}
                       variant="secondary"
-                      className="text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                      className="text-xs bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent"
                     >
                       {muscle}
                     </Badge>
@@ -206,11 +206,11 @@ export function StepReview({
           
           {selectedExercises.length === 0 && (
             <div className="text-center py-12">
-              <Dumbbell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <Activity className="h-16 w-16 text-app-text-muted mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-app-text-primary mb-2">
                 Nenhum exercício adicionado
               </h4>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-app-text-secondary">
                 Volte para a etapa de exercícios para adicionar
               </p>
             </div>
@@ -221,16 +221,16 @@ export function StepReview({
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 pt-6">
         <div className="flex-1">
-          <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200 dark:border-green-700">
+          <div className="p-6 bg-gradient-to-r from-app-achievement-consecutive/10 to-app-achievement-consecutive/20 rounded-2xl border border-app-border-accent">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-app-achievement-consecutive rounded-xl flex items-center justify-center">
                 <CheckCircle2 className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h4 className="font-bold text-green-800 dark:text-green-300">
+                <h4 className="font-bold text-app-achievement-consecutive">
                   Tudo pronto!
                 </h4>
-                <p className="text-sm text-green-600 dark:text-green-400">
+                <p className="text-sm text-app-text-secondary">
                   Seu treino está configurado e pronto para ser salvo
                 </p>
               </div>
@@ -238,26 +238,26 @@ export function StepReview({
             
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-xl font-bold text-green-800 dark:text-green-300">
+                <p className="text-xl font-bold text-app-achievement-consecutive">
                   {selectedExercises.length}
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
+                <p className="text-xs text-app-text-secondary">
                   Exercícios
                 </p>
               </div>
               <div>
-                <p className="text-xl font-bold text-green-800 dark:text-green-300">
+                <p className="text-xl font-bold text-app-achievement-consecutive">
                   {totalSets}
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
+                <p className="text-xs text-app-text-secondary">
                   Séries
                 </p>
               </div>
               <div>
-                <p className="text-xl font-bold text-green-800 dark:text-green-300">
+                <p className="text-xl font-bold text-app-achievement-consecutive">
                   ~{Math.round(totalTime / 60)}min
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
+                <p className="text-xs text-app-text-secondary">
                   Duração
                 </p>
               </div>
@@ -269,10 +269,10 @@ export function StepReview({
           <Button
             onClick={onSave}
             disabled={isSaving || selectedExercises.length === 0}
-            className={`h-14 font-bold rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 border-0 ${
+            className={`h-14 font-bold rounded-xl shadow-app-xl transition-all duration-300 transform hover:scale-105 border-0 ${
               selectedExercises.length > 0
-                ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 hover:shadow-red-500/25 text-white'
-                : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed transform-none'
+                ? 'bg-achievement-workout hover:bg-app-achievement-workout/90 hover:shadow-app-achievement-workout/25 text-white'
+                : 'bg-app-bg-secondary text-app-text-muted cursor-not-allowed transform-none'
             }`}
           >
             {isSaving ? (
@@ -289,7 +289,7 @@ export function StepReview({
           </Button>
           
           <div className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-app-text-muted">
               {mode === 'edit' ? 'Suas alterações serão salvas' : 'O treino será adicionado à biblioteca'}
             </p>
           </div>
@@ -297,16 +297,16 @@ export function StepReview({
       </div>
 
       {/* Tips Card */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-700">
+      <div className="bg-gradient-to-r from-app-achievement-consecutive/10 to-app-achievement-exercise/10 rounded-2xl p-6 border border-app-border-accent">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 bg-app-achievement-consecutive rounded-xl flex items-center justify-center flex-shrink-0">
             <Edit3 className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-2">
+            <h4 className="font-bold text-app-achievement-consecutive mb-2">
               Dicas para um treino eficaz
             </h4>
-            <ul className="space-y-1 text-sm text-blue-600 dark:text-blue-400">
+            <ul className="space-y-1 text-sm text-app-text-secondary">
               <li>• Certifique-se de que a progressão dos exercícios faça sentido</li>
               <li>• Considere alternar grupos musculares para otimizar o descanso</li>
               <li>• Ajuste os tempos de descanso conforme a intensidade do exercício</li>
