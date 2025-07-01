@@ -1,13 +1,16 @@
 // /components/physical-assessments/components/list/PaginationInfo.tsx
 
-import { PaginationInfoProps } from "@/components/physical-assessments/types/physical-assessment";
+interface PaginationInfoProps { 
+  currentCount: number;
+  totalCount: number;
+}
 
 export function PaginationInfo({ currentCount, totalCount }: PaginationInfoProps) {
   return (
     <div className="text-center mt-6">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Mostrando <span className="font-semibold text-gray-900 dark:text-white">{currentCount}</span> de{' '}
-        <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span> avaliações
+      <p className="text-sm text-app-text-secondary">
+        Mostrando <span className="font-semibold text-app-heading">{currentCount}</span> de{' '}
+        <span className="font-semibold text-app-heading">{totalCount}</span> avaliações
       </p>
     </div>
   );

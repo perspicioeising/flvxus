@@ -16,7 +16,7 @@ interface ComparisonOverviewProps {
 export function ComparisonOverview({ comparisonData }: ComparisonOverviewProps) {
   
   const getTrendIcon = (change: number, improvement: string) => {
-    if (Math.abs(change) < 0.01) return <ArrowRightCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />;
+    if (Math.abs(change) < 0.01) return <ArrowRightCircle className="h-4 w-4 sm:h-5 sm:w-5 text-app-text-muted" />;
     
     if (improvement === 'positive') {
       return <ArrowUpCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />;
@@ -24,8 +24,8 @@ export function ComparisonOverview({ comparisonData }: ComparisonOverviewProps) 
       return <ArrowDownCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />;
     } else {
       return change > 0 ? 
-        <ArrowUpCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" /> : 
-        <ArrowDownCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />;
+        <ArrowUpCircle className="h-4 w-4 sm:h-5 sm:w-5 text-app-achievement-consecutive" /> : 
+        <ArrowDownCircle className="h-4 w-4 sm:h-5 sm:w-5 text-app-achievement-consecutive" />;
     }
   };
 
@@ -33,7 +33,23 @@ export function ComparisonOverview({ comparisonData }: ComparisonOverviewProps) 
     switch (improvement) {
       case 'positive': return 'text-green-600 dark:text-green-400';
       case 'negative': return 'text-red-600 dark:text-red-400';
-      default: return 'text-blue-600 dark:text-blue-400';
+      default: return 'text-app-achievement-consecutive';
+    }
+  };
+
+  const getComparisonGradient = (improvement: string) => {
+    switch (improvement) {
+      case 'positive': return 'from-green-600 to-emerald-600';
+      case 'negative': return 'from-red-600 to-pink-600';
+      default: return 'from-app-achievement-consecutive to-app-btn-secondary';
+    }
+  };
+
+  const getComparisonCardGradient = (improvement: string) => {
+    switch (improvement) {
+      case 'positive': return 'from-green-500 to-emerald-500';
+      case 'negative': return 'from-red-500 to-pink-500';
+      default: return 'from-app-achievement-consecutive to-app-btn-secondary';
     }
   };
 
@@ -41,57 +57,45 @@ export function ComparisonOverview({ comparisonData }: ComparisonOverviewProps) 
     <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {comparisonData.map((comparison) => (
         <div key={comparison.metric} className="relative group">
-          <div className={`absolute inset-0 bg-gradient-to-r ${
-            comparison.improvement === 'positive' ? 'from-green-600 to-emerald-600' :
-            comparison.improvement === 'negative' ? 'from-red-600 to-pink-600' :
-            'from-blue-600 to-cyan-600'
-          } rounded-xl sm:rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+          <div className={`absolute inset-0 bg-gradient-to-r ${getComparisonGradient(comparison.improvement)} rounded-xl sm:rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
           
-          <Card className="relative border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-lg hover:shadow-xl sm:hover:shadow-2xl transition-all duration-500 rounded-xl sm:rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
+          <Card className="relative border-0 bg-app-bg-card/90 backdrop-blur-xl shadow-app-medium hover:shadow-app-xl transition-all duration-500 rounded-xl sm:rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
             
             {/* Animated gradient border */}
-            <div className={`absolute inset-0 bg-gradient-to-r ${
-              comparison.improvement === 'positive' ? 'from-green-500 to-emerald-500' :
-              comparison.improvement === 'negative' ? 'from-red-500 to-pink-500' :
-              'from-blue-500 to-cyan-500'
-            } rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-            <div className="absolute inset-[1px] bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl"></div>
+            <div className={`absolute inset-0 bg-gradient-to-r ${getComparisonCardGradient(comparison.improvement)} rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+            <div className="absolute inset-[1px] bg-app-bg-card rounded-xl sm:rounded-2xl"></div>
 
             <CardContent className="relative p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className={`p-2 sm:p-3 bg-gradient-to-br ${
-                    comparison.improvement === 'positive' ? 'from-green-500 to-emerald-500' :
-                    comparison.improvement === 'negative' ? 'from-red-500 to-pink-500' :
-                    'from-blue-500 to-cyan-500'
-                  } rounded-lg sm:rounded-xl text-white shadow-lg`}>
+                  <div className={`p-2 sm:p-3 bg-gradient-to-br ${getComparisonCardGradient(comparison.improvement)} rounded-lg sm:rounded-xl text-white shadow-app-medium`}>
                     {comparison.icon}
                   </div>
-                  <span className="font-bold text-base sm:text-lg text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  <span className="font-bold text-base sm:text-lg text-app-text-heading group-hover:text-app-achievement-workout transition-colors">
                     {comparison.label}
                   </span>
                 </div>
-                <div className="p-1.5 sm:p-2 bg-gray-100 dark:bg-gray-800 rounded-lg sm:rounded-xl">
+                <div className="p-1.5 sm:p-2 bg-app-bg-secondary rounded-lg sm:rounded-xl">
                   {getTrendIcon(comparison.change, comparison.improvement)}
                 </div>
               </div>
               
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">Atual</span>
-                  <span className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
+                  <span className="text-xs sm:text-sm font-semibold text-app-text-secondary">Atual</span>
+                  <span className="text-xl sm:text-2xl font-black text-app-text-heading">
                     {comparison.current.toFixed(2)}{comparison.unit}
                   </span>
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">Anterior</span>
-                  <span className="text-base sm:text-lg font-bold text-gray-600 dark:text-gray-400">
+                  <span className="text-xs sm:text-sm font-semibold text-app-text-secondary">Anterior</span>
+                  <span className="text-base sm:text-lg font-bold text-app-text-secondary">
                     {comparison.previous.toFixed(2)}{comparison.unit}
                   </span>
                 </div>
                 
-                <div className="border-t pt-3 sm:pt-4">
+                <div className="border-t border-app-border-muted pt-3 sm:pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-xs sm:text-sm font-bold">Variação</span>
                     <div className="text-right">

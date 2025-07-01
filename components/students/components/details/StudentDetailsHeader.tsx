@@ -221,43 +221,7 @@ export function StudentDetailsHeader({
                   {statusInfo.label}
                 </Badge>
               </div>
-              
-              {/* Contact Information */}
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-app-text-secondary">
-                  <Mail className="h-4 w-4 text-achievement-workout" />
-                  <span>{student.email}</span>
-                </div>
-                
-                {student.phone && (
-                  <div className="flex items-center gap-2 text-sm text-app-text-secondary">
-                    <Phone className="h-4 w-4 text-achievement-consecutive" />
-                    <span>{student.phone}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Quick Info Tags */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {getAge() && (
-                  <Badge className="px-2 py-1 bg-app-bg-secondary text-app-text-secondary border border-app-border-muted rounded-full text-xs">
-                    {getAge()} anos
-                  </Badge>
-                )}
-                
-                {student.gender && (
-                  <Badge className="px-2 py-1 bg-app-bg-secondary text-app-text-secondary border border-app-border-muted rounded-full text-xs">
-                    {student.gender === 'male' ? 'Masculino' : 
-                     student.gender === 'female' ? 'Feminino' : student.gender}
-                  </Badge>
-                )}
-                
-                {student.goals && student.goals.length > 0 && (
-                  <Badge className="px-2 py-1 bg-achievement-weight/10 text-achievement-weight border border-app-border-accent rounded-full text-xs font-medium">
-                    {student.goals.length} objetivo{student.goals.length > 1 ? 's' : ''}
-                  </Badge>
-                )}
-              </div>
+       
               
               {/* Metadata */}
               <div className="flex flex-wrap items-center gap-4 text-xs text-app-text-secondary">
@@ -265,13 +229,6 @@ export function StudentDetailsHeader({
                   <Calendar className="h-3 w-3" />
                   <span>Criado em {formatDate(student.created_at)}</span>
                 </div>
-                
-                {/* {student.updated_at !== student.created_at && (
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>Atualizado em {formatDate(student.updated_at)}</span>
-                  </div>
-                )} */}
               </div>
             </div>
           </div>

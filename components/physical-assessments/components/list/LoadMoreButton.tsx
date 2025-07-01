@@ -1,8 +1,15 @@
-// /components/physical-assessments/components/list/LoadMoreButton.tsx
 
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronDown } from "lucide-react";
-import { LoadMoreButtonProps } from "@/components/physical-assessments/types/physical-assessment";
+
+interface LoadMoreButtonProps {
+  isLoading: boolean;
+  hasMore: boolean;
+  totalLoaded: number;
+  totalAvailable: number;
+  itemsPerPage: number;
+  onLoadMore: () => void;
+}
 
 export function LoadMoreButton({
   isLoading,
@@ -20,11 +27,11 @@ export function LoadMoreButton({
   return (
     <div className="flex justify-center">
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-green-500/20 to-emerald-600/20 rounded-2xl blur-xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/20 via-app-btn-primary/20 to-app-achievement-workout/20 rounded-2xl blur-xl"></div>
         <Button
           onClick={onLoadMore}
           disabled={isLoading}
-          className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 px-8 py-4 text-lg font-semibold text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400"
+          className="relative card-app backdrop-blur-xl border border-app-border-accent rounded-2xl shadow-app-xl hover:shadow-app-xl transition-all duration-300 transform hover:scale-105 px-8 py-4 text-lg font-semibold text-app-text-primary hover:text-app-achievement-workout"
         >
           {isLoading ? (
             <>
@@ -35,7 +42,7 @@ export function LoadMoreButton({
             <>
               <ChevronDown className="h-5 w-5 mr-2" />
               Carregar mais avaliações
-              <span className="ml-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm">
+              <span className="ml-2 px-2 py-1 bg-app-achievement-workout/10 text-app-achievement-workout rounded-full text-sm border border-app-border-accent">
                 +{nextBatchSize}
               </span>
             </>

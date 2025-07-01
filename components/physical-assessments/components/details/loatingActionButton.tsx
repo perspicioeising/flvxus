@@ -1,9 +1,9 @@
-// components/physical-assessments/components/floatingActionButton.tsx
+// components/physical-assessments/components/details/FloatingActionButton.tsx
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Plus, X, Share2, Download, Trash2 } from 'lucide-react';
+import { Edit, Plus, X, Share2, Download, Trash2, Copy } from 'lucide-react';
 
 interface FloatingActionButtonProps {
   userRole: string | null;
@@ -31,22 +31,22 @@ export function FloatingActionButton({
       icon: Edit,
       label: 'Editar',
       action: onEdit,
-      color: 'from-indigo-500 to-purple-500',
-      hoverColor: 'hover:from-indigo-600 hover:to-purple-600'
+      color: 'from-app-achievement-workout to-app-btn-primary',
+      hoverColor: 'hover:from-app-achievement-workout hover:to-app-btn-primary'
     },
     {
       icon: Share2,
       label: 'Compartilhar',
       action: onShare,
-      color: 'from-blue-500 to-cyan-500',
-      hoverColor: 'hover:from-blue-600 hover:to-cyan-600'
+      color: 'from-app-achievement-workout to-app-btn-secondary',
+      hoverColor: 'hover:from-app-achievement-workout hover:to-app-btn-secondary'
     },
     {
       icon: Download,
       label: 'Relatório',
       action: onDownload,
-      color: 'from-green-500 to-emerald-500',
-      hoverColor: 'hover:from-green-600 hover:to-emerald-600'
+      color: 'from-app-achievement-workout to-app-btn-accent',
+      hoverColor: 'hover:from-app-achievement-workout hover:to-app-btn-accent'
     },
     {
       icon: Trash2,
@@ -68,7 +68,7 @@ export function FloatingActionButton({
               key={index}
               className={`flex items-center gap-3 transition-all duration-300 delay-${index * 50}`}
             >
-              <div className="bg-gray-900/80 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-sm font-semibold shadow-lg">
+              <div className="bg-app-overlay backdrop-blur-sm text-app-text-primary px-3 py-2 rounded-lg text-sm font-semibold shadow-app-large border border-app-border-accent">
                 {action.label}
               </div>
               <Button
@@ -76,7 +76,7 @@ export function FloatingActionButton({
                   action.action();
                   setIsOpen(false);
                 }}
-                className={`w-12 h-12 rounded-full bg-gradient-to-r ${action.color} ${action.hoverColor} text-white shadow-2xl border-0 transition-all duration-300 transform hover:scale-110`}
+                className={`w-12 h-12 rounded-full bg-gradient-to-r ${action.color} ${action.hoverColor} text-white shadow-app-xl border-0 transition-all duration-300 transform hover:scale-110`}
               >
                 <Icon className="h-5 w-5" />
               </Button>
@@ -88,10 +88,10 @@ export function FloatingActionButton({
       {/* Main FAB */}
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 rounded-full shadow-2xl border-0 transition-all duration-300 transform hover:scale-110 ${
+        className={`w-14 h-14 rounded-full shadow-app-xl border-0 transition-all duration-300 transform hover:scale-110 ${
           isOpen 
             ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rotate-45' 
-            : 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600'
+            : 'bg-gradient-to-r from-app-achievement-workout to-app-btn-primary hover:from-app-achievement-workout hover:to-app-btn-primary'
         }`}
       >
         {isOpen ? (

@@ -1,4 +1,3 @@
-// /opt/flvxus/app/api/physical-assessments/route.ts - VERSÃO CORRIGIDA
 
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
@@ -28,15 +27,6 @@ interface BodyCompositionResult {
   leanMass: number;
 }
 
-const PROTOCOLS: Record<string, string> = {
-  'jackson_pollock_3': 'Jackson & Pollock (3 dobras)',
-  'jackson_pollock_7': 'Jackson & Pollock (7 dobras)',
-  'durnin_womersley': 'Durnin & Womersley',
-  'slaughter': 'Slaughter et al.',
-  'boileau': 'Boileau et al.',
-  'guedes_1994': 'Guedes 1994'
-};
-
 export async function GET(request: Request) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
@@ -46,27 +36,39 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    // BUSCAR PERFIL DO USUÁRIO LOGADO
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, tenant_id, role')
       .eq('user_id', session.user.id)
-      .single() as { data: Profile | null };
+      .single() as { data: Profile | null, error: any };
 
-    if (!profile) {
+    if (profileError || !profile) {
+      console.error('❌ Erro ao buscar perfil:', profileError);
       return NextResponse.json({ error: 'Perfil não encontrado' }, { status: 404 });
+    }
+
+    // VERIFICAR SE O TENANT_ID EXISTE
+    if (!profile.tenant_id) {
+      console.error('❌ Perfil sem tenant_id:', profile);
+      return NextResponse.json({ error: 'Usuário não associado a um tenant' }, { status: 400 });
     }
 
     const url = new URL(request.url);
     const studentId = url.searchParams.get('student_id');
     const page = url.searchParams.get('page');
     const limit = url.searchParams.get('limit');
+    const all = url.searchParams.get('all');
 
     console.log('=== DEBUG GET ASSESSMENTS ===');
+    console.log('User ID:', session.user.id);
     console.log('Profile ID:', profile.id);
     console.log('Profile Role:', profile.role);
     console.log('Tenant ID:', profile.tenant_id);
     console.log('Student ID filter:', studentId);
+    console.log('All assessments:', all);
 
+    // CONSTRUIR QUERY COM FILTRO OBRIGATÓRIO DE TENANT
     let query = supabase
       .from('physical_assessments')
       .select(`
@@ -78,30 +80,58 @@ export async function GET(request: Request) {
           goals
         )
       `)
-      .eq('tenant_id', profile.tenant_id)
+      .eq('tenant_id', profile.tenant_id) // FILTRO OBRIGATÓRIO POR TENANT
       .order('created_at', { ascending: false });
 
+    // FILTRO ADICIONAL POR STUDENT_ID (SE FORNECIDO)
     if (studentId) {
+      // Verificar se o student pertence ao mesmo tenant
+      const { data: studentProfile, error: studentError } = await supabase
+        .from('profiles')
+        .select('id, tenant_id')
+        .eq('id', studentId)
+        .eq('tenant_id', profile.tenant_id) // VERIFICAÇÃO DE TENANT
+        .single();
+
+      if (studentError || !studentProfile) {
+        console.error('❌ Student não encontrado no tenant:', studentError);
+        return NextResponse.json({ error: 'Aluno não encontrado no seu tenant' }, { status: 404 });
+      }
+
       query = query.eq('student_id', studentId);
     }
 
+    // FILTRO POR ROLE: STUDENTS APENAS VEEM SUAS PRÓPRIAS AVALIAÇÕES
     if (profile.role === 'student') {
       query = query.eq('student_id', profile.id);
+      console.log('🔒 Filtro aplicado: student pode ver apenas suas avaliações');
+    } else if (profile.role === 'trainer') {
+      console.log('👨‍🏫 Trainer pode ver todas as avaliações do tenant');
     }
 
-    // APLICAR PAGINAÇÃO APENAS SE SOLICITADA
+    // EXECUTAR QUERY
     let assessments, error, count;
 
-    if (page && limit) {
+    if (all === 'true') {
+      // Buscar todas as avaliações (sem paginação)
+      console.log('📊 Buscando todas as avaliações do tenant...');
+      const result = await query;
+      assessments = result.data;
+      error = result.error;
+      count = result.data?.length || 0;
+    } else if (page && limit) {
+      // Buscar com paginação
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
       const offset = (pageNum - 1) * limitNum;
 
+      console.log(`📄 Buscando página ${pageNum} (${limitNum} itens, offset ${offset})`);
       const result = await query.range(offset, offset + limitNum - 1);
       assessments = result.data;
       error = result.error;
       count = result.count;
     } else {
+      // Buscar sem paginação (padrão)
       const result = await query;
       assessments = result.data;
       error = result.error;
@@ -113,10 +143,29 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    console.log(`✅ GET Assessments: ${assessments?.length || 0} registros encontrados`);
+    console.log(`✅ GET Assessments: ${assessments?.length || 0} registros encontrados para tenant ${profile.tenant_id}`);
+
+    // VALIDAÇÃO ADICIONAL: VERIFICAR SE TODAS AS AVALIAÇÕES PERTENCEM AO TENANT CORRETO
+    const invalidAssessments = assessments?.filter(assessment => 
+      assessment.tenant_id !== profile.tenant_id
+    ) || [];
+
+    if (invalidAssessments.length > 0) {
+      console.error('🚨 VAZAMENTO DE DADOS DETECTADO:', invalidAssessments);
+      // Filtrar apenas avaliações do tenant correto
+      assessments = assessments?.filter(assessment => 
+        assessment.tenant_id === profile.tenant_id
+      ) || [];
+    }
 
     // PROCESSAR DADOS DE IA NOS RESULTADOS
     const processedAssessments = assessments?.map(assessment => {
+      // Validação extra de segurança
+      if (assessment.tenant_id !== profile.tenant_id) {
+        console.error('🚨 Avaliação com tenant incorreto detectada:', assessment.id);
+        return null;
+      }
+
       if (assessment.ai_analysis && typeof assessment.ai_analysis === 'string') {
         try {
           assessment.ai_analysis = JSON.parse(assessment.ai_analysis);
@@ -134,10 +183,13 @@ export async function GET(request: Request) {
       }
 
       return assessment;
-    }) || [];
+    }).filter(Boolean) || []; // Remove null values
 
     // RETORNO PADRONIZADO
-    if (page && limit) {
+    if (all === 'true') {
+      console.log(`📦 Retornando ${processedAssessments.length} avaliações do tenant ${profile.tenant_id}`);
+      return NextResponse.json(processedAssessments);
+    } else if (page && limit) {
       return NextResponse.json({
         assessments: processedAssessments,
         pagination: {
@@ -172,20 +224,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    // BUSCAR PERFIL DO USUÁRIO LOGADO
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, tenant_id, role')
       .eq('user_id', session.user.id)
-      .single() as { data: Profile | null };
+      .single() as { data: Profile | null, error: any };
 
-    if (!profile || profile.role !== 'trainer') {
+    if (profileError || !profile || profile.role !== 'trainer') {
+      console.error('❌ Erro ao buscar perfil ou não é trainer:', profileError);
       return NextResponse.json({ error: 'Acesso restrito a treinadores' }, { status: 403 });
+    }
+
+    // VERIFICAR SE O TENANT_ID EXISTE
+    if (!profile.tenant_id) {
+      console.error('❌ Trainer sem tenant_id:', profile);
+      return NextResponse.json({ error: 'Treinador não associado a um tenant' }, { status: 400 });
     }
 
     const body = await request.json();
 
     console.log('=== DADOS RECEBIDOS NA API ===');
-    console.log('Body completo:', JSON.stringify(body, null, 2));
+    console.log('Trainer ID:', profile.id);
+    console.log('Tenant ID:', profile.tenant_id);
+    console.log('Student ID solicitado:', body.student_id);
 
     // Validar dados obrigatórios
     const requiredFields = ['student_id', 'weight', 'height', 'protocol', 'age', 'gender'];
@@ -198,17 +260,32 @@ export async function POST(request: Request) {
       }
     }
 
-    // Verificar se o student pertence ao mesmo tenant
+    // VERIFICAÇÃO CRÍTICA DE SEGURANÇA: VERIFICAR SE O STUDENT PERTENCE AO MESMO TENANT
     const { data: student, error: studentError } = await supabase
       .from('profiles')
-      .select('id, tenant_id')
+      .select('id, tenant_id, role')
       .eq('id', body.student_id)
-      .eq('tenant_id', profile.tenant_id)
+      .eq('tenant_id', profile.tenant_id) // VERIFICAÇÃO OBRIGATÓRIA DE TENANT
+      .eq('role', 'student') // VERIFICAÇÃO ADICIONAL DE ROLE
       .single();
 
     if (studentError || !student) {
-      return NextResponse.json({ error: 'Aluno não encontrado' }, { status: 404 });
+      console.error('❌ Student não encontrado no tenant:', {
+        requestedStudentId: body.student_id,
+        trainerTenantId: profile.tenant_id,
+        error: studentError
+      });
+      return NextResponse.json(
+        { error: 'Aluno não encontrado no seu tenant' }, 
+        { status: 404 }
+      );
     }
+
+    console.log('✅ Student validado:', {
+      studentId: student.id,
+      studentTenantId: student.tenant_id,
+      trainerTenantId: profile.tenant_id
+    });
 
     // Calcular composição corporal se não fornecida
     let calculations = null;
@@ -241,7 +318,7 @@ export async function POST(request: Request) {
       protocol: body.protocol,
       date: body.date || new Date().toISOString().split('T')[0],
       notes: body.notes || null,
-      tenant_id: profile.tenant_id,
+      tenant_id: profile.tenant_id, // USAR O TENANT DO TRAINER LOGADO
 
       // Circunferências
       neck: body.measurements?.neck ? parseFloat(body.measurements.neck) : null,
@@ -325,8 +402,8 @@ export async function POST(request: Request) {
     }
 
     console.log('=== DADOS FINAIS PARA INSERÇÃO ===');
-    console.log('ai_analysis final:', assessmentData.ai_analysis ? 'PRESENTE' : 'NULL');
-    console.log('ai_recommendations final:', assessmentData.ai_recommendations ? 'PRESENTE' : 'NULL');
+    console.log('tenant_id:', assessmentData.tenant_id);
+    console.log('student_id:', assessmentData.student_id);
 
     // INSERIR NO BANCO
     const { data: assessment, error } = await supabase
@@ -348,8 +425,25 @@ export async function POST(request: Request) {
       throw error;
     }
 
+    // VALIDAÇÃO FINAL: VERIFICAR SE A AVALIAÇÃO CRIADA PERTENCE AO TENANT CORRETO
+    if (assessment.tenant_id !== profile.tenant_id) {
+      console.error('🚨 ERRO CRÍTICO: Avaliação criada com tenant incorreto!', {
+        assessmentTenantId: assessment.tenant_id,
+        expectedTenantId: profile.tenant_id
+      });
+      
+      // Tentar remover a avaliação criada incorretamente
+      await supabase.from('physical_assessments').delete().eq('id', assessment.id);
+      
+      return NextResponse.json(
+        { error: 'Erro de integridade: tenant incorreto' },
+        { status: 500 }
+      );
+    }
+
     console.log('=== AVALIAÇÃO CRIADA COM SUCESSO ===');
     console.log('ID da avaliação:', assessment.id);
+    console.log('Tenant ID:', assessment.tenant_id);
 
     return NextResponse.json(assessment);
   } catch (error: any) {
@@ -361,7 +455,7 @@ export async function POST(request: Request) {
   }
 }
 
-// CORREÇÃO COM TYPESCRIPT - SEM ERROS DE TIPO
+// FUNÇÕES AUXILIARES
 
 function calculateBodyComposition({ 
   weight, 
@@ -549,50 +643,6 @@ function calculateBodyComposition({
       }
       break;
 
-    case 'slaughter':
-      const sumSlaughter = toNumber(measurements.triceps) + 
-                          toNumber(measurements.subscapular);
-      console.log('Slaughter - Sum:', sumSlaughter);
-      
-      if (sumSlaughter > 0) {
-        if (gender === 'male') {
-          if (sumSlaughter <= 35) {
-            fatPercentage = (1.21 * sumSlaughter) - (0.008 * sumSlaughter * sumSlaughter) - 1.7;
-          } else {
-            fatPercentage = (0.783 * sumSlaughter) + 1.6;
-          }
-        } else {
-          if (sumSlaughter <= 35) {
-            fatPercentage = (1.33 * sumSlaughter) - (0.013 * sumSlaughter * sumSlaughter) - 2.5;
-          } else {
-            fatPercentage = (0.546 * sumSlaughter) + 9.7;
-          }
-        }
-      } else {
-        fatPercentage = gender === 'male' ? 
-          (1.2 * bmi) + (0.23 * age) - 16.2 : 
-          (1.2 * bmi) + (0.23 * age) - 5.4;
-      }
-      break;
-
-    case 'boileau':
-      const sumBoileau = toNumber(measurements.triceps) + 
-                        toNumber(measurements.subscapular);
-      console.log('Boileau - Sum:', sumBoileau);
-      
-      if (sumBoileau > 0) {
-        if (gender === 'male') {
-          fatPercentage = (0.735 * sumBoileau) + 1.0;
-        } else {
-          fatPercentage = (0.610 * sumBoileau) + 5.1;
-        }
-      } else {
-        fatPercentage = gender === 'male' ? 
-          (1.2 * bmi) + (0.23 * age) - 16.2 : 
-          (1.2 * bmi) + (0.23 * age) - 5.4;
-      }
-      break;
-
     default:
       // Estimativa básica usando IMC
       console.log('Protocolo padrão - BMI:', bmi);
@@ -642,4 +692,4 @@ function getAccuracyEstimate(protocol: string): string {
     'guedes_1994': 'Boa para jovens brasileiros (±3-4%)'
   };
   return accuracy[protocol] || 'Estimativa (±5-6%)';
-}
+} 
