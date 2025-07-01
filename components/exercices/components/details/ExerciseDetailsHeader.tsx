@@ -185,38 +185,7 @@ export function ExerciseDetailsHeader({
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* Quick Stats - Mobile Optimized */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-achievement-workout/10 border border-app-border-accent rounded-xl p-3 text-center">
-                <div className="text-lg sm:text-xl font-bold text-achievement-workout">
-                  {exercise.muscle_group?.length || 0}
-                </div>
-                <div className="text-xs text-app-text-secondary">Músculos</div>
-              </div>
-              
-              <div className="bg-achievement-exercise/10 border border-app-border-accent rounded-xl p-3 text-center">
-                <div className="text-lg sm:text-xl font-bold text-achievement-exercise">
-                  {exercise.equipment?.length || 0}
-                </div>
-                <div className="text-xs text-app-text-secondary">Equipamentos</div>
-              </div>
-              
-              <div className="bg-achievement-consecutive/10 border border-app-border-accent rounded-xl p-3 text-center">
-                <div className="text-lg sm:text-xl font-bold text-achievement-consecutive">
-                  {exercise.variations?.length || 0}
-                </div>
-                <div className="text-xs text-app-text-secondary">Variações</div>
-              </div>
-              
-              <div className="bg-achievement-weight/10 border border-app-border-accent rounded-xl p-3 text-center">
-                <div className="text-lg sm:text-xl font-bold text-achievement-weight">
-                  {(exercise.tips?.length || 0) + (exercise.common_errors?.length || 0)}
-                </div>
-                <div className="text-xs text-app-text-secondary">Dicas</div>
-              </div>
-            </div>
+            </div>           
 
             {/* Tags Section - Collapsible on Mobile */}
             <div className="space-y-3">

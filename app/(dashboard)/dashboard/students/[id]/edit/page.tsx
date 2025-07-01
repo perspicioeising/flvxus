@@ -68,19 +68,11 @@ export default function EditStudentPage({ params }: EditStudentPageProps) {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center">
+      <div className="min-h-screen bg-app-gradient flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="relative">
             <div className="w-20 h-20 border-4 border-blue-200 dark:border-blue-800 rounded-full animate-spin border-t-blue-600 dark:border-t-blue-400"></div>
             <div className="absolute inset-0 w-20 h-20 border-4 border-transparent rounded-full animate-ping border-t-blue-400 dark:border-t-blue-500"></div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              Carregando dados do aluno...
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Aguarde um momento
-            </p>
           </div>
         </div>
       </div>

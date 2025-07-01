@@ -1,4 +1,4 @@
-// components/physical-assessments/components/assessmentComparison.tsx
+// components/physical-assessments/components/comparacao/assessmentComparison.tsx
 'use client';
 
 import React from 'react';
@@ -58,7 +58,7 @@ export function AssessmentComparison({
       label: "Métricas Gerais",
       shortLabel: "Métricas",
       icon: BarChart3,
-      gradient: "from-indigo-500 to-indigo-600",
+      gradient: "from-app-achievement-workout to-app-btn-primary",
       description: "Comparação das principais métricas"
     },
     {
@@ -66,7 +66,7 @@ export function AssessmentComparison({
       label: "Medidas Corporais",
       shortLabel: "Medidas",
       icon: User,
-      gradient: "from-blue-500 to-indigo-600",
+      gradient: "from-app-achievement-consecutive to-app-btn-secondary",
       description: "Visualização detalhada das mudanças"
     },
     {
@@ -74,7 +74,7 @@ export function AssessmentComparison({
       label: "Resumo e Análise",
       shortLabel: "Resumo",
       icon: Trophy,
-      gradient: "from-purple-500 to-indigo-600",
+      gradient: "from-app-achievement-exercise to-app-btn-accent",
       description: "Recomendações e insights"
     }
   ];
@@ -95,10 +95,10 @@ export function AssessmentComparison({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="relative mb-8">
             {/* Background Glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 rounded-2xl blur-2xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-app-achievement-workout/20 to-app-achievement-exercise/20 rounded-2xl blur-2xl"></div>
             
             {/* Tab List */}
-            <TabsList className="relative grid w-full grid-cols-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl rounded-2xl p-2 border-0 gap-2">
+            <TabsList className="relative grid w-full grid-cols-3 bg-app-bg-card/80 backdrop-blur-xl shadow-app-large rounded-2xl p-2 border-0 gap-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.value;
@@ -111,8 +111,8 @@ export function AssessmentComparison({
                       relative group flex items-center justify-center gap-2 rounded-xl font-semibold 
                       py-3 px-4 transition-all duration-300
                       ${isActive 
-                        ? 'text-white shadow-lg transform scale-[1.02]' 
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                        ? 'text-white shadow-app-medium transform scale-[1.02]' 
+                        : 'hover:bg-app-bg-secondary text-app-text-secondary hover:text-app-text-primary'
                       }
                     `}
                   >
@@ -127,7 +127,7 @@ export function AssessmentComparison({
                     {/* Tab Content */}
                     <div className="relative z-10 flex items-center gap-2">
                       <Icon className={`h-4 w-4 transition-all duration-300 ${
-                        isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300'
+                        isActive ? 'text-white' : 'text-app-text-muted group-hover:text-app-text-secondary'
                       }`} />
                       <span className="hidden sm:inline">{tab.label}</span>
                       <span className="sm:hidden">{tab.shortLabel}</span>
@@ -140,7 +140,7 @@ export function AssessmentComparison({
                     
                     {/* Hover Effect */}
                     {!isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent dark:from-gray-800/30 dark:to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-br from-app-bg-secondary/50 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     )}
                   </TabsTrigger>
                 );
@@ -152,8 +152,8 @@ export function AssessmentComparison({
           <div className="sm:hidden -mt-4 mb-6">
             <div className="relative">
               <div className={`absolute inset-0 bg-gradient-to-r ${tabs.find(t => t.value === activeTab)?.gradient} rounded-xl blur-xl opacity-10`}></div>
-              <div className="relative p-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-indigo-200/30 dark:border-indigo-700/30">
-                <p className="text-xs text-center text-gray-600 dark:text-gray-400">
+              <div className="relative p-3 bg-app-bg-card/60 backdrop-blur-sm rounded-xl border border-app-border-accent">
+                <p className="text-xs text-center text-app-text-secondary">
                   {tabs.find(t => t.value === activeTab)?.description}
                 </p>
               </div>
