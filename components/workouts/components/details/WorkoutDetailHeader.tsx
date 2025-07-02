@@ -3,6 +3,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { 
   ArrowLeft, 
   Edit3, 
@@ -18,14 +20,11 @@ import {
   MoreVertical,
   Sparkles,
   Crown,
-  Share2,
-  Download,
-  User,
-  TrendingUp,
-  Zap
+  Zap,
+  Dumbbell,
+  TrendingUp
 } from 'lucide-react';
 import { WorkoutDetailHeaderProps } from './types';
-import { DIFFICULTY_LEVELS, WORKOUT_GOALS } from '../../constants';
 
 export function WorkoutDetailHeader({
   workout,
@@ -38,237 +37,235 @@ export function WorkoutDetailHeader({
   isLoading
 }: WorkoutDetailHeaderProps) {
   const router = useRouter();
-  
-  const levelInfo = DIFFICULTY_LEVELS.find(l => l.value === workout.level);
-  const goalInfo = WORKOUT_GOALS.find(g => g.value === workout.goal);
 
   // Função para classificação baseada no treino
-  const getWorkoutClassificationData = (level: string, totalExercises: number) => {
-    let classification = '';
-    let badgeColor = '';
-    let icon = Award;
-
+  const getWorkoutClassification = (totalExercises: number) => {
     if (totalExercises >= 10) {
-      classification = 'Intensivo';
-      badgeColor = 'from-app-achievement-workout to-app-achievement-workout';
-      icon = Crown;
+      return { 
+        label: 'Intensivo', 
+        colorClass: 'from-red-500 to-red-600',
+        icon: Crown 
+      };
     } else if (totalExercises >= 7) {
-      classification = 'Completo';
-      badgeColor = 'from-app-achievement-consecutive to-app-achievement-consecutive';
-      icon = Award;
+      return { 
+        label: 'Completo', 
+        colorClass: 'from-purple-500 to-purple-600',
+        icon: Award 
+      };
     } else if (totalExercises >= 5) {
-      classification = 'Moderado';
-      badgeColor = 'from-app-achievement-exercise to-app-achievement-exercise';
-      icon = Target;
+      return { 
+        label: 'Moderado', 
+        colorClass: 'from-blue-500 to-indigo-600',
+        icon: Target 
+      };
     } else {
-      classification = 'Básico';
-      badgeColor = 'from-app-achievement-weight to-app-achievement-weight';
-      icon = Zap;
+      return { 
+        label: 'Básico', 
+        colorClass: 'from-green-500 to-emerald-600',
+        icon: Zap 
+      };
     }
-
-    return { classification, badgeColor, icon };
   };
 
-  const { classification, badgeColor, icon: ClassificationIcon } = getWorkoutClassificationData(workout.level, stats.totalExercises);
-
-  const handleShare = () => {
-    // Implementar compartilhamento
-    console.log('Compartilhar treino');
+  const getLevelColor = (level: string) => {
+    switch (level?.toLowerCase()) {
+      case 'iniciante':
+      case 'beginner':
+        return 'from-green-500 to-emerald-600';
+      case 'intermediário':
+      case 'intermediate':
+        return 'from-yellow-500 to-orange-600';
+      case 'avançado':
+      case 'advanced':
+        return 'from-red-500 to-red-600';
+      default:
+        return 'from-blue-500 to-indigo-600';
+    }
   };
 
-  const handleDownload = () => {
-    // Implementar download/relatório
-    console.log('Download relatório');
+  const getGoalColor = (goal: string) => {
+    switch (goal?.toLowerCase()) {
+      case 'hipertrofia':
+      case 'muscle gain':
+        return 'from-orange-500 to-orange-600';
+      case 'emagrecimento':
+      case 'weight loss':
+        return 'from-red-500 to-red-600';
+      case 'resistência':
+      case 'endurance':
+        return 'from-blue-500 to-blue-600';
+      case 'força':
+      case 'strength':
+        return 'from-purple-500 to-purple-600';
+      case 'condicionamento':
+      case 'conditioning':
+        return 'from-green-500 to-green-600';
+      default:
+        return 'from-gray-500 to-gray-600';
+    }
   };
+
+  const classification = getWorkoutClassification(stats.totalExercises);
+  const levelColor = getLevelColor(workout.level);
+  const goalColor = getGoalColor(workout.goal);
 
   return (
-    <div className="relative mb-6 sm:mb-8">
-      {/* Background Gradient */}
+    <div className="relative mb-6">
+      {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-achievement-workout/15 to-app-achievement-workout/10 rounded-2xl sm:rounded-3xl blur-xl"></div>
       
-      {/* Main Header Card */}
       <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/30 rounded-2xl sm:rounded-3xl shadow-app-xl">
-        
-        {/* Top Section with Actions */}
-        <div className="p-4 sm:p-6 lg:p-8 pb-0">
-          <div className="flex items-center justify-between mb-6">
+        <div className="p-4 sm:p-6 lg:p-8">
+          
+          {/* Navigation Bar - Mobile First */}
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
             <Button
-              variant="outline"
-              size="icon"
-              onClick={() => router.push('/dashboard/workouts')}
-              className="h-12 w-12 bg-app-card backdrop-blur-sm border-2 border-app-border-accent hover:border-app-achievement-workout rounded-xl shadow-app-medium transition-all duration-300 hover:scale-105"
+              variant="ghost"
+              onClick={() => router.back()}
+              className="h-10 w-10 sm:h-12 sm:w-auto sm:px-4 bg-app-bg-secondary hover:bg-app-border-accent/20 rounded-xl transition-all duration-300"
             >
               <ArrowLeft className="h-5 w-5" />
+              <span className="hidden sm:inline sm:ml-2 font-semibold">Voltar</span>
             </Button>
 
-            {/* Desktop Actions */}
-            {userRole === 'trainer' && (
-              <div className="hidden sm:flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={onEdit}
-                  disabled={isLoading}
-                  className="h-11 px-4 bg-app-card backdrop-blur-sm border-2 border-app-border-accent hover:border-app-achievement-workout rounded-xl font-semibold shadow-app-medium transition-all duration-300 hover:scale-105 group"
-                >
-                  <Edit3 className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform" />
-                  Editar
-                </Button>
-                
-                {/* <Button
-                  variant="outline"
-                  onClick={handleShare}
-                  className="h-11 px-4 bg-app-card backdrop-blur-sm border-2 border-app-achievement-consecutive hover:border-app-achievement-consecutive/80 rounded-xl font-semibold shadow-app-medium transition-all duration-300 hover:scale-105 group text-app-achievement-consecutive"
-                >
-                  <Share2 className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
-                  Compartilhar
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={handleDownload}
-                  className="h-11 px-4 bg-app-card backdrop-blur-sm border-2 border-app-achievement-exercise hover:border-app-achievement-exercise/80 rounded-xl font-semibold shadow-app-medium transition-all duration-300 hover:scale-105 group text-app-achievement-exercise"
-                >
-                  <Download className="h-4 w-4 mr-2 group-hover:translate-y-0.5 transition-transform" />
-                  Relatório
-                </Button> */}
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-11 w-11 bg-app-card backdrop-blur-sm border-2 border-app-border-muted hover:border-app-border-accent rounded-xl shadow-app-medium transition-all duration-300"
-                    >
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-app-overlay backdrop-blur-md border-0 rounded-xl shadow-app-xl">
-                    <DropdownMenuItem onClick={onClone} disabled={isLoading} className="rounded-lg">
-                      <Copy className="h-4 w-4 mr-2" />
-                      Clonar Treino
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={onDelete} disabled={isLoading} className="text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Deletar Treino
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-
-            {/* Mobile Actions */}
+            {/* Actions Menu - Mobile */}
             {userRole === 'trainer' && (
               <div className="sm:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
-                      className="h-12 w-12 bg-app-card backdrop-blur-sm border-2 border-app-border-accent hover:border-app-achievement-workout rounded-xl shadow-app-medium transition-all duration-300"
+                      className="h-10 w-10 bg-app-bg-secondary hover:bg-app-border-accent/20 rounded-xl"
                     >
                       <MoreVertical className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-app-overlay backdrop-blur-md border-0 rounded-xl shadow-app-xl">
-                    <DropdownMenuItem onClick={onEdit} disabled={isLoading} className="rounded-lg">
-                      <Edit3 className="h-4 w-4 mr-2" />
-                      Editar
+                  <DropdownMenuContent 
+                    align="end" 
+                    className="w-48 bg-app-overlay backdrop-blur-xl border border-app-border-default rounded-xl shadow-app-xl"
+                  >
+                    <DropdownMenuItem onClick={onEdit} className="flex items-center gap-2 p-3">
+                      <Edit3 className="h-4 w-4 text-app-achievement-workout" />
+                      <span>Editar</span>
                     </DropdownMenuItem>
-                    {/* <DropdownMenuItem onClick={handleShare} className="rounded-lg">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Compartilhar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDownload} className="rounded-lg">
-                      <Download className="h-4 w-4 mr-2" />
-                      Relatório
-                    </DropdownMenuItem> */}
-                    <DropdownMenuItem onClick={onClone} disabled={isLoading} className="rounded-lg">
-                      <Copy className="h-4 w-4 mr-2" />
-                      Clonar
+                    <DropdownMenuItem onClick={onClone} className="flex items-center gap-2 p-3">
+                      <Copy className="h-4 w-4 text-app-achievement-workout" />
+                      <span>Clonar</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={onDelete} disabled={isLoading} className="text-red-600 rounded-lg">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Deletar
+                    <DropdownMenuItem 
+                      onClick={onDelete} 
+                      className="flex items-center gap-2 p-3 text-red-600 dark:text-red-400"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Deletar</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             )}
 
-            {/* Student Action Button */}
+            {/* Desktop Actions */}
+            {userRole === 'trainer' && (
+              <div className="hidden sm:flex items-center gap-3">
+                <Button
+                  onClick={onEdit}
+                  className="h-10 px-4 bg-app-card border-app-border-accent text-app-text-primary hover:bg-app-border-accent/20 rounded-xl font-semibold transition-all duration-300"
+                >
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                
+                <Button
+                  onClick={onClone}
+                  variant="outline"
+                  className="h-10 px-4 bg-app-card border-app-border-accent text-app-text-primary hover:bg-app-border-accent/20 rounded-xl font-semibold transition-all duration-300"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Clonar
+                </Button>
+                
+                <Button
+                  onClick={onDelete}
+                  variant="outline"
+                  className="h-10 px-4 bg-app-card border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl font-semibold transition-all duration-300"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Deletar
+                </Button>
+              </div>
+            )}
+
+            {/* Student Action */}
             {userRole === 'student' && onStartWorkout && (
               <Button
                 onClick={onStartWorkout}
-                className="h-12 px-4 sm:px-6 bg-app-achievement-consecutive hover:bg-app-achievement-consecutive/90 text-white font-bold rounded-xl shadow-app-xl hover:shadow-app-achievement-consecutive/25 transition-all duration-300 transform hover:scale-105 border-0"
+                className="h-10 px-4 sm:h-12 sm:px-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold rounded-xl shadow-xl hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 border-0"
               >
-                <Play className="h-5 w-5 mr-2" />
+                <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Iniciar Treino
               </Button>
             )}
           </div>
 
-          {/* Title Section */}
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="relative inline-flex items-center justify-center mb-4">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-achievement-workout rounded-2xl flex items-center justify-center shadow-app-xl">
-                <Activity className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+          {/* Workout Info */}
+          <div className="space-y-4">
+            
+            {/* Title and Icon */}
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-app-achievement-workout rounded-xl sm:rounded-2xl flex items-center justify-center shadow-app-large">
+                  <Dumbbell className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                </div>
               </div>
-              <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-app-achievement-consecutive to-app-achievement-consecutive rounded-full flex items-center justify-center shadow-app-medium animate-pulse">
-                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+              
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-app-heading leading-tight break-words">
+                  {workout.name}
+                </h1>
+                
+                {/* Metadata */}
+                <div className="flex flex-wrap items-center gap-3 mt-2 text-xs sm:text-sm text-app-text-secondary">
+                  <div className="flex items-center gap-1">
+                    <Hash className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span>{stats.totalExercises} exercícios</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span>~{stats.estimatedDuration} min</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span>{stats.totalSets} séries</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span>{stats.muscleGroups.length} grupos musculares</span>
+                  </div>
+
+                  {workout.updated_at !== workout.created_at && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span>Atualizado em {format(new Date(workout.updated_at), 'dd/MM/yy')}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Badges */}
+                
               </div>
             </div>
-            
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-app-text-heading to-app-text-heading bg-clip-text text-transparent mb-2">
-              {workout.name}
-            </h1>
-            
+
+            {/* Description */}
             {workout.description && (
-              <p className="text-base sm:text-lg text-app-text-secondary max-w-2xl mx-auto leading-relaxed mb-4 px-4">
+              <p className="text-sm sm:text-base text-app-text-secondary leading-relaxed">
                 {workout.description}
               </p>
             )}
-            
-            <div className="flex items-center justify-center gap-2 text-app-text-muted">
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="text-sm sm:text-base font-semibold">
-                Criado em {new Date(workout.created_at).toLocaleDateString('pt-BR')}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Workout Info Section */}
-        
-      </div>
-    </div>
-  );
-}
-
-// Componente auxiliar para cards de métricas
-interface MetricCardProps {
-  icon: any;
-  label: string;
-  value: string;
-  unit: string;
-  gradient: string;
-  bgColor: string;
-  borderColor: string;
-}
-
-function MetricCard({ icon: Icon, label, value, unit, gradient, bgColor, borderColor }: MetricCardProps) {
-  return (
-    <div className="group relative">
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-xl blur-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300`}></div>
-      <div className={`relative flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-br ${bgColor} rounded-xl border ${borderColor} transition-all duration-300 group-hover:scale-105 group-hover:shadow-app-medium`}>
-        <div className={`p-2 sm:p-2.5 bg-gradient-to-br ${gradient} rounded-lg shadow-app-medium`}>
-          <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
-        </div>
-        <div>
-          <div className="text-xs font-semibold text-app-text-muted">{label}</div>
-          <div className="text-base sm:text-lg font-bold text-app-text-primary">
-            {value}{unit}
           </div>
         </div>
       </div>
