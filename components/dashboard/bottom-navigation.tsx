@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  Home, 
-  Users, 
-  Activity, 
-  Trophy, 
-  Settings, 
+import {
+  Home,
+  Users,
+  Activity,
+  Trophy,
+  Settings,
   Menu,
   BarChart4,
   Calendar,
@@ -51,11 +51,11 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
     try {
       const response = await fetch('/api/profile');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error);
       }
-      
+
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -103,12 +103,13 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
       color: "achievement-weight"
     },
     {
-      name: "Dietas",
-      href: "/dashboard/diets",
-      icon: Utensils,
-      isActive: pathname.startsWith("/dashboard/diets"),
-      color: "achievement-exercise"
+      name: "Treinos",
+      href: "/dashboard/workouts",
+      icon: Activity,
+      isActive: pathname.startsWith("/dashboard/workouts"),
+      color: "achievement-consecutive"
     },
+
   ];
 
   // Navegação principal para alunos
@@ -147,7 +148,8 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
   const getSecondaryNavigation = () => {
     if (userRole === 'trainer') {
       return [
-        { name: "Treinos", href: "/dashboard/workouts", icon: Activity, color: "achievement-consecutive" },
+        {
+          name: "Dietas", href: "/dashboard/diets", icon: Activity, color: "achievement-consecutive"},
         { name: "Conquistas", href: "/dashboard/achievements", icon: Trophy, color: "achievement-exercise" },
         { name: "Exercícios", href: "/dashboard/exercises", icon: Dumbbell, color: "achievement-weight" },
         { name: "Rotinas", href: "/dashboard/workout-plans", icon: ClipboardList, color: "achievement-workout" },
@@ -168,7 +170,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
       <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
         {/* Gradient Background with Blur */}
         <div className="absolute inset-0 bg-app-overlay backdrop-blur-xl border-t border-app-border-muted"></div>
-        
+
         {/* Navigation Content */}
         <nav className="relative px-4 py-2 pb-safe-bottom">
           <div className="flex items-center justify-around">
@@ -180,38 +182,35 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                 onClick={handleNavClick}
                 className="group flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-0 flex-1 no-select"
               >
-                <div className={`relative p-2 rounded-full transition-all duration-300 ${
-                  item.isActive 
-                    ? `bg-${item.color} shadow-app-large scale-110` 
+                <div className={`relative p-2 rounded-full transition-all duration-300 ${item.isActive
+                    ? `bg-${item.color} shadow-app-large scale-110`
                     : "bg-app-bg-secondary group-hover:bg-app-border-accent group-hover:scale-105"
-                }`}>
-                  <item.icon className={`h-5 w-5 transition-colors duration-200 ${
-                    item.isActive 
-                      ? "text-white" 
+                  }`}>
+                  <item.icon className={`h-5 w-5 transition-colors duration-200 ${item.isActive
+                      ? "text-white"
                       : "text-app-text-secondary group-hover:text-app-text-accent"
-                  }`} />
-                  
+                    }`} />
+
                   {/* Active indicator */}
                   {item.isActive && (
                     <div className={`absolute -inset-1 bg-${item.color}/30 rounded-full blur-md -z-10`}></div>
                   )}
                 </div>
-                
-                <span className={`text-xs font-medium transition-colors duration-200 truncate max-w-full ${
-                  item.isActive 
-                    ? "text-app-text-accent" 
+
+                <span className={`text-xs font-medium transition-colors duration-200 truncate max-w-full ${item.isActive
+                    ? "text-app-text-accent"
                     : "text-app-text-secondary group-hover:text-app-text-accent"
-                }`}>
+                  }`}>
                   {item.name}
                 </span>
               </Link>
             ))}
-            
+
             {/* Menu Button */}
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <SheetTrigger asChild>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   onClick={handleNavClick}
                   className="group flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-0 flex-1 hover:bg-transparent no-select"
                 >
@@ -223,9 +222,9 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                   </span>
                 </Button>
               </SheetTrigger>
-              
-              <SheetContent 
-                side="bottom" 
+
+              <SheetContent
+                side="bottom"
                 className="bg-app-overlay backdrop-blur-xl border-t border-app-border-default rounded-t-3xl max-h-[80vh] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-app-border-muted"
               >
                 {/* Header */}
@@ -246,7 +245,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                       </p>
                     </div>
                   </div>
-                  
+
                   {profile?.status === 'active' && (
                     <Badge className="bg-achievement-consecutive/10 text-achievement-consecutive border-app-border-accent">
                       Online
@@ -268,22 +267,19 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                           await hapticFeedback('light');
                           setIsMenuOpen(false);
                         }}
-                        className={`group flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 no-select ${
-                          pathname.startsWith(item.href)
+                        className={`group flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 no-select ${pathname.startsWith(item.href)
                             ? `bg-${item.color} text-white shadow-app-large`
                             : "bg-app-card hover:bg-app-border-accent/20 text-app-text-primary"
-                        }`}
+                          }`}
                       >
-                        <div className={`p-2 rounded-xl transition-all duration-200 ${
-                          pathname.startsWith(item.href)
+                        <div className={`p-2 rounded-xl transition-all duration-200 ${pathname.startsWith(item.href)
                             ? "bg-white/20"
                             : "bg-app-bg-secondary group-hover:bg-app-border-accent/30"
-                        }`}>
-                          <item.icon className={`h-5 w-5 transition-colors duration-200 ${
-                            pathname.startsWith(item.href)
+                          }`}>
+                          <item.icon className={`h-5 w-5 transition-colors duration-200 ${pathname.startsWith(item.href)
                               ? "text-white"
                               : "text-app-text-secondary group-hover:text-app-text-accent"
-                          }`} />
+                            }`} />
                         </div>
                         <span className="font-medium text-sm">{item.name}</span>
                       </Link>
@@ -310,7 +306,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
                       </div>
                       <span className="font-medium text-sm">Perfil</span>
                     </Link>
-                    
+
                     <Link
                       href="/dashboard/settings"
                       onClick={async () => {
@@ -387,7 +383,7 @@ export function BottomNavigation({ userRole }: BottomNavigationProps) {
           </div>
         </nav>
       </div>
-      
+
       {/* Spacer for bottom navigation */}
       <div className="h-20 md:hidden"></div>
     </>
