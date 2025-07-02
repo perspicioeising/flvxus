@@ -1,9 +1,10 @@
- 'use client';
+'use client';
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { 
   Brain, 
   Activity, 
@@ -23,7 +24,14 @@ import {
   Lightbulb,
   Star,
   Crown,
-  Award
+  Award,
+  Scale,
+  Flame,
+  Droplets,
+  Calculator,
+  User,
+  ListCollapse,
+  Expand
 } from "lucide-react";
 
 // Tipos unificados para análise IA
@@ -133,31 +141,26 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
   // Estado vazio - quando não há análise IA
   if (!hasBasicData && mode === 'view') {
     return (
-      <div className={`space-y-6 ${className}`}>
+      <div className={`space-y-4 sm:space-y-6 ${className}`}>
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-exercise/10 to-app-btn-primary/10 rounded-3xl blur-2xl"></div>
-          <Card className="relative border-0 bg-app-overlay backdrop-blur-xl rounded-3xl shadow-app-xl overflow-hidden">
-            <CardContent className="text-center py-16 sm:py-24 px-8">
-              <div className="relative mb-8">
-                <div className="relative">
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto bg-gradient-to-br from-app-bg-secondary via-app-border-muted to-app-bg-secondary rounded-full flex items-center justify-center shadow-app-xl">
-                    <Brain className="h-12 w-12 sm:h-16 sm:w-16 text-app-text-muted" />
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-achievement-exercise rounded-full flex items-center justify-center shadow-app-medium">
-                    <Info className="h-6 w-6 text-white" />
-                  </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-text-accent/10 to-app-achievement-workout/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <Card className="relative border-0 card-app">
+            <CardContent className="text-center py-12 sm:py-16">
+              <div className="relative mb-6">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-app-bg-secondary rounded-full flex items-center justify-center shadow-app-large">
+                  <Brain className="h-8 w-8 sm:h-10 sm:w-10 text-app-text-muted" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-app-border-muted/20 via-app-bg-secondary/20 to-app-border-muted/20 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-app-text-muted/30 via-app-achievement-workout/30 to-app-text-muted/30 rounded-full blur-2xl animate-pulse"></div>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl font-black text-app-text-heading mb-4">
+              <h3 className="text-lg sm:text-xl font-bold text-app-heading mb-2">
                 Análise IA não disponível
               </h3>
-              <p className="text-app-text-secondary mb-8 max-w-lg mx-auto text-base sm:text-lg leading-relaxed">
+              <p className="text-app-text-secondary max-w-md mx-auto leading-relaxed mb-4">
                 Esta avaliação foi realizada sem análise de inteligência artificial
               </p>
-              <Badge className="px-6 py-3 bg-gradient-to-r from-app-bg-secondary to-app-border-muted text-app-text-primary border-0 rounded-2xl text-base font-bold shadow-app-large">
-                <Info className="h-4 w-4 mr-2" />
+              <Badge className="px-4 py-2 bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent rounded-full text-sm font-bold">
+                <Info className="h-3 w-3 mr-1" />
                 Análise Manual
               </Badge>
             </CardContent>
@@ -170,86 +173,78 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
   // Estado inicial no modo criação
   if (!hasBasicData && mode === 'create') {
     return (
-      <div className={`space-y-6 ${className}`}>
+      <div className={`space-y-4 sm:space-y-6 ${className}`}>
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-exercise/20 to-app-btn-primary/20 rounded-3xl blur-xl"></div>
-          <Card className="relative border-0 bg-app-overlay backdrop-blur-xl rounded-3xl shadow-app-xl overflow-hidden">
-            <CardHeader className="p-8 bg-gradient-to-r from-app-bg-secondary/30 via-app-achievement-exercise/10 to-app-bg-secondary/30">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="p-4 bg-achievement-exercise rounded-2xl shadow-app-large">
-                    <Brain className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-achievement-consecutive rounded-full flex items-center justify-center animate-pulse">
-                    <Sparkles className="h-3 w-3 text-white" />
-                  </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-text-accent/10 to-app-achievement-workout/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <Card className="relative border-0 card-app">
+            <CardHeader className="pb-3 sm:pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-app-achievement-workout rounded-lg flex items-center justify-center">
+                  <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <div>
-                  <CardTitle className="text-2xl font-bold text-app-text-heading">
-                    Análise Inteligente
-                  </CardTitle>
-                  <CardDescription className="text-app-text-secondary">
-                    Gere recomendações personalizadas com IA
-                  </CardDescription>
-                </div>
+                <CardTitle className="text-lg sm:text-xl font-bold text-app-heading">
+                  Análise Inteligente
+                </CardTitle>
+                <Badge className="px-2 py-1 bg-purple-100 text-purple-600 border border-purple-200 rounded-full text-xs">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Pronto
+                </Badge>
               </div>
             </CardHeader>
 
-            <CardContent className="p-8">
-              <div className="text-center py-12">
-                <div className="relative mb-8">
-                  <div className="relative">
-                    <div className="w-32 h-32 mx-auto bg-gradient-to-br from-app-achievement-exercise/20 via-app-achievement-weight/20 to-app-achievement-exercise/20 rounded-full flex items-center justify-center shadow-app-xl">
-                      <Brain className="h-16 w-16 text-app-achievement-exercise" />
-                    </div>
-                    <div className="absolute -top-2 -right-2 w-12 h-12 bg-achievement-consecutive rounded-full flex items-center justify-center shadow-app-medium animate-bounce">
-                      <Zap className="h-6 w-6 text-white" />
-                    </div>
+            <CardContent>
+              <div className="text-center py-8">
+                <div className="relative mb-6">
+                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-app-achievement-workout/20 via-app-text-accent/20 to-app-achievement-workout/20 rounded-full flex items-center justify-center shadow-app-large">
+                    <Brain className="h-10 w-10 text-app-achievement-workout" />
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-exercise/30 via-app-achievement-weight/30 to-app-achievement-exercise/30 rounded-full blur-3xl animate-pulse"></div>
+                  <div className="absolute -top-1 -right-1 w-8 h-8 bg-app-text-accent rounded-full flex items-center justify-center animate-bounce">
+                    <Zap className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/30 via-app-text-accent/30 to-app-achievement-workout/30 rounded-full blur-2xl animate-pulse"></div>
                 </div>
 
-                <h3 className="text-3xl font-black text-app-text-heading mb-4">
+                <h3 className="text-xl font-bold text-app-heading mb-3">
                   Pronto para Análise IA!
                 </h3>
-                <p className="text-app-text-secondary mb-10 max-w-lg mx-auto text-lg leading-relaxed">
+                <p className="text-app-text-secondary mb-6 max-w-lg mx-auto leading-relaxed">
                   A inteligência artificial irá analisar os dados corporais{studentInfo?.name ? ` de ${studentInfo.name}` : ''} e gerar recomendações personalizadas de treino, nutrição e estilo de vida.
                 </p>
 
                 {/* Informações do que será analisado */}
                 {assessmentData && (
-                  <div className="mb-10 p-6 bg-gradient-to-r from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-2xl border border-app-border-accent shadow-app-medium">
-                    <h4 className="font-bold text-app-achievement-exercise mb-6 text-lg flex items-center justify-center gap-2">
-                      <Lightbulb className="h-5 w-5" />
+                  <div className="mb-6 p-4 bg-gradient-to-r from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted">
+                    <h4 className="font-bold text-app-achievement-workout mb-4 text-base flex items-center justify-center gap-2">
+                      <Lightbulb className="h-4 w-4" />
                       Dados para Análise
                     </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {assessmentData.bmi && (
                         <MetricPreview
                           value={assessmentData.bmi.toFixed(1)}
                           label="IMC"
-                          gradient="from-app-achievement-exercise to-app-btn-primary"
+                          gradient="from-app-achievement-workout to-app-btn-primary"
                         />
                       )}
                       {assessmentData.fatPercentage && (
                         <MetricPreview
                           value={`${assessmentData.fatPercentage}%`}
                           label="% Gordura"
-                          gradient="from-app-achievement-workout to-app-btn-primary"
+                          gradient="from-app-achievement-workout to-app-btn-secondary"
                         />
                       )}
                       {assessmentData.leanMass && (
                         <MetricPreview
                           value={`${assessmentData.leanMass}kg`}
                           label="M. Magra"
-                          gradient="from-app-achievement-weight to-app-btn-primary"
+                          gradient="from-app-achievement-workout to-app-text-accent"
                         />
                       )}
                       {assessmentData.protocol && (
                         <MetricPreview
                           value={assessmentData.protocol}
                           label="Protocolo"
-                          gradient="from-app-achievement-consecutive to-app-btn-primary"
+                          gradient="from-app-achievement-workout to-app-btn-accent"
                           isText
                         />
                       )}
@@ -257,15 +252,15 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
                   </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   {onBack && (
                     <Button
                       variant="outline"
                       onClick={onBack}
-                      className="px-6 py-3 bg-app-card backdrop-blur-sm border-2 border-app-border-accent hover:border-app-achievement-exercise rounded-xl font-semibold shadow-app-medium transition-all duration-300 hover:scale-105"
+                      className="h-10 bg-app-card border-app-border-muted text-app-text-primary rounded-xl"
                       disabled={isLoading}
                     >
-                      <ArrowLeft className="h-5 w-5 mr-2" />
+                      <ArrowLeft className="h-4 w-4 mr-2" />
                       Voltar
                     </Button>
                   )}
@@ -274,16 +269,16 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
                     <Button
                       onClick={onAnalyze}
                       disabled={isLoading}
-                      className="px-10 py-3 bg-achievement-exercise hover:bg-app-achievement-exercise/90 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white font-bold rounded-xl shadow-app-xl hover:shadow-app-achievement-exercise/25 disabled:shadow-none transition-all duration-300 transform hover:scale-105 disabled:scale-100 border-0"
+                      className="h-10 px-6 bg-app-achievement-workout hover:bg-app-achievement-workout/90 text-white font-semibold rounded-xl shadow-app-medium"
                     >
                       {isLoading ? (
                         <>
-                          <div className="h-5 w-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <div className="h-4 w-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           Analisando...
                         </>
                       ) : (
                         <>
-                          <Brain className="h-5 w-5 mr-2" />
+                          <Brain className="h-4 w-4 mr-2" />
                           Analisar com IA
                         </>
                       )}
@@ -300,7 +295,7 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
 
   // Interface principal - exibir análise completa
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 sm:space-y-6 ${className}`}>
       {/* Classificação Principal */}
       <ClassificationCard 
         analysis={analysis} 
@@ -309,18 +304,18 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
 
       {/* Análise Detalhada */}
       {analysis?.analysis && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Pontos Fortes */}
           {analysis.analysis.strengths && analysis.analysis.strengths.length > 0 && (
             <AnalysisCard
               title="Pontos Fortes"
               icon={CheckCircle2}
               items={analysis.analysis.strengths}
-              gradient="from-app-achievement-consecutive to-app-btn-primary"
+              gradient="from-app-achievement-workout to-app-btn-primary"
               bgGradient="from-app-bg-secondary/30 to-app-bg-secondary/50"
               borderColor="border-app-border-accent"
-              textColor="text-app-achievement-consecutive"
-              dotColor="bg-app-achievement-consecutive"
+              textColor="text-app-achievement-workout"
+              dotColor="bg-app-achievement-workout"
             />
           )}
 
@@ -331,9 +326,9 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
               icon={Target}
               items={analysis.analysis.improvements}
               gradient="from-amber-500 to-orange-600"
-              bgGradient="from-amber-50/50 to-orange-100/50 dark:from-amber-900/20 dark:to-orange-800/20"
-              borderColor="border-amber-200/50 dark:border-amber-700/50"
-              textColor="text-amber-700 dark:text-amber-300"
+              bgGradient="from-app-bg-secondary/30 to-app-bg-secondary/50"
+              borderColor="border-amber-200/50"
+              textColor="text-amber-700"
               dotColor="bg-amber-500"
             />
           )}
@@ -345,9 +340,9 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
               icon={AlertCircle}
               items={analysis.analysis.risks}
               gradient="from-red-500 to-rose-600"
-              bgGradient="from-red-50/50 to-rose-100/50 dark:from-red-900/20 dark:to-rose-800/20"
-              borderColor="border-red-200/50 dark:border-red-700/50"
-              textColor="text-red-700 dark:text-red-300"
+              bgGradient="from-app-bg-secondary/30 to-app-bg-secondary/50"
+              borderColor="border-red-200/50"
+              textColor="text-red-700"
               dotColor="bg-red-500"
             />
           )}
@@ -356,7 +351,7 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
 
       {/* Recomendações */}
       {recommendations && Object.keys(recommendations).length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Recomendações de Treino */}
           {recommendations.training && Object.keys(recommendations.training).length > 0 && (
             <RecommendationSection
@@ -375,7 +370,7 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
               title="Recomendações Nutricionais"
               icon={Heart}
               items={recommendations.nutrition}
-              gradient="from-app-achievement-consecutive to-app-btn-primary"
+              gradient="from-app-achievement-workout to-app-btn-secondary"
               bgGradient="from-app-bg-secondary/30 to-app-bg-secondary/50"
               borderColor="border-app-border-accent"
             />
@@ -387,7 +382,7 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
               title="Recomendações de Estilo de Vida"
               icon={Zap}
               items={recommendations.lifestyle}
-              gradient="from-app-achievement-weight to-app-btn-primary"
+              gradient="from-app-achievement-workout to-app-text-accent"
               bgGradient="from-app-bg-secondary/30 to-app-bg-secondary/50"
               borderColor="border-app-border-accent"
             />
@@ -407,15 +402,15 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
 
       {/* Ações do Modo Criação */}
       {mode === 'create' && (onBack || onSave) && (
-        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-8 border-t border-app-border-muted">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-app-border-muted">
           {onBack && (
             <Button
               variant="outline"
               onClick={onBack}
-              className="px-6 py-3 bg-app-card backdrop-blur-sm border-2 border-app-border-accent hover:border-app-achievement-exercise rounded-xl font-semibold shadow-app-medium transition-all duration-300 hover:scale-105"
+              className="h-10 bg-app-card border-app-border-muted text-app-text-primary rounded-xl"
               disabled={isLoading}
             >
-              <ArrowLeft className="h-5 w-5 mr-2" />
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar aos Resultados
             </Button>
           )}
@@ -423,16 +418,16 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
             <Button
               onClick={onSave}
               disabled={isLoading}
-              className="px-10 py-3 bg-achievement-consecutive hover:bg-app-achievement-consecutive/90 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white font-bold rounded-xl shadow-app-xl hover:shadow-app-achievement-consecutive/25 disabled:shadow-none transition-all duration-300 transform hover:scale-105 disabled:scale-100 border-0"
+              className="h-10 px-6 bg-app-achievement-workout hover:bg-app-achievement-workout/90 text-white font-semibold rounded-xl shadow-app-medium"
             >
               {isLoading ? (
                 <>
-                  <div className="h-5 w-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="h-4 w-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Salvando...
                 </>
               ) : (
                 <>
-                  <Save className="h-5 w-5 mr-2" />
+                  <Save className="h-4 w-4 mr-2" />
                   Salvar com Análise IA
                 </>
               )}
@@ -451,68 +446,43 @@ const AssessmentAIAnalysis: React.FC<AssessmentAIAnalysisProps> = ({
 function ClassificationCard({ analysis, mode }: { analysis: AIAnalysis | null; mode: string }) {
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-exercise/20 to-app-btn-primary/20 rounded-3xl blur-xl"></div>
-      <Card className="relative border-0 bg-app-overlay backdrop-blur-xl rounded-3xl shadow-app-xl overflow-hidden">
-        <CardHeader className="p-8 bg-gradient-to-r from-app-bg-secondary/30 via-app-achievement-exercise/10 to-app-bg-secondary/30">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="p-4 bg-achievement-exercise rounded-2xl shadow-app-large">
-                  <Brain className="h-8 w-8 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-achievement-consecutive rounded-full flex items-center justify-center">
-                  <Sparkles className="h-3 w-3 text-white" />
-                </div>
-              </div>
-              <div>
-                <CardTitle className="text-2xl font-bold text-app-text-heading">
-                  Análise Inteligente
-                </CardTitle>
-                <CardDescription className="text-app-text-secondary">
-                  {mode === 'create' ? 'Análise gerada com sucesso' : 'Classificação e perfil corporal por IA'}
-                </CardDescription>
-              </div>
-            </div>
-            {mode === 'create' && (
-              <Badge className="px-4 py-2 bg-gradient-to-r from-app-achievement-consecutive/20 to-app-achievement-consecutive/30 text-app-achievement-consecutive border-0 rounded-2xl font-bold shadow-app-medium">
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Análise Completa
-              </Badge>
-            )}
-          </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-text-accent/10 to-app-achievement-workout/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <Card className="relative border-0 card-app">
+        <CardHeader className="pb-3 sm:pb-4">
+         
         </CardHeader>
-        <CardContent className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 mb-6">
             <ClassificationMetric
               value={analysis?.classification || 'N/A'}
               label="Classificação Corporal"
-              gradient="from-app-achievement-exercise to-app-btn-primary"
+              gradient="from-app-achievement-workout to-app-btn-primary"
               icon={Crown}
             />
             <ClassificationMetric
               value={analysis?.somatotype || 'N/A'}
               label="Somatótipo"
-              gradient="from-app-achievement-workout to-app-btn-primary"
+              gradient="from-app-achievement-workout to-app-btn-secondary"
               icon={Activity}
             />
             <ClassificationMetric
               value={analysis?.healthStatus || 'N/A'}
               label="Status de Saúde"
-              gradient="from-app-achievement-consecutive to-app-btn-primary"
+              gradient="from-app-achievement-workout to-app-text-accent"
               icon={Shield}
             />
           </div>
           
           {/* Perfil Metabólico */}
           {analysis?.metabolicProfile && (
-            <div className="mt-8 p-6 bg-gradient-to-r from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-2xl border border-app-border-accent shadow-app-medium">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-achievement-weight rounded-xl shadow-app-medium">
-                  <Zap className="h-6 w-6 text-white" />
+            <div className="p-4 bg-gradient-to-r from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted shadow-app-medium">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-app-achievement-workout rounded-lg">
+                  <Zap className="h-4 w-4 text-white" />
                 </div>
                 <div className="flex-1">
-                  <div className="font-bold text-app-achievement-weight text-lg mb-1">Perfil Metabólico</div>
-                  <div className="text-app-text-primary leading-relaxed">{analysis.metabolicProfile}</div>
+                  <div className="font-bold text-app-achievement-workout text-base mb-1">Perfil Metabólico</div>
+                  <div className="text-app-text-primary text-sm leading-relaxed">{analysis.metabolicProfile}</div>
                 </div>
               </div>
             </div>
@@ -533,18 +503,27 @@ function ClassificationMetric({ value, label, gradient, icon: Icon }: {
   return (
     <div className="relative group">
       <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500`}></div>
-      <div className="relative text-center p-6 bg-app-card backdrop-blur-xl rounded-2xl border border-app-border-muted shadow-app-large transform group-hover:scale-105 transition-all duration-300 overflow-hidden">
+      <Card className="relative border-0 bg-app-card backdrop-blur-xl rounded-2xl shadow-app-large hover:shadow-app-xl transition-all duration-500 group-hover:scale-105 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`}></div>
         </div>
-        <div className="relative">
-          <Icon className={`h-8 w-8 mx-auto mb-3 bg-gradient-to-br ${gradient} bg-clip-text text-transparent`} />
-          <div className="text-3xl font-black text-app-text-heading mb-2">
-            {value}
+        <CardContent className="relative p-4 sm:p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-1">
+                {label}
+              </p>
+              <div className="text-2xl sm:text-3xl font-black text-app-heading mb-1">
+                {value}
+              </div>
+            </div>
+            <div className={`relative p-2 sm:p-3 bg-gradient-to-br ${gradient} rounded-xl shadow-app-medium`}>
+              <Icon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+              <div className="absolute inset-0 bg-white/20 rounded-xl blur-sm"></div>
+            </div>
           </div>
-          <div className="text-sm text-app-text-secondary font-semibold">{label}</div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -562,22 +541,22 @@ function AnalysisCard({ title, icon: Icon, items, gradient, bgGradient, borderCo
 }) {
   return (
     <div className="relative group">
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500`}></div>
-      <Card className="relative border-0 bg-app-card backdrop-blur-xl shadow-app-large hover:shadow-app-xl transition-all duration-500 rounded-2xl overflow-hidden group-hover:transform group-hover:scale-[1.02]">
-        <CardHeader className={`p-6 bg-gradient-to-br ${bgGradient}`}>
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500`}></div>
+      <Card className="relative border-0 card-app shadow-app-large hover:shadow-app-xl transition-all duration-500 group-hover:scale-105 overflow-hidden">
+        <CardHeader className={`p-4 sm:p-6 bg-gradient-to-br ${bgGradient}`}>
           <div className="flex items-center gap-3">
-            <div className={`p-3 bg-gradient-to-br ${gradient} rounded-xl shadow-app-medium`}>
-              <Icon className="h-6 w-6 text-white" />
+            <div className={`p-2 sm:p-3 bg-gradient-to-br ${gradient} rounded-xl shadow-app-medium`}>
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg font-bold text-app-text-heading">{title}</CardTitle>
-              <CardDescription className={`${textColor} opacity-80 text-sm`}>
+              <CardTitle className="text-base sm:text-lg font-bold text-app-heading">{title}</CardTitle>
+              <CardDescription className={`${textColor} opacity-80 text-xs sm:text-sm`}>
                 Aspectos identificados pela IA
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <ul className="space-y-3">
             {items.map((item: string, index: number) => (
               <li key={index} className="flex items-start gap-3 animate-fadeIn" style={{ animationDelay: `${index * 100}ms` }}>
@@ -603,28 +582,26 @@ function RecommendationSection({ title, icon: Icon, items, gradient, bgGradient,
 }) {
   return (
     <div className="relative">
-      <div className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-5 rounded-3xl blur-2xl`}></div>
-      <Card className="relative border-0 bg-app-overlay backdrop-blur-xl rounded-3xl shadow-app-xl overflow-hidden">
-        <CardHeader className={`p-8 bg-gradient-to-r ${bgGradient}`}>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className={`p-4 bg-gradient-to-br ${gradient} rounded-2xl shadow-app-large`}>
-                <Icon className="h-8 w-8 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-achievement-consecutive rounded-full flex items-center justify-center">
-                <Star className="h-3 w-3 text-white" />
-              </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-text-accent/10 to-app-achievement-workout/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <Card className="relative border-0 card-app">
+        <CardHeader className="pb-3 sm:pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-app-achievement-workout rounded-lg flex items-center justify-center">
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-app-text-heading">{title}</CardTitle>
-              <CardDescription className="text-app-text-secondary">
+              <CardTitle className="text-lg sm:text-xl font-bold text-app-heading">{title}</CardTitle>
+              <CardDescription className="text-app-text-secondary text-sm">
                 Estratégias personalizadas pela IA
               </CardDescription>
             </div>
+            <Badge className="px-2 py-1 bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent rounded-full text-xs">
+              {Object.keys(items).length}
+            </Badge>
           </div>
         </CardHeader>
-        <CardContent className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
             {Object.entries(items).map(([key, value], index) => (
               <RecommendationCard
                 key={key}
@@ -656,8 +633,8 @@ function RecommendationCard({ title, content, gradient, borderColor, delay }: {
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300`}></div>
-      <div className={`relative p-6 bg-app-card backdrop-blur-sm rounded-xl border ${borderColor} shadow-app-medium transform group-hover:scale-105 transition-all duration-300`}>
-        <div className="font-bold text-app-text-heading capitalize mb-3 text-lg">
+      <div className="relative p-4 bg-app-card backdrop-blur-sm rounded-xl border border-app-border-muted shadow-app-medium transform group-hover:scale-105 transition-all duration-300">
+        <div className="font-bold text-app-heading capitalize mb-2 text-sm">
           {title}:
         </div>
         <div className="text-app-text-secondary leading-relaxed text-sm">
@@ -672,36 +649,31 @@ function RecommendationCard({ title, content, gradient, borderColor, delay }: {
 function ProgressTrackingCard({ progressTracking }: { progressTracking: any }) {
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-exercise/10 to-app-btn-primary/10 rounded-3xl blur-2xl"></div>
-      <Card className="relative border-0 bg-app-overlay backdrop-blur-xl rounded-3xl shadow-app-xl overflow-hidden">
-        <CardHeader className="p-8 bg-gradient-to-r from-app-bg-secondary/30 via-app-achievement-exercise/10 to-app-bg-secondary/30">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="p-4 bg-achievement-exercise rounded-2xl shadow-app-large">
-                <BarChart3 className="h-8 w-8 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-achievement-consecutive rounded-full flex items-center justify-center">
-                <Crown className="h-3 w-3 text-white" />
-              </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-text-accent/10 to-app-achievement-workout/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <Card className="relative border-0 card-app">
+        <CardHeader className="pb-3 sm:pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-app-achievement-workout rounded-lg flex items-center justify-center">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-app-text-heading">
+              <CardTitle className="text-lg sm:text-xl font-bold text-app-heading">
                 Plano de Acompanhamento
               </CardTitle>
-              <CardDescription className="text-app-text-secondary">
+              <CardDescription className="text-app-text-secondary text-sm">
                 Estratégia para monitoramento de progresso
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
             {progressTracking.nextAssessment && (
               <TrackingMetric
                 icon={Clock}
                 label="Próxima Avaliação"
                 value={progressTracking.nextAssessment}
-                gradient="from-app-achievement-exercise to-app-btn-primary"
+                gradient="from-app-achievement-workout to-app-btn-primary"
               />
             )}
             {progressTracking.expectedTimeline && (
@@ -709,7 +681,7 @@ function ProgressTrackingCard({ progressTracking }: { progressTracking: any }) {
                 icon={TrendingUp}
                 label="Timeline Esperada"
                 value={progressTracking.expectedTimeline}
-                gradient="from-app-achievement-workout to-app-btn-primary"
+                gradient="from-app-achievement-workout to-app-btn-secondary"
               />
             )}
             {progressTracking.keyMetrics && progressTracking.keyMetrics.length > 0 && (
@@ -717,7 +689,7 @@ function ProgressTrackingCard({ progressTracking }: { progressTracking: any }) {
                 icon={Target}
                 label="Métricas Chave"
                 value={progressTracking.keyMetrics.join(', ')}
-                gradient="from-app-achievement-weight to-app-btn-primary"
+                gradient="from-app-achievement-workout to-app-text-accent"
               />
             )}
           </div>
@@ -736,16 +708,28 @@ function TrackingMetric({ icon: Icon, label, value, gradient }: {
 }) {
   return (
     <div className="relative group">
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300`}></div>
-      <div className="relative p-6 bg-app-card backdrop-blur-sm rounded-xl border border-app-border-accent shadow-app-medium transform group-hover:scale-105 transition-all duration-300">
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`p-3 bg-gradient-to-br ${gradient} rounded-xl shadow-app-medium`}>
-            <Icon className="h-5 w-5 text-white" />
-          </div>
-          <div className="font-bold text-app-text-heading text-lg">{label}</div>
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500`}></div>
+      <Card className="relative border-0 bg-app-card backdrop-blur-xl rounded-xl shadow-app-large hover:shadow-app-xl transition-all duration-500 group-hover:scale-105 overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`}></div>
         </div>
-        <div className="text-app-text-secondary font-semibold">{value}</div>
-      </div>
+        <CardContent className="relative p-4 sm:p-6">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <p className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-1">
+                {label}
+              </p>
+              <div className="text-app-text-primary font-semibold text-sm">
+                {value}
+              </div>
+            </div>
+            <div className={`relative p-2 bg-gradient-to-br ${gradient} rounded-lg shadow-app-medium`}>
+              <Icon className="h-4 w-4 text-white" />
+              <div className="absolute inset-0 bg-white/20 rounded-lg blur-sm"></div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -754,33 +738,35 @@ function TrackingMetric({ icon: Icon, label, value, gradient }: {
 function SpecificNotesCard({ notes }: { notes: string }) {
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-app-bg-secondary/10 to-app-border-muted/10 rounded-3xl blur-2xl"></div>
-      <Card className="relative border-0 bg-app-overlay backdrop-blur-xl rounded-3xl shadow-app-xl overflow-hidden">
-        <CardHeader className="p-8 bg-gradient-to-r from-app-bg-secondary/30 via-app-bg-secondary/40 to-app-bg-secondary/30">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="p-4 bg-gradient-to-br from-app-bg-secondary to-app-border-accent rounded-2xl shadow-app-large">
-                <Info className="h-8 w-8 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-achievement-consecutive rounded-full flex items-center justify-center">
-                <Lightbulb className="h-3 w-3 text-white" />
-              </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-text-accent/10 to-app-achievement-workout/10 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <Card className="relative border-0 card-app">
+        <CardHeader className="pb-3 sm:pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+              <Info className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-app-text-heading">
+              <CardTitle className="text-lg sm:text-xl font-bold text-app-heading">
                 Observações Específicas
               </CardTitle>
-              <CardDescription className="text-app-text-secondary">
+              <CardDescription className="text-app-text-secondary text-sm">
                 Considerações técnicas e metodológicas
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-8">
-          <div className="p-6 bg-app-card backdrop-blur-sm rounded-xl border border-app-border-muted shadow-app-medium">
-            <p className="text-app-text-secondary leading-relaxed">
-              {notes}
-            </p>
+        <CardContent>
+          <div className="p-4 bg-gradient-to-r from-app-bg-secondary/20 to-app-achievement-workout/5 rounded-xl border border-app-border-accent">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
+                <Lightbulb className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-app-text-primary leading-relaxed">
+                  {notes}
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -796,14 +782,13 @@ function MetricPreview({ value, label, gradient, isText = false }: {
   isText?: boolean;
 }) {
   return (
-    <div className="text-center p-4 bg-app-card backdrop-blur-sm rounded-xl shadow-app-medium border border-app-border-accent">
-      <div className={`text-${isText ? 'lg' : '2xl'} font-black bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+    <div className="text-center p-3 bg-app-card backdrop-blur-sm rounded-xl shadow-app-medium border border-app-border-accent">
+      <div className={`text-${isText ? 'sm' : 'xl'} font-black text-app-heading mb-1`}>
         {value}
       </div>
-      <div className="text-sm text-app-text-secondary font-medium mt-1">{label}</div>
+      <div className="text-xs text-app-text-secondary font-medium">{label}</div>
     </div>
   );
 }
 
 export default AssessmentAIAnalysis;
-                         
