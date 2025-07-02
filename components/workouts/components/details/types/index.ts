@@ -3,6 +3,7 @@
 import { Exercise, Workout } from "@/components/workouts/types";
 
 export interface WorkoutDetailData extends Workout {
+  notes: any;
   workout_exercises: WorkoutExerciseDetail[];
 }
 
