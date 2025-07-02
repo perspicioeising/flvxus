@@ -102,7 +102,7 @@ export function AssessmentDetailsContent({ assessment, classification }: Assessm
       icon: BarChart3,
       progress: Math.min((ensureNumber(assessment.fat_percentage) / 35) * 100, 100),
       suffix: "%",
-      description: "Percentual de gordura corporal",
+      description: "Percentual de gordura",
       idealRange: assessment.gender === 'male' ? "10-15%" : "16-24%"
     },
     {
@@ -591,7 +591,7 @@ export function AssessmentDetailsContent({ assessment, classification }: Assessm
 
       {/* Protocol Information */}
       <Card className="border-0 card-app">
-        <CardHeader className="pb-3 sm:pb-4">
+         <CardHeader className="pb-3 sm:pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-app-achievement-workout rounded-lg flex items-center justify-center">
@@ -615,7 +615,7 @@ export function AssessmentDetailsContent({ assessment, classification }: Assessm
             </Button>
           </div>
         </CardHeader>
-
+{expandedSections.info && (
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-gradient-to-br from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted shadow-app-medium">
@@ -712,6 +712,7 @@ export function AssessmentDetailsContent({ assessment, classification }: Assessm
             </div>
           </div>
         </CardContent>
+         )}
       </Card>
 
       {/* Empty State for missing sections */}
