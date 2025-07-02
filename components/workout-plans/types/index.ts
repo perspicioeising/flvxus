@@ -24,6 +24,7 @@ export interface WorkoutPlanItem {
 }
 
 export interface WorkoutPlan {
+  notes: any;
   id: string;
   name: string;
   description?: string;
