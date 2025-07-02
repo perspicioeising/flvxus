@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   X, 
   Dumbbell, 
@@ -10,9 +11,12 @@ import {
   Lightbulb,
   Play,
   Volume2,
-  ExternalLink,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ListCollapse,
+  Expand,
+  Eye,
+  Info
 } from 'lucide-react';
 import { ExerciseDetailModalProps } from './types';
 
@@ -33,7 +37,7 @@ export function ExerciseDetailModal({
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+      setIsMobile(window.innerWidth < 768);
     };
     
     checkMobile();
@@ -63,7 +67,7 @@ export function ExerciseDetailModal({
         
         {/* Bottom Sheet */}
         <div className="fixed bottom-0 left-0 right-0 z-50 transform transition-transform duration-300 ease-out translate-y-0">
-          <div className="bg-app-overlay backdrop-blur-xl rounded-t-3xl shadow-app-xl max-h-[90vh] flex flex-col">
+          <div className="bg-app-overlay backdrop-blur-xl rounded-t-3xl shadow-app-xl max-h-[90vh] flex flex-col border-t border-app-border-accent">
             
             {/* Handle */}
             <div className="flex justify-center py-3">
@@ -131,7 +135,7 @@ export function ExerciseDetailModal({
     );
   }
 
-  // Desktop Modal - Usando um modal customizado sem Dialog do shadcn
+  // Desktop Modal - Redesenhado
   return (
     <>
       {/* Backdrop */}
@@ -142,58 +146,77 @@ export function ExerciseDetailModal({
       
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl max-h-[90vh] bg-app-overlay backdrop-blur-xl rounded-2xl shadow-app-xl border border-app-border-accent overflow-hidden flex flex-col">
+        <div className="w-full max-w-4xl max-h-[90vh] bg-app-gradient rounded-2xl shadow-app-xl overflow-hidden flex flex-col">
           
           {/* Header */}
-          <div className="p-6 pb-4 border-b border-app-border-muted bg-gradient-to-r from-app-card to-app-bg-secondary/30">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-achievement-workout rounded-xl flex items-center justify-center shadow-app-large">
-                  <Dumbbell className="h-8 w-8 text-white" />
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-achievement-workout/15 to-app-achievement-workout/10 rounded-t-2xl blur-xl"></div>
+            <div className="relative bg-app-overlay backdrop-blur-xl border-b border-app-border-accent/30 p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 bg-achievement-workout rounded-2xl flex items-center justify-center shadow-app-large">
+                    <Dumbbell className="h-8 w-8 text-white" />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-app-text-heading mb-2">
+                      {exercise.name}
+                    </h2>
+                    
+                    {/* Quick Info Badges */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {exercise.muscle_group.slice(0, 3).map((muscle: string) => (
+                        <Badge
+                          key={muscle}
+                          className="bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent text-xs"
+                        >
+                          {muscle}
+                        </Badge>
+                      ))}
+                      {exercise.muscle_group.length > 3 && (
+                        <Badge className="bg-app-bg-secondary text-app-text-muted border border-app-border-muted text-xs">
+                          +{exercise.muscle_group.length - 3} mais
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-app-text-heading mb-2">
-                    {exercise.name}
-                  </h2>
-                  {exercise.description && (
-                    <p className="text-app-text-secondary leading-relaxed">
-                      {exercise.description}
-                    </p>
-                  )}
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-10 w-10 rounded-xl hover:bg-app-bg-secondary"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-10 w-10 rounded-xl hover:bg-app-bg-secondary"
-              >
-                <X className="h-5 w-5" />
-              </Button>
             </div>
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            <DesktopContent exercise={exercise} />
+          <div className="flex-1 overflow-y-auto p-6 bg-app-gradient">
+            <DesktopContent 
+              exercise={exercise} 
+              expandedSections={expandedSections}
+              toggleSection={toggleSection}
+            />
           </div>
 
           {/* Footer */}
-          <div className="p-6 pt-4 border-t border-app-border-muted bg-gradient-to-r from-app-card to-app-bg-secondary/30">
+          <div className="p-6 pt-4 border-t border-app-border-muted bg-app-overlay backdrop-blur-xl">
             <div className="flex gap-3 justify-end">
               <Button
                 onClick={onClose}
                 variant="outline"
-                className="min-w-[120px] border-2 border-app-border-accent hover:border-app-achievement-workout"
+                className="min-w-[120px] border-2 border-app-border-accent hover:border-app-achievement-workout rounded-xl"
               >
                 Fechar
               </Button>
               {exercise.video_url && (
                 <Button
                   onClick={() => window.open(exercise.video_url, '_blank')}
-                  className="min-w-[160px] bg-achievement-workout hover:bg-app-achievement-workout/90 shadow-app-medium"
+                  className="min-w-[160px] bg-achievement-workout hover:bg-app-achievement-workout/90 shadow-app-medium rounded-xl"
                 >
                   <Play className="h-4 w-4 mr-2" />
                   Ver Vídeo Completo
@@ -220,22 +243,8 @@ function MobileContent({
   return (
     <div className="space-y-4">
 
-      {exercise.audio_url && (
-        <div className="p-4 bg-gradient-to-r from-app-card to-app-bg-secondary/10 rounded-xl border border-app-border-muted">
-          <h3 className="font-semibold text-app-text-heading mb-3 flex items-center gap-2">
-            <Volume2 className="h-4 w-4 text-app-achievement-workout" />
-            Áudio Explicativo
-          </h3>
-          <audio
-            src={exercise.audio_url}
-            controls
-            className="w-full"
-          />
-        </div>
-      )}
-
       {exercise.video_url && (
-        <div className="p-4 bg-gradient-to-r from-app-card to-app-bg-secondary/10 rounded-xl border border-app-border-muted">
+        <div className="p-4 bg-app-card rounded-xl border border-app-border-muted">
           <h3 className="font-semibold text-app-text-heading mb-3 flex items-center gap-2">
             <Play className="h-4 w-4 text-app-achievement-workout" />
             Demonstração
@@ -258,18 +267,60 @@ function MobileContent({
           </div>
         </div>
       )}
-      {/* Description */}
-      {exercise.description && (
+
+      {exercise.audio_url && (
+        <div className="p-4 bg-app-card rounded-xl border border-app-border-muted">
+          <h3 className="font-semibold text-app-text-heading mb-3 flex items-center gap-2">
+            <Volume2 className="h-4 w-4 text-app-achievement-workout" />
+            Áudio Explicativo
+          </h3>
+          <audio
+            src={exercise.audio_url}
+            controls
+            className="w-full"
+          />
+        </div>
+      )}
+
+      {/* Muscle Groups */}
+      <CollapsibleSection
+        title="Grupos Musculares"
+        isExpanded={expandedSections.muscles}
+        onToggle={() => toggleSection('muscles')}
+        icon={<Target className="h-4 w-4" />}
+        iconColor="text-app-achievement-workout"
+      >
+        <div className="flex flex-wrap gap-2">
+          {exercise.muscle_group.map((muscle: string) => (
+            <Badge
+              key={muscle}
+              className="bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent px-3 py-1 rounded-full"
+            >
+              {muscle}
+            </Badge>
+          ))}
+        </div>
+      </CollapsibleSection>
+
+      {/* Equipment */}
+      {exercise.equipment && exercise.equipment.length > 0 && (
         <CollapsibleSection
-          title="Descrição"
-          isExpanded={expandedSections.description}
-          onToggle={() => toggleSection('description')}
-          icon={<Dumbbell className="h-4 w-4" />}
-          iconColor="text-app-achievement-workout"
+          title="Equipamentos"
+          isExpanded={expandedSections.equipment}
+          onToggle={() => toggleSection('equipment')}
+          icon={<Package className="h-4 w-4" />}
+          iconColor="text-app-achievement-exercise"
         >
-          <p className="text-app-text-secondary leading-relaxed">
-            {exercise.description}
-          </p>
+          <div className="flex flex-wrap gap-2">
+            {exercise.equipment.map((eq: string) => (
+              <Badge
+                key={eq}
+                className="bg-app-achievement-exercise/10 text-app-achievement-exercise border border-app-border-accent px-3 py-1 rounded-full"
+              >
+                {eq}
+              </Badge>
+            ))}
+          </div>
         </CollapsibleSection>
       )}
 
@@ -282,11 +333,15 @@ function MobileContent({
           icon={<Lightbulb className="h-4 w-4" />}
           iconColor="text-app-achievement-consecutive"
         >
-          <div className="space-y-2">
+          <div className="space-y-3">
             {exercise.tips.map((tip: string, index: number) => (
-              <div key={index} className="flex gap-3 p-3 bg-app-achievement-consecutive/10 rounded-lg border border-app-border-accent">
-                <span className="text-xs font-bold text-app-achievement-consecutive">{index + 1}</span>
-                <p className="text-sm text-app-text-secondary">{tip}</p>
+              <div key={index} className="p-4 bg-gradient-to-br from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted">
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 bg-app-achievement-consecutive rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-white">{index + 1}</span>
+                  </div>
+                  <p className="text-sm text-app-text-secondary leading-relaxed">{tip}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -302,61 +357,18 @@ function MobileContent({
           icon={<AlertTriangle className="h-4 w-4" />}
           iconColor="text-orange-600"
         >
-          <div className="space-y-2">
+          <div className="space-y-3">
             {exercise.common_errors.map((error: string, index: number) => (
-              <div key={index} className="flex gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-700">
-                <AlertTriangle className="h-3 w-3 text-orange-600 dark:text-orange-400 mt-1 flex-shrink-0" />
-                <p className="text-sm text-app-text-secondary">{error}</p>
+              <div key={index} className="p-4 bg-gradient-to-br from-orange-50/50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-700">
+                <div className="flex gap-3">
+                  <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-app-text-secondary leading-relaxed">{error}</p>
+                </div>
               </div>
             ))}
           </div>
         </CollapsibleSection>
       )}
-
-
-      {/* Muscle Groups */}
-      <CollapsibleSection
-        title="Grupos Musculares"
-        isExpanded={expandedSections.muscles}
-        onToggle={() => toggleSection('muscles')}
-        icon={<Target className="h-4 w-4" />}
-        iconColor="text-app-achievement-workout"
-      >
-        <div className="flex flex-wrap gap-2">
-          {exercise.muscle_group.map((muscle: string) => (
-            <Badge
-              key={muscle}
-              className="bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent"
-            >
-              {muscle}
-            </Badge>
-          ))}
-        </div>
-      </CollapsibleSection>
-
-      {/* Equipment */}
-      {exercise.equipment && exercise.equipment.length > 0 && (
-        <CollapsibleSection
-          title="Equipamentos"
-          isExpanded={expandedSections.equipment}
-          onToggle={() => toggleSection('equipment')}
-          icon={<Package className="h-4 w-4" />}
-          iconColor="text-app-achievement-workout"
-        >
-          <div className="flex flex-wrap gap-2">
-            {exercise.equipment.map((eq: string) => (
-              <Badge
-                key={eq}
-                className="bg-app-bg-secondary text-app-text-secondary border border-app-border-muted"
-              >
-                {eq}
-              </Badge>
-            ))}
-          </div>
-        </CollapsibleSection>
-      )}
-
-      
 
       {/* Variations */}
       {exercise.variations && exercise.variations.length > 0 && (
@@ -365,15 +377,17 @@ function MobileContent({
           isExpanded={expandedSections.variations}
           onToggle={() => toggleSection('variations')}
           icon={<Target className="h-4 w-4" />}
-          iconColor="text-app-achievement-exercise"
+          iconColor="text-app-achievement-weight"
         >
-          <div className="space-y-2">
+          <div className="space-y-3">
             {exercise.variations.map((variation: string, index: number) => (
-              <div key={index} className="flex gap-3 p-3 bg-app-achievement-exercise/10 rounded-lg border border-app-border-accent">
-                <div className="w-6 h-6 bg-app-achievement-exercise rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-white">{index + 1}</span>
+              <div key={index} className="p-4 bg-gradient-to-br from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted">
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 bg-app-achievement-weight rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-white">{index + 1}</span>
+                  </div>
+                  <p className="text-sm font-medium text-app-text-primary">{variation}</p>
                 </div>
-                <p className="text-sm font-medium text-app-text-primary">{variation}</p>
               </div>
             ))}
           </div>
@@ -383,144 +397,285 @@ function MobileContent({
   );
 }
 
-// Desktop Content Component
-function DesktopContent({ exercise }: { exercise: any }) {
+// Desktop Content Component - Redesenhado
+function DesktopContent({ 
+  exercise, 
+  expandedSections, 
+  toggleSection 
+}: {
+  exercise: any;
+  expandedSections: Record<string, boolean>;
+  toggleSection: (section: string) => void;
+}) {
   return (
-    <>
-      {/* Video Section */}
-      {exercise.video_url && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold text-app-text-heading flex items-center gap-2">
-            <Play className="h-5 w-5 text-app-achievement-workout" />
-            Demonstração
-          </h3>
-          <div className="aspect-video bg-app-bg-secondary rounded-xl overflow-hidden shadow-app-medium">
-            {exercise.video_url.includes('youtube') || exercise.video_url.includes('vimeo') ? (
-              <iframe
-                src={exercise.video_url}
-                className="w-full h-full"
-                allowFullScreen
-                title={`Vídeo: ${exercise.name}`}
-              />
-            ) : (
-              <video
-                src={exercise.video_url}
-                controls
-                className="w-full h-full object-cover"
-              />
+    <div className="space-y-6">
+      
+      {/* Media Section */}
+      {(exercise.video_url || exercise.audio_url) && (
+        <Card className="border-0 card-app">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-app-achievement-workout rounded-lg flex items-center justify-center">
+                <Play className="h-4 w-4 text-white" />
+              </div>
+              <CardTitle className="text-lg font-bold text-app-heading">
+                Demonstração
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {exercise.video_url && (
+              <div className="aspect-video bg-app-bg-secondary rounded-xl overflow-hidden shadow-app-medium">
+                {exercise.video_url.includes('youtube') || exercise.video_url.includes('vimeo') ? (
+                  <iframe
+                    src={exercise.video_url}
+                    className="w-full h-full"
+                    allowFullScreen
+                    title={`Vídeo: ${exercise.name}`}
+                  />
+                ) : (
+                  <video
+                    src={exercise.video_url}
+                    controls
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
             )}
-          </div>
-        </div>
+            
+            {exercise.audio_url && (
+              <div>
+                <h4 className="font-semibold text-app-text-heading mb-3 flex items-center gap-2">
+                  <Volume2 className="h-4 w-4 text-app-achievement-workout" />
+                  Áudio Explicativo
+                </h4>
+                <audio src={exercise.audio_url} controls className="w-full" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Audio Section */}
-      {exercise.audio_url && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold text-app-text-heading flex items-center gap-2">
-            <Volume2 className="h-5 w-5 text-app-achievement-workout" />
-            Áudio Explicativo
-          </h3>
-          <audio src={exercise.audio_url} controls className="w-full" />
-        </div>
-      )}
-
-      {/* Muscle Groups */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-app-text-heading flex items-center gap-2">
-          <Target className="h-5 w-5 text-app-achievement-workout" />
-          Grupos Musculares
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {exercise.muscle_group.map((muscle: string) => (
-            <Badge
-              key={muscle}
-              className="px-4 py-2 bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent text-base"
+      {/* Basic Info Section */}
+      <Card className="border-0 card-app">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-app-achievement-workout rounded-lg flex items-center justify-center">
+                <Info className="h-4 w-4 text-white" />
+              </div>
+              <CardTitle className="text-lg font-bold text-app-heading">
+                Informações Básicas
+              </CardTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleSection('description')}
+              className="h-8 w-8 p-0"
             >
-              {muscle}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Equipment */}
-      {exercise.equipment && exercise.equipment.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold text-app-text-heading flex items-center gap-2">
-            <Package className="h-5 w-5 text-app-achievement-workout" />
-            Equipamentos
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {exercise.equipment.map((eq: string) => (
-              <Badge key={eq} className="px-4 py-2 bg-app-bg-secondary text-app-text-secondary border border-app-border-muted text-base">
-                {eq}
-              </Badge>
-            ))}
+              {expandedSections.description ? (
+                <ListCollapse className="h-4 w-4" />
+              ) : (
+                <Expand className="h-4 w-4" />
+              )}
+            </Button>
           </div>
-        </div>
-      )}
+        </CardHeader>
+        
+        {expandedSections.description && (
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Muscle Groups */}
+              <div className="space-y-4">
+                <h4 className="font-bold text-app-heading flex items-center gap-2">
+                  <Target className="h-4 w-4 text-app-achievement-workout" />
+                  Grupos Musculares ({exercise.muscle_group.length})
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {exercise.muscle_group.map((muscle: string) => (
+                    <Badge
+                      key={muscle}
+                      className="bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent px-3 py-1.5 text-sm rounded-full"
+                    >
+                      {muscle}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
 
-      {/* Tips */}
+              {/* Equipment */}
+              <div className="space-y-4">
+                <h4 className="font-bold text-app-heading flex items-center gap-2">
+                  <Package className="h-4 w-4 text-app-achievement-exercise" />
+                  Equipamentos ({exercise.equipment?.length || 0})
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {exercise.equipment && exercise.equipment.length > 0 ? (
+                    exercise.equipment.map((eq: string) => (
+                      <Badge
+                        key={eq}
+                        className="bg-app-achievement-exercise/10 text-app-achievement-exercise border border-app-border-accent px-3 py-1.5 text-sm rounded-full"
+                      >
+                        {eq}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge className="bg-app-bg-secondary text-app-text-muted border border-app-border-muted px-3 py-1.5 text-sm rounded-full">
+                      Peso corporal
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Tips Section */}
       {exercise.tips && exercise.tips.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold text-app-text-heading flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-app-achievement-consecutive" />
-            Dicas de Execução
-          </h3>
-          <div className="space-y-3">
-            {exercise.tips.map((tip: string, index: number) => (
-              <div key={index} className="flex gap-3 p-4 bg-app-achievement-consecutive/10 rounded-xl border border-app-border-accent">
-                <div className="w-7 h-7 bg-app-achievement-consecutive rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-white">{index + 1}</span>
+        <Card className="border-0 card-app">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-app-achievement-consecutive rounded-lg flex items-center justify-center">
+                  <Lightbulb className="h-4 w-4 text-white" />
                 </div>
-                <p className="text-app-text-secondary">{tip}</p>
+                <CardTitle className="text-lg font-bold text-app-heading">
+                  Dicas de Execução ({exercise.tips.length})
+                </CardTitle>
               </div>
-            ))}
-          </div>
-        </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleSection('tips')}
+                className="h-8 w-8 p-0"
+              >
+                {expandedSections.tips ? (
+                  <ListCollapse className="h-4 w-4" />
+                ) : (
+                  <Expand className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          
+          {expandedSections.tips && (
+            <CardContent>
+              <div className="grid gap-4">
+                {exercise.tips.map((tip: string, index: number) => (
+                  <div key={index} className="p-4 bg-gradient-to-br from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted">
+                    <div className="flex gap-4">
+                      <div className="w-8 h-8 bg-app-achievement-consecutive rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-white">{index + 1}</span>
+                      </div>
+                      <p className="text-app-text-secondary leading-relaxed">{tip}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
       )}
 
-      {/* Common Errors */}
+      {/* Common Errors Section */}
       {exercise.common_errors && exercise.common_errors.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold text-app-text-heading flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            Erros Comuns
-          </h3>
-          <div className="space-y-3">
-            {exercise.common_errors.map((error: string, index: number) => (
-              <div key={index} className="flex gap-3 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-700">
-                <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-1 flex-shrink-0" />
-                <p className="text-app-text-secondary">{error}</p>
+        <Card className="border-0 card-app">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="h-4 w-4 text-white" />
+                </div>
+                <CardTitle className="text-lg font-bold text-app-heading">
+                  Erros Comuns ({exercise.common_errors.length})
+                </CardTitle>
               </div>
-            ))}
-          </div>
-        </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleSection('errors')}
+                className="h-8 w-8 p-0"
+              >
+                {expandedSections.errors ? (
+                  <ListCollapse className="h-4 w-4" />
+                ) : (
+                  <Expand className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          
+          {expandedSections.errors && (
+            <CardContent>
+              <div className="grid gap-4">
+                {exercise.common_errors.map((error: string, index: number) => (
+                  <div key={index} className="p-4 bg-gradient-to-br from-orange-50/50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-700">
+                    <div className="flex gap-4">
+                      <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-app-text-secondary leading-relaxed">{error}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
       )}
 
-      {/* Variations */}
+      {/* Variations Section */}
       {exercise.variations && exercise.variations.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold text-app-text-heading flex items-center gap-2">
-            <Target className="h-5 w-5 text-app-achievement-exercise" />
-            Variações
-          </h3>
-          <div className="space-y-2">
-            {exercise.variations.map((variation: string, index: number) => (
-              <div key={index} className="flex gap-3 p-3 bg-app-achievement-exercise/10 rounded-xl border border-app-border-accent">
-                <div className="w-6 h-6 bg-app-achievement-exercise rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-bold text-white">{index + 1}</span>
+        <Card className="border-0 card-app">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-app-achievement-weight rounded-lg flex items-center justify-center">
+                  <Target className="h-4 w-4 text-white" />
                 </div>
-                <p className="font-medium text-app-text-primary">{variation}</p>
+                <CardTitle className="text-lg font-bold text-app-heading">
+                  Variações ({exercise.variations.length})
+                </CardTitle>
               </div>
-            ))}
-          </div>
-        </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleSection('variations')}
+                className="h-8 w-8 p-0"
+              >
+                {expandedSections.variations ? (
+                  <ListCollapse className="h-4 w-4" />
+                ) : (
+                  <Expand className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          
+          {expandedSections.variations && (
+            <CardContent>
+              <div className="grid gap-4">
+                {exercise.variations.map((variation: string, index: number) => (
+                  <div key={index} className="p-4 bg-gradient-to-br from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted">
+                    <div className="flex gap-4">
+                      <div className="w-8 h-8 bg-app-achievement-weight rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-white">{index + 1}</span>
+                      </div>
+                      <p className="font-medium text-app-text-primary">{variation}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
       )}
-    </>
+    </div>
   );
 }
 
-// Collapsible Section Component
+// Collapsible Section Component for Mobile
 interface CollapsibleSectionProps {
   title: string;
   isExpanded: boolean;
@@ -542,7 +697,7 @@ function CollapsibleSection({
     <div className="border border-app-border-muted rounded-xl overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-app-card to-app-bg-secondary/10 hover:from-app-bg-secondary/20 hover:to-app-bg-secondary/30 transition-all duration-300"
+        className="w-full flex items-center justify-between p-4 bg-app-card hover:bg-app-bg-secondary/20 transition-all duration-300"
       >
         <div className="flex items-center gap-2">
           <span className={iconColor}>{icon}</span>
