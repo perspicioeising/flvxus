@@ -1,4 +1,3 @@
-// components/workout-plans/components/steps/StepReview.tsx
 import { CheckCircle2, Calendar, User, FileText, Dumbbell, Save, Edit, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,18 +76,18 @@ export function StepReview({
       {/* Header Section */}
       <div className="text-center space-y-4">
         <div className="relative inline-block">
-          <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg mx-auto">
+          <div className="w-20 h-20 bg-app-achievement-consecutive rounded-2xl flex items-center justify-center shadow-app-large mx-auto">
             <CheckCircle2 className="h-10 w-10 text-white" />
           </div>
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-app-achievement-workout rounded-full flex items-center justify-center">
             <span className="text-white font-bold text-sm">4</span>
           </div>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-app-text-primary">
             Revisão Final
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-app-text-secondary mt-2">
             Confira todos os detalhes antes de {mode === 'create' ? 'criar' : 'atualizar'} o plano
           </p>
         </div>
@@ -97,14 +96,14 @@ export function StepReview({
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <div className="relative p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/20 to-app-achievement-consecutive/20 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="relative p-4 bg-app-card rounded-xl shadow-app-medium">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Duração Total</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{calculateDuration()}</p>
+                <p className="text-sm text-app-text-secondary">Duração Total</p>
+                <p className="text-xl font-bold text-app-text-primary">{calculateDuration()}</p>
               </div>
-              <div className="p-3 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg">
+              <div className="p-3 bg-app-achievement-workout rounded-lg">
                 <Calendar className="h-5 w-5 text-white" />
               </div>
             </div>
@@ -112,14 +111,14 @@ export function StepReview({
         </div>
 
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <div className="relative p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-consecutive/20 to-app-achievement-exercise/20 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="relative p-4 bg-app-card rounded-xl shadow-app-medium">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Frequência</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{formData.schedule.length}x/semana</p>
+                <p className="text-sm text-app-text-secondary">Frequência</p>
+                <p className="text-xl font-bold text-app-text-primary">{formData.schedule.length}x/semana</p>
               </div>
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
+              <div className="p-3 bg-app-achievement-consecutive rounded-lg">
                 <Dumbbell className="h-5 w-5 text-white" />
               </div>
             </div>
@@ -127,14 +126,14 @@ export function StepReview({
         </div>
 
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <div className="relative p-4 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-weight/20 to-app-achievement-exercise/20 rounded-xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="relative p-4 bg-app-card rounded-xl shadow-app-medium">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Treinos Únicos</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{uniqueWorkouts}</p>
+                <p className="text-sm text-app-text-secondary">Treinos Únicos</p>
+                <p className="text-xl font-bold text-app-text-primary">{uniqueWorkouts}</p>
               </div>
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+              <div className="p-3 bg-app-achievement-weight rounded-lg">
                 <FileText className="h-5 w-5 text-white" />
               </div>
             </div>
@@ -145,37 +144,37 @@ export function StepReview({
       {/* Plan Details */}
       <div className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+        <div className="bg-app-card rounded-xl shadow-app-medium p-6 border border-app-border-muted">
+          <h3 className="font-semibold text-app-text-primary mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-app-achievement-workout" />
             Informações do Plano
           </h3>
           <div className="space-y-3">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Nome</p>
-              <p className="font-medium text-gray-900 dark:text-white">{formData.name}</p>
+              <p className="text-sm text-app-text-secondary">Nome</p>
+              <p className="font-medium text-app-text-primary">{formData.name}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Descrição</p>
-              <p className="text-gray-700 dark:text-gray-300">{formData.description}</p>
+              <p className="text-sm text-app-text-secondary">Descrição</p>
+              <p className="text-app-text-primary">{formData.description}</p>
             </div>
             <div className="flex gap-6">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Início</p>
-                <p className="font-medium text-gray-900 dark:text-white">{formatDate(formData.start_date)}</p>
+                <p className="text-sm text-app-text-secondary">Início</p>
+                <p className="font-medium text-app-text-primary">{formatDate(formData.start_date)}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Término</p>
-                <p className="font-medium text-gray-900 dark:text-white">{formatDate(formData.end_date)}</p>
+                <p className="text-sm text-app-text-secondary">Término</p>
+                <p className="font-medium text-app-text-primary">{formatDate(formData.end_date)}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Weekly Schedule */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+        <div className="bg-app-card rounded-xl shadow-app-medium p-6 border border-app-border-muted">
+          <h3 className="font-semibold text-app-text-primary mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-app-achievement-workout" />
             Programação Semanal
           </h3>
           <div className="space-y-3">
@@ -183,12 +182,12 @@ export function StepReview({
               const dayWorkouts = workoutsByDay[day] || [];
               
               return (
-                <div key={day} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div key={day} className="p-4 bg-app-bg-accent rounded-lg border border-app-border-muted">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900 dark:text-white">
+                    <h4 className="font-medium text-app-text-primary">
                       {getDayName(day)}
                     </h4>
-                    <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                    <Badge className="bg-app-achievement-workout/10 text-app-achievement-workout border-app-border-accent">
                       {dayWorkouts.length} treino{dayWorkouts.length !== 1 ? 's' : ''}
                     </Badge>
                   </div>
@@ -196,18 +195,18 @@ export function StepReview({
                     <div className="space-y-1">
                       {dayWorkouts.map((sw, index) => (
                         <div key={`${sw.workout.id}-${index}`} className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <div className="w-1.5 h-1.5 bg-app-achievement-workout rounded-full"></div>
+                          <span className="text-sm text-app-text-primary">
                             {sw.workout.name}
                           </span>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs border-app-border-muted">
                             {sw.workout.level}
                           </Badge>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                    <p className="text-sm text-app-text-muted italic">
                       Nenhum treino atribuído
                     </p>
                   )}
@@ -223,7 +222,7 @@ export function StepReview({
         <Button
           onClick={onSave}
           disabled={isSaving}
-          className="px-8 py-3 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:via-amber-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-2xl hover:shadow-orange-500/25 transition-all duration-300 transform hover:scale-105 border-0"
+          className="px-8 py-3 bg-achievement-workout hover:bg-app-btn-primary-hover text-white font-bold rounded-xl shadow-app-xl hover:shadow-app-achievement-workout/25 transition-all duration-300 transform hover:scale-105 border-0"
         >
           {isSaving ? (
             <>
@@ -243,7 +242,7 @@ export function StepReview({
       {selectedWorkouts.length === 0 && (
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 rounded-xl blur-xl"></div>
-          <div className="relative p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl">
+          <div className="relative p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
               <div>

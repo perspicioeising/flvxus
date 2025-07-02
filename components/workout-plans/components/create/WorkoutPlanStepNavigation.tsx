@@ -1,4 +1,3 @@
-// components/workout-plans/components/form/WorkoutPlanStepNavigation.tsx
 import { CheckCircle2, Star, Calendar, Clock, Dumbbell, FileCheck } from "lucide-react";
 
 interface WorkoutPlanStep {
@@ -37,30 +36,30 @@ export const WorkoutPlanStepNavigation = ({
       {/* Mobile Version - Horizontal Scroll */}
       <div className="block sm:hidden">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 via-amber-500/10 to-orange-600/10 rounded-2xl blur-xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-orange-200/50 dark:border-orange-800/30 rounded-2xl p-4 shadow-xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-achievement-consecutive/10 to-app-achievement-workout/10 rounded-2xl blur-xl"></div>
+          <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/30 rounded-2xl p-4 shadow-app-xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className={`p-3 bg-gradient-to-br ${steps[currentStepIndex]?.color || 'from-orange-500 to-orange-600'} rounded-xl shadow-lg`}>
+                <div className="p-3 bg-achievement-workout rounded-xl shadow-app-medium">
                   {(() => {
                     const StepIcon = STEP_ICONS[steps[currentStepIndex]?.icon as keyof typeof STEP_ICONS];
                     return StepIcon ? <StepIcon className="h-6 w-6 text-white" /> : null;
                   })()}
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white text-lg">
+                  <h3 className="font-bold text-app-text-primary text-lg">
                     {steps[currentStepIndex]?.title}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-app-text-secondary">
                     {steps[currentStepIndex]?.description}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-app-text-muted uppercase tracking-wider">
                   Etapa
                 </p>
-                <p className="text-lg font-black text-orange-600 dark:text-orange-400">
+                <p className="text-lg font-black text-app-achievement-workout">
                   {currentStepIndex + 1}/{steps.length}
                 </p>
               </div>
@@ -68,13 +67,13 @@ export const WorkoutPlanStepNavigation = ({
             
             {/* Progress Bar */}
             <div className="space-y-2">
-              <div className="flex justify-between text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="flex justify-between text-xs font-medium text-app-text-secondary">
                 <span>Progresso</span>
                 <span>{Math.round(((currentStepIndex + 1) / steps.length) * 100)}%</span>
               </div>
-              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-2 bg-app-bg-secondary rounded-full overflow-hidden">
                 <div 
-                  className={`h-full bg-gradient-to-r ${steps[currentStepIndex]?.color || 'from-orange-500 to-orange-600'} rounded-full transition-all duration-700 ease-out`}
+                  className="h-full bg-achievement-workout rounded-full transition-all duration-700 ease-out"
                   style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
                 />
               </div>
@@ -86,22 +85,22 @@ export const WorkoutPlanStepNavigation = ({
       {/* Desktop Version - Optimized Grid */}
       <div className="hidden sm:block">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-600/10 via-amber-500/10 to-orange-600/10 rounded-2xl blur-xl"></div>
-          <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-orange-200/50 dark:border-orange-800/30 rounded-2xl p-4 lg:p-6 shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-achievement-consecutive/10 to-app-achievement-workout/10 rounded-2xl blur-xl"></div>
+          <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/30 rounded-2xl p-4 lg:p-6 shadow-app-xl">
             
             {/* Compact Progress Header */}
             <div className="text-center mb-4 lg:mb-6">
               <div className="flex items-center justify-center gap-3 mb-2">
-                <h2 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-lg lg:text-xl font-bold text-app-text-primary">
                   Criação do Plano
                 </h2>
-                <div className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-                  <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                <div className="px-3 py-1 bg-app-achievement-workout/10 rounded-full">
+                  <span className="text-sm font-semibold text-app-achievement-workout">
                     {currentStepIndex + 1}/{steps.length}
                   </span>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-app-text-secondary">
                 {Math.round(((currentStepIndex + 1) / steps.length) * 100)}% concluído
               </p>
             </div>
@@ -120,7 +119,7 @@ export const WorkoutPlanStepNavigation = ({
                     {index < steps.length - 1 && (
                       <div className="absolute top-6 lg:top-8 left-full w-full h-0.5 -translate-x-1/2 z-0">
                         <div className={`h-full rounded-full transition-all duration-700 ${
-                          isCompleted ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gray-200 dark:bg-gray-700'
+                          isCompleted ? 'bg-app-achievement-consecutive' : 'bg-app-bg-secondary'
                         }`} />
                       </div>
                     )}
@@ -133,10 +132,10 @@ export const WorkoutPlanStepNavigation = ({
                         isClickable ? 'hover:scale-105 cursor-pointer' : 'cursor-not-allowed opacity-75'
                       } ${
                         isActive
-                          ? `bg-gradient-to-br ${step.color} text-white shadow-xl scale-105`
+                          ? 'bg-achievement-workout text-white shadow-app-xl scale-105'
                           : isCompleted
-                          ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg'
-                          : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600 shadow-md'
+                          ? 'bg-app-achievement-consecutive text-white shadow-app-large'
+                          : 'bg-app-card border-2 border-app-border-muted hover:border-app-border-accent shadow-app-medium'
                       }`}
                     >
                       {/* Icon */}
@@ -144,7 +143,7 @@ export const WorkoutPlanStepNavigation = ({
                         <div className={`relative p-2 lg:p-3 rounded-lg lg:rounded-xl ${
                           isActive || isCompleted 
                             ? 'bg-white/20' 
-                            : `bg-gradient-to-br ${step.color}`
+                            : 'bg-achievement-workout'
                         }`}>
                           {isCompleted && !isActive ? (
                             <CheckCircle2 className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
@@ -154,7 +153,7 @@ export const WorkoutPlanStepNavigation = ({
                             }`} />
                           )}
                           {isActive && (
-                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 lg:w-4 lg:h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 lg:w-4 lg:h-4 bg-app-achievement-consecutive rounded-full flex items-center justify-center">
                               <Star className="h-1.5 w-1.5 lg:h-2 lg:w-2 text-white" />
                             </div>
                           )}
@@ -166,14 +165,14 @@ export const WorkoutPlanStepNavigation = ({
                         <h3 className={`font-bold text-xs lg:text-sm mb-1 ${
                           isActive || isCompleted 
                             ? 'text-white' 
-                            : 'text-gray-900 dark:text-white'
+                            : 'text-app-text-primary'
                         }`}>
                           {step.title}
                         </h3>
                         <p className={`text-xs leading-tight hidden lg:block ${
                           isActive || isCompleted 
                             ? 'text-white/80' 
-                            : 'text-gray-600 dark:text-gray-400'
+                            : 'text-app-text-secondary'
                         }`}>
                           {step.description}
                         </p>
@@ -200,13 +199,13 @@ export const WorkoutPlanStepNavigation = ({
 
             {/* Progress Bar */}
             <div className="space-y-2">
-              <div className="flex justify-between text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="flex justify-between text-xs font-medium text-app-text-secondary">
                 <span>Progresso Geral</span>
                 <span>{Math.round(((currentStepIndex + 1) / steps.length) * 100)}%</span>
               </div>
-              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-2 bg-app-bg-secondary rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 rounded-full transition-all duration-1000 ease-out"
+                  className="h-full bg-achievement-workout rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
                 />
               </div>

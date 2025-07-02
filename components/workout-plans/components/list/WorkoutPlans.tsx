@@ -1,9 +1,10 @@
-// /components/workout-plans/components/list/WorkoutPlans.tsx - ATUALIZADO
 
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { 
   useWorkoutPlans, 
   useCreateWorkoutPlan, 
@@ -19,7 +20,7 @@ import { LoadingSkeleton } from './LoadingSkeleton';
 export default function WorkoutPlansPage() {
   const router = useRouter();
   const navigation = useWorkoutPlanNavigation();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list'); // Padrão list como nos exercícios
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   const {
     plans,
@@ -58,7 +59,7 @@ export default function WorkoutPlansPage() {
     isLoading: isDataLoading,
   } = useWorkoutPlanData();
 
-  // Handler para criar plano - navegar para formulário
+  // Handler para criar plano
   const handleCreatePlan = () => {
     router.push('/dashboard/workout-plans/new');
   };
@@ -85,12 +86,12 @@ export default function WorkoutPlansPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black">
-      <div className="container mx-auto px-4 py-4 max-w-7xl">
+    <div className="min-h-screen bg-app-gradient">
+      <div className="container mx-auto px-3 sm:px-4 py-4 max-w-7xl">
 
         {/* Header */}
         <WorkoutPlansHeader 
-          userRole="trainer" // TODO: Get from context
+          userRole="trainer"
           stats={{ total: pagination.total }}
           onCreateNew={handleCreatePlan}
         />
@@ -111,8 +112,8 @@ export default function WorkoutPlansPage() {
           hasMore={hasMorePlans}
           hasMorePlans={hasMorePlans}
           onLoadMore={loadMorePlans}
-          onPageChange={() => {}} // Não usado com infinite scroll
-          onPageSizeChange={() => {}} // Não usado com infinite scroll
+          onPageChange={() => {}}
+          onPageSizeChange={() => {}}
           onView={navigation.goToDetails}
           onEdit={navigation.goToEdit}
           onClone={handleClonePlan}
@@ -122,7 +123,118 @@ export default function WorkoutPlansPage() {
           onCreateNew={handleCreatePlan}
           onClearFilters={handleClearFilters}
         />
+
+        {/* Floating Action Button - Mobile Only - IGUAL AOS EXERCÍCIOS */}
+        <div className="fixed bottom-24 right-4 sm:hidden z-40">
+          <div className="relative">
+            <div className="absolute inset-0 bg-app-achievement-workout/30 rounded-full blur-xl animate-pulse"></div>
+            <Button
+              onClick={handleCreatePlan}
+              className="relative w-14 h-14 bg-achievement-workout hover:bg-app-btn-primary-hover rounded-full shadow-app-xl hover:shadow-app-xl transition-all duration-300 transform hover:scale-110 active:scale-95"
+            >
+              <Plus className="h-6 w-6 text-white" />
+            </Button>
+          </div>
+        </div>
       </div>
+
+      {/* CSS para animações - IGUAL AOS EXERCÍCIOS */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in-up {
+          animation: fadeInUp 0.5s ease-out both;
+        }
+
+        /* Mobile scroll optimization */
+        @media (max-width: 768px) {
+          .container {
+            padding-left: 12px;
+            padding-right: 12px;
+          }
+          
+          .grid {
+            padding: 0;
+          }
+        }
+        
+        /* Smooth scrolling */
+        html {
+          scroll-behavior: smooth;
+        }
+        
+        /* Custom scrollbar para desktop */
+        @media (min-width: 769px) {
+          ::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          ::-webkit-scrollbar-track {
+            background: rgb(var(--background-secondary));
+          }
+          
+          ::-webkit-scrollbar-thumb {
+            background: rgb(var(--achievement-workout));
+            border-radius: 3px;
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: rgb(var(--button-primary));
+          }
+        }
+        
+        .animate-fade-in-up {
+          will-change: opacity, transform;
+        }
+        
+        /* Reduced motion para acessibilidade */
+        @media (prefers-reduced-motion: reduce) {
+          .animate-fade-in-up {
+            animation: none;
+          }
+          
+          * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+        
+        /* Touch feedback para mobile */
+        @media (max-width: 768px) {
+          .card-app:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease-out;
+          }
+          
+          button:active {
+            transform: scale(0.95);
+          }
+        }
+        
+        /* Focus states para acessibilidade */
+        button:focus-visible,
+        [role="button"]:focus-visible {
+          outline: 2px solid rgb(var(--achievement-workout));
+          outline-offset: 2px;
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+          .card-app {
+            border: 2px solid;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// /components/workout-plans/components/list/WorkoutPlansPaginationInfo.tsx
 
 import React from 'react';
 
@@ -13,9 +12,9 @@ export function WorkoutPlansPaginationInfo({
 }: WorkoutPlansPaginationInfoProps) {
   return (
     <div className="text-center mt-6">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Mostrando <span className="font-semibold text-gray-900 dark:text-white">{currentCount}</span> de{' '}
-        <span className="font-semibold text-gray-900 dark:text-white">{totalCount}</span> planos de treino
+      <p className="text-sm text-app-text-secondary">
+        Mostrando <span className="font-semibold text-app-text-primary">{currentCount}</span> de{' '}
+        <span className="font-semibold text-app-text-primary">{totalCount}</span> planos de treino
       </p>
     </div>
   );

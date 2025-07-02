@@ -23,7 +23,7 @@ export function PhysicalAssessmentHeader({
 
   return (
     <div className="relative mb-8">
-      <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-green-500/20 to-green-600/20 dark:from-green-500/10 dark:via-green-400/10 dark:to-green-500/10 rounded-3xl blur-xl"></div>
+      <div className="absolute inset-0 bg-app-gradient rounded-3xl blur-xl"></div>
       <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-green-200/50 dark:border-green-800/30 rounded-3xl p-6 lg:p-8 shadow-2xl">
         
         {/* Back Button + Title */}
