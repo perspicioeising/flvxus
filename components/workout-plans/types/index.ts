@@ -51,7 +51,7 @@ export interface CreateWorkoutPlanData {
 
 export interface WorkoutPlanFilters {
   searchQuery: string;
-  statusFilter: 'all' | 'active' | 'completed';
+  statusFilter: string;
 }
 
 export interface WorkoutPlanStats {

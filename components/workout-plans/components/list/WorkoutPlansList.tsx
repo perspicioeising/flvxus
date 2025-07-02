@@ -1,8 +1,7 @@
-// /components/workout-plans/components/list/WorkoutPlansList.tsx - ATUALIZADO
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Infinity } from 'lucide-react';
+import { CalendarCheck, Infinity } from 'lucide-react';
 import { WorkoutPlanCard } from './WorkoutPlanCard';
 import { WorkoutPlansEmptyState } from './WorkoutPlansEmptyState';
 import { WorkoutPlansLoadMore } from './WorkoutPlansLoadMore';
@@ -56,7 +55,41 @@ export function WorkoutPlansList({
 
   return (
     <div className="space-y-6">
- 
+      {/* Toggle para Infinite Scroll */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 via-app-achievement-consecutive/10 to-app-achievement-workout/10 rounded-xl blur-lg"></div>
+        <div className="relative flex items-center justify-between p-3 sm:p-4 bg-app-card border border-app-border-muted rounded-xl shadow-app-medium">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+              infiniteScrollEnabled 
+                ? 'bg-app-achievement-consecutive text-white shadow-app-medium' 
+                : 'bg-app-bg-secondary text-app-text-muted'
+            }`}>
+              <Infinity className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-app-text-primary">
+                Scroll Infinito
+              </p>
+              <p className="text-xs text-app-text-secondary">
+                {infiniteScrollEnabled ? 'Carregamento automático ativo' : 'Carregamento manual'}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setInfiniteScrollEnabled(!infiniteScrollEnabled)}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+              infiniteScrollEnabled
+                ? 'bg-app-achievement-consecutive/10 text-app-achievement-consecutive hover:bg-app-achievement-consecutive/20'
+                : 'bg-app-bg-secondary text-app-text-secondary hover:bg-app-border-accent/20'
+            }`}
+          >
+            {infiniteScrollEnabled ? 'Desativar' : 'Ativar'}
+          </Button>
+        </div>
+      </div>
 
       {/* Plans List */}
       <div className="space-y-4 sm:space-y-6">
@@ -87,9 +120,9 @@ export function WorkoutPlansList({
             {/* Loading indicator para infinite scroll */}
             {isLoading && infiniteScrollEnabled && (
               <div className="text-center py-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg">
-                  <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                <div className="inline-flex items-center gap-3 px-6 py-3 bg-app-card backdrop-blur-sm rounded-xl shadow-app-medium border border-app-border-muted">
+                  <div className="w-5 h-5 border-2 border-app-achievement-workout border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-app-text-secondary font-medium">
                     Carregando mais planos...
                   </span>
                 </div>
@@ -119,11 +152,12 @@ export function WorkoutPlansList({
             {/* Indicador de fim da lista */}
             {!hasMorePlans && plans.length > 0 && (
               <div className="text-center py-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-50 to-orange-50 dark:from-orange-900/20 dark:to-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm text-orange-700 dark:text-orange-300 font-medium">
+                <div className="inline-flex items-center gap-3 px-6 py-3 bg-app-achievement-consecutive/10 border border-app-border-accent rounded-xl">
+                  <div className="w-2 h-2 bg-app-achievement-consecutive rounded-full"></div>
+                  <span className="text-sm text-app-achievement-consecutive font-medium">
                     Todos os planos foram carregados
                   </span>
+                  <CalendarCheck className="h-4 w-4 text-app-achievement-consecutive" />
                 </div>
               </div>
             )}
