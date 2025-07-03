@@ -12,8 +12,13 @@ import {
   Play,
   Info,
   Dumbbell,
-  Sparkles
+  Sparkles,
+  Weight,
+  Repeat,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import { useState } from 'react';
 import { WorkoutExerciseCardProps } from './types';
 
 export function WorkoutExerciseCard({ 
@@ -22,6 +27,20 @@ export function WorkoutExerciseCard({
   onView, 
   userRole 
 }: WorkoutExerciseCardProps) {
+  const [showSetsDetails, setShowSetsDetails] = useState(false);
+  
+  // Type guards para verificação segura
+  const setsConfig = exercise.sets_config;
+  const hasSetsConfig = Boolean(setsConfig && setsConfig.length > 0);
+  
+  const totalReps = hasSetsConfig && setsConfig
+    ? setsConfig.reduce((sum, set) => sum + set.target_reps, 0)
+    : exercise.sets * exercise.reps;
+
+  const totalSets = hasSetsConfig && setsConfig
+    ? setsConfig.length
+    : exercise.sets;
+
   return (
     <div className="group relative animate-fadeIn" style={{ animationDelay: `${index * 100}ms` }}>
       {/* Connection line for visual flow */}
@@ -119,7 +138,9 @@ export function WorkoutExerciseCard({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-1">Séries</p>
-                    <p className="text-xl font-black text-app-text-primary">{exercise.sets}</p>
+                    <p className="text-xl font-black text-app-text-primary">
+                      {totalSets}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -135,7 +156,12 @@ export function WorkoutExerciseCard({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-1">Reps</p>
-                    <p className="text-xl font-black text-app-text-primary">{exercise.reps}</p>
+                    <p className="text-xl font-black text-app-text-primary">
+                      {hasSetsConfig ? `${totalReps}` : `${exercise.sets}x${exercise.reps}`}
+                    </p>
+                    {hasSetsConfig && (
+                      <p className="text-xs text-app-text-muted"></p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -157,21 +183,26 @@ export function WorkoutExerciseCard({
               </div>
             </div>
 
-            {/* Duration (if exists) */}
-            {exercise.duration ? (
+            {/* Sets Config Toggle */}
+            {hasSetsConfig ? (
               <div className="relative group/param">
                 <div className="absolute inset-0 bg-gradient-to-br from-app-achievement-workout/20 to-app-achievement-workout/30 rounded-xl blur-lg opacity-0 group-hover/param:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative p-4 bg-gradient-to-br from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted transition-all duration-300 group-hover/param:scale-105 group-hover/param:border-app-achievement-workout">
+                <button
+                  onClick={() => setShowSetsDetails(!showSetsDetails)}
+                  className="relative w-full p-4 bg-gradient-to-br from-app-bg-secondary/30 to-app-bg-secondary/50 rounded-xl border border-app-border-muted transition-all duration-300 group-hover/param:scale-105 group-hover/param:border-app-achievement-workout hover:bg-app-achievement-workout/10"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-app-achievement-workout to-app-achievement-workout rounded-xl flex items-center justify-center shadow-app-medium group-hover/param:shadow-app-large transition-all duration-300">
-                      <Play className="h-5 w-5 text-white" />
+                      {showSetsDetails ? <ChevronUp className="h-5 w-5 text-white" /> : <ChevronDown className="h-5 w-5 text-white" />}
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-1">Duração</p>
-                      <p className="text-xl font-black text-app-text-primary">{exercise.duration}s</p>
+                      <p className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-1">Detalhes</p>
+                      <p className="text-sm font-bold text-app-text-primary">
+                        {showSetsDetails ? 'Ocultar' : 'Mostrar'}
+                      </p>
                     </div>
                   </div>
-                </div>
+                </button>
               </div>
             ) : (
               <div className="relative p-4 bg-gradient-to-br from-app-bg-secondary/20 to-app-bg-secondary/30 rounded-xl border border-app-border-muted opacity-60">
@@ -180,16 +211,84 @@ export function WorkoutExerciseCard({
                     <Info className="h-5 w-5 text-app-text-muted" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-1">Tempo</p>
-                    <p className="text-sm font-semibold text-app-text-muted">Livre</p>
+                    <p className="text-xs font-bold text-app-text-muted uppercase tracking-wider mb-1">Config</p>
+                    <p className="text-sm font-semibold text-app-text-muted">Padrão</p>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Notes (if exists) */}
-          {exercise.notes && (
+          {/* Sets Configuration Details */}
+          {hasSetsConfig && showSetsDetails && setsConfig && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-app-bg-secondary/20 to-app-achievement-workout/5 rounded-xl border border-app-border-accent">
+              <div className="flex items-center gap-2 mb-4">
+                <Hash className="h-4 w-4 text-app-achievement-workout" />
+                <h4 className="font-bold text-app-achievement-workout">Configuração das Séries</h4>
+              </div>
+              
+              <div className="grid gap-3">
+                {setsConfig.map((setConfig, setIndex) => (
+                  <div key={setIndex} className="flex items-center gap-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-app-border-muted">
+                    <div className="w-8 h-8 bg-app-achievement-workout rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      {setConfig.set_number}
+                    </div>
+                    
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <span className="text-xs text-app-text-muted">Repetições:</span>
+                        <p className="font-bold text-app-text-primary flex items-center gap-1">
+                          <Repeat className="h-3 w-3" />
+                          {setConfig.target_reps}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <span className="text-xs text-app-text-muted">Carga:</span>
+                        <p className="font-bold text-app-text-primary flex items-center gap-1">
+                          <Weight className="h-3 w-3" />
+                          {setConfig.suggested_weight ? `${setConfig.suggested_weight}kg` : 'Livre'}
+                        </p>
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <span className="text-xs text-app-text-muted">Observações:</span>
+                        <p className="text-app-text-secondary italic">
+                          {setConfig.notes || 'Nenhuma observação'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* General Notes */}
+          {exercise.general_notes && (
+            <div className="relative mb-4">
+              <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-consecutive/10 to-app-achievement-consecutive/20 rounded-xl blur-lg"></div>
+              <div className="relative p-4 bg-gradient-to-r from-app-bg-secondary/20 to-app-achievement-workout/5 rounded-xl border border-app-border-accent">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-app-achievement-consecutive to-app-achievement-consecutive rounded-xl flex items-center justify-center flex-shrink-0 shadow-app-medium">
+                    <StickyNote className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-app-achievement-consecutive mb-2 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      Observações Gerais:
+                    </p>
+                    <p className="text-sm text-app-text-secondary leading-relaxed">
+                      {exercise.general_notes}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Legacy Notes (for backward compatibility) */}
+          {exercise.notes && !exercise.general_notes && (
             <div className="relative mb-4">
               <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-consecutive/10 to-app-achievement-consecutive/20 rounded-xl blur-lg"></div>
               <div className="relative p-4 bg-gradient-to-r from-app-bg-secondary/20 to-app-achievement-workout/5 rounded-xl border border-app-border-accent">

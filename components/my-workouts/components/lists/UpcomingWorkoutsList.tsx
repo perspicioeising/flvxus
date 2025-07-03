@@ -24,7 +24,7 @@ export function UpcomingWorkoutsList({ workouts, onStartWorkout, className = '' 
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-app-achievement-exercise rounded-lg flex items-center justify-center shadow-app-medium">
               <Calendar className="h-4 w-4 text-white" />
             </div>
             <CardTitle className="text-lg font-bold text-app-heading">
@@ -32,7 +32,7 @@ export function UpcomingWorkoutsList({ workouts, onStartWorkout, className = '' 
             </CardTitle>
           </div>
           
-          <Badge className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-xs font-semibold">
+          <Badge className="px-3 py-1 bg-app-achievement-exercise/10 text-app-achievement-exercise border border-app-achievement-exercise/20 rounded-full text-xs font-semibold">
             {workouts.length} próximo{workouts.length !== 1 ? 's' : ''}
           </Badge>
         </div>
@@ -52,5 +52,3 @@ export function UpcomingWorkoutsList({ workouts, onStartWorkout, className = '' 
     </Card>
   );
 }
-
-

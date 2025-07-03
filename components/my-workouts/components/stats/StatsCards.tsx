@@ -11,7 +11,7 @@ import {
   BarChart3,
   Award
 } from 'lucide-react';
-import { StudentStats } from '../types';
+import { StudentStats } from '../../types';
 
 interface StatsCardsProps {
   stats: StudentStats;

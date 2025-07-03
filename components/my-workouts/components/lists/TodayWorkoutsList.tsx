@@ -21,7 +21,7 @@ export function TodayWorkoutsList({ workouts, onStartWorkout, className = '' }: 
       <Card className={`border-0 card-app ${className}`}>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-app-achievement-workout rounded-lg flex items-center justify-center shadow-app-medium">
               <Sun className="h-4 w-4 text-white" />
             </div>
             <CardTitle className="text-lg font-bold text-app-heading">
@@ -32,7 +32,7 @@ export function TodayWorkoutsList({ workouts, onStartWorkout, className = '' }: 
         
         <CardContent>
           <div className="text-center py-8">
-            <div className="w-12 h-12 mx-auto bg-app-bg-secondary rounded-full flex items-center justify-center mb-4">
+            <div className="w-12 h-12 mx-auto bg-app-bg-secondary rounded-2xl flex items-center justify-center mb-4 border border-app-border-muted">
               <Sun className="h-6 w-6 text-app-text-muted" />
             </div>
             <h4 className="text-base font-semibold text-app-heading mb-2">
@@ -52,7 +52,7 @@ export function TodayWorkoutsList({ workouts, onStartWorkout, className = '' }: 
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-app-achievement-workout rounded-lg flex items-center justify-center shadow-app-medium">
               <Sun className="h-4 w-4 text-white" />
             </div>
             <CardTitle className="text-lg font-bold text-app-heading">
@@ -60,7 +60,7 @@ export function TodayWorkoutsList({ workouts, onStartWorkout, className = '' }: 
             </CardTitle>
           </div>
           
-          <Badge className="px-3 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full text-xs font-semibold">
+          <Badge className="px-3 py-1 bg-app-achievement-workout/10 text-app-achievement-workout border border-app-achievement-workout/20 rounded-full text-xs font-semibold">
             {workouts.length} treino{workouts.length !== 1 ? 's' : ''}
           </Badge>
         </div>

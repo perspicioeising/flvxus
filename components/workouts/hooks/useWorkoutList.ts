@@ -1,48 +1,21 @@
 // components/workouts/hooks/useWorkoutList.ts
-
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Workout, 
   WorkoutFilters, 
   WorkoutStats, 
   PaginationData,
-  UseWorkoutListReturn
 } from '../types';
-import { 
-  DEFAULT_FILTERS, 
-  PAGINATION_DEFAULTS, 
-  API_ENDPOINTS,
-  ERROR_MESSAGES
-} from '../constants';
+import { PAGINATION_DEFAULTS, DEFAULT_FILTERS } from '../constants';
 
-// Debounce hook
-const useDebounce = <T,>(value: T, delay: number): T => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
-
-// Hook for workout list with async pagination
-export const useWorkoutList = (): UseWorkoutListReturn & {
-  viewMode: 'grid' | 'list';
-  setViewMode: (mode: 'grid' | 'list') => void;
-  isLoadingMore: boolean;
-  loadMore: () => Promise<void>;
-} => {
+export function useWorkoutList() {
   const { toast } = useToast();
+  
+  // Estados principais
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [filters, setFilters] = useState<WorkoutFilters>(DEFAULT_FILTERS);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -51,190 +24,138 @@ export const useWorkoutList = (): UseWorkoutListReturn & {
     hasMore: true
   });
 
-  // Debounce search filter
-  const debouncedSearch = useDebounce(filters.search, 500);
-
-  // Track if it's the initial mount
-  const isInitialMount = useRef(true);
-
-  // Calculate stats
+  // Estatísticas calculadas
   const stats = useMemo((): WorkoutStats => {
-    const totalExercises = workouts.reduce(
-      (sum, workout) => sum + (workout.workout_exercises?.length || 0), 
-      0
-    );
-    
+    const totalExercises = workouts.reduce((sum, workout) => {
+      return sum + (workout.workout_exercises?.length || 0);
+    }, 0);
+
+    const avgExercisesPerWorkout = workouts.length > 0 
+      ? Math.round(totalExercises / workouts.length)
+      : 0;
+
+    const uniqueLevels = new Set(workouts.map(w => w.level)).size;
+    const uniqueGoals = new Set(workouts.map(w => w.goal)).size;
+
+    // Treinos criados nos últimos 7 dias
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const recentWorkouts = workouts.filter(w => 
+      new Date(w.created_at) > weekAgo
+    ).length;
+
     return {
       total: pagination.total,
       totalExercises,
-      avgExercisesPerWorkout: workouts.length > 0 ? Math.round(totalExercises / workouts.length) : 0,
-      uniqueLevels: new Set(workouts.map(w => w.level)).size,
-      uniqueGoals: new Set(workouts.map(w => w.goal)).size,
-      recentWorkouts: workouts.filter(w => {
-        const created = new Date(w.created_at);
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return created > weekAgo;
-      }).length
+      avgExercisesPerWorkout,
+      uniqueLevels,
+      uniqueGoals,
+      recentWorkouts
     };
   }, [workouts, pagination.total]);
 
-  // Check if filters are active
+  // Verificar se há filtros ativos
   const hasActiveFilters = useMemo(() => {
     return filters.search !== '' || 
            filters.level !== 'all' || 
-           filters.goal !== 'all';
+           filters.goal !== 'all' ||
+           filters.sortBy !== 'created_at' ||
+           filters.sortOrder !== 'desc';
   }, [filters]);
 
-  // Fetch workouts from API
-  const fetchWorkouts = useCallback(async (
-    page = 1, 
-    limit = pagination.limit, 
-    append = false,
-    searchTerm = debouncedSearch
-  ) => {
+  // Função para buscar treinos
+  const fetchWorkouts = useCallback(async (page: number = 1, append: boolean = false) => {
     try {
-      if (page === 1) {
-        setIsLoading(true);
-      } else {
+      if (append) {
         setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
       }
 
-      const queryParams = new URLSearchParams({
+      // Construir URL com parâmetros
+      const params = new URLSearchParams({
         page: page.toString(),
-        limit: limit.toString(),
-        ...(searchTerm && { search: searchTerm }),
+        limit: pagination.limit.toString(),
+        ...(filters.search && { search: filters.search }),
         ...(filters.level !== 'all' && { level: filters.level }),
         ...(filters.goal !== 'all' && { goal: filters.goal }),
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder
       });
 
-      const response = await fetch(`${API_ENDPOINTS.workouts}?${queryParams}`);
+      const response = await fetch(`/api/workouts?${params.toString()}`);
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || ERROR_MESSAGES.NETWORK_ERROR);
+        throw new Error(data.error || 'Erro ao carregar treinos');
       }
 
-      if (data.workouts && data.pagination) {
-        const newWorkouts = data.workouts;
-        const newPagination = {
-          ...data.pagination,
-          hasMore: data.pagination.page < data.pagination.totalPages
-        };
-
-        if (append) {
-          setWorkouts(prev => [...prev, ...newWorkouts]);
-        } else {
-          setWorkouts(newWorkouts);
-        }
-        
-        setPagination(newPagination);
+      if (append) {
+        setWorkouts(prev => [...prev, ...data.workouts]);
       } else {
-        // Fallback for non-paginated response
-        const fallbackData = Array.isArray(data) ? data : [];
-        setWorkouts(fallbackData);
-        setPagination({
-          page: 1,
-          limit: fallbackData.length,
-          total: fallbackData.length,
-          totalPages: 1,
-          hasMore: false
-        });
+        setWorkouts(data.workouts);
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR;
+
+      setPagination({
+        page: data.pagination.page,
+        limit: data.pagination.limit,
+        total: data.pagination.total,
+        totalPages: data.pagination.totalPages,
+        hasMore: data.pagination.hasMore
+      });
+
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro ao carregar treinos",
-        description: message,
+        description: error.message,
       });
-      
-      if (!append) {
-        setWorkouts([]);
-        setPagination({ ...PAGINATION_DEFAULTS, hasMore: false });
-      }
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [filters.level, filters.goal, filters.sortBy, filters.sortOrder, pagination.limit, toast, debouncedSearch]);
+  }, [filters, pagination.limit, toast]);
 
-  // Load more workouts (for pagination)
+  // Carregar treinos quando filtros mudarem
+  useEffect(() => {
+    fetchWorkouts(1, false);
+  }, [filters]);
+
+  // Atualizar filtros
+  const updateFilters = useCallback((newFilters: Partial<WorkoutFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  // Limpar filtros
+  const clearFilters = useCallback(() => {
+    setFilters(DEFAULT_FILTERS);
+  }, []);
+
+  // Recarregar treinos
+  const refreshWorkouts = useCallback(() => {
+    return fetchWorkouts(1, false);
+  }, [fetchWorkouts]);
+
+  // Carregar mais treinos (para paginação/infinite scroll)
   const loadMore = useCallback(async () => {
     if (!pagination.hasMore || isLoadingMore) return;
     
-    const nextPage = Math.floor(workouts.length / pagination.limit) + 1;
-    await fetchWorkouts(nextPage, pagination.limit, true);
-  }, [pagination.hasMore, pagination.limit, isLoadingMore, workouts.length, fetchWorkouts]);
+    const nextPage = pagination.page + 1;
+    await fetchWorkouts(nextPage, true);
+  }, [fetchWorkouts, pagination.hasMore, pagination.page, isLoadingMore]);
 
-  // Update filters
-  const updateFilters = useCallback((newFilters: Partial<WorkoutFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    
-    // Only reset workouts and pagination for non-search filter changes
-    if (!('search' in newFilters)) {
-      setWorkouts([]); 
-      setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
-    }
-  }, []);
-
-  // Clear filters
-  const clearFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
-    setWorkouts([]);
-    setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
-  }, []);
-
-  // Handle page change (for traditional pagination if needed)
+  // Mudança de página
   const handlePageChange = useCallback((page: number) => {
-    if (page !== pagination.page) {
-      setPagination(prev => ({ ...prev, page }));
-      fetchWorkouts(page, pagination.limit, false);
-    }
-  }, [pagination.page, pagination.limit, fetchWorkouts]);
+    fetchWorkouts(page, false);
+  }, [fetchWorkouts]);
 
-  // Handle page size change
+  // Mudança de tamanho da página
   const handlePageSizeChange = useCallback((pageSize: number) => {
-    if (pageSize !== pagination.limit) {
-      setPagination(prev => ({ ...prev, limit: pageSize, page: 1, hasMore: true }));
-      setWorkouts([]);
-    }
-  }, [pagination.limit]);
-
-  // Refresh workouts
-  const refreshWorkouts = useCallback(() => {
-    setWorkouts([]);
-    setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
-    return fetchWorkouts(1, pagination.limit, false);
-  }, [fetchWorkouts, pagination.limit]);
-
-  // Effect for debounced search
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
-    setWorkouts([]);
-    setPagination(prev => ({ ...prev, page: 1, hasMore: true }));
-    fetchWorkouts(1, pagination.limit, false, debouncedSearch);
-  }, [debouncedSearch]);
-
-  // Effect for other filter changes (not search)
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      fetchWorkouts(1, pagination.limit, false);
-      return;
-    }
-
-    // Only fetch if it's not a search change
-    fetchWorkouts(1, pagination.limit, false);
-  }, [filters.level, filters.goal, filters.sortBy, filters.sortOrder]);
+    setPagination(prev => ({ ...prev, limit: pageSize }));
+  }, []);
 
   return {
+    // Estados
     workouts,
     isLoading,
     isLoadingMore,
@@ -242,45 +163,15 @@ export const useWorkoutList = (): UseWorkoutListReturn & {
     filters,
     pagination,
     viewMode,
+    hasActiveFilters,
+    
+    // Ações
     updateFilters,
     clearFilters,
-    hasActiveFilters,
     refreshWorkouts,
     handlePageChange,
     handlePageSizeChange,
     setViewMode,
     loadMore
   };
-};
-
-// Hook personalizado para infinite scroll
-export const useInfiniteScroll = ({
-  hasMore,
-  isLoading,
-  onLoadMore,
-  threshold = 200,
-  enabled = true
-}: {
-  hasMore: boolean;
-  isLoading: boolean;
-  onLoadMore: () => void;
-  threshold?: number;
-  enabled?: boolean;
-}) => {
-  useEffect(() => {
-    if (!enabled || !hasMore || isLoading) return;
-
-    const handleScroll = () => {
-      const scrollHeight = document.documentElement.scrollHeight;
-      const scrollTop = document.documentElement.scrollTop;
-      const clientHeight = document.documentElement.clientHeight;
-
-      if (scrollHeight - scrollTop - clientHeight < threshold) {
-        onLoadMore();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoading, onLoadMore, threshold, enabled]);
-};
+}

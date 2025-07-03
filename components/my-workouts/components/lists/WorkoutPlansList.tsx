@@ -1,4 +1,3 @@
-// components/my-workouts/components/lists/WorkoutPlansList.tsx
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarCheck, Calendar, Dumbbell, Plus, Eye } from 'lucide-react';
@@ -25,7 +24,7 @@ export function WorkoutPlansList({
     <Card className={`border-0 card-app ${className}`}>
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-bold text-app-heading flex items-center gap-3">
-          <div className="w-8 h-8 bg-app-achievement-workout rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-app-achievement-consecutive rounded-lg flex items-center justify-center shadow-app-medium">
             <CalendarCheck className="h-4 w-4 text-white" />
           </div>
           {title}
@@ -40,7 +39,7 @@ export function WorkoutPlansList({
       <CardContent>
         {workoutPlans.length === 0 ? (
           <div className="text-center py-8">
-            <div className="w-16 h-16 bg-app-bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-app-bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 border border-app-border-muted">
               <Calendar className="h-8 w-8 text-app-text-muted" />
             </div>
             <h4 className="text-base font-semibold text-app-heading mb-2">

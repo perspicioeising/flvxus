@@ -1,6 +1,5 @@
-// components/my-workouts/components/execution/ExerciseCard.tsx
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,17 +8,15 @@ import {
   Target, 
   Clock,
   Volume2,
-  Play,
   Info,
   MessageSquare,
-  Star,
   AlertTriangle,
   Lightbulb,
   RotateCcw,
   ChevronDown,
   ChevronUp,
   Activity,
-  Zap
+  Award
 } from 'lucide-react';
 import { DIFFICULTY_LEVELS } from '../../constants';
 
@@ -36,7 +33,6 @@ export function ExerciseCard({
   exercise, 
   exerciseNumber, 
   totalExercises, 
-  onComplete, 
   onNotesChange,
   onDifficultyRating 
 }: ExerciseCardProps) {
@@ -48,20 +44,26 @@ export function ExerciseCard({
 
   const handleNotesChange = (value: string) => {
     setNotes(value);
-    onNotesChange(value);
+    // Debounce simples para evitar muitas chamadas
+    setTimeout(() => onNotesChange(value), 300);
   };
 
-  const handleDifficultyChange = (rating: number) => {
+  const handleDifficultyClick = (rating: number) => {
     setDifficultyRating(rating);
     onDifficultyRating(rating);
   };
 
   const playAudio = () => {
-    if (exercise.exercise.audio_url) {
+    if (!exercise.exercise.audio_url || isPlaying) return;
+    
+    try {
       const audio = new Audio(exercise.exercise.audio_url);
       setIsPlaying(true);
       audio.play();
       audio.onended = () => setIsPlaying(false);
+      audio.onerror = () => setIsPlaying(false);
+    } catch (error) {
+      setIsPlaying(false);
     }
   };
 
@@ -71,45 +73,41 @@ export function ExerciseCard({
   return (
     <div className="space-y-4">
       
-      {/* Header Card */}
+      {/* Main Exercise Info */}
       <Card className="border-0 card-app">
         <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <Badge className="px-3 py-1 bg-app-achievement-workout text-white rounded-full font-bold">
-                  {exerciseNumber} de {totalExercises}
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-app-achievement-workout rounded-xl flex items-center justify-center shrink-0">
+              <Dumbbell className="h-6 w-6 text-white" />
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge className="px-2 py-1 bg-app-achievement-workout text-white rounded-full text-xs font-bold">
+                  {exerciseNumber}/{totalExercises}
                 </Badge>
                 
                 {exercise.exercise.audio_url && (
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
                     onClick={playAudio}
                     disabled={isPlaying}
-                    className="h-8 px-3 rounded-xl border-app-border-muted hover:bg-app-bg-secondary"
+                    className="h-7 px-2 text-xs border border-app-border-muted hover:bg-app-bg-secondary rounded-lg disabled:opacity-50 flex items-center gap-1"
                   >
-                    <Volume2 className="h-3 w-3 mr-2" />
-                    {isPlaying ? 'Tocando...' : 'Áudio'}
-                  </Button>
+                    <Volume2 className="h-3 w-3" />
+                    {isPlaying ? 'Tocando' : 'Áudio'}
+                  </button>
                 )}
               </div>
               
-              <h2 className="text-2xl font-bold text-app-heading mb-2">
+              <h2 className="text-xl font-bold text-app-heading mb-2 leading-tight">
                 {exercise.exercise.name}
               </h2>
               
               {exercise.exercise.description && (
-                <p className="text-sm text-app-text-secondary line-clamp-3 leading-relaxed">
+                <p className="text-sm text-app-text-secondary line-clamp-2 leading-relaxed">
                   {exercise.exercise.description}
                 </p>
               )}
-            </div>
-
-            <div className="ml-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-app-achievement-workout to-orange-600 rounded-2xl flex items-center justify-center shadow-app-medium">
-                <Dumbbell className="h-8 w-8 text-white" />
-              </div>
             </div>
           </div>
         </CardContent>
@@ -118,84 +116,45 @@ export function ExerciseCard({
       {/* Quick Stats */}
       <Card className="border-0 card-app">
         <CardContent className="p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-app-bg-secondary rounded-xl">
-              <Target className="h-6 w-6 text-app-achievement-workout mx-auto mb-2" />
-              <p className="text-xs text-app-text-muted uppercase tracking-wider mb-1">Séries</p>
-              <p className="text-2xl font-bold text-app-heading">{exercise.sets}</p>
+          <div className="grid grid-cols-4 gap-3 text-center">
+            <div className="p-2">
+              <Target className="h-5 w-5 text-app-achievement-exercise mx-auto mb-1" />
+              <p className="text-xs text-app-text-muted font-medium">Séries</p>
+              <p className="text-lg font-bold text-app-heading">{exercise.sets}</p>
             </div>
             
-            <div className="text-center p-4 bg-app-bg-secondary rounded-xl">
-              <RotateCcw className="h-6 w-6 text-app-achievement-workout mx-auto mb-2" />
-              <p className="text-xs text-app-text-muted uppercase tracking-wider mb-1">Reps</p>
-              <p className="text-2xl font-bold text-app-heading">{exercise.reps}</p>
+            <div className="p-2">
+              <RotateCcw className="h-5 w-5 text-app-achievement-consecutive mx-auto mb-1" />
+              <p className="text-xs text-app-text-muted font-medium">Reps</p>
+              <p className="text-lg font-bold text-app-heading">{exercise.reps}</p>
             </div>
             
-            <div className="text-center p-4 bg-app-bg-secondary rounded-xl">
-              <Clock className="h-6 w-6 text-app-achievement-workout mx-auto mb-2" />
-              <p className="text-xs text-app-text-muted uppercase tracking-wider mb-1">Descanso</p>
-              <p className="text-2xl font-bold text-app-heading">{exercise.rest}s</p>
+            <div className="p-2">
+              <Clock className="h-5 w-5 text-app-achievement-workout mx-auto mb-1" />
+              <p className="text-xs text-app-text-muted font-medium">Descanso</p>
+              <p className="text-lg font-bold text-app-heading">{exercise.rest}s</p>
             </div>
             
-            <div className="text-center p-4 bg-app-bg-secondary rounded-xl">
-              <Activity className="h-6 w-6 text-app-achievement-workout mx-auto mb-2" />
-              <p className="text-xs text-app-text-muted uppercase tracking-wider mb-1">Músculos</p>
-              <p className="text-2xl font-bold text-app-heading">{muscleGroups.length}</p>
+            <div className="p-2">
+              <Activity className="h-5 w-5 text-app-achievement-weight mx-auto mb-1" />
+              <p className="text-xs text-app-text-muted font-medium">Músculos</p>
+              <p className="text-lg font-bold text-app-heading">{muscleGroups.length}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Muscle Groups & Equipment */}
-      <Card className="border-0 card-app">
-        <CardContent className="p-4 space-y-4">
-          {muscleGroups.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold text-app-heading mb-3 flex items-center gap-2">
-                <Target className="h-4 w-4 text-app-achievement-workout" />
-                Músculos Trabalhados
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {muscleGroups.map((muscle: string, index: number) => (
-                  <Badge key={index} className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
-                    {muscle}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {equipment.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold text-app-heading mb-3 flex items-center gap-2">
-                <Dumbbell className="h-4 w-4 text-app-achievement-workout" />
-                Equipamentos
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {equipment.map((item: string, index: number) => (
-                  <Badge key={index} className="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full">
-                    {item}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Personal Notes */}
+      {/* Personal Notes from Trainer */}
       {exercise.notes && (
-        <Card className="border-0 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-800">
+        <Card className="border-0 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                <Info className="h-4 w-4 text-white" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-                  Observações do Personal
+              <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                  Observação do Personal
                 </h4>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300 leading-relaxed">
+                <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
                   {exercise.notes}
                 </p>
               </div>
@@ -204,19 +163,15 @@ export function ExerciseCard({
         </Card>
       )}
 
-      {/* Video Player */}
+      {/* Video */}
       {exercise.exercise.video_url && (
         <Card className="border-0 card-app">
           <CardContent className="p-4">
-            <h4 className="font-semibold text-app-heading mb-3 flex items-center gap-2">
-              <Play className="h-4 w-4 text-app-achievement-workout" />
-              Demonstração
-            </h4>
-            <div className="rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+            <div className="relative rounded-xl overflow-hidden bg-app-bg-secondary">
               <video
                 controls
-                className="w-full h-48 sm:h-64 object-cover"
-                poster="/placeholder-video-thumbnail.jpg"
+                className="w-full h-48 object-cover"
+                preload="metadata"
               >
                 <source src={exercise.exercise.video_url} type="video/mp4" />
                 Seu navegador não suporta reprodução de vídeo.
@@ -227,105 +182,127 @@ export function ExerciseCard({
       )}
 
       {/* Expandable Details */}
+      {(exercise.exercise.tips?.length > 0 || exercise.exercise.common_errors?.length > 0 || muscleGroups.length > 0 || equipment.length > 0) && (
+        <Card className="border-0 card-app">
+          <CardContent className="p-4">
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="w-full justify-between text-app-text-primary hover:bg-app-bg-secondary rounded-xl p-3 flex items-center"
+            >
+              <span className="flex items-center gap-2 font-medium">
+                <Info className="h-4 w-4 text-app-achievement-workout" />
+                Detalhes do Exercício
+              </span>
+              {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+
+            {showDetails && (
+              <div className="mt-4 space-y-4">
+                
+                {/* Muscle Groups & Equipment */}
+                {(muscleGroups.length > 0 || equipment.length > 0) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {muscleGroups.length > 0 && (
+                      <div>
+                        <h5 className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2">
+                          Músculos
+                        </h5>
+                        <div className="flex flex-wrap gap-1">
+                          {muscleGroups.map((muscle: string, index: number) => (
+                            <Badge key={index} className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs">
+                              {muscle}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {equipment.length > 0 && (
+                      <div>
+                        <h5 className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2">
+                          Equipamentos
+                        </h5>
+                        <div className="flex flex-wrap gap-1">
+                          {equipment.map((item: string, index: number) => (
+                            <Badge key={index} className="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full text-xs">
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tips */}
+                {exercise.exercise.tips?.length > 0 && (
+                  <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-xl">
+                    <div className="flex items-start gap-2 mb-2">
+                      <Lightbulb className="h-4 w-4 text-green-600 mt-0.5" />
+                      <h5 className="font-semibold text-green-800 dark:text-green-200 text-sm">Dicas</h5>
+                    </div>
+                    <ul className="space-y-1">
+                      {exercise.exercise.tips.map((tip: string, index: number) => (
+                        <li key={index} className="text-xs text-green-700 dark:text-green-300 flex items-start gap-2">
+                          <span className="w-1 h-1 bg-green-500 rounded-full mt-2 shrink-0"></span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Common Errors */}
+                {exercise.exercise.common_errors?.length > 0 && (
+                  <div className="p-3 bg-red-50 dark:bg-red-950/30 rounded-xl">
+                    <div className="flex items-start gap-2 mb-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
+                      <h5 className="font-semibold text-red-800 dark:text-red-200 text-sm">Evite</h5>
+                    </div>
+                    <ul className="space-y-1">
+                      {exercise.exercise.common_errors.map((error: string, index: number) => (
+                        <li key={index} className="text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
+                          <span className="w-1 h-1 bg-red-500 rounded-full mt-2 shrink-0"></span>
+                          <span>{error}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Notes and Rating */}
       <Card className="border-0 card-app">
         <CardContent className="p-4">
-          <Button
-            variant="ghost"
-            onClick={() => setShowDetails(!showDetails)}
-            className="w-full justify-between text-app-text-primary hover:bg-app-bg-secondary rounded-xl p-4"
-          >
-            <span className="flex items-center gap-2 font-semibold">
-              <Info className="h-4 w-4" />
-              Dicas e Detalhes Técnicos
-            </span>
-            {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-
-          {showDetails && (
-            <div className="mt-4 space-y-4">
-              {/* Tips */}
-              {exercise.exercise.tips && exercise.exercise.tips.length > 0 && (
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                  <div className="flex items-start gap-3 mb-3">
-                    <Lightbulb className="h-5 w-5 text-green-600 mt-0.5" />
-                    <h4 className="font-semibold text-green-800 dark:text-green-200">Dicas de Execução</h4>
-                  </div>
-                  <ul className="space-y-2">
-                    {exercise.exercise.tips.map((tip: string, index: number) => (
-                      <li key={index} className="text-sm text-green-700 dark:text-green-300 flex items-start gap-2">
-                        <span className="text-green-500 mt-1">•</span>
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Common Errors */}
-              {exercise.exercise.common_errors && exercise.exercise.common_errors.length > 0 && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
-                  <div className="flex items-start gap-3 mb-3">
-                    <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-                    <h4 className="font-semibold text-red-800 dark:text-red-200">Erros Comuns</h4>
-                  </div>
-                  <ul className="space-y-2">
-                    {exercise.exercise.common_errors.map((error: string, index: number) => (
-                      <li key={index} className="text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
-                        <span className="text-red-500 mt-1">•</span>
-                        <span>{error}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Notes and Difficulty - Compact */}
-      <Card className="border-0 card-app">
-        <CardContent className="p-4">
-          <Button
-            variant="ghost"
+          <button
             onClick={() => setShowNotes(!showNotes)}
-            className="w-full justify-between text-app-text-primary hover:bg-app-bg-secondary rounded-xl p-4"
+            className="w-full justify-between text-app-text-primary hover:bg-app-bg-secondary rounded-xl p-3 flex items-center"
           >
-            <span className="flex items-center gap-2 font-semibold">
-              <MessageSquare className="h-4 w-4" />
-              Suas Observações & Avaliação
+            <span className="flex items-center gap-2 font-medium">
+              <MessageSquare className="h-4 w-4 text-app-achievement-workout" />
+              Suas Anotações
             </span>
             {showNotes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+          </button>
 
           {showNotes && (
             <div className="mt-4 space-y-4">
-              {/* Personal Notes */}
-              <div>
-                <label className="text-sm font-semibold text-app-heading mb-2 block">
-                  Observações Pessoais:
-                </label>
-                <Textarea
-                  placeholder="Como foi este exercício? Anote suas impressões..."
-                  value={notes}
-                  onChange={(e) => handleNotesChange(e.target.value)}
-                  className="min-h-[80px] bg-app-card border-app-border-muted focus:border-app-achievement-workout rounded-xl"
-                />
-              </div>
-
+              
               {/* Difficulty Rating */}
               <div>
-                <label className="text-sm font-semibold text-app-heading mb-3 block">
-                  Dificuldade:
+                <label className="text-sm font-semibold text-app-heading mb-2 block">
+                  Como foi a dificuldade?
                 </label>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="flex gap-2">
                   {DIFFICULTY_LEVELS.map((level) => (
-                    <Button
+                    <button
                       key={level.value}
-                      variant={difficultyRating === level.value ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleDifficultyChange(level.value)}
-                      className={`flex-1 p-3 ${
+                      onClick={() => handleDifficultyClick(level.value)}
+                      className={`w-12 h-12 rounded-xl border-2 transition-all duration-200 ${
                         difficultyRating === level.value 
                           ? 'bg-app-achievement-workout text-white border-app-achievement-workout' 
                           : 'border-app-border-muted hover:bg-app-bg-secondary'
@@ -333,11 +310,24 @@ export function ExerciseCard({
                     >
                       <div className="text-center">
                         <div className="text-lg">{level.emoji}</div>
-                        <div className="text-xs font-semibold">{level.value}</div>
+                        <div className="text-xs font-bold">{level.value}</div>
                       </div>
-                    </Button>
+                    </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-sm font-semibold text-app-heading mb-2 block">
+                  Observações pessoais:
+                </label>
+                <Textarea
+                  placeholder="Como foi este exercício? Dificuldades, melhorias..."
+                  value={notes}
+                  onChange={(e) => handleNotesChange(e.target.value)}
+                  className="min-h-[80px] bg-app-card border-app-border-muted focus:border-app-achievement-workout rounded-xl text-sm resize-none"
+                />
               </div>
             </div>
           )}

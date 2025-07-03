@@ -1,7 +1,7 @@
 // components/workouts/components/WorkoutForm.tsx
 'use client';
 
-import { useWorkoutForm, useExerciseLibrary } from '@/components/workouts/hooks';
+import { useWorkoutForm } from '@/components/workouts/hooks';
 import { WORKOUT_STEPS } from '@/components/workouts/constants';
 
 // Import dos componentes
@@ -12,6 +12,7 @@ import { StepGoal } from '../steps/StepGoal';
 import { StepExercises } from '../steps/StepExercises';
 import { StepReview } from '../steps/StepReview';
 import { WorkoutFormSkeleton } from './WorkoutFormSkeleton';
+import { useExerciseLibrary } from '../../hooks/useExerciseLibrary';
 
 interface WorkoutFormProps {
   mode?: 'create' | 'edit';
@@ -40,6 +41,9 @@ export function WorkoutForm({
     handleExerciseRemove,
     handleExerciseUpdate,
     saveWorkout,
+    handleSetConfigUpdate,
+    handleAddSet,
+    handleRemoveSet,
     
     // Validações
     canAdvanceStep,
@@ -107,6 +111,9 @@ export function WorkoutForm({
             onExerciseSelect={handleExerciseSelect}
             onExerciseRemove={handleExerciseRemove}
             onExerciseUpdate={handleExerciseUpdate}
+            onSetConfigUpdate={handleSetConfigUpdate}
+            onAddSet={handleAddSet}
+            onRemoveSet={handleRemoveSet}
             onFiltersChange={updateFilters}
             isLoading={isLoadingExercises}
           />

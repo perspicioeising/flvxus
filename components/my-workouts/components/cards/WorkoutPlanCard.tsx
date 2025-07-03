@@ -1,4 +1,3 @@
-// components/my-workouts/components/cards/WorkoutPlanCard.tsx
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -54,7 +53,7 @@ export function WorkoutPlanCard({ plan, onViewPlan, className = '' }: WorkoutPla
     if (!isActive()) {
       return { label: 'Inativo', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' };
     }
-    return { label: 'Ativo', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' };
+    return { label: 'Ativo', color: 'bg-app-achievement-consecutive/10 text-app-achievement-consecutive border border-app-achievement-consecutive/20' };
   };
 
   const status = getPlanStatus();
@@ -64,13 +63,13 @@ export function WorkoutPlanCard({ plan, onViewPlan, className = '' }: WorkoutPla
   const endDate = plan.end_date || plan.endDate || '';
 
   return (
-    <Card className={`border-0 card-app group hover:shadow-app-large transition-all duration-300 hover:scale-[1.02] ${className}`}>
+    <Card className={`border-0 card-app group hover:shadow-app-large transition-all duration-300 hover:scale-[1.02] border border-app-border-muted hover:border-app-achievement-consecutive/50 ${className}`}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <CalendarCheck className="h-5 w-5 text-app-achievement-workout" />
+              <CalendarCheck className="h-5 w-5 text-app-achievement-consecutive" />
               <h3 className="text-lg font-bold text-app-heading truncate">
                 {plan.name}
               </h3>
@@ -89,12 +88,12 @@ export function WorkoutPlanCard({ plan, onViewPlan, className = '' }: WorkoutPla
               </Badge>
               
               <div className="flex items-center gap-1 text-xs text-app-text-muted">
-                <Dumbbell className="h-3 w-3" />
+                <Dumbbell className="h-3 w-3 text-app-achievement-workout" />
                 <span>{workoutCount} treinos</span>
               </div>
               
               <div className="flex items-center gap-1 text-xs text-app-text-muted">
-                <Activity className="h-3 w-3" />
+                <Activity className="h-3 w-3 text-app-achievement-exercise" />
                 <span>{uniqueDays}x semana</span>
               </div>
             </div>
@@ -110,7 +109,7 @@ export function WorkoutPlanCard({ plan, onViewPlan, className = '' }: WorkoutPla
             </div>
             
             <div className="flex items-center gap-2 text-xs text-app-text-muted">
-              <Clock className="h-3 w-3" />
+              <Clock className="h-3 w-3 text-app-achievement-workout" />
               <span>
                 {format(new Date(startDate), 'dd/MM/yy', { locale: ptBR })} - {format(new Date(endDate), 'dd/MM/yy', { locale: ptBR })}
               </span>
@@ -120,12 +119,12 @@ export function WorkoutPlanCard({ plan, onViewPlan, className = '' }: WorkoutPla
 
         {/* Stats rápidas */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="text-center p-2 bg-app-bg-secondary rounded-lg">
-            <p className="text-lg font-bold text-app-heading">{workoutCount}</p>
+          <div className="text-center p-2 bg-app-bg-secondary rounded-lg border border-app-border-muted">
+            <p className="text-lg font-bold text-app-achievement-workout">{workoutCount}</p>
             <p className="text-xs text-app-text-muted">Treinos</p>
           </div>
-          <div className="text-center p-2 bg-app-bg-secondary rounded-lg">
-            <p className="text-lg font-bold text-app-heading">{uniqueDays}</p>
+          <div className="text-center p-2 bg-app-bg-secondary rounded-lg border border-app-border-muted">
+            <p className="text-lg font-bold text-app-achievement-exercise">{uniqueDays}</p>
             <p className="text-xs text-app-text-muted">Dias/Sem</p>
           </div>
           <div className="text-center p-2 bg-app-bg-secondary rounded-lg">
@@ -139,7 +138,7 @@ export function WorkoutPlanCard({ plan, onViewPlan, className = '' }: WorkoutPla
         {/* Action Button */}
         <Button
           onClick={() => onViewPlan(plan.id)}
-          className="w-full bg-gradient-to-r from-app-achievement-workout to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-app-medium hover:shadow-app-large transition-all duration-300 group-hover:scale-105"
+          className="w-full bg-gradient-to-r from-app-achievement-workout to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-app-medium hover:shadow-app-large transition-all duration-300 group-hover:scale-105"
         >
           Ver Treinos
           <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />

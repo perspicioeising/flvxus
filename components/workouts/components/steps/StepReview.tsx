@@ -1,4 +1,4 @@
-// components/workouts/steps/StepReview.tsx
+// components/workouts/steps/StepReview.tsx - VERSÃO ATUALIZADA
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -12,7 +12,10 @@ import {
   Edit3,
   TrendingUp,
   Users,
-  Calendar
+  Calendar,
+  Weight,
+  Repeat,
+  StickyNote
 } from 'lucide-react';
 import { DIFFICULTY_LEVELS, WORKOUT_GOALS } from '../../constants';
 import { StepReviewProps } from '../../types';
@@ -27,11 +30,17 @@ export function StepReview({
   const selectedLevel = DIFFICULTY_LEVELS.find(l => l.value === formData.level);
   const selectedGoal = WORKOUT_GOALS.find(g => g.value === formData.goal);
   
-  const totalSets = selectedExercises.reduce((sum, ex) => sum + ex.sets, 0);
-  const totalTime = selectedExercises.reduce((sum, ex) => sum + (ex.sets * (30 + ex.rest)), 0); // Estimativa
+  const totalSets = selectedExercises.reduce((sum, ex) => sum + ex.sets_config.length, 0);
+  const totalTime = selectedExercises.reduce((sum, ex) => {
+    const exerciseTime = ex.sets_config.reduce((setSum, set) => setSum + (set.target_reps * 2), 0); // 2s por rep
+    return sum + exerciseTime + (ex.rest * (ex.sets_config.length - 1));
+  }, 0);
   const avgRestTime = selectedExercises.length > 0 
     ? Math.round(selectedExercises.reduce((sum, ex) => sum + ex.rest, 0) / selectedExercises.length)
     : 0;
+  const totalReps = selectedExercises.reduce((sum, ex) => 
+    sum + ex.sets_config.reduce((setSum, set) => setSum + set.target_reps, 0), 0
+  );
 
   return (
     <div className="space-y-8">
@@ -43,7 +52,7 @@ export function StepReview({
           Revisão do Treino
         </h2>
         <p className="text-app-text-secondary">
-          Revise todas as informações antes de finalizar
+          Revise todas as informações e configurações das séries antes de finalizar
         </p>
       </div>
 
@@ -111,6 +120,18 @@ export function StepReview({
             
             <div className="text-center p-4 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted">
               <div className="w-12 h-12 bg-app-achievement-exercise rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Repeat className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-2xl font-bold text-app-text-primary">
+                {totalReps}
+              </p>
+              <p className="text-sm text-app-text-secondary">
+                Repetições
+              </p>
+            </div>
+            
+            <div className="text-center p-4 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted">
+              <div className="w-12 h-12 bg-app-achievement-weight rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Clock className="h-6 w-6 text-white" />
               </div>
               <p className="text-2xl font-bold text-app-text-primary">
@@ -120,85 +141,151 @@ export function StepReview({
                 Tempo Est.
               </p>
             </div>
-            
-            <div className="text-center p-4 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted">
-              <div className="w-12 h-12 bg-app-achievement-weight rounded-xl flex items-center justify-center mx-auto mb-3">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-              <p className="text-2xl font-bold text-app-text-primary">
-                {avgRestTime}s
-              </p>
-              <p className="text-sm text-app-text-secondary">
-                Descanso Médio
-              </p>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Exercises List */}
+      {/* Exercises List with Sets Configuration */}
       <div className="bg-app-card rounded-2xl shadow-app-xl border border-app-border-muted">
         <div className="p-6 border-b border-app-border-muted">
           <h4 className="text-lg font-bold text-app-text-primary flex items-center gap-2">
             <Activity className="h-5 w-5 text-app-achievement-workout" />
-            Lista de Exercícios
+            Configuração Detalhada dos Exercícios
           </h4>
           <p className="text-sm text-app-text-secondary mt-1">
-            Sequência e configuração dos exercícios
+            Sequência, séries individuais e observações
           </p>
         </div>
         
         <div className="p-6">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {selectedExercises.map((exercise, index) => (
               <div
                 key={exercise.id}
-                className="flex items-center gap-4 p-4 bg-app-bg-secondary/20 rounded-xl hover:bg-app-bg-secondary/30 transition-all duration-200 border border-app-border-muted"
+                className="p-6 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted"
               >
-                <div className="w-12 h-12 bg-achievement-workout rounded-xl flex items-center justify-center text-white font-bold shadow-app-medium">
-                  {index + 1}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h5 className="font-semibold text-app-text-primary mb-1">
-                    {exercise.name}
-                  </h5>
-                  <div className="flex flex-wrap gap-2 text-sm text-app-text-secondary">
-                    <span className="flex items-center gap-1">
-                      <Hash className="h-3 w-3" />
-                      {exercise.sets} séries
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Target className="h-3 w-3" />
-                      {exercise.reps} repetições
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {exercise.rest}s descanso
-                    </span>
+                {/* Exercise Header */}
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-12 h-12 bg-achievement-workout rounded-xl flex items-center justify-center text-white font-bold shadow-app-medium flex-shrink-0">
+                    {index + 1}
                   </div>
-                  {exercise.notes && (
-                    <p className="text-sm text-app-text-muted mt-1 italic">
-                      "{exercise.notes}"
+                  
+                  <div className="flex-1 min-w-0">
+                    <h5 className="text-xl font-bold text-app-text-primary mb-2">
+                      {exercise.name}
+                    </h5>
+                    <p className="text-sm text-app-text-secondary mb-3">
+                      {exercise.description}
                     </p>
-                  )}
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  {exercise.muscle_group.slice(0, 2).map((muscle) => (
-                    <Badge
-                      key={muscle}
-                      variant="secondary"
-                      className="text-xs bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent"
-                    >
-                      {muscle}
-                    </Badge>
-                  ))}
-                  {exercise.muscle_group.length > 2 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{exercise.muscle_group.length - 2}
-                    </Badge>
-                  )}
+                    
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {exercise.muscle_group.slice(0, 3).map((muscle) => (
+                        <Badge
+                          key={muscle}
+                          variant="secondary"
+                          className="text-xs bg-app-achievement-workout/10 text-app-achievement-workout border border-app-border-accent"
+                        >
+                          {muscle}
+                        </Badge>
+                      ))}
+                      {exercise.muscle_group.length > 3 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{exercise.muscle_group.length - 3}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* General Exercise Info */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="text-center p-3 bg-app-card rounded-lg">
+                        <Hash className="h-4 w-4 text-app-achievement-workout mx-auto mb-1" />
+                        <p className="text-lg font-bold text-app-text-primary">{exercise.sets_config.length}</p>
+                        <p className="text-xs text-app-text-secondary">Séries</p>
+                      </div>
+                      <div className="text-center p-3 bg-app-card rounded-lg">
+                        <Repeat className="h-4 w-4 text-app-achievement-consecutive mx-auto mb-1" />
+                        <p className="text-lg font-bold text-app-text-primary">
+                          {exercise.sets_config.reduce((sum, set) => sum + set.target_reps, 0)}
+                        </p>
+                        <p className="text-xs text-app-text-secondary">Rep. Total</p>
+                      </div>
+                      <div className="text-center p-3 bg-app-card rounded-lg">
+                        <Clock className="h-4 w-4 text-app-achievement-exercise mx-auto mb-1" />
+                        <p className="text-lg font-bold text-app-text-primary">{exercise.rest}s</p>
+                        <p className="text-xs text-app-text-secondary">Descanso</p>
+                      </div>
+                      <div className="text-center p-3 bg-app-card rounded-lg">
+                        <Weight className="h-4 w-4 text-app-achievement-weight mx-auto mb-1" />
+                        <p className="text-lg font-bold text-app-text-primary">
+                          {exercise.sets_config.some(set => set.suggested_weight && set.suggested_weight > 0) ? 'Sim' : 'Não'}
+                        </p>
+                        <p className="text-xs text-app-text-secondary">Carga Def.</p>
+                      </div>
+                    </div>
+
+                    {/* General Notes */}
+                    {exercise.general_notes && (
+                      <div className="p-4 bg-gradient-to-r from-app-achievement-workout/10 to-app-achievement-consecutive/10 rounded-lg border border-app-border-accent mb-4">
+                        <div className="flex items-start gap-2">
+                          <StickyNote className="h-4 w-4 text-app-achievement-workout mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h6 className="text-sm font-semibold text-app-achievement-workout mb-1">
+                              Observações Gerais
+                            </h6>
+                            <p className="text-sm text-app-text-secondary italic">
+                              "{exercise.general_notes}"
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sets Configuration */}
+                    <div>
+                      <h6 className="text-sm font-bold text-app-text-primary mb-3 flex items-center gap-2">
+                        <Target className="h-4 w-4 text-app-achievement-workout" />
+                        Configuração das Séries
+                      </h6>
+                      
+                      <div className="grid gap-3">
+                        {exercise.sets_config.map((setConfig, setIndex) => (
+                          <div 
+                            key={setIndex}
+                            className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-app-border-muted"
+                          >
+                            <div className="w-8 h-8 bg-app-achievement-workout rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                              {setConfig.set_number}
+                            </div>
+                            
+                            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div>
+                                <p className="text-xs font-medium text-app-text-secondary mb-1">Repetições</p>
+                                <p className="text-sm font-bold text-app-text-primary flex items-center gap-1">
+                                  <Repeat className="h-3 w-3" />
+                                  {setConfig.target_reps}
+                                </p>
+                              </div>
+                              
+                              <div>
+                                <p className="text-xs font-medium text-app-text-secondary mb-1">Carga Sugerida</p>
+                                <p className="text-sm font-bold text-app-text-primary flex items-center gap-1">
+                                  <Weight className="h-3 w-3" />
+                                  {setConfig.suggested_weight ? `${setConfig.suggested_weight}kg` : 'Não def.'}
+                                </p>
+                              </div>
+                              
+                              <div className="md:col-span-2">
+                                <p className="text-xs font-medium text-app-text-secondary mb-1">Observações</p>
+                                <p className="text-sm text-app-text-muted italic">
+                                  {setConfig.notes || 'Nenhuma observação'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -228,15 +315,15 @@ export function StepReview({
               </div>
               <div>
                 <h4 className="font-bold text-app-achievement-consecutive">
-                  Tudo pronto!
+                  Treino Configurado!
                 </h4>
                 <p className="text-sm text-app-text-secondary">
-                  Seu treino está configurado e pronto para ser salvo
+                  Todas as séries foram configuradas individualmente
                 </p>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-4 gap-4 text-center">
               <div>
                 <p className="text-xl font-bold text-app-achievement-consecutive">
                   {selectedExercises.length}
@@ -251,6 +338,14 @@ export function StepReview({
                 </p>
                 <p className="text-xs text-app-text-secondary">
                   Séries
+                </p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-app-achievement-consecutive">
+                  {totalReps}
+                </p>
+                <p className="text-xs text-app-text-secondary">
+                  Repetições
                 </p>
               </div>
               <div>
@@ -290,7 +385,7 @@ export function StepReview({
           
           <div className="text-center">
             <p className="text-xs text-app-text-muted">
-              {mode === 'edit' ? 'Suas alterações serão salvas' : 'O treino será adicionado à biblioteca'}
+              {mode === 'edit' ? 'Configurações serão atualizadas' : 'Treino será adicionado à biblioteca'}
             </p>
           </div>
         </div>
@@ -304,13 +399,13 @@ export function StepReview({
           </div>
           <div>
             <h4 className="font-bold text-app-achievement-consecutive mb-2">
-              Dicas para um treino eficaz
+              Dicas para treinos com séries individuais
             </h4>
             <ul className="space-y-1 text-sm text-app-text-secondary">
-              <li>• Certifique-se de que a progressão dos exercícios faça sentido</li>
-              <li>• Considere alternar grupos musculares para otimizar o descanso</li>
-              <li>• Ajuste os tempos de descanso conforme a intensidade do exercício</li>
-              <li>• Revise as observações para garantir execução correta</li>
+              <li>• Configure cargas progressivas para melhor adaptação</li>
+              <li>• Use observações específicas para orientar execução</li>
+              <li>• Considere diferentes repetições para objetivos variados</li>
+              <li>• Alunos poderão registrar pesos e repetições reais durante execução</li>
             </ul>
           </div>
         </div>
