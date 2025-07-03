@@ -1,3 +1,4 @@
+// app/api/workout-progress/complete/route.ts
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -17,89 +18,104 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, tenant_id, total_points')
+      .select('id, tenant_id, role, total_points')
       .eq('user_id', session.user.id)
       .single();
 
-    if (profileError) {
+    if (profileError || profile?.role !== 'student') {
       return NextResponse.json(
-        { error: profileError.message },
-        { status: 500 }
+        { error: 'Access restricted to students' },
+        { status: 403 }
       );
     }
 
     const data = await request.json();
-    const { workoutId, duration } = data;
+    const { workoutId, planId, duration, exercises, notes } = data;
 
-    // Get exercise progress for this workout
-    const { data: progress, error: progressError } = await supabase
-      .from('exercise_progress')
-      .select('weight, set_weights')
-      .eq('workout_id', workoutId)
-      .eq('student_id', profile.id);
-
-    if (progressError) {
-      return NextResponse.json(
-        { error: progressError.message },
-        { status: 500 }
-      );
-    }
-
-    // Calculate total weight lifted
-    const totalWeight = progress.reduce((sum, p) => {
-      // If we have set_weights, use the sum of all sets
-      if (p.set_weights && p.set_weights.length > 0) {
-        return sum + p.set_weights.reduce((setSum: any, weight: any) => setSum + (weight || 0), 0);
-      }
-      // Otherwise use the average weight
-      return sum + (p.weight || 0);
+    // Calcular estatísticas do treino
+    const exercisesCompleted = exercises.filter((e: any) => e.sets_completed > 0).length;
+    const totalWeight = exercises.reduce((sum: number, e: any) => {
+      return sum + (e.weights?.reduce((w: number, weight: number) => w + (weight || 0), 0) || 0);
     }, 0);
 
-    // Record workout completion
-    const { error } = await supabase
+    // Salvar progresso de cada exercício
+    const exerciseProgressPromises = exercises.map((exerciseData: any) => {
+      if (exerciseData.sets_completed === 0) return Promise.resolve();
+      
+      return supabase
+        .from('exercise_progress')
+        .insert({
+          student_id: profile.id,
+          workout_id: workoutId,
+          exercise_id: exerciseData.exercise_id,
+          weight: exerciseData.weights?.reduce((sum: number, w: number) => sum + (w || 0), 0) / (exerciseData.weights?.length || 1) || 0,
+          notes: exerciseData.notes || null,
+          set_weights: exerciseData.weights || [],
+          tenant_id: profile.tenant_id
+        });
+    });
+
+    await Promise.all(exerciseProgressPromises);
+
+    // Registrar histórico do treino
+    const { error: historyError } = await supabase
       .from('workout_history')
       .insert({
         student_id: profile.id,
         workout_id: workoutId,
         completed_at: new Date().toISOString(),
-        duration,
-        exercises_completed: progress.length,
+        duration: Math.floor(duration / 60), // Converter para minutos
+        exercises_completed: exercisesCompleted,
         total_weight: totalWeight,
+        notes: notes || null,
         tenant_id: profile.tenant_id
       });
 
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+    if (historyError) {
+      console.error('Error saving workout history:', historyError);
+      throw new Error('Erro ao salvar histórico do treino');
     }
 
-    // Update user's last workout date and add points
-    const pointsEarned = 10; // Base points for completing a workout
+    // Calcular pontos baseados na performance
+    let pointsEarned = 10; // Pontos base por completar treino
+    
+    // Bônus por exercícios completados
+    pointsEarned += exercisesCompleted * 2;
+    
+    // Bônus por dificuldade média alta
+    const avgDifficulty = exercises
+      .filter((e: any) => e.difficulty_rating)
+      .reduce((sum: number, e: any) => sum + e.difficulty_rating, 0) / 
+      exercises.filter((e: any) => e.difficulty_rating).length;
+    
+    if (avgDifficulty >= 4) pointsEarned += 5; // Bônus por treino difícil
+
+    // Atualizar pontos do usuário e data do último treino
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        last_workout_date: new Date().toISOString(),
+        last_workout_date: new Date().toISOString().split('T')[0],
         total_points: (profile.total_points || 0) + pointsEarned
       })
       .eq('id', profile.id);
 
     if (updateError) {
-      return NextResponse.json(
-        { error: updateError.message },
-        { status: 500 }
-      );
+      console.error('Error updating user profile:', updateError);
     }
 
-    // Check for achievements
+    // Verificar conquistas
     await checkAndAwardAchievements(supabase, profile.id, profile.tenant_id);
 
     return NextResponse.json({ 
       success: true,
-      pointsEarned
+      pointsEarned,
+      totalWeight,
+      exercisesCompleted,
+      duration: Math.floor(duration / 60)
     });
+
   } catch (error: any) {
+    console.error('Error completing workout:', error);
     return NextResponse.json(
       { error: error.message || 'An error occurred while completing the workout' },
       { status: 500 }
@@ -109,7 +125,7 @@ export async function POST(request: Request) {
 
 async function checkAndAwardAchievements(supabase: any, userId: string, tenantId: string) {
   try {
-    // Get all achievements for this tenant
+    // Buscar todas as conquistas do tenant
     const { data: achievements, error: achievementsError } = await supabase
       .from('achievements')
       .select('*')
@@ -117,15 +133,16 @@ async function checkAndAwardAchievements(supabase: any, userId: string, tenantId
 
     if (achievementsError) throw achievementsError;
 
-    // Get user's workout history
+    // Buscar histórico de treinos do usuário
     const { data: workoutHistory, error: historyError } = await supabase
       .from('workout_history')
       .select('*')
-      .eq('student_id', userId);
+      .eq('student_id', userId)
+      .eq('tenant_id', tenantId);
 
     if (historyError) throw historyError;
 
-    // Get user's current points
+    // Buscar perfil do usuário para pontos totais
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('total_points')
@@ -134,9 +151,9 @@ async function checkAndAwardAchievements(supabase: any, userId: string, tenantId
 
     if (profileError) throw profileError;
 
-    // Check each achievement
+    // Verificar cada conquista
     for (const achievement of achievements) {
-      // Check if user already has this achievement
+      // Verificar se o usuário já possui esta conquista
       const { data: existingAchievement, error: existingError } = await supabase
         .from('user_achievements')
         .select('id')
@@ -145,28 +162,34 @@ async function checkAndAwardAchievements(supabase: any, userId: string, tenantId
         .maybeSingle();
 
       if (existingError) throw existingError;
-      if (existingAchievement) continue; // Skip if already earned
+      if (existingAchievement) continue; // Já possui
 
-      // Check if achievement criteria is met
+      // Verificar critério
       let criteriaFulfilled = false;
 
-      if (achievement.criteria_type === 'workouts_completed') {
-        criteriaFulfilled = workoutHistory.length >= achievement.criteria_value;
-      } else if (achievement.criteria_type === 'consecutive_days') {
-        // This would require more complex logic in a real app
-        // For now, we'll just check if they have enough workouts
-        criteriaFulfilled = workoutHistory.length >= achievement.criteria_value;
-      } else if (achievement.criteria_type === 'total_weight') {
-        const totalWeight = workoutHistory.reduce((sum: any, wh: { total_weight: any; }) => sum + (wh.total_weight || 0), 0);
-        criteriaFulfilled = totalWeight >= achievement.criteria_value;
-      } else if (achievement.criteria_type === 'exercises_completed') {
-        const totalExercises = workoutHistory.reduce((sum: any, wh: { exercises_completed: any; }) => sum + (wh.exercises_completed || 0), 0);
-        criteriaFulfilled = totalExercises >= achievement.criteria_value;
+      switch (achievement.criteria_type) {
+        case 'workouts_completed':
+          criteriaFulfilled = workoutHistory.length >= achievement.criteria_value;
+          break;
+          
+        case 'consecutive_days':
+          criteriaFulfilled = calculateStreak(workoutHistory) >= achievement.criteria_value;
+          break;
+          
+        case 'total_weight':
+          const totalWeight = workoutHistory.reduce((sum: number, wh: any) => sum + (wh.total_weight || 0), 0);
+          criteriaFulfilled = totalWeight >= achievement.criteria_value;
+          break;
+          
+        case 'exercises_completed':
+          const totalExercises = workoutHistory.reduce((sum: number, wh: any) => sum + (wh.exercises_completed || 0), 0);
+          criteriaFulfilled = totalExercises >= achievement.criteria_value;
+          break;
       }
 
-      // Award achievement if criteria is met
+      // Conceder conquista se critério atendido
       if (criteriaFulfilled) {
-        // Add achievement to user_achievements
+        // Adicionar conquista
         const { error: insertError } = await supabase
           .from('user_achievements')
           .insert({
@@ -177,7 +200,7 @@ async function checkAndAwardAchievements(supabase: any, userId: string, tenantId
 
         if (insertError) throw insertError;
 
-        // Add points to user
+        // Adicionar pontos da conquista
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
@@ -186,9 +209,40 @@ async function checkAndAwardAchievements(supabase: any, userId: string, tenantId
           .eq('id', userId);
 
         if (updateError) throw updateError;
+
+        console.log(`Achievement ${achievement.name} awarded to user ${userId}`);
       }
     }
   } catch (error) {
     console.error('Error checking achievements:', error);
+    // Não falhar o treino por erro nas conquistas
   }
+}
+
+function calculateStreak(history: any[]): number {
+  if (!history.length) return 0;
+  
+  const sortedDates = history
+    .map(h => new Date(h.completed_at).toDateString())
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  
+  const uniqueDates = [...new Set(sortedDates)];
+  
+  let streak = 0;
+  const today = new Date().toDateString();
+  let currentDate = new Date();
+  
+  for (const dateStr of uniqueDates) {
+    const workoutDate = new Date(dateStr);
+    const diffDays = Math.floor((currentDate.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === streak) {
+      streak++;
+      currentDate = workoutDate;
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
 }
