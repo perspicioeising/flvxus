@@ -1,4 +1,3 @@
-// components/workouts/WorkoutsList.tsx
 'use client';
 
 import { useState } from "react";
@@ -14,8 +13,9 @@ import {
   WorkoutLoadMore,
   WorkoutPaginationInfo
 } from "./components/list";
-import { useWorkoutList, useWorkoutOperations } from "./hooks";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
+import { useWorkoutList } from "./hooks/useWorkoutList";
+import { useWorkoutOperations } from "./hooks/useWorkoutOperations";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { Workout } from "./types";
 
 export default function WorkoutsListPage() {
@@ -39,6 +39,7 @@ export default function WorkoutsListPage() {
   } = useWorkoutList();
 
   const { cloneWorkout, deleteWorkout } = useWorkoutOperations();
+  
   // Hook de infinite scroll
   useInfiniteScroll({
     hasMore: pagination.hasMore,
@@ -154,7 +155,7 @@ export default function WorkoutsListPage() {
               {/* Grid Layout */}
               {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                  {workouts.map((workout, index) => (
+                  {workouts.map((workout: Workout, index: number) => (
                     <div
                       key={workout.id}
                       className="animate-fade-in-up"
@@ -178,7 +179,7 @@ export default function WorkoutsListPage() {
               ) : (
                 /* List Layout */
                 <div className="space-y-3 sm:space-y-4">
-                  {workouts.map((workout, index) => (
+                  {workouts.map((workout: Workout, index: number) => (
                     <div
                       key={workout.id}
                       className="animate-fade-in-up"
@@ -372,6 +373,3 @@ export default function WorkoutsListPage() {
     </div>
   );
 }
-
-// Export the main component
-export { WorkoutsListPage };

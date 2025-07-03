@@ -1,7 +1,7 @@
 // components/workouts/detail/components/WorkoutExerciseList.tsx
 import { WorkoutExerciseCard } from './WorkoutExerciseCard';
 import { WorkoutExerciseListProps } from './types';
-import { Activity, Dumbbell, Hash, Clock, Target, Star, Crown, PieChart } from 'lucide-react';
+import { Activity, Dumbbell, Hash, Clock, Target, Star, Crown, PieChart, Weight } from 'lucide-react';
 
 export function WorkoutExerciseList({ 
   exercises, 
@@ -27,6 +27,29 @@ export function WorkoutExerciseList({
     );
   }
 
+  // Calcular estatísticas atualizadas
+  const totalSets = exercises.reduce((sum, ex) => {
+    return sum + (ex.sets_config?.length || ex.sets);
+  }, 0);
+
+  const totalReps = exercises.reduce((sum, ex) => {
+    if (ex.sets_config && ex.sets_config.length > 0) {
+      return sum + ex.sets_config.reduce((setSum, set) => setSum + set.target_reps, 0);
+    }
+    return sum + (ex.sets * parseInt(ex.reps.toString()));
+  }, 0);
+
+  const averageRest = Math.round(exercises.reduce((sum, ex) => sum + ex.rest, 0) / exercises.length);
+  
+  const estimatedTime = exercises.reduce((sum, ex) => {
+    const exerciseSets = ex.sets_config?.length || ex.sets;
+    const exerciseTime = exerciseSets * 30; // 30s por série estimado
+    const restTime = (exerciseSets - 1) * ex.rest;
+    return sum + exerciseTime + restTime;
+  }, 0);
+
+  const hasAdvancedConfig = exercises.some(ex => ex.sets_config && ex.sets_config.length > 0);
+
   return (
     <div className="space-y-6">
       {/* Exercise List */}
@@ -44,7 +67,7 @@ export function WorkoutExerciseList({
           ))}
       </div>
 
-      {/* Workout Summary */}
+      {/* Enhanced Workout Summary */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-app-achievement-workout/10 to-app-achievement-consecutive/10 rounded-2xl blur-lg"></div>
         <div className="relative p-6 bg-gradient-to-r from-app-bg-secondary/30 via-app-achievement-workout/10 to-app-bg-secondary/30 rounded-2xl border border-app-border-muted shadow-app-medium">
@@ -62,7 +85,7 @@ export function WorkoutExerciseList({
                 Resumo do Treino
               </h3>
               <p className="text-app-text-secondary">
-                Visão geral das métricas
+                {hasAdvancedConfig ? 'Configuração avançada com séries individuais' : 'Configuração padrão'}
               </p>
             </div>
           </div>
@@ -91,9 +114,23 @@ export function WorkoutExerciseList({
                   <Hash className="h-6 w-6 text-white" />
                 </div>
                 <p className="text-2xl font-black text-app-achievement-consecutive mb-1">
-                  {exercises.reduce((sum, ex) => sum + ex.sets, 0)}
+                  {totalSets}
                 </p>
                 <p className="text-sm text-app-text-muted font-medium">Séries</p>
+              </div>
+            </div>
+            
+            {/* Total Reps */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-app-achievement-exercise/20 to-app-achievement-exercise/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative text-center p-4 bg-app-card rounded-xl border border-app-border-muted shadow-app-medium hover:shadow-app-large transition-all duration-300 group-hover:scale-105">
+                <div className="w-12 h-12 bg-gradient-to-br from-app-achievement-exercise to-app-btn-accent rounded-xl flex items-center justify-center mx-auto mb-3 shadow-app-medium group-hover:shadow-app-large transition-all duration-300">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+                <p className="text-2xl font-black text-app-achievement-exercise mb-1">
+                  {totalReps}
+                </p>
+                <p className="text-sm text-app-text-muted font-medium">Repetições</p>
               </div>
             </div>
             
@@ -105,23 +142,9 @@ export function WorkoutExerciseList({
                   <Clock className="h-6 w-6 text-white" />
                 </div>
                 <p className="text-2xl font-black text-app-achievement-weight mb-1">
-                  {Math.round(exercises.reduce((sum, ex) => sum + ex.rest, 0) / exercises.length)}s
+                  {averageRest}s
                 </p>
                 <p className="text-sm text-app-text-muted font-medium">Descanso Médio</p>
-              </div>
-            </div>
-            
-            {/* Muscle Groups */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-app-achievement-exercise/20 to-app-achievement-exercise/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative text-center p-4 bg-app-card rounded-xl border border-app-border-muted shadow-app-medium hover:shadow-app-large transition-all duration-300 group-hover:scale-105">
-                <div className="w-12 h-12 bg-gradient-to-br from-app-achievement-exercise to-app-btn-accent rounded-xl flex items-center justify-center mx-auto mb-3 shadow-app-medium group-hover:shadow-app-large transition-all duration-300">
-                  <Target className="h-6 w-6 text-white" />
-                </div>
-                <p className="text-2xl font-black text-app-achievement-exercise mb-1">
-                  {Array.from(new Set(exercises.flatMap(ex => ex.exercise.muscle_group))).length}
-                </p>
-                <p className="text-sm text-app-text-muted font-medium">Grupos Musculares</p>
               </div>
             </div>
           </div>
@@ -143,17 +166,49 @@ export function WorkoutExerciseList({
                 Volume Total:
               </span>
               <span className="text-sm font-bold text-app-heading">
-                {exercises.reduce((sum, ex) => sum + (ex.sets * parseInt(ex.reps.toString())), 0)} reps
+                {totalReps} reps
               </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-app-card rounded-xl">
               <span className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
                 <Clock className="h-4 w-4 text-app-achievement-workout" />
-                Tempo Total:
+                Tempo Estimado:
               </span>
               <span className="text-sm font-bold text-app-heading">
-                ~{Math.round((exercises.reduce((sum, ex) => sum + (ex.sets * ex.rest), 0) + exercises.length * 60) / 60)} min
+                ~{Math.round(estimatedTime / 60)} min
               </span>
+            </div>
+          </div>
+
+          {/* Advanced Configuration Indicator */}
+          {hasAdvancedConfig && (
+            <div className="mt-4 p-3 bg-gradient-to-r from-app-achievement-workout/10 to-app-achievement-consecutive/10 rounded-xl border border-app-border-accent">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-app-achievement-workout rounded-lg flex items-center justify-center">
+                  <Weight className="h-3 w-3 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-app-achievement-workout">
+                  Treino com configuração avançada de séries individuais
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Muscle Groups Distribution */}
+          <div className="mt-6">
+            <h4 className="font-bold text-app-heading mb-3 flex items-center gap-2">
+              <Target className="h-4 w-4 text-app-achievement-consecutive" />
+              Grupos Musculares ({Array.from(new Set(exercises.flatMap(ex => ex.exercise.muscle_group))).length})
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {Array.from(new Set(exercises.flatMap(ex => ex.exercise.muscle_group))).map((muscle) => (
+                <span
+                  key={muscle}
+                  className="px-3 py-1 bg-app-achievement-consecutive/10 text-app-achievement-consecutive border border-app-border-accent text-xs font-medium rounded-full"
+                >
+                  {muscle}
+                </span>
+              ))}
             </div>
           </div>
         </div>

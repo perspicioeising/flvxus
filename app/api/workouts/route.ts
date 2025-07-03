@@ -3,6 +3,14 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 
+// Interface para configuração de série
+interface SetConfig {
+  set_number: number;
+  target_reps: number;
+  suggested_weight?: number;
+  notes?: string;
+}
+
 export async function GET(request: NextRequest) {
   const cookieStore = cookies();
   const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
@@ -143,14 +151,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Then add the exercises
+    // Then add the exercises with new structure
     if (data.exercises && data.exercises.length > 0) {
       interface ExerciseInput {
         exercise_id: string;
         sets: number;
         reps: number;
         rest?: number;
-        notes?: string;
+        sets_config: SetConfig[];
+        general_notes?: string;
         order: number;
       }
 
@@ -160,7 +169,9 @@ export async function POST(request: Request) {
         sets: number;
         reps: number;
         rest?: number;
-        notes?: string;
+        notes?: string; // Mantido para compatibilidade
+        general_notes?: string;
+        sets_config: SetConfig[];
         order: number;
         tenant_id: string;
       }
@@ -171,7 +182,9 @@ export async function POST(request: Request) {
         sets: exercise.sets,
         reps: exercise.reps,
         rest: exercise.rest,
-        notes: exercise.notes,
+        notes: exercise.general_notes, // Compatibilidade
+        general_notes: exercise.general_notes,
+        sets_config: exercise.sets_config,
         order: exercise.order,
         tenant_id: profile.tenant_id
       }));

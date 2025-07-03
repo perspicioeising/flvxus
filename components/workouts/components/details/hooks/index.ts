@@ -17,15 +17,38 @@ export const useWorkoutDetail = (workoutId: string): UseWorkoutDetailReturn => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Calcular estatísticas do treino
+  // Calcular estatísticas do treino (ATUALIZADO para nova estrutura)
   const stats = useMemo((): WorkoutStats | null => {
     if (!workout || !workout.workout_exercises) return null;
 
     const exercises = workout.workout_exercises;
-    const totalSets = exercises.reduce((sum, ex) => sum + ex.sets, 0);
-    const totalRest = exercises.reduce((sum, ex) => sum + (ex.rest * ex.sets), 0);
-    const estimatedExerciseTime = exercises.length * 30; // 30s por exercício estimado
-    const estimatedDuration = Math.round((totalRest + estimatedExerciseTime) / 60); // em minutos
+    
+    // Verificar se há configuração avançada
+    const hasAdvancedConfiguration = exercises.some(ex => ex.sets_config && ex.sets_config.length > 0);
+    
+    // Calcular total de séries
+    const totalSets = exercises.reduce((sum, ex) => {
+      return sum + (ex.sets_config?.length || ex.sets);
+    }, 0);
+
+    // Calcular total de repetições (apenas se houver sets_config)
+    let totalReps: number = 0; // Initialize with 0
+    if (hasAdvancedConfiguration) {
+      totalReps = exercises.reduce((sum, ex) => {
+        if (ex.sets_config && ex.sets_config.length > 0) {
+          return sum + ex.sets_config.reduce((setSum, set) => setSum + set.target_reps, 0);
+        }
+        return sum + (ex.sets * ex.reps);
+      }, 0);
+    }
+
+    // Calcular tempo estimado
+    const estimatedDuration = exercises.reduce((sum, ex) => {
+      const exerciseSets = ex.sets_config?.length || ex.sets;
+      const exerciseTime = exerciseSets * 30; // 30s por série estimado
+      const restTime = (exerciseSets - 1) * ex.rest;
+      return sum + exerciseTime + restTime;
+    }, 0);
 
     const muscleGroups = Array.from(
       new Set(exercises.flatMap(ex => ex.exercise.muscle_group))
@@ -38,10 +61,12 @@ export const useWorkoutDetail = (workoutId: string): UseWorkoutDetailReturn => {
     return {
       totalExercises: exercises.length,
       totalSets,
-      estimatedDuration,
+      totalReps,
+      estimatedDuration: Math.round(estimatedDuration / 60), // em minutos
       averageRest: exercises.length > 0 ? Math.round(exercises.reduce((sum, ex) => sum + ex.rest, 0) / exercises.length) : 0,
       muscleGroups,
-      equipmentNeeded
+      equipmentNeeded,
+      hasAdvancedConfiguration
     };
   }, [workout]);
 
@@ -93,7 +118,7 @@ export const useWorkoutDetail = (workoutId: string): UseWorkoutDetailReturn => {
   };
 };
 
-// Hook para ações do treino (clonar, deletar)
+// Hook para ações do treino (clonar, deletar) - ATUALIZADO
 export const useWorkoutActions = (): UseWorkoutActionsReturn => {
   const router = useRouter();
   const { toast } = useToast();
@@ -114,7 +139,8 @@ export const useWorkoutActions = (): UseWorkoutActionsReturn => {
           sets: we.sets,
           reps: we.reps,
           rest: we.rest,
-          notes: we.notes || "",
+          sets_config: we.sets_config || [],
+          general_notes: we.general_notes || we.notes || "",
           order: index + 1
         })) || []
       };

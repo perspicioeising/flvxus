@@ -24,7 +24,7 @@ export function RecentHistoryList({ history, className = '' }: RecentHistoryList
       <Card className={`border-0 card-app ${className}`}>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-app-achievement-weight rounded-lg flex items-center justify-center shadow-app-medium">
               <History className="h-4 w-4 text-white" />
             </div>
             <CardTitle className="text-lg font-bold text-app-heading">
@@ -35,7 +35,7 @@ export function RecentHistoryList({ history, className = '' }: RecentHistoryList
         
         <CardContent>
           <div className="text-center py-8">
-            <div className="w-12 h-12 mx-auto bg-app-bg-secondary rounded-full flex items-center justify-center mb-4">
+            <div className="w-12 h-12 mx-auto bg-app-bg-secondary rounded-2xl flex items-center justify-center mb-4">
               <History className="h-6 w-6 text-app-text-muted" />
             </div>
             <h4 className="text-base font-semibold text-app-heading mb-2">
@@ -55,7 +55,7 @@ export function RecentHistoryList({ history, className = '' }: RecentHistoryList
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-app-achievement-weight rounded-lg flex items-center justify-center shadow-app-medium">
               <History className="h-4 w-4 text-white" />
             </div>
             <CardTitle className="text-lg font-bold text-app-heading">
@@ -63,7 +63,7 @@ export function RecentHistoryList({ history, className = '' }: RecentHistoryList
             </CardTitle>
           </div>
           
-          <Badge className="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full text-xs font-semibold">
+          <Badge className="px-3 py-1 bg-app-achievement-weight/10 text-app-achievement-weight border border-app-achievement-weight/20 rounded-full text-xs font-semibold">
             {history.length} recente{history.length !== 1 ? 's' : ''}
           </Badge>
         </div>
@@ -74,9 +74,9 @@ export function RecentHistoryList({ history, className = '' }: RecentHistoryList
           {history.slice(0, 5).map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-3 p-3 bg-app-bg-secondary rounded-xl hover:bg-app-border-accent/20 transition-colors"
+              className="flex items-center gap-3 p-3 bg-app-bg-secondary rounded-xl hover:bg-app-border-accent/20 transition-all duration-200 border border-app-border-muted hover:border-app-border-accent"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-app-achievement-workout to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-app-achievement-workout rounded-lg flex items-center justify-center flex-shrink-0 shadow-app-light">
                 <Dumbbell className="h-5 w-5 text-white" />
               </div>
               
@@ -102,7 +102,7 @@ export function RecentHistoryList({ history, className = '' }: RecentHistoryList
               
               {item.total_weight > 0 && (
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold text-app-heading">
+                  <p className="text-sm font-bold text-app-achievement-workout">
                     {item.total_weight.toFixed(0)}kg
                   </p>
                   <p className="text-xs text-app-text-muted">total</p>

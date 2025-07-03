@@ -1,125 +1,193 @@
-import { useState, useEffect, useCallback } from 'react';
-import { WorkoutSession, ExerciseProgress } from '../types';
+// hooks/useWorkoutSession.ts
+import { useState, useEffect, useCallback, useRef } from 'react';
+
+interface ExerciseProgress {
+  exercise_id: string;
+  weights: number[];
+  reps: number[];
+  sets_completed: number;
+  notes?: string;
+  difficulty_rating?: number;
+}
+
+interface WorkoutSession {
+  workout_id: string;
+  plan_id: string;
+  started_at: string;
+  exercises: ExerciseProgress[];
+  is_paused: boolean;
+  pause_time?: number;
+  total_pause_time: number;
+}
 
 export function useWorkoutSession(workoutId: string, planId: string) {
   const [session, setSession] = useState<WorkoutSession | null>(null);
-  const [isActive, setIsActive] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Carregar sessão existente do localStorage
+  useEffect(() => {
+    const savedSession = localStorage.getItem(`workout_session_${workoutId}`);
+    if (savedSession) {
+      const parsedSession = JSON.parse(savedSession);
+      setSession(parsedSession);
+      
+      // Calcular tempo decorrido
+      const started = new Date(parsedSession.started_at).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - started) / 1000) - parsedSession.total_pause_time;
+      setCurrentTime(elapsed);
+      
+      if (!parsedSession.is_paused) {
+        setIsActive(true);
+      }
+    }
+  }, [workoutId]);
+
+  // Timer
+  useEffect(() => {
+    if (isActive && !session?.is_paused) {
+      intervalRef.current = setInterval(() => {
+        setCurrentTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isActive, session?.is_paused]);
+
+  // Salvar sessão no localStorage sempre que atualizar
+  useEffect(() => {
+    if (session) {
+      localStorage.setItem(`workout_session_${workoutId}`, JSON.stringify(session));
+    }
+  }, [session, workoutId]);
 
   const startSession = useCallback((workout: any) => {
     const newSession: WorkoutSession = {
       workout_id: workoutId,
       plan_id: planId,
       started_at: new Date().toISOString(),
-      exercises: workout.workout_exercises.map((we: any) => ({
-        exercise_id: we.exercise.id,
-        sets_completed: 0,
-        weights: [],
-        reps: [],
-        difficulty_rating: undefined,
-        notes: '',
-        rest_time: we.rest
+      exercises: workout.workout_exercises.map((ex: any) => ({
+        exercise_id: ex.exercise.id,
+        weights: new Array(ex.sets).fill(undefined),
+        reps: new Array(ex.sets).fill(undefined),
+        sets_completed: 0
       })),
-      current_exercise_index: 0,
       is_paused: false,
-      total_duration: 0
+      total_pause_time: 0
     };
-    
+
     setSession(newSession);
     setIsActive(true);
-    
-    // Salvar no localStorage como backup
-    localStorage.setItem('current_workout_session', JSON.stringify(newSession));
+    setCurrentTime(0);
   }, [workoutId, planId]);
 
-  const updateExerciseProgress = useCallback((exerciseId: string, progress: Partial<ExerciseProgress>) => {
-    if (!session) return;
-    
-    const updatedSession = {
-      ...session,
-      exercises: session.exercises.map(ex => 
-        ex.exercise_id === exerciseId 
-          ? { ...ex, ...progress }
-          : ex
-      )
-    };
-    
-    setSession(updatedSession);
-    localStorage.setItem('current_workout_session', JSON.stringify(updatedSession));
-  }, [session]);
-
-  const completeWorkout = useCallback(async (finalNotes?: string) => {
-    if (!session) return;
-
-    try {
-      const workoutData = {
-        workoutId: session.workout_id,
-        planId: session.plan_id,
-        duration: Math.floor(currentTime / 60), // em minutos
-        exercises: session.exercises,
-        notes: finalNotes
+  const pauseSession = useCallback(() => {
+    setSession(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        is_paused: true,
+        pause_time: Date.now()
       };
+    });
+  }, []);
 
-      const response = await fetch('/api/workout-progress/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(workoutData)
-      });
+  const resumeSession = useCallback(() => {
+    setSession(prev => {
+      if (!prev || !prev.pause_time) return prev;
+      
+      const pauseDuration = Math.floor((Date.now() - prev.pause_time) / 1000);
+      return {
+        ...prev,
+        is_paused: false,
+        pause_time: undefined,
+        total_pause_time: prev.total_pause_time + pauseDuration
+      };
+    });
+  }, []);
 
-      if (!response.ok) {
-        throw new Error('Erro ao finalizar treino');
-      }
+  const updateExerciseProgress = useCallback((exerciseId: string, updates: Partial<ExerciseProgress>) => {
+    setSession(prev => {
+      if (!prev) return null;
+      
+      return {
+        ...prev,
+        exercises: prev.exercises.map(ex => 
+          ex.exercise_id === exerciseId 
+            ? { ...ex, ...updates }
+            : ex
+        )
+      };
+    });
+  }, []);
 
-      // Limpar sessão
-      setSession(null);
-      setIsActive(false);
-      setCurrentTime(0);
-      localStorage.removeItem('current_workout_session');
+  const completeWorkout = useCallback(async (notes?: string) => {
+    if (!session) return;
 
-      return await response.json();
-    } catch (error) {
-      console.error('Error completing workout:', error);
-      throw error;
+    // Calcular duração total
+    const duration = currentTime;
+
+    // Preparar dados para API
+    const workoutData = {
+      workoutId,
+      planId,
+      duration,
+      exercises: session.exercises.map(ex => ({
+        exercise_id: ex.exercise_id,
+        weights: ex.weights.filter(w => w !== undefined),
+        reps: ex.reps.filter(r => r !== undefined),
+        sets_completed: ex.sets_completed,
+        notes: ex.notes,
+        difficulty_rating: ex.difficulty_rating
+      })),
+      notes
+    };
+
+    // Enviar para API
+    const response = await fetch('/api/workout-progress/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(workoutData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to complete workout');
     }
-  }, [session, currentTime]);
 
-  // Timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
+    // Limpar sessão do localStorage
+    localStorage.removeItem(`workout_session_${workoutId}`);
     
-    if (isActive && session && !session.is_paused) {
-      interval = setInterval(() => {
-        setCurrentTime(prev => prev + 1);
-      }, 1000);
-    }
-    
-    return () => clearInterval(interval);
-  }, [isActive, session?.is_paused]);
+    return response.json();
+  }, [session, workoutId, planId, currentTime]);
 
-  // Recuperar sessão do localStorage
-  useEffect(() => {
-    const savedSession = localStorage.getItem('current_workout_session');
-    if (savedSession) {
-      try {
-        const parsed = JSON.parse(savedSession);
-        if (parsed.workout_id === workoutId && parsed.plan_id === planId) {
-          setSession(parsed);
-          setIsActive(true);
-        }
-      } catch (error) {
-        localStorage.removeItem('current_workout_session');
-      }
-    }
-  }, [workoutId, planId]);
+  const resetSession = useCallback(() => {
+    localStorage.removeItem(`workout_session_${workoutId}`);
+    setSession(null);
+    setCurrentTime(0);
+    setIsActive(false);
+  }, [workoutId]);
 
   return {
     session,
     isActive,
     currentTime,
     startSession,
+    pauseSession,
+    resumeSession,
     updateExerciseProgress,
     completeWorkout,
-    pauseSession: () => setSession(prev => prev ? { ...prev, is_paused: true } : null),
-    resumeSession: () => setSession(prev => prev ? { ...prev, is_paused: false } : null)
+    resetSession
   };
 }

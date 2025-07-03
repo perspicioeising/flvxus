@@ -1,8 +1,9 @@
-// components/workouts/steps/StepExercises.tsx
+// components/workouts/steps/StepExercises.tsx - VERSÃO ATUALIZADA
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Activity, 
@@ -15,10 +16,15 @@ import {
   StickyNote,
   Trash2,
   Filter,
-  X
+  X,
+  Weight,
+  Repeat,
+  ChevronDown,
+  ChevronUp,
+  Copy
 } from 'lucide-react';
 import { MUSCLE_GROUPS, EQUIPMENT_TYPES } from '../../constants';
-import { StepExercisesProps } from '../../types';
+import { StepExercisesProps, SetConfig, SelectedExercise } from '../../types';
 
 export function StepExercises({
   exercises,
@@ -27,10 +33,14 @@ export function StepExercises({
   onExerciseSelect,
   onExerciseRemove,
   onExerciseUpdate,
+  onSetConfigUpdate,
+  onAddSet,
+  onRemoveSet,
   onFiltersChange,
   isLoading
 }: StepExercisesProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set());
 
   const handleFilterChange = (key: string, value: string) => {
     onFiltersChange({ [key]: value });
@@ -42,6 +52,32 @@ export function StepExercises({
       muscleGroup: 'all',
       equipment: 'all'
     });
+  };
+
+  const toggleExerciseExpansion = (exerciseId: string) => {
+    const newExpanded = new Set(expandedExercises);
+    if (newExpanded.has(exerciseId)) {
+      newExpanded.delete(exerciseId);
+    } else {
+      newExpanded.add(exerciseId);
+    }
+    setExpandedExercises(newExpanded);
+  };
+
+  const copySetConfig = (exerciseId: string, setIndex: number) => {
+    const exercise = selectedExercises.find(ex => ex.id === exerciseId);
+    if (!exercise || !exercise.sets_config[setIndex]) return;
+    
+    const configToCopy = { ...exercise.sets_config[setIndex] };
+    onAddSet(exerciseId);
+    
+    // Após adicionar, atualizar a nova série com os dados copiados
+    setTimeout(() => {
+      const newSetIndex = exercise.sets_config.length;
+      onSetConfigUpdate(exerciseId, newSetIndex, 'target_reps', configToCopy.target_reps);
+      onSetConfigUpdate(exerciseId, newSetIndex, 'suggested_weight', configToCopy.suggested_weight);
+      onSetConfigUpdate(exerciseId, newSetIndex, 'notes', configToCopy.notes);
+    }, 100);
   };
 
   const hasActiveFilters = filters.search || filters.muscleGroup !== 'all' || filters.equipment !== 'all';
@@ -56,7 +92,7 @@ export function StepExercises({
           Exercícios do Treino
         </h2>
         <p className="text-app-text-secondary">
-          Selecione e configure os exercícios para o seu treino
+          Selecione exercícios e configure séries individuais com repetições e cargas específicas
         </p>
       </div>
 
@@ -79,9 +115,14 @@ export function StepExercises({
                   <div className="w-8 h-8 bg-achievement-workout rounded-lg flex items-center justify-center flex-shrink-0">
                     <Activity className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-sm font-medium text-app-text-primary truncate">
-                    {exercise.name}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium text-app-text-primary truncate block">
+                      {exercise.name}
+                    </span>
+                    <span className="text-xs text-app-text-secondary">
+                      {exercise.sets_config.length} séries
+                    </span>
+                  </div>
                 </div>
               ))}
               {selectedExercises.length > 4 && (
@@ -297,14 +338,14 @@ export function StepExercises({
               <div className="p-6 border-b border-app-border-muted">
                 <h3 className="font-bold text-app-text-primary flex items-center gap-2">
                   <Target className="h-5 w-5 text-app-achievement-workout" />
-                  Exercícios Selecionados
+                  Configuração Detalhada
                 </h3>
                 <p className="text-sm text-app-text-secondary mt-1">
-                  Configure séries, repetições e descanso
+                  Configure cada série individualmente
                 </p>
               </div>
               
-              <div className="p-6">
+              <div className="p-6 max-h-[80vh] overflow-y-auto">
                 {selectedExercises.length === 0 ? (
                   <div className="text-center py-8">
                     <Activity className="h-12 w-12 text-app-text-muted mx-auto mb-3" />
@@ -313,92 +354,191 @@ export function StepExercises({
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {selectedExercises.map((exercise, index) => (
-                      <div
-                        key={exercise.id}
-                        className="p-4 bg-app-bg-secondary/20 rounded-xl space-y-4 border border-app-border-muted"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-achievement-workout rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                              {index + 1}
+                  <div className="space-y-6">
+                    {selectedExercises.map((exercise, exerciseIndex) => {
+                      const isExpanded = expandedExercises.has(exercise.id);
+                      
+                      return (
+                        <div
+                          key={exercise.id}
+                          className="p-4 bg-app-bg-secondary/20 rounded-xl border border-app-border-muted"
+                        >
+                          {/* Exercise Header */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-achievement-workout rounded-lg flex items-center justify-center text-white text-sm font-bold">
+                                {exerciseIndex + 1}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-app-text-primary text-sm">
+                                  {exercise.name}
+                                </h4>
+                                <p className="text-xs text-app-text-secondary">
+                                  {exercise.sets_config.length} séries configuradas
+                                </p>
+                              </div>
                             </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleExerciseExpansion(exercise.id)}
+                                className="text-app-text-secondary hover:text-app-text-primary p-2"
+                              >
+                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onExerciseRemove(exercise.id)}
+                                className="text-red-600 hover:text-red-700 dark:text-red-400 p-2"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Quick Config */}
+                          <div className="grid grid-cols-2 gap-3 mb-4">
                             <div>
-                              <h4 className="font-semibold text-app-text-primary text-sm">
-                                {exercise.name}
-                              </h4>
+                              <label className="text-xs font-medium text-app-text-secondary mb-1 block flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Descanso (s)
+                              </label>
+                              <Input
+                                type="number"
+                                value={exercise.rest}
+                                onChange={(e) => onExerciseUpdate(exercise.id, 'rest', parseInt(e.target.value) || 0)}
+                                className="h-8 text-sm bg-app-card border-app-border-muted"
+                                min="0"
+                                max="600"
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <Button
+                                onClick={() => onAddSet(exercise.id)}
+                                className="h-8 px-3 bg-achievement-workout hover:bg-app-achievement-workout/90 text-white text-sm rounded-lg"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Série
+                              </Button>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onExerciseRemove(exercise.id)}
-                            className="text-red-600 hover:text-red-700 dark:text-red-400 p-2"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
+
+                          {/* General Notes */}
+                          <div className="mb-4">
                             <label className="text-xs font-medium text-app-text-secondary mb-1 block flex items-center gap-1">
-                              <Hash className="h-3 w-3" />
-                              Séries
+                              <StickyNote className="h-3 w-3" />
+                              Observações Gerais
                             </label>
-                            <Input
-                              type="number"
-                              value={exercise.sets}
-                              onChange={(e) => onExerciseUpdate(exercise.id, 'sets', parseInt(e.target.value) || 1)}
-                              className="h-8 text-sm bg-app-card border-app-border-muted"
-                              min="1"
-                              max="10"
+                            <Textarea
+                              placeholder="Instruções gerais para execução do exercício..."
+                              value={exercise.general_notes}
+                              onChange={(e) => onExerciseUpdate(exercise.id, 'general_notes', e.target.value)}
+                              className="min-h-[60px] text-sm bg-app-card border-app-border-muted resize-none"
                             />
                           </div>
-                          <div>
-                            <label className="text-xs font-medium text-app-text-secondary mb-1 block flex items-center gap-1">
-                              <Target className="h-3 w-3" />
-                              Reps
-                            </label>
-                            <Input
-                              type="number"
-                              value={exercise.reps}
-                              onChange={(e) => onExerciseUpdate(exercise.id, 'reps', parseInt(e.target.value) || 1)}
-                              className="h-8 text-sm bg-app-card border-app-border-muted"
-                              min="1"
-                              max="100"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs font-medium text-app-text-secondary mb-1 block flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              Rest (s)
-                            </label>
-                            <Input
-                              type="number"
-                              value={exercise.rest}
-                              onChange={(e) => onExerciseUpdate(exercise.id, 'rest', parseInt(e.target.value) || 0)}
-                              className="h-8 text-sm bg-app-card border-app-border-muted"
-                              min="0"
-                              max="600"
-                            />
-                          </div>
+
+                          {/* Sets Configuration */}
+                          {isExpanded && (
+                            <div className="space-y-3 border-t border-app-border-muted pt-4">
+                              <h5 className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+                                <Hash className="h-4 w-4" />
+                                Configuração das Séries
+                              </h5>
+                              
+                              {exercise.sets_config.map((setConfig, setIndex) => (
+                                <div key={setIndex} className="p-3 bg-app-card rounded-lg border border-app-border-muted space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <h6 className="text-sm font-medium text-app-text-primary">
+                                      Série {setConfig.set_number}
+                                    </h6>
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => copySetConfig(exercise.id, setIndex)}
+                                        className="text-app-text-muted hover:text-app-text-primary p-1"
+                                        title="Duplicar série"
+                                      >
+                                        <Copy className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => onRemoveSet(exercise.id, setIndex)}
+                                        className="text-red-600 hover:text-red-700 dark:text-red-400 p-1"
+                                        disabled={exercise.sets_config.length <= 1}
+                                      >
+                                        <Minus className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="text-xs font-medium text-app-text-secondary mb-1 block flex items-center gap-1">
+                                        <Repeat className="h-3 w-3" />
+                                        Repetições
+                                      </label>
+                                      <Input
+                                        type="number"
+                                        value={setConfig.target_reps}
+                                        onChange={(e) => onSetConfigUpdate(exercise.id, setIndex, 'target_reps', parseInt(e.target.value) || 1)}
+                                        className="h-8 text-sm bg-white dark:bg-gray-800 border-app-border-muted"
+                                        min="1"
+                                        max="100"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs font-medium text-app-text-secondary mb-1 block flex items-center gap-1">
+                                        <Weight className="h-3 w-3" />
+                                        Carga (kg)
+                                      </label>
+                                      <Input
+                                        type="number"
+                                        step="0.5"
+                                        value={setConfig.suggested_weight || ''}
+                                        onChange={(e) => onSetConfigUpdate(exercise.id, setIndex, 'suggested_weight', parseFloat(e.target.value) || 0)}
+                                        className="h-8 text-sm bg-white dark:bg-gray-800 border-app-border-muted"
+                                        min="0"
+                                        placeholder="0"
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <label className="text-xs font-medium text-app-text-secondary mb-1 block flex items-center gap-1">
+                                      <StickyNote className="h-3 w-3" />
+                                      Observações da Série
+                                    </label>
+                                    <Input
+                                      placeholder="Ex: aquecimento, peso máximo, falha..."
+                                      value={setConfig.notes || ''}
+                                      onChange={(e) => onSetConfigUpdate(exercise.id, setIndex, 'notes', e.target.value)}
+                                      className="h-8 text-sm bg-white dark:bg-gray-800 border-app-border-muted"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                              
+                              {/* Add Set Button */}
+                              <div className="text-center pt-2">
+                                <Button
+                                  onClick={() => onAddSet(exercise.id)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-2 border-dashed border-app-achievement-workout/50 text-app-achievement-workout hover:border-app-achievement-workout hover:bg-app-achievement-workout/10"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Adicionar Série
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        
-                        <div>
-                          <label className="text-xs font-medium text-app-text-secondary mb-1 block flex items-center gap-1">
-                            <StickyNote className="h-3 w-3" />
-                            Observações
-                          </label>
-                          <Input
-                            placeholder="Observações opcionais..."
-                            value={exercise.notes}
-                            onChange={(e) => onExerciseUpdate(exercise.id, 'notes', e.target.value)}
-                            className="h-8 text-sm bg-app-card border-app-border-muted"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

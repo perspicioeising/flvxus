@@ -14,7 +14,7 @@ import {
   Settings,
   CheckCircle2
 } from "lucide-react";
-import type { WorkoutFormData, SelectedExercise, Exercise, WorkoutStep, WorkoutFilters, ExerciseFilters } from '../types';
+import type { WorkoutFormData, SelectedExercise, Exercise, WorkoutStep, WorkoutFilters, ExerciseFilters, SetConfig } from '../types';
 
 // DEFAULT VALUES - Movendo para o topo para evitar problemas de hoisting
 export const DEFAULT_FILTERS: WorkoutFilters = {
@@ -40,13 +40,6 @@ export const DEFAULT_WORKOUT_FORM: WorkoutFormData = {
   exercises: []
 };
 
-export const DEFAULT_EXERCISE_PARAMS: Omit<SelectedExercise, keyof Exercise> = {
-  sets: 3,
-  reps: 12,
-  rest: 60,
-  notes: "",
-  order: 1
-};
 
 export const DEFAULT_EXERCISE_FILTERS: ExerciseFilters = {
   search: "",
@@ -207,6 +200,27 @@ export const API_ENDPOINTS = {
   workout: (id: string) => `/api/workouts/${id}`,
   workoutClone: (id: string) => `/api/workouts/${id}/clone`
 } as const;
+
+export const DEFAULT_SET_CONFIG: SetConfig = {
+  set_number: 1,
+  target_reps: 12,
+  suggested_weight: 0,
+  notes: ""
+};
+
+export const DEFAULT_EXERCISE_PARAMS: Omit<SelectedExercise, keyof Exercise> = {
+  sets: 3,
+  reps: 12,
+  rest: 60,
+  sets_config: [
+    { set_number: 1, target_reps: 12, suggested_weight: 0, notes: "" },
+    { set_number: 2, target_reps: 12, suggested_weight: 0, notes: "" },
+    { set_number: 3, target_reps: 12, suggested_weight: 0, notes: "" }
+  ],
+  general_notes: "",
+  order: 1,
+  notes: ""
+};
 
 // Validation rules
 export const VALIDATION_RULES = {

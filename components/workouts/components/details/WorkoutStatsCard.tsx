@@ -12,12 +12,17 @@ import {
   Star,
   Crown,
   Award,
-  Zap
+  Zap,
+  Weight,
+  Repeat
 } from 'lucide-react';
 import { WorkoutStatsCardProps } from './types';
 
 export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) {
-  // Configuração das métricas principais
+  // Verificar se o treino tem configuração avançada
+  const hasAdvancedConfig = stats.hasAdvancedConfiguration || false;
+  
+  // Configuração das métricas principais (atualizada para nova estrutura)
   const metrics = [
     {
       value: stats.totalExercises,
@@ -36,18 +41,20 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
       icon: Hash,
       progress: Math.min((stats.totalSets / 50) * 100, 100),
       suffix: "",
-      description: "Séries totais",
+      description: hasAdvancedConfig ? "Séries individuais" : "Séries totais",
       idealRange: "15-30 séries"
     },
     {
-      value: stats.estimatedDuration,
-      label: "Duração",
+      value: stats.totalReps || stats.estimatedDuration,
+      label: stats.totalReps ? "Repetições" : "Duração",
       color: 'from-app-achievement-weight to-app-text-accent',
-      icon: Clock,
-      progress: Math.min((stats.estimatedDuration / 120) * 100, 100),
-      suffix: "min",
-      description: "Tempo estimado",
-      idealRange: "45-90 min"
+      icon: stats.totalReps ? Repeat : Clock,
+      progress: stats.totalReps 
+        ? Math.min((stats.totalReps / 300) * 100, 100)
+        : Math.min((stats.estimatedDuration / 120) * 100, 100),
+      suffix: stats.totalReps ? "" : "min",
+      description: stats.totalReps ? "Repetições totais" : "Tempo estimado",
+      idealRange: stats.totalReps ? "150-300 reps" : "45-90 min"
     },
     {
       value: stats.averageRest,
@@ -61,13 +68,17 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
     }
   ];
 
-  // Função para classificação do treino
-  const getWorkoutClassification = (totalExercises: number, totalSets: number) => {
+  // Função para classificação do treino (atualizada)
+  const getWorkoutClassification = (totalExercises: number, totalSets: number, hasAdvanced: boolean) => {
     let classification = '';
     let colorClass = '';
     let icon = Award;
 
-    if (totalExercises >= 10 && totalSets >= 30) {
+    if (hasAdvanced) {
+      classification = 'Personalizado';
+      colorClass = 'from-green-500 to-teal-600';
+      icon = Crown;
+    } else if (totalExercises >= 10 && totalSets >= 30) {
       classification = 'Intensivo';
       colorClass = 'from-red-500 to-red-600';
       icon = Crown;
@@ -88,7 +99,7 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
     return { classification, colorClass, icon };
   };
 
-  const classification = getWorkoutClassification(stats.totalExercises, stats.totalSets);
+  const classification = getWorkoutClassification(stats.totalExercises, stats.totalSets, hasAdvancedConfig);
 
   return (
     <div className="space-y-6">
@@ -126,7 +137,7 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
                         </span>
                       </div>
                       <p className="text-xs text-app-text-muted mt-1">
-                        Ideal: {metric.idealRange}
+                        {hasAdvancedConfig && metric.label === "Séries" ? "Config. avançada" : `Ideal: ${metric.idealRange}`}
                       </p>
                     </div>
 
@@ -154,6 +165,9 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
         })}
       </div>
 
+      {/* Advanced Configuration Badge */}
+      
+
       {/* Workout Classification */}
       <div className="relative">
         <div className="p-6 bg-gradient-to-r from-app-bg-secondary/30 via-app-achievement-workout/10 to-app-bg-secondary/30 rounded-2xl border border-app-border-muted shadow-app-medium">
@@ -171,7 +185,7 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
                 Análise do Treino
               </h3>
               <p className="text-app-text-secondary">
-                Classificação e distribuição
+                {hasAdvancedConfig ? 'Classificação e configuração personalizada' : 'Classificação e distribuição'}
               </p>
             </div>
           </div>
@@ -197,6 +211,7 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
                 <classification.icon className="h-3 w-3 mr-1" />
                 {classification.classification}
               </Badge>
+          
             </div>
 
             {/* Extended Stats */}
@@ -208,13 +223,25 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
                 </span>
                 <span className="text-sm font-bold text-app-heading">{stats.totalSets}</span>
               </div>
+              
+              {stats.totalReps && (
+                <div className="flex justify-between items-center p-3 bg-app-card rounded-xl">
+                  <span className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
+                    <Repeat className="h-4 w-4 text-app-achievement-workout" />
+                    Total de Repetições:
+                  </span>
+                  <span className="text-sm font-bold text-app-heading">{stats.totalReps}</span>
+                </div>
+              )}
+              
               <div className="flex justify-between items-center p-3 bg-app-card rounded-xl">
                 <span className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
                   <Clock className="h-4 w-4 text-app-achievement-workout" />
-                  Duração Total:
+                  Duração Estimada:
                 </span>
                 <span className="text-sm font-bold text-app-heading">{stats.estimatedDuration} min</span>
               </div>
+              
               <div className="flex justify-between items-center p-3 bg-app-card rounded-xl">
                 <span className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
                   <Timer className="h-4 w-4 text-app-achievement-workout" />
@@ -222,6 +249,7 @@ export function WorkoutStatsCard({ stats, level, goal }: WorkoutStatsCardProps) 
                 </span>
                 <span className="text-sm font-bold text-app-heading">{stats.averageRest}s</span>
               </div>
+              
               <div className="flex justify-between items-center p-3 bg-app-card rounded-xl">
                 <span className="text-sm font-semibold text-app-text-primary flex items-center gap-2">
                   <Target className="h-4 w-4 text-app-achievement-workout" />

@@ -53,30 +53,13 @@ export async function GET() {
 
     // 4. Buscar planos de treino do aluno
     console.log('🔍 Buscando planos de treino para o aluno:', profile.id);
-    console.log('🔍 Tenant ID:', profile.tenant_id);
     
-    // Vamos fazer uma busca mais específica
     const { data: workoutPlans, error: plansError } = await supabase
       .from('workout_plans')
       .select('*')
       .eq('student_id', profile.id)
-      .eq('tenant_id', profile.tenant_id);
-    
-    // Debug adicional - vamos buscar TODOS os planos do tenant para ver o que tem
-    const { data: allPlans, error: allPlansError } = await supabase
-      .from('workout_plans')
-      .select('id, name, student_id, tenant_id')
-      .eq('tenant_id', profile.tenant_id);
-    
-    console.log('🔍 TODOS os planos do tenant:', allPlans);
-    
-    // Buscar também o plano específico que sabemos que existe
-    const { data: specificPlan, error: specificError } = await supabase
-      .from('workout_plans')
-      .select('*')
-      .eq('id', '2ca3c153-92f0-450a-85f2-d59294accf4e');
-    
-    console.log('🔍 Plano específico encontrado:', specificPlan);
+      .eq('tenant_id', profile.tenant_id)
+      .order('created_at', { ascending: false });
 
     if (plansError) {
       console.log('❌ Erro ao buscar planos:', plansError);
@@ -87,7 +70,6 @@ export async function GET() {
     }
 
     console.log('📊 Planos encontrados:', workoutPlans?.length || 0);
-    console.log('📋 Detalhes dos planos:', workoutPlans);
 
     if (!workoutPlans || workoutPlans.length === 0) {
       console.log('⚠️ Nenhum plano encontrado, retornando array vazio');
@@ -113,7 +95,6 @@ export async function GET() {
     }
 
     console.log('📊 Workout items encontrados:', workoutItems?.length || 0);
-    console.log('📋 Detalhes dos workout items:', workoutItems);
 
     if (!workoutItems || workoutItems.length === 0) {
       console.log('⚠️ Nenhum workout item encontrado');
@@ -128,8 +109,8 @@ export async function GET() {
     }
 
     // 6. Buscar dados dos workouts
-    const workoutIds = workoutItems.map(item => item.workout_id);
-    console.log('🔍 Buscando workouts:', workoutIds);
+    const workoutIds = [...new Set(workoutItems.map(item => item.workout_id))];
+    console.log('🔍 Buscando workouts únicos:', workoutIds.length);
 
     const { data: workouts, error: workoutsError } = await supabase
       .from('workouts')
@@ -146,26 +127,30 @@ export async function GET() {
     }
 
     console.log('📊 Workouts encontrados:', workouts?.length || 0);
-    console.log('📋 Detalhes dos workouts:', workouts);
 
-    // 7. Buscar exercícios dos workouts
+    // 7. Buscar exercícios dos workouts COM A NOVA ESTRUTURA
     const { data: workoutExercises, error: exercisesError } = await supabase
       .from('workout_exercises')
       .select('*')
       .in('workout_id', workoutIds)
-      .eq('tenant_id', profile.tenant_id);
+      .eq('tenant_id', profile.tenant_id)
+      .order('order');
 
     if (exercisesError) {
       console.log('❌ Erro ao buscar workout exercises:', exercisesError);
-    } else {
-      console.log('📊 Workout exercises encontrados:', workoutExercises?.length || 0);
+      return NextResponse.json(
+        { error: exercisesError.message },
+        { status: 500 }
+      );
     }
+
+    console.log('📊 Workout exercises encontrados:', workoutExercises?.length || 0);
 
     // 8. Buscar dados dos exercícios
     let exercises = [];
     if (workoutExercises && workoutExercises.length > 0) {
-      const exerciseIds = workoutExercises.map(we => we.exercise_id);
-      console.log('🔍 Buscando exercises:', exerciseIds);
+      const exerciseIds = [...new Set(workoutExercises.map(we => we.exercise_id))];
+      console.log('🔍 Buscando exercises únicos:', exerciseIds.length);
 
       const { data: exercisesData, error: exercisesDataError } = await supabase
         .from('exercises')
@@ -181,7 +166,25 @@ export async function GET() {
       }
     }
 
-    // 9. Montar resposta estruturada
+    // 9. Buscar histórico de progresso do aluno (últimos 30 dias)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { data: exerciseProgress, error: progressError } = await supabase
+      .from('exercise_progress')
+      .select('*')
+      .eq('student_id', profile.id)
+      .eq('tenant_id', profile.tenant_id)
+      .gte('created_at', thirtyDaysAgo.toISOString())
+      .order('created_at', { ascending: false });
+
+    if (progressError) {
+      console.log('⚠️ Erro ao buscar progresso:', progressError);
+    } else {
+      console.log('📊 Registros de progresso encontrados:', exerciseProgress?.length || 0);
+    }
+
+    // 10. Montar resposta estruturada
     console.log('🔨 Montando resposta final...');
 
     const result = workoutPlans.map(plan => {
@@ -207,6 +210,12 @@ export async function GET() {
 
         const workoutExercisesWithData = workoutExercisesList.map(we => {
           const exercise = exercises.find(e => e.id === we.exercise_id);
+          
+          // Buscar último progresso deste exercício
+          const lastProgress = exerciseProgress
+            ?.filter(p => p.exercise_id === we.exercise_id && p.workout_id === workout.id)
+            ?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
           return {
             id: we.id,
             exerciseId: we.exercise_id,
@@ -221,12 +230,29 @@ export async function GET() {
             duration: we.duration,
             rest: we.rest,
             notes: we.notes,
+            general_notes: we.general_notes,
+            sets_config: we.sets_config || null,
             order: we.order,
             tips: exercise?.tips || [],
             commonErrors: exercise?.common_errors || [],
-            completed: false,
-            completedSets: 0,
-            weight: null
+            lastProgress: lastProgress ? {
+              weight: lastProgress.weight,
+              setWeights: lastProgress.set_weights,
+              notes: lastProgress.notes,
+              completedAt: lastProgress.created_at
+            } : null,
+            // Estrutura completa do exercício para o componente
+            exercise: {
+              id: exercise?.id,
+              name: exercise?.name,
+              description: exercise?.description,
+              video_url: exercise?.video_url,
+              audio_url: exercise?.audio_url,
+              muscle_group: exercise?.muscle_group || [],
+              equipment: exercise?.equipment || [],
+              tips: exercise?.tips || [],
+              common_errors: exercise?.common_errors || []
+            }
           };
         });
 
@@ -240,7 +266,14 @@ export async function GET() {
           planName: plan.name,
           dayOfWeek: item.day_of_week,
           exercises: workoutExercisesWithData.sort((a, b) => a.order - b.order),
-          duration: workoutExercisesList.length * 5
+          duration: workoutExercisesList.reduce((sum, ex) => {
+            // Calcular duração estimada baseada no número de séries e tempo de descanso
+            const setsTime = (ex.sets || 0) * 45; // 45 segundos por série em média
+            const restTime = (ex.sets - 1) * (ex.rest || 60); // Tempo de descanso entre séries
+            return sum + setsTime + restTime;
+          }, 0) / 60, // Converter para minutos
+          // Incluir também no formato antigo para compatibilidade
+          workout_exercises: workoutExercisesWithData.sort((a, b) => a.order - b.order)
         };
       }).filter(w => w !== null);
 
@@ -250,6 +283,7 @@ export async function GET() {
         description: plan.description,
         startDate: plan.start_date,
         endDate: plan.end_date,
+        status: plan.status || 'active',
         workouts: planWorkouts
       };
     });
@@ -258,11 +292,17 @@ export async function GET() {
     console.log('📊 Total de planos:', result.length);
     console.log('📊 Total de workouts:', result.reduce((sum, plan) => sum + plan.workouts.length, 0));
     
-    // Log da estrutura final
+    // Log resumido da estrutura final
     result.forEach((plan, index) => {
       console.log(`Plano ${index + 1}: ${plan.name} - ${plan.workouts.length} workouts`);
       plan.workouts.forEach((workout, wIndex) => {
         console.log(`  Workout ${wIndex + 1}: ${workout.name} - ${workout.exercises.length} exercícios`);
+        
+        // Contar exercícios com sets_config
+        const exercisesWithConfig = workout.exercises.filter(ex => ex.sets_config).length;
+        if (exercisesWithConfig > 0) {
+          console.log(`    - ${exercisesWithConfig} exercícios com configuração personalizada de séries`);
+        }
       });
     });
 

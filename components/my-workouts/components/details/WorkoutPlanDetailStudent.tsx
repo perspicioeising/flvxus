@@ -57,21 +57,27 @@ export function WorkoutPlanDetailStudent({ plan, onStartWorkout }: WorkoutPlanDe
 
   // Calcular estatísticas do plano
   const getStats = () => {
-    const startDate = new Date(plan.start_date);
-    const endDate = new Date(plan.end_date);
-    const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const startDateValue = plan.startDate || plan.start_date;
+    const endDateValue = plan.endDate || plan.end_date;
+    
+    const startDate = startDateValue ? new Date(startDateValue) : new Date();
+    const endDate = endDateValue ? new Date(endDateValue) : new Date();
+    
+    const duration = startDateValue && endDateValue ? 
+      Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
     const now = new Date();
     
     let status: 'active' | 'completed' | 'upcoming' = 'active';
-    if (endDate < now) {
+    if (endDateValue && endDate < now) {
       status = 'completed';
-    } else if (startDate > now) {
+    } else if (startDateValue && startDate > now) {
       status = 'upcoming';
     }
 
-    const workouts = plan.workout_plan_items || [];
-    const scheduledDays = [...new Set(workouts.map(w => w.day_of_week))];
-    const uniqueWorkoutIds = [...new Set(workouts.map(w => w.workout?.id || w.workout_id).filter(Boolean))];
+    // Usar plan.workouts em vez de plan.workout_plan_items
+    const workouts = plan.workouts || [];
+    const scheduledDays = [...new Set(workouts.map(w => w.dayOfWeek))];
+    const uniqueWorkoutIds = [...new Set(workouts.map(w => w.id).filter(Boolean))];
     
     return {
       totalWorkouts: workouts.length,
@@ -85,19 +91,19 @@ export function WorkoutPlanDetailStudent({ plan, onStartWorkout }: WorkoutPlanDe
 
   // Agrupar treinos por dia da semana
   const groupWorkoutsByDay = () => {
-    const workouts = plan.workout_plan_items || [];
-    return workouts.reduce((acc, item) => {
-      if (!item || typeof item.day_of_week !== 'number') {
+    const workouts = plan.workouts || [];
+    return workouts.reduce((acc, workout) => {
+      if (!workout || typeof workout.dayOfWeek !== 'number') {
         return acc;
       }
       
-      const day = item.day_of_week;
+      const day = workout.dayOfWeek;
       if (!acc[day]) {
         acc[day] = [];
       }
-      acc[day].push(item);
+      acc[day].push(workout);
       return acc;
-    }, {} as Record<number, typeof plan.workout_plan_items>);
+    }, {} as Record<number, any[]>);
   };
 
   const stats = getStats();
@@ -186,15 +192,15 @@ export function WorkoutPlanDetailStudent({ plan, onStartWorkout }: WorkoutPlanDe
                       const today = new Date().getDay();
                       const todayWorkouts = workoutsByDay[today];
                       
-                      if (todayWorkouts && todayWorkouts[0]?.workout?.id) {
-                        onStartWorkout(todayWorkouts[0].workout.id);
+                      if (todayWorkouts && todayWorkouts[0]?.id) {
+                        onStartWorkout(todayWorkouts[0].id);
                       } else {
                         // Encontrar próximo treino disponível
                         for (let i = 1; i <= 7; i++) {
                           const nextDay = (today + i) % 7;
                           const nextWorkouts = workoutsByDay[nextDay];
-                          if (nextWorkouts && nextWorkouts[0]?.workout?.id) {
-                            onStartWorkout(nextWorkouts[0].workout.id);
+                          if (nextWorkouts && nextWorkouts[0]?.id) {
+                            onStartWorkout(nextWorkouts[0].id);
                             return;
                           }
                         }
@@ -225,7 +231,13 @@ export function WorkoutPlanDetailStudent({ plan, onStartWorkout }: WorkoutPlanDe
                   <div className="flex flex-wrap items-center gap-3 mt-2 text-xs sm:text-sm text-app-text-secondary">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{format(new Date(plan.start_date), 'dd/MM/yyyy')} - {format(new Date(plan.end_date), 'dd/MM/yyyy')}</span>
+                      <span>
+                        {(() => {
+                          const startDateValue = plan.startDate || plan.start_date;
+                          const endDateValue = plan.endDate || plan.end_date;
+                          return `${startDateValue ? format(new Date(startDateValue), 'dd/MM/yyyy') : 'N/A'} - ${endDateValue ? format(new Date(endDateValue), 'dd/MM/yyyy') : 'N/A'}`;
+                        })()}
+                      </span>
                     </div>
                     
                     <div className="flex items-center gap-1">
@@ -336,14 +348,20 @@ export function WorkoutPlanDetailStudent({ plan, onStartWorkout }: WorkoutPlanDe
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                         <div className="flex justify-between">
                           <span className="text-app-text-secondary">Início:</span>
-                          <span className="font-semibold text-app-heading">
-                            {format(new Date(plan.start_date), 'dd/MM/yyyy')}
+                          <span className="font-semibold text-app-heading text-right">
+                            {(() => {
+                              const startDateValue = plan.startDate || plan.start_date;
+                              return startDateValue ? format(new Date(startDateValue), 'dd/MM/yyyy') : 'N/A';
+                            })()}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-app-text-secondary">Término:</span>
-                          <span className="font-semibold text-app-heading">
-                            {format(new Date(plan.end_date), 'dd/MM/yyyy')}
+                          <span className="font-semibold text-app-heading text-right">
+                            {(() => {
+                              const endDateValue = plan.endDate || plan.end_date;
+                              return endDateValue ? format(new Date(endDateValue), 'dd/MM/yyyy') : 'N/A';
+                            })()}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -443,13 +461,23 @@ export function WorkoutPlanDetailStudent({ plan, onStartWorkout }: WorkoutPlanDe
                           {/* Workouts List */}
                           <div className="p-4 space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {dayWorkouts.map((item, index) => {
-                                if (!item?.workout) return null;
+                              {dayWorkouts.map((workout, index) => {
+                                if (!workout) return null;
+                                
+                                // Adaptar o workout para o formato esperado pelo WorkoutDayCardStudent
+                                const adaptedWorkout = {
+                                  id: workout.id,
+                                  name: workout.name,
+                                  description: workout.description,
+                                  level: workout.level,
+                                  goal: workout.goal,
+                                  workout_exercises: (workout as any).exercises || (workout as any).workout_exercises || []
+                                };
                                 
                                 return (
                                   <WorkoutDayCardStudent
-                                    key={`${item.id}-${index}`}
-                                    workout={item.workout}
+                                    key={`${workout.id}-${index}`}
+                                    workout={adaptedWorkout}
                                     onStartWorkout={onStartWorkout}
                                     isToday={isToday}
                                   />

@@ -22,11 +22,11 @@ export function TodayWorkoutCard({ workout, onStartWorkout, className = '' }: To
   const levelConfig = WORKOUT_LEVELS[workout.level?.toLowerCase() as keyof typeof WORKOUT_LEVELS] || WORKOUT_LEVELS.intermediario;
   const goalConfig = WORKOUT_GOALS[workout.goal?.toLowerCase() as keyof typeof WORKOUT_GOALS];
   
-  const exerciseCount = workout.workout_exercises?.length || 0;
+  const exerciseCount = workout.exercises?.length || workout.workout_exercises?.length || 0;
   const estimatedDuration = exerciseCount * 3; // 3 min por exercício
 
   return (
-    <Card className={`border-0 card-app group hover:shadow-app-large transition-all duration-300 hover:scale-[1.02] ${className}`}>
+    <Card className={`border-0 card-app group hover:shadow-app-large transition-all duration-300 hover:scale-[1.02] border border-app-border-muted hover:border-app-achievement-workout/50 ${className}`}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
@@ -46,7 +46,7 @@ export function TodayWorkoutCard({ workout, onStartWorkout, className = '' }: To
           </div>
           
           <div className="flex-shrink-0 ml-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-app-achievement-workout to-orange-600 rounded-lg flex items-center justify-center shadow-app-medium">
+            <div className="w-10 h-10 bg-app-achievement-workout rounded-lg flex items-center justify-center shadow-app-medium">
               <Dumbbell className="h-5 w-5 text-white" />
             </div>
           </div>
@@ -68,12 +68,12 @@ export function TodayWorkoutCard({ workout, onStartWorkout, className = '' }: To
         {/* Stats */}
         <div className="flex items-center justify-between text-xs text-app-text-muted mb-4">
           <div className="flex items-center gap-1">
-            <Target className="h-3 w-3" />
+            <Target className="h-3 w-3 text-app-achievement-exercise" />
             <span>{exerciseCount} exercícios</span>
           </div>
           
           <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
+            <Clock className="h-3 w-3 text-app-achievement-workout" />
             <span>~{estimatedDuration} min</span>
           </div>
         </div>
@@ -81,7 +81,7 @@ export function TodayWorkoutCard({ workout, onStartWorkout, className = '' }: To
         {/* Action Button */}
         <Button
           onClick={() => onStartWorkout(workout.id, workout.planId)}
-          className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold rounded-xl shadow-app-medium hover:shadow-green-500/25 transition-all duration-300 group-hover:scale-105"
+          className="w-full bg-app-achievement-consecutive hover:bg-app-achievement-consecutive/90 text-white font-bold rounded-xl shadow-app-medium hover:shadow-app-large transition-all duration-300 group-hover:scale-105"
         >
           <PlayCircle className="h-4 w-4 mr-2" />
           Iniciar Agora

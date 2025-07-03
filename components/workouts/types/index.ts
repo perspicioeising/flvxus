@@ -13,6 +13,23 @@ export interface Exercise {
   audio_url?: string;
 }
 
+export interface SetConfig {
+  set_number: number;
+  target_reps: number;
+  suggested_weight?: number;
+  notes?: string;
+}
+
+// Interface atualizada para exercício selecionado
+export interface SelectedExercise extends Exercise {
+  sets: number; // Número total de séries
+  reps: number; // Repetições padrão (para referência/compatibilidade)
+  rest: number; // Tempo de descanso
+  sets_config: SetConfig[]; // Configuração detalhada de cada série
+  general_notes: string; // Observações gerais do exercício
+  order: number;
+}
+
 export interface SelectedExercise extends Exercise {
   sets: number;
   reps: number;
@@ -49,7 +66,9 @@ export interface WorkoutExercise {
   reps: number;
   duration?: number;
   rest: number;
-  notes?: string;
+  notes?: string; // Mantido para compatibilidade
+  general_notes?: string; // Novas observações gerais
+  sets_config?: SetConfig[]; // Nova configuração de séries
   order: number;
   exercise: Exercise;
 }
@@ -64,7 +83,8 @@ export interface CreateWorkoutRequest {
     sets: number;
     reps: number;
     rest: number;
-    notes?: string;
+    sets_config: SetConfig[]; // Nova configuração
+    general_notes?: string; // Novas observações
     order: number;
   }[];
 }
@@ -115,6 +135,27 @@ export interface Student {
   avatar_url?: string;
 }
 
+export interface ExerciseProgress {
+  id: string;
+  student_id: string;
+  workout_id: string;
+  exercise_id: string;
+  completed_sets: CompletedSet[];
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  tenant_id: string;
+}
+
+// Série completada pelo aluno
+export interface CompletedSet {
+  set_number: number;
+  actual_reps: number;
+  actual_weight?: number;
+  completed: boolean;
+  notes?: string;
+}
+
 // Component Props Interfaces
 export interface WorkoutFormHeaderProps {
   mode: 'create' | 'edit';
@@ -149,6 +190,9 @@ export interface StepExercisesProps {
   onExerciseSelect: (exercise: Exercise) => void;
   onExerciseRemove: (exerciseId: string) => void;
   onExerciseUpdate: (exerciseId: string, field: keyof SelectedExercise, value: any) => void;
+  onSetConfigUpdate: (exerciseId: string, setIndex: number, field: keyof SetConfig, value: any) => void;
+  onAddSet: (exerciseId: string) => void;
+  onRemoveSet: (exerciseId: string, setIndex: number) => void;
   onFiltersChange: (filters: Partial<ExerciseFilters>) => void;
   isLoading: boolean;
 }

@@ -23,16 +23,16 @@ export function UpcomingWorkoutCard({ workout, onStartWorkout, className = '' }:
   const levelConfig = WORKOUT_LEVELS[workout.level?.toLowerCase() as keyof typeof WORKOUT_LEVELS] || WORKOUT_LEVELS.intermediario;
   const dayInfo = DAYS_OF_WEEK.find(d => d.value === workout.dayOfWeek);
   
-  const exerciseCount = workout.workout_exercises?.length || 0;
+  const exerciseCount = workout.exercises?.length || workout.workout_exercises?.length || 0;
   const estimatedDuration = exerciseCount * 3;
 
   return (
-    <Card className={`border-0 card-app group hover:shadow-app-medium transition-all duration-300 ${className}`}>
+    <Card className={`border-0 card-app group hover:shadow-app-medium transition-all duration-300 border border-app-border-muted hover:border-app-achievement-exercise/50 ${className}`}>
       <CardContent className="p-3 sm:p-4">
         {/* Date Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-app-achievement-workout" />
+            <Calendar className="h-4 w-4 text-app-achievement-exercise" />
             <div className="text-xs">
               <p className="font-semibold text-app-heading">
                 {dayInfo?.short}
@@ -56,12 +56,12 @@ export function UpcomingWorkoutCard({ workout, onStartWorkout, className = '' }:
           
           <div className="flex items-center justify-between text-xs text-app-text-muted">
             <div className="flex items-center gap-1">
-              <Target className="h-3 w-3" />
+              <Target className="h-3 w-3 text-app-achievement-exercise" />
               <span>{exerciseCount} ex.</span>
             </div>
             
             <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
+              <Clock className="h-3 w-3 text-app-achievement-workout" />
               <span>~{estimatedDuration}min</span>
             </div>
           </div>
@@ -72,7 +72,7 @@ export function UpcomingWorkoutCard({ workout, onStartWorkout, className = '' }:
           onClick={() => onStartWorkout(workout.id, workout.planId)}
           variant="outline"
           size="sm"
-          className="w-full text-xs border-app-border-accent hover:bg-app-achievement-workout hover:text-white hover:border-app-achievement-workout transition-colors"
+          className="w-full text-xs border-app-border-accent hover:bg-app-achievement-exercise hover:text-white hover:border-app-achievement-exercise transition-all duration-200"
         >
           <PlayCircle className="h-3 w-3 mr-1" />
           Executar
