@@ -13,17 +13,22 @@ import {
   Pause,
   Dumbbell,
   Info,
-  Trophy
+  Trophy,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  Save,
+  ArrowRight
 } from 'lucide-react';
 import { WorkoutTimer } from './WorkoutTimer';
 import { ExerciseCard } from './ExerciseCard';
 import { SetTracker } from './SetTracker';
 import { WorkoutSummary } from './WorkoutSummary';
 import { ExerciseDetailsModal } from './ExerciseDetailsModal';
-import { ExerciseNotesModal } from './ExerciseNotesModal';
 import { ConfirmationDialog } from './ConfirmationDialog';
-import { useWorkoutSession } from '../../hooks/useWorkoutSession';
+import { ExerciseSelector } from './ExerciseSelector';
 import { LoadingScreen } from '../LoadingScreen';
+import { useWorkoutSession } from '../../hooks/useWorkoutSession';
 
 interface WorkoutExecutionInterfaceProps {
   planId: string;
@@ -35,12 +40,15 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
   const { toast } = useToast();
   
   const [workout, setWorkout] = useState<any>(null);
+  const [workoutPlans, setWorkoutPlans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
+  const [completedExerciseId, setCompletedExerciseId] = useState<string | null>(null);
   
   const {
     session,
@@ -58,14 +66,25 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
     const fetchWorkout = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/workouts/${workoutId}`);
         
+        // Buscar detalhes do treino
+        const response = await fetch(`/api/workouts/${workoutId}`);
         if (!response.ok) {
           throw new Error('Treino não encontrado');
         }
-        
         const data = await response.json();
         setWorkout(data);
+        
+        // Buscar todos os planos do usuário para mostrar contexto completo
+        try {
+          const plansResponse = await fetch('/api/my-workouts');
+          if (plansResponse.ok) {
+            const plansData = await plansResponse.json();
+            setWorkoutPlans(plansData || []);
+          }
+        } catch (plansError) {
+          console.log('Erro ao buscar planos (não crítico):', plansError);
+        }
         
         if (!session) {
           startSession(data);
@@ -100,31 +119,70 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
     return completedSets >= currentExercise.sets;
   }, [session?.exercises, currentExercise]);
 
-  const handleExerciseComplete = useCallback(() => {
-    // Mostrar modal de anotações quando exercício é concluído
+  const handleExerciseComplete = useCallback((exerciseId: string) => {
+    // Definir qual exercício foi completado e mostrar modal específico
+    setCompletedExerciseId(exerciseId);
     setShowNotesModal(true);
   }, []);
 
   const handleNotesSubmit = useCallback(async (notes: string, difficulty: number) => {
-    if (!currentExercise) return;
+    if (!completedExerciseId) return;
     
     try {
-      await updateExerciseProgress(currentExercise.exercise.id, { 
+      await updateExerciseProgress(completedExerciseId, { 
         notes,
         difficulty_rating: difficulty 
       });
       
-      // Avançar para próximo exercício ou finalizar
-      if (currentExerciseIndex < totalExercises - 1) {
-        setCurrentExerciseIndex(prev => prev + 1);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Limpar o exercício completado
+      setCompletedExerciseId(null);
+      setShowNotesModal(false);
+      
+      // Verificar se foi o último exercício
+      const isLastExercise = currentExerciseIndex === totalExercises - 1;
+      
+      if (isLastExercise) {
+        // Se foi o último exercício, mostrar opção de finalizar automaticamente
+        toast({
+          title: "Parabéns! 🎉",
+          description: "Você completou todos os exercícios! Finalizando treino...",
+          duration: 2000,
+        });
+        
+        // Aguardar um pouco para o usuário ver a mensagem, depois ir para o resumo
+        setTimeout(() => {
+          setShowSummary(true);
+        }, 2000);
       } else {
-        setShowSummary(true);
+        // Avançar para próximo exercício automaticamente
+        const nextExerciseIndex = currentExerciseIndex + 1;
+        setCurrentExerciseIndex(nextExerciseIndex);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast({
+          title: "Exercício concluído! 💪",
+          description: `Avançando para: ${workout?.workout_exercises?.[nextExerciseIndex]?.exercise?.name}`,
+        });
       }
+      
     } catch (error) {
       console.error('Erro ao salvar anotações:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar suas observações.",
+      });
     }
-  }, [currentExercise, currentExerciseIndex, totalExercises, updateExerciseProgress]);
+  }, [completedExerciseId, updateExerciseProgress, toast, currentExerciseIndex, totalExercises, workout, setShowSummary]);
+
+  const handleNotesModalClose = () => {
+    // Permitir fechar o modal sem bloquear o fluxo
+    if (completedExerciseId) {
+      // Se tem um exercício completado, salvar sem observações
+      handleNotesSubmit('', 0);
+    } else {
+      setShowNotesModal(false);
+    }
+  };
 
   const handleSetComplete = useCallback(async (setIndex: number, weight: number, reps: number) => {
     if (!session || !currentExercise) return;
@@ -147,12 +205,17 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
 
       // Verificar se exercício foi concluído
       if (setIndex + 1 >= currentExercise.sets) {
-        handleExerciseComplete();
+        handleExerciseComplete(currentExercise.exercise.id);
       }
     } catch (error) {
       console.error('Erro ao completar série:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar série",
+        description: "Não foi possível salvar o progresso da série.",
+      });
     }
-  }, [session, currentExercise, updateExerciseProgress, handleExerciseComplete]);
+  }, [session, currentExercise, updateExerciseProgress, handleExerciseComplete, toast]);
 
   const handleFinishWorkout = async (finalNotes?: string) => {
     try {
@@ -173,6 +236,21 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
     }
   };
 
+  const handleExerciseSelect = (exerciseIndex: number) => {
+    setCurrentExerciseIndex(exerciseIndex);
+    setShowExerciseSelector(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateExercise = (direction: 'prev' | 'next') => {
+    if (direction === 'prev' && currentExerciseIndex > 0) {
+      setCurrentExerciseIndex(prev => prev - 1);
+    } else if (direction === 'next' && currentExerciseIndex < totalExercises - 1) {
+      setCurrentExerciseIndex(prev => prev + 1);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleExit = () => {
     setShowExitDialog(true);
   };
@@ -181,10 +259,32 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
     router.push(`/dashboard/my-workouts/${planId}`);
   };
 
+  const areAllExercisesCompleted = useCallback(() => {
+    if (!session?.exercises || !workout?.workout_exercises) return false;
+    
+    return workout.workout_exercises.every((we: any) => {
+      const progress = session.exercises.find((e: any) => e.exercise_id === we.exercise.id);
+      return progress && (progress.sets_completed || 0) >= we.sets;
+    });
+  }, [session?.exercises, workout?.workout_exercises]);
+
   const shouldShowFinishButton = () => {
     if (!session?.exercises) return false;
+    
+    // Mostrar se todos os exercícios estão completos OU se pelo menos metade foi iniciada
+    const allCompleted = areAllExercisesCompleted();
+    if (allCompleted) return true;
+    
     const startedExercises = session.exercises.filter((e: any) => (e.sets_completed || 0) > 0).length;
     return startedExercises >= Math.ceil(totalExercises / 2);
+  };
+
+  const getCompletedExercisesCount = () => {
+    if (!session?.exercises || !workout?.workout_exercises) return 0;
+    return workout.workout_exercises.filter((we: any) => {
+      const progress = session.exercises.find((e: any) => e.exercise_id === we.exercise.id);
+      return progress && (progress.sets_completed || 0) >= we.sets;
+    }).length;
   };
 
   if (isLoading || !workout) {
@@ -203,11 +303,13 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
     );
   }
 
+  const completedCount = getCompletedExercisesCount();
+
   return (
     <div className="min-h-screen bg-app-gradient">
       <div className="container mx-auto px-3 py-4 max-w-lg">
         
-                  {/* Header Limpo e Compacto */}
+        {/* Header Melhorado */}
         <div className="sticky top-0 z-40 bg-app-overlay/95 backdrop-blur-xl rounded-2xl p-4 shadow-app-xl border border-app-border-accent/50 mb-4">
           
           {/* Top Bar */}
@@ -233,27 +335,93 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
                 variant="ghost"
                 onClick={() => setShowSummary(true)}
                 size="sm"
-                className="h-9 px-3 bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50 rounded-xl text-green-600"
+                className={`h-9 px-3 rounded-xl text-green-600 transition-all duration-300 ${
+                  areAllExercisesCompleted() 
+                    ? 'bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 dark:from-green-900/30 dark:to-emerald-900/30 dark:hover:from-green-900/50 dark:hover:to-emerald-900/50 animate-pulse' 
+                    : 'bg-green-100 hover:bg-green-200 dark:bg-green-900/30 dark:hover:bg-green-900/50'
+                }`}
               >
                 <Trophy className="h-4 w-4 mr-1" />
-                <span className="text-xs font-semibold">Finalizar</span>
+                <span className="text-xs font-semibold">
+                  {areAllExercisesCompleted() ? 'Finalizar!' : 'Finalizar'}
+                </span>
               </Button>
             )}
           </div>
 
           {/* Workout Info */}
-          <div className="text-center">
+          <div className="text-center mb-3">
             <h1 className="text-lg font-bold text-app-heading mb-1">
               {workout.name}
             </h1>
             <p className="text-sm text-app-text-secondary">
-              Exercício {currentExerciseIndex + 1} de {totalExercises}
+              {completedCount} de {totalExercises} exercícios concluídos
             </p>
+          </div>
+
+          {/* Exercise Navigation */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleNavigateExercise('prev')}
+              disabled={currentExerciseIndex === 0}
+              className="h-8 w-8 p-0 hover:bg-app-bg-secondary rounded-lg disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={() => setShowExerciseSelector(true)}
+              className="flex-1 mx-2 h-8 px-3 bg-app-bg-secondary hover:bg-app-border-accent/20 rounded-lg text-sm font-medium"
+            >
+              <List className="h-4 w-4 mr-2" />
+              Exercício {currentExerciseIndex + 1} de {totalExercises}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleNavigateExercise('next')}
+              disabled={currentExerciseIndex === totalExercises - 1}
+              className="h-8 w-8 p-0 hover:bg-app-bg-secondary rounded-lg disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
         {/* Conteúdo Principal */}
         <div className="space-y-4">
+          
+          {/* Mensagem de conclusão quando todos exercícios estão completos */}
+          {areAllExercisesCompleted() && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800 rounded-2xl p-4 text-center shadow-app-xl">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center animate-bounce">
+                  <Trophy className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-green-800 dark:text-green-200">
+                    Treino Completo! 🎉
+                  </h3>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Todos os exercícios foram concluídos
+                  </p>
+                </div>
+              </div>
+              
+              <Button
+                onClick={() => setShowSummary(true)}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold rounded-xl px-6 py-3 shadow-app-large hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                <Trophy className="h-5 w-5 mr-2" />
+                Ver Resumo e Finalizar
+              </Button>
+            </div>
+          )}
+          
           
           {/* Exercise Card com Botão de Detalhes */}
           {currentExercise && (
@@ -271,7 +439,7 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
               exercise={currentExercise}
               session={session}
               onSetComplete={handleSetComplete}
-              onExerciseComplete={handleExerciseComplete}
+              onExerciseComplete={() => handleExerciseComplete(currentExercise.exercise.id)}
             />
           )}
         </div>
@@ -287,11 +455,88 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
         exercise={currentExercise?.exercise}
       />
 
-      <ExerciseNotesModal
-        isOpen={showNotesModal}
-        onClose={() => setShowNotesModal(false)}
-        onSave={handleNotesSubmit}
-        exerciseName={currentExercise?.exercise?.name || ''}
+      {/* Usar o modal melhorado com import dinâmico */}
+      {showNotesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/90 to-slate-900/80 backdrop-blur-md"
+            onClick={handleNotesModalClose}
+          />
+          
+          <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/50 rounded-3xl w-full max-w-md shadow-app-xl">
+            
+            <div className="flex items-center justify-between p-6 pb-4">
+              <h3 className="text-xl font-bold text-app-heading">
+                {currentExerciseIndex === totalExercises - 1 ? 'Último Exercício Concluído! 🏆' : 'Exercício Concluído! 🎉'}
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNotesModalClose}
+                className="h-8 w-8 text-app-text-muted hover:text-app-text-primary hover:bg-app-bg-secondary rounded-xl transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="px-6 pb-6 space-y-6">
+              
+              <div className="text-center">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-app-large ${
+                  currentExerciseIndex === totalExercises - 1 
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                    : 'bg-app-achievement-consecutive'
+                }`}>
+                  <Trophy className="h-8 w-8 text-white" />
+                </div>
+                <h4 className="font-bold text-app-heading mb-2">
+                  {completedExerciseId 
+                    ? workout?.workout_exercises?.find((we: any) => we.exercise.id === completedExerciseId)?.exercise?.name || ''
+                    : ''
+                  }
+                </h4>
+                <p className="text-sm text-app-text-secondary">
+                  {currentExerciseIndex === totalExercises - 1 
+                    ? 'Parabéns! Você completou todos os exercícios!' 
+                    : 'Parabéns! Como foi este exercício?'
+                  }
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <Button
+                  onClick={() => handleNotesSubmit('', 0)}
+                  className={`w-full font-bold rounded-2xl py-4 text-lg shadow-app-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${
+                    currentExerciseIndex === totalExercises - 1
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white'
+                      : 'bg-app-achievement-workout hover:bg-app-achievement-workout/90 text-white'
+                  }`}
+                >
+                  <Save className="h-5 w-5 mr-3" />
+                  {currentExerciseIndex === totalExercises - 1 ? 'Finalizar Treino' : 'Continuar para Próximo'}
+                  <ArrowRight className="h-5 w-5 ml-3" />
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={handleNotesModalClose}
+                  className="w-full bg-app-card border-2 border-app-border-muted hover:bg-app-bg-secondary rounded-2xl font-semibold py-3 transition-all duration-300"
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ExerciseSelector
+        isOpen={showExerciseSelector}
+        onClose={() => setShowExerciseSelector(false)}
+        exercises={workout?.workout_exercises || []}
+        currentIndex={currentExerciseIndex}
+        session={session}
+        onSelect={handleExerciseSelect}
       />
 
       <ConfirmationDialog

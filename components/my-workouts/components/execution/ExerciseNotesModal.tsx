@@ -5,7 +5,9 @@ import {
   X,
   Save,
   Trophy,
-  Star
+  Star,
+  ArrowRight,
+  SkipForward
 } from 'lucide-react';
 import { DIFFICULTY_LEVELS } from '../../constants';
 
@@ -36,7 +38,7 @@ export function ExerciseNotesModal({ isOpen, onClose, onSave, exerciseName }: Ex
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/90 to-slate-900/80 backdrop-blur-md"
@@ -44,11 +46,11 @@ export function ExerciseNotesModal({ isOpen, onClose, onSave, exerciseName }: Ex
       />
       
       {/* Modal */}
-      <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/50 rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-app-xl max-h-screen overflow-hidden flex flex-col">
+      <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/50 rounded-3xl w-full max-w-md shadow-app-xl">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-app-border-muted flex-shrink-0">
-          <h3 className="text-lg font-bold text-app-heading">
+        <div className="flex items-center justify-between p-6 pb-4">
+          <h3 className="text-xl font-bold text-app-heading">
             Exercício Concluído! 🎉
           </h3>
           <Button
@@ -61,8 +63,8 @@ export function ExerciseNotesModal({ isOpen, onClose, onSave, exerciseName }: Ex
           </Button>
         </div>
 
-        {/* Content - Scrollable */}
-        <div className="p-4 space-y-6 flex-1 overflow-y-auto">
+        {/* Content */}
+        <div className="px-6 pb-6 space-y-6">
           
           {/* Celebration */}
           <div className="text-center">
@@ -116,7 +118,7 @@ export function ExerciseNotesModal({ isOpen, onClose, onSave, exerciseName }: Ex
               placeholder="Como foi este exercício? Dificuldades, melhorias, sensações..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[80px] bg-app-card border-app-border-muted focus:border-app-achievement-workout rounded-xl text-sm resize-none"
+              className="min-h-[60px] max-h-[80px] bg-app-card border-app-border-muted focus:border-app-achievement-workout rounded-xl text-sm resize-none"
             />
           </div>
 
@@ -134,24 +136,24 @@ export function ExerciseNotesModal({ isOpen, onClose, onSave, exerciseName }: Ex
               +5 XP por completar o exercício
             </p>
           </div>
-        </div>
 
-        {/* Action Buttons - Fixed at bottom */}
-        <div className="flex-shrink-0 p-4 border-t border-app-border-muted bg-app-bg-secondary/50">
-          <div className="flex flex-col gap-3 w-full">
+          {/* Action Buttons - Mais destacados */}
+          <div className="space-y-3 pt-2">
             <Button
               onClick={handleSave}
-              className="w-full bg-app-achievement-workout hover:bg-app-achievement-workout/90 text-white font-bold rounded-xl py-3 shadow-app-large"
+              className="w-full bg-app-achievement-workout hover:bg-app-achievement-workout/90 text-white font-bold rounded-2xl py-4 text-lg shadow-app-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
             >
-              <Save className="h-4 w-4 mr-2" />
-              Salvar e Continuar
+              <Save className="h-5 w-5 mr-3" />
+              Salvar e Próximo Exercício
+              <ArrowRight className="h-5 w-5 ml-3" />
             </Button>
             
             <Button
               variant="outline"
               onClick={handleSkip}
-              className="w-full bg-app-card border-app-border-muted hover:bg-app-bg-secondary rounded-xl font-medium py-3"
+              className="w-full bg-app-card border-2 border-app-border-muted hover:bg-app-bg-secondary rounded-2xl font-semibold py-3 transition-all duration-300"
             >
+              <SkipForward className="h-4 w-4 mr-2" />
               Pular e Continuar
             </Button>
           </div>

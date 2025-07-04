@@ -58,16 +58,11 @@ export function WorkoutDayCardStudent({ workout, onStartWorkout, isToday = false
   const GoalIcon = getGoalIcon(workout.goal);
 
   return (
-    <div className={`group relative bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border transition-all duration-300 overflow-hidden hover:shadow-lg hover:scale-[1.02] ${
+    <div className={`group relative bg-app-card backdrop-blur-sm rounded-xl border transition-all duration-300 overflow-hidden hover:shadow-app-medium hover:scale-[1.02] ${
       isToday 
-        ? 'border-app-achievement-workout/50 ring-2 ring-app-achievement-workout ring-opacity-30' 
-        : 'border-gray-200/30 dark:border-gray-700/30'
+        ? 'border-app-achievement-workout/50 ring-2 ring-app-achievement-workout/30 bg-gradient-to-br from-app-achievement-workout/5 to-orange-500/5 dark:from-app-achievement-workout/10 dark:to-orange-500/10' 
+        : 'border-app-border-muted hover:border-app-achievement-workout/40'
     }`}>
-      
-      {/* Glow effect para hoje */}
-      {isToday && (
-        <div className="absolute inset-0 bg-gradient-to-br from-app-achievement-workout/10 to-orange-500/10 opacity-100"></div>
-      )}
       
       <div className="relative p-4">
         {/* Header */}
@@ -94,13 +89,16 @@ export function WorkoutDayCardStudent({ workout, onStartWorkout, isToday = false
           </div>
           
           {/* Goal Icon */}
-          <div className={`ml-3 p-2 rounded-lg bg-gradient-to-br ${
-            workout.goal?.toLowerCase().includes('hipertrofia') ? 'from-orange-100 to-orange-200 dark:from-orange-900/20 dark:to-orange-800/20' :
-            workout.goal?.toLowerCase().includes('emagrecimento') ? 'from-red-100 to-red-200 dark:from-red-900/20 dark:to-red-800/20' :
-            workout.goal?.toLowerCase().includes('força') ? 'from-purple-100 to-purple-200 dark:from-purple-900/20 dark:to-purple-800/20' :
-            'from-gray-100 to-gray-200 dark:from-gray-900/20 dark:to-gray-800/20'
+          <div className={`ml-3 p-2 rounded-lg border transition-all duration-200 ${
+            isToday 
+              ? 'bg-app-achievement-workout border-app-achievement-workout/20' 
+              : 'bg-app-bg-secondary border-app-border-muted hover:border-app-achievement-workout/30'
           }`}>
-            <GoalIcon className={`w-5 h-5 ${goalConfig?.color || 'text-gray-600'}`} />
+            <GoalIcon className={`w-5 h-5 ${
+              isToday 
+                ? 'text-white' 
+                : goalConfig?.color || 'text-app-achievement-workout'
+            }`} />
           </div>
         </div>
 
@@ -111,7 +109,7 @@ export function WorkoutDayCardStudent({ workout, onStartWorkout, isToday = false
           </Badge>
           
           {workout.goal && goalConfig && (
-            <Badge className={`px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 ${goalConfig.color}`}>
+            <Badge className={`px-2.5 py-1 rounded-full text-xs font-medium ${goalConfig.color}`}>
               {goalConfig.label}
             </Badge>
           )}
@@ -134,10 +132,10 @@ export function WorkoutDayCardStudent({ workout, onStartWorkout, isToday = false
         {/* Action Button */}
         <Button
           onClick={() => onStartWorkout(workout.id)}
-          className={`w-full font-bold rounded-xl shadow-md transition-all duration-300 group-hover:scale-105 ${
+          className={`w-full font-bold rounded-xl shadow-app-medium transition-all duration-300 group-hover:scale-105 ${
             isToday 
-              ? 'bg-gradient-to-r from-app-achievement-workout to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white hover:shadow-orange-500/25' 
-              : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:shadow-green-500/25'
+              ? 'bg-gradient-to-r from-app-achievement-workout to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white hover:shadow-app-large' 
+              : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:shadow-app-large'
           }`}
         >
           <Play className="w-4 h-4 mr-2" />
