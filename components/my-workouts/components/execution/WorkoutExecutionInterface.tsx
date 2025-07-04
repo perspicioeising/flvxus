@@ -18,7 +18,8 @@ import {
   ChevronRight,
   List,
   Save,
-  ArrowRight
+  ArrowRight,
+  Star
 } from 'lucide-react';
 import { WorkoutTimer } from './WorkoutTimer';
 import { ExerciseCard } from './ExerciseCard';
@@ -40,7 +41,6 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
   const { toast } = useToast();
   
   const [workout, setWorkout] = useState<any>(null);
-  const [workoutPlans, setWorkoutPlans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
@@ -49,6 +49,8 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [completedExerciseId, setCompletedExerciseId] = useState<string | null>(null);
+  const [notes, setNotes] = useState('');
+  const [difficultyRating, setDifficultyRating] = useState(0);
   
   const {
     session,
@@ -74,17 +76,6 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
         }
         const data = await response.json();
         setWorkout(data);
-        
-        // Buscar todos os planos do usuário para mostrar contexto completo
-        try {
-          const plansResponse = await fetch('/api/my-workouts');
-          if (plansResponse.ok) {
-            const plansData = await plansResponse.json();
-            setWorkoutPlans(plansData || []);
-          }
-        } catch (plansError) {
-          console.log('Erro ao buscar planos (não crítico):', plansError);
-        }
         
         if (!session) {
           startSession(data);
@@ -125,18 +116,20 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
     setShowNotesModal(true);
   }, []);
 
-  const handleNotesSubmit = useCallback(async (notes: string, difficulty: number) => {
+  const handleNotesSubmit = useCallback(async (notesValue: string, difficultyValue: number) => {
     if (!completedExerciseId) return;
     
     try {
       await updateExerciseProgress(completedExerciseId, { 
-        notes,
-        difficulty_rating: difficulty 
+        notes: notesValue,
+        difficulty_rating: difficultyValue 
       });
       
-      // Limpar o exercício completado
+      // Limpar o exercício completado e resetar form
       setCompletedExerciseId(null);
       setShowNotesModal(false);
+      setNotes('');
+      setDifficultyRating(0);
       
       // Verificar se foi o último exercício
       const isLastExercise = currentExerciseIndex === totalExercises - 1;
@@ -180,7 +173,10 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
       // Se tem um exercício completado, salvar sem observações
       handleNotesSubmit('', 0);
     } else {
+      // Limpar estados e fechar
       setShowNotesModal(false);
+      setNotes('');
+      setDifficultyRating(0);
     }
   };
 
@@ -422,7 +418,6 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
             </div>
           )}
           
-          
           {/* Exercise Card com Botão de Detalhes */}
           {currentExercise && (
             <ExerciseCard
@@ -455,7 +450,7 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
         exercise={currentExercise?.exercise}
       />
 
-      {/* Usar o modal melhorado com import dinâmico */}
+      {/* Usar o modal melhorado com todos os campos */}
       {showNotesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div 
@@ -463,9 +458,10 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
             onClick={handleNotesModalClose}
           />
           
-          <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/50 rounded-3xl w-full max-w-md shadow-app-xl">
+          <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/50 rounded-3xl w-full max-w-md shadow-app-xl max-h-[90vh] overflow-hidden flex flex-col">
             
-            <div className="flex items-center justify-between p-6 pb-4">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 pb-4 flex-shrink-0">
               <h3 className="text-xl font-bold text-app-heading">
                 {currentExerciseIndex === totalExercises - 1 ? 'Último Exercício Concluído! 🏆' : 'Exercício Concluído! 🎉'}
               </h3>
@@ -479,8 +475,10 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
               </Button>
             </div>
 
-            <div className="px-6 pb-6 space-y-6">
+            {/* Content - Scrollable */}
+            <div className="px-6 pb-6 space-y-6 flex-1 overflow-y-auto">
               
+              {/* Celebration */}
               <div className="text-center">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-app-large ${
                   currentExerciseIndex === totalExercises - 1 
@@ -503,9 +501,88 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
                 </p>
               </div>
 
-              <div className="space-y-3 pt-2">
+              {/* Difficulty Rating */}
+              <div>
+                <label className="text-sm font-semibold text-app-heading mb-3 block text-center">
+                  Como foi a dificuldade?
+                </label>
+                <div className="flex gap-2 justify-center">
+                  {[1, 2, 3, 4, 5].map((level) => {
+                    const difficultyInfo = {
+                      1: { emoji: '😴', label: 'Muito Fácil' },
+                      2: { emoji: '😊', label: 'Fácil' },
+                      3: { emoji: '😐', label: 'Moderado' },
+                      4: { emoji: '😅', label: 'Difícil' },
+                      5: { emoji: '🥵', label: 'Muito Difícil' }
+                    }[level] || { emoji: '😐', label: 'Moderado' };
+
+                    return (
+                      <button
+                        key={level}
+                        onClick={() => setDifficultyRating(level)}
+                        className={`w-14 h-14 rounded-xl border-2 transition-all duration-200 ${
+                          difficultyRating === level 
+                            ? 'bg-app-achievement-workout text-white border-app-achievement-workout scale-110' 
+                            : 'border-app-border-muted hover:bg-app-bg-secondary hover:scale-105'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="text-lg">{difficultyInfo.emoji}</div>
+                          <div className="text-xs font-bold">{level}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {difficultyRating > 0 && (
+                  <p className="text-center text-xs text-app-text-secondary mt-2">
+                    {
+                      {
+                        1: 'Muito Fácil',
+                        2: 'Fácil', 
+                        3: 'Moderado',
+                        4: 'Difícil',
+                        5: 'Muito Difícil'
+                      }[difficultyRating]
+                    }
+                  </p>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-sm font-semibold text-app-heading mb-2 block">
+                  Observações pessoais (opcional):
+                </label>
+                <textarea
+                  placeholder="Como foi este exercício? Dificuldades, melhorias, sensações..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full min-h-[80px] max-h-[120px] p-3 bg-app-card border border-app-border-muted focus:border-app-achievement-workout rounded-xl text-sm resize-none outline-none transition-colors"
+                />
+              </div>
+
+              {/* Achievement Stars */}
+              <div className="text-center">
+                <div className="flex justify-center gap-1 mb-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star 
+                      key={star} 
+                      className="h-5 w-5 text-yellow-400 fill-yellow-400" 
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-app-text-secondary">
+                  +5 XP por completar o exercício
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons - Fixed at bottom */}
+            <div className="flex-shrink-0 p-6 pt-4 border-t border-app-border-muted bg-app-bg-secondary/50">
+              <div className="space-y-3">
                 <Button
-                  onClick={() => handleNotesSubmit('', 0)}
+                  onClick={() => handleNotesSubmit(notes, difficultyRating)}
                   className={`w-full font-bold rounded-2xl py-4 text-lg shadow-app-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${
                     currentExerciseIndex === totalExercises - 1
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white'
@@ -513,16 +590,16 @@ export function WorkoutExecutionInterface({ planId, workoutId }: WorkoutExecutio
                   }`}
                 >
                   <Save className="h-5 w-5 mr-3" />
-                  {currentExerciseIndex === totalExercises - 1 ? 'Finalizar Treino' : 'Continuar para Próximo'}
+                  {currentExerciseIndex === totalExercises - 1 ? 'Finalizar Treino' : 'Salvar e Continuar'}
                   <ArrowRight className="h-5 w-5 ml-3" />
                 </Button>
                 
                 <Button
                   variant="outline"
-                  onClick={handleNotesModalClose}
+                  onClick={() => handleNotesSubmit('', 0)}
                   className="w-full bg-app-card border-2 border-app-border-muted hover:bg-app-bg-secondary rounded-2xl font-semibold py-3 transition-all duration-300"
                 >
-                  Fechar
+                  Pular e Continuar
                 </Button>
               </div>
             </div>
