@@ -14,7 +14,6 @@ import {
   Trophy,
   ArrowRight,
   TrendingUp,
-  Clock,
   Timer
 } from 'lucide-react';
 
@@ -38,14 +37,17 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
   const [restTimer, setRestTimer] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [restInterval, setRestInterval] = useState<NodeJS.Timeout | null>(null);
+  
+  // Transição suave - estado local para evitar loading
+  const [localProgress, setLocalProgress] = useState<any>(null);
 
-  const exerciseProgress = session?.exercises?.find((e: any) => e.exercise_id === exercise.exercise.id);
+  const exerciseProgress = session?.exercises?.find((e: any) => e.exercise_id === exercise.exercise.id) || localProgress;
   const totalSets = exercise.sets;
   const restTime = exercise.rest;
   
-  // Calcular série atual corretamente
+  // Calcular série atual
   const completedSets = exerciseProgress?.weights?.filter((w: any) => w !== undefined && w !== null).length || 0;
-  const nextSetIndex = completedSets; // Próxima série a ser completada (0-based)
+  const nextSetIndex = completedSets;
   const isExerciseComplete = completedSets >= totalSets;
 
   // Configuração das séries
@@ -79,47 +81,65 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
     }
   }, [nextSetIndex, currentSetConfig, exerciseProgress, currentWeight, currentReps, isExerciseComplete, isResting]);
 
+  // Timer de descanso
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isResting && restTimer > 0) {
+      interval = setInterval(() => {
+        setRestTimer(prev => {
+          if (prev <= 1) {
+            setIsResting(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      setRestInterval(interval);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isResting, restTimer]);
+
   const handleSetComplete = () => {
     const weight = parseFloat(currentWeight) || 0;
     const reps = parseInt(currentReps) || 0;
     
-    // Completar a série atual
+    // Atualização local IMEDIATA para transição suave
+    const newWeights = [...(exerciseProgress?.weights || [])];
+    const newReps = [...(exerciseProgress?.reps || [])];
+    
+    newWeights[nextSetIndex] = weight;
+    newReps[nextSetIndex] = reps;
+    
+    // Estado local atualizado imediatamente
+    setLocalProgress({
+      ...exerciseProgress,
+      weights: newWeights,
+      reps: newReps,
+      sets_completed: nextSetIndex + 1
+    });
+    
+    // Chamar callback (que pode ser assíncrono)
     onSetComplete(nextSetIndex, weight, reps);
     
     // Verificar se é a última série
     if (nextSetIndex + 1 >= totalSets) {
-      // Exercício completo
+      // Exercício completo - chamar callback após pequeno delay para animação
       setTimeout(() => {
         onExerciseComplete();
-      }, 800);
+      }, 500);
     } else {
       // Iniciar descanso
-      startRestTimer();
+      if (restTime > 0) {
+        setRestTimer(restTime);
+        setIsResting(true);
+      }
     }
     
     // Limpar inputs
     setCurrentWeight('');
     setCurrentReps('');
-  };
-
-  const startRestTimer = () => {
-    if (restTime <= 0) return;
-    
-    setRestTimer(restTime);
-    setIsResting(true);
-    
-    const interval = setInterval(() => {
-      setRestTimer(prev => {
-        if (prev <= 1) {
-          setIsResting(false);
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    setRestInterval(interval);
   };
 
   const skipRest = () => {
@@ -320,7 +340,7 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
           
           <div className="space-y-2">
             {setsConfig.map((setConfig, index) => {
-              const completed = exerciseProgress?.weights?.[index] !== undefined;
+              const completed = (exerciseProgress?.weights?.[index] !== undefined);
               const isCurrent = index === nextSetIndex && !completed;
               const weight = exerciseProgress?.weights?.[index];
               const reps = exerciseProgress?.reps?.[index];
@@ -328,7 +348,7 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
               return (
                 <div
                   key={index}
-                  className={`p-3 rounded-xl border transition-all duration-200 ${
+                  className={`p-3 rounded-xl border transition-all duration-300 ${
                     completed 
                       ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950/20' 
                       : isCurrent 
