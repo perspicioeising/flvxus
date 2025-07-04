@@ -14,7 +14,10 @@ import {
   Trophy,
   ArrowRight,
   TrendingUp,
-  Timer
+  Timer,
+  Edit2,
+  Save,
+  X
 } from 'lucide-react';
 
 interface SetConfig {
@@ -37,6 +40,10 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
   const [restTimer, setRestTimer] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [restInterval, setRestInterval] = useState<NodeJS.Timeout | null>(null);
+  const [editingSet, setEditingSet] = useState<number | null>(null);
+  const [editWeight, setEditWeight] = useState('');
+  const [editReps, setEditReps] = useState('');
+  const [pendingSaves, setPendingSaves] = useState<{[key: number]: {weight: number, reps: number}}>({});
   
   // Transição suave - estado local para evitar loading
   const [localProgress, setLocalProgress] = useState<any>(null);
@@ -45,8 +52,8 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
   const totalSets = exercise.sets;
   const restTime = exercise.rest;
   
-  // Calcular série atual
-  const completedSets = exerciseProgress?.weights?.filter((w: any) => w !== undefined && w !== null).length || 0;
+  // Calcular série atual - considerar o progresso local também
+  const completedSets = localProgress?.sets_completed || exerciseProgress?.weights?.filter((w: any) => w !== undefined && w !== null).length || 0;
   const nextSetIndex = completedSets;
   const isExerciseComplete = completedSets >= totalSets;
 
@@ -63,12 +70,14 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
     target_reps: exercise.reps
   };
 
-  // Auto-preencher valores
+  // Auto-preencher valores - melhorar lógica
   useEffect(() => {
     if (isExerciseComplete || isResting) return;
 
+    // Usar progresso local se disponível, senão usar o do exerciseProgress
+    const currentProgress = localProgress || exerciseProgress;
     const suggestedWeight = currentSetConfig.suggested_weight;
-    const lastWeight = nextSetIndex > 0 ? exerciseProgress?.weights?.[nextSetIndex - 1] : null;
+    const lastWeight = nextSetIndex > 0 ? currentProgress?.weights?.[nextSetIndex - 1] : null;
     
     if (suggestedWeight && !currentWeight) {
       setCurrentWeight(suggestedWeight.toString());
@@ -79,7 +88,7 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
     if (!currentReps) {
       setCurrentReps(currentSetConfig.target_reps.toString());
     }
-  }, [nextSetIndex, currentSetConfig, exerciseProgress, currentWeight, currentReps, isExerciseComplete, isResting]);
+  }, [nextSetIndex, currentSetConfig, exerciseProgress, localProgress, currentWeight, currentReps, isExerciseComplete, isResting]);
 
   // Timer de descanso
   useEffect(() => {
@@ -88,7 +97,8 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
       interval = setInterval(() => {
         setRestTimer(prev => {
           if (prev <= 1) {
-            setIsResting(false);
+            // Tempo acabou - finalizar descanso automaticamente
+            finishRest();
             return 0;
           }
           return prev - 1;
@@ -105,12 +115,18 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
     const weight = parseFloat(currentWeight) || 0;
     const reps = parseInt(currentReps) || 0;
     
-    // Atualização local IMEDIATA para transição suave
+    // Armazenar dados localmente SEM chamar API ainda
     const newWeights = [...(exerciseProgress?.weights || [])];
     const newReps = [...(exerciseProgress?.reps || [])];
     
     newWeights[nextSetIndex] = weight;
     newReps[nextSetIndex] = reps;
+    
+    // Armazenar para salvar depois
+    setPendingSaves(prev => ({
+      ...prev,
+      [nextSetIndex]: { weight, reps }
+    }));
     
     // Estado local atualizado imediatamente
     setLocalProgress({
@@ -120,21 +136,30 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
       sets_completed: nextSetIndex + 1
     });
     
-    // Chamar callback (que pode ser assíncrono)
-    onSetComplete(nextSetIndex, weight, reps);
-    
     // Verificar se é a última série
     if (nextSetIndex + 1 >= totalSets) {
-      // Exercício completo - chamar callback após pequeno delay para animação
-      setTimeout(() => {
+      // Exercício completo - salvar TODOS os dados pendentes
+      setTimeout(async () => {
+        // Salvar todas as séries pendentes de uma vez
+        for (const [setIndex, data] of Object.entries(pendingSaves)) {
+          await onSetComplete(parseInt(setIndex), data.weight, data.reps);
+        }
+        // Salvar a série atual também
+        await onSetComplete(nextSetIndex, weight, reps);
+        
+        // Limpar pendências
+        setPendingSaves({});
+        
+        // Finalizar exercício
         onExerciseComplete();
-      }, 500);
+      }, 200);
     } else {
-      // Iniciar descanso
+      // NÃO é a última série - iniciar descanso
       if (restTime > 0) {
         setRestTimer(restTime);
         setIsResting(true);
       }
+      // Se não tem tempo de descanso, a próxima série já estará disponível
     }
     
     // Limpar inputs
@@ -142,7 +167,60 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
     setCurrentReps('');
   };
 
+  const handleEditSet = (setIndex: number) => {
+    const weight = exerciseProgress?.weights?.[setIndex];
+    const reps = exerciseProgress?.reps?.[setIndex];
+    
+    setEditingSet(setIndex);
+    setEditWeight(weight?.toString() || '');
+    setEditReps(reps?.toString() || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingSet === null) return;
+    
+    const weight = parseFloat(editWeight) || 0;
+    const reps = parseInt(editReps) || 0;
+    
+    // Atualizar localmente
+    const newWeights = [...(exerciseProgress?.weights || [])];
+    const newReps = [...(exerciseProgress?.reps || [])];
+    
+    newWeights[editingSet] = weight;
+    newReps[editingSet] = reps;
+    
+    setLocalProgress({
+      ...exerciseProgress,
+      weights: newWeights,
+      reps: newReps
+    });
+    
+    // Salvar imediatamente para edições (pois já foi completado antes)
+    await onSetComplete(editingSet, weight, reps);
+    
+    // Limpar edição
+    setEditingSet(null);
+    setEditWeight('');
+    setEditReps('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSet(null);
+    setEditWeight('');
+    setEditReps('');
+  };
+
   const skipRest = () => {
+    setIsResting(false);
+    setRestTimer(0);
+    if (restInterval) {
+      clearInterval(restInterval);
+      setRestInterval(null);
+    }
+  };
+
+  // Função para finalizar descanso (seja por tempo ou por pular)
+  const finishRest = () => {
     setIsResting(false);
     setRestTimer(0);
     if (restInterval) {
@@ -171,7 +249,7 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
             Exercício Concluído! 🎉
           </h3>
           <p className="text-app-text-secondary mb-4">
-            {totalSets} séries • {exerciseProgress?.weights?.reduce((sum: number, w: number) => sum + (w || 0), 0) || 0}kg total
+            {totalSets} séries • {(localProgress || exerciseProgress)?.weights?.reduce((sum: number, w: number) => sum + (w || 0), 0) || 0}kg total
           </p>
         </CardContent>
       </Card>
@@ -340,10 +418,13 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
           
           <div className="space-y-2">
             {setsConfig.map((setConfig, index) => {
-              const completed = (exerciseProgress?.weights?.[index] !== undefined);
-              const isCurrent = index === nextSetIndex && !completed;
-              const weight = exerciseProgress?.weights?.[index];
-              const reps = exerciseProgress?.reps?.[index];
+              // Usar progresso local se disponível
+              const currentProgress = localProgress || exerciseProgress;
+              const completed = (currentProgress?.weights?.[index] !== undefined);
+              const isCurrent = index === nextSetIndex && !completed && !isResting;
+              const weight = currentProgress?.weights?.[index];
+              const reps = currentProgress?.reps?.[index];
+              const isEditing = editingSet === index;
               
               return (
                 <div
@@ -356,37 +437,112 @@ export function SetTracker({ exercise, session, onSetComplete, onExerciseComplet
                         : 'border-app-border-muted bg-app-bg-secondary'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      ) : isCurrent ? (
-                        <div className="w-5 h-5 border-2 border-app-achievement-workout rounded-full animate-pulse">
-                          <div className="w-1 h-1 bg-app-achievement-workout rounded-full m-1"></div>
-                        </div>
-                      ) : (
-                        <Circle className="h-5 w-5 text-app-text-muted" />
-                      )}
-                      
-                      <span className="font-medium text-app-heading">
-                        Série {setConfig.set_number}
-                      </span>
-                      
-                      {isCurrent && (
-                        <Badge className="px-2 py-0.5 bg-app-achievement-workout text-white text-xs rounded-full">
-                          ATUAL
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {completed && (
-                      <div className="text-right">
-                        <span className="font-bold text-app-achievement-consecutive">
-                          {weight}kg × {reps}
+                  {isEditing ? (
+                    /* Modo de Edição */
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Edit2 className="h-4 w-4 text-app-achievement-workout" />
+                        <span className="font-medium text-app-heading text-sm">
+                          Editando Série {setConfig.set_number}
                         </span>
                       </div>
-                    )}
-                  </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-app-text-muted mb-1 block">Peso (kg)</label>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.5"
+                            value={editWeight}
+                            onChange={(e) => setEditWeight(e.target.value)}
+                            className="text-center font-bold bg-app-card border-app-border-muted focus:border-app-achievement-workout rounded-lg h-10"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-app-text-muted mb-1 block">Repetições</label>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            value={editReps}
+                            onChange={(e) => setEditReps(e.target.value)}
+                            className="text-center font-bold bg-app-card border-app-border-muted focus:border-app-achievement-workout rounded-lg h-10"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleSaveEdit}
+                          size="sm"
+                          className="flex-1 bg-app-achievement-workout hover:bg-app-achievement-workout/90 text-white font-semibold rounded-lg py-2"
+                        >
+                          <Save className="h-3 w-3 mr-1" />
+                          Salvar
+                        </Button>
+                        <Button
+                          onClick={handleCancelEdit}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 bg-app-card border-app-border-muted hover:bg-app-bg-secondary rounded-lg py-2"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Modo Normal */
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {completed ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        ) : isCurrent ? (
+                          <div className="w-5 h-5 border-2 border-app-achievement-workout rounded-full animate-pulse">
+                            <div className="w-1 h-1 bg-app-achievement-workout rounded-full m-1"></div>
+                          </div>
+                        ) : (
+                          <Circle className="h-5 w-5 text-app-text-muted" />
+                        )}
+                        
+                        <span className="font-medium text-app-heading">
+                          Série {setConfig.set_number}
+                        </span>
+                        
+                        {isCurrent && !isResting && (
+                          <Badge className="px-2 py-0.5 bg-app-achievement-workout text-white text-xs rounded-full">
+                            ATUAL
+                          </Badge>
+                        )}
+                        
+                        {isCurrent && isResting && (
+                          <Badge className="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full animate-pulse">
+                            DESCANSO
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {completed && (
+                          <>
+                            <div className="text-right">
+                              <span className="font-bold text-app-achievement-consecutive">
+                                {weight}kg × {reps}
+                              </span>
+                            </div>
+                            <Button
+                              onClick={() => handleEditSet(index)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-app-bg-secondary rounded-lg"
+                            >
+                              <Edit2 className="h-3 w-3 text-app-text-muted" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
