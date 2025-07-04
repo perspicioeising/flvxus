@@ -9,11 +9,68 @@ export const DAYS_OF_WEEK = [
 ];
 
 export const DIFFICULTY_LEVELS = [
-  { value: 1, label: 'Muito Fácil', color: 'text-green-500', emoji: '😊' },
-  { value: 2, label: 'Fácil', color: 'text-green-400', emoji: '🙂' },
-  { value: 3, label: 'Moderado', color: 'text-yellow-500', emoji: '😐' },
-  { value: 4, label: 'Difícil', color: 'text-orange-500', emoji: '😓' },
-  { value: 5, label: 'Muito Difícil', color: 'text-red-500', emoji: '😰' }
+  { 
+    value: 1, 
+    emoji: "😴", 
+    label: "Muito Fácil",
+    color: "green"
+  },
+  { 
+    value: 2, 
+    emoji: "🙂", 
+    label: "Fácil",
+    color: "blue"
+  },
+  { 
+    value: 3, 
+    emoji: "😐", 
+    label: "Moderado",
+    color: "yellow"
+  },
+  { 
+    value: 4, 
+    emoji: "😅", 
+    label: "Difícil",
+    color: "orange"
+  },
+  { 
+    value: 5, 
+    emoji: "🥵", 
+    label: "Muito Difícil",
+    color: "red"
+  }
+];
+
+export const EXERCISE_CATEGORIES = {
+  STRENGTH: 'strength',
+  CARDIO: 'cardio',
+  FLEXIBILITY: 'flexibility',
+  BALANCE: 'balance'
+};
+
+export const MUSCLE_GROUPS = [
+  'Peitoral',
+  'Costas',
+  'Ombros',
+  'Bíceps',
+  'Tríceps',
+  'Quadríceps',
+  'Posterior',
+  'Panturrilha',
+  'Abdomen',
+  'Glúteos'
+];
+
+export const EQUIPMENT_TYPES = [
+  'Halteres',
+  'Barra',
+  'Banco',
+  'Cabo',
+  'Máquina',
+  'Peso Corporal',
+  'Elástico',
+  'Kettlebell',
+  'Medicine Ball'
 ];
 
 export const WORKOUT_GOALS = {

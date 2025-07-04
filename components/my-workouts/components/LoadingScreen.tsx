@@ -8,7 +8,6 @@ export function LoadingScreen() {
           <div className="w-16 h-16 border-4 border-app-achievement-workout/30 rounded-full animate-spin border-t-app-achievement-workout"></div>
           <div className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-ping border-t-app-achievement-workout/50"></div>
         </div>
-        <p className="text-app-text-secondary font-medium">Carregando seus treinos...</p>
       </div>
     </div>
   );
