@@ -26,9 +26,27 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 ## Andamento
 
 ### Em andamento
-- Fase 6 — IA Anthropic (Edge Functions) em paralelo: gerar dieta, sugerir treino, analisar
-  avaliação; Zod, rate limit, log de uso, anti-injection, rascunho→aprovação.
-- A seguir: Fase 5 (área do aluno), integração IA↔UI, Fase 7 (qualidade/CI/README), Fase 8 (revisão final).
+- Fase de execução/gamificação/IA (workflow): (A) CORRIGIR execução de treino do aluno — iniciar
+  sessão, ver vídeo+detalhes do exercício, registrar série, finalizar, sem ficar preso ao dia
+  atual; (B) GAMIFICAÇÃO (voltou ao escopo por decisão do usuário) — conquistas/pontos ao
+  finalizar sessão, tela do aluno; (C) INTEGRAÇÃO IA↔UI — ligar botões às Edge Functions com
+  fluxo rascunho→aprovação.
+- A seguir: Fase 7 (qualidade/CI/README) e Fase 8 (revisão final).
+
+### Versões inline das Edge Functions (entregue)
+- `supabase/functions-inline/` com generate-diet, suggest-workout e analyze-assessment em arquivo
+  único + README, para o usuário deployar pelo dashboard do Supabase (sem CLI/Docker).
+
+### Fixes aplicados durante os testes do usuário (produção)
+- Auth religado à v2 (cadastro via signUp + trigger); `/dashboard` legado redireciona por papel.
+- Scroll mobile corrigido no AppShell (h-[100dvh] + min-h-0).
+- Exercícios do catálogo global: botão "Duplicar para o meu acervo".
+- "Criar ficha a partir de modelo": explica quando desabilitado (sem alunos/modelos).
+- Convite de aluno PKCE (redirectTo + /callback server + set-password) e domínio oficial.
+- Formulário de aluno: campos opcionais de verdade, gênero como select, erros em pt-BR.
+- Upload de vídeo: bodySizeLimit 50mb (erro 413).
+- Trigger handle_new_user não cria mais aluno como trainer; aluno pendente visível + reenvio de convite.
+- Segredos removidos do .env.example (CRON_SECRET real; ANTHROPIC_API_KEY).
 
 ### Concluído
 - Setup do repositório: resolvido erro de clone no Windows (arquivos `:Zone.Identifier`),
