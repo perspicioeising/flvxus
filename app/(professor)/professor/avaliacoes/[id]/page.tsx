@@ -15,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/patterns';
-import { AnalisarIaStub } from '@/components/professor/avaliacoes/analisar-ia-stub';
+import { AnalisarAvaliacaoIa } from '@/components/professor/ia/analisar-avaliacao';
 import { EvolucaoGraficos } from '@/components/professor/avaliacoes/evolucao-graficos';
 import { montarSerieEvolucao } from '@/components/professor/avaliacoes/evolucao-series';
 import {
@@ -94,6 +94,16 @@ export default async function DetalheAvaliacaoPage({
     )
   ).filter((f): f is { path: string; url: string } => f.url != null);
 
+  // Análise de IA já aprovada (materializada em physical_assessments), se houver.
+  const aiAnalysisObj =
+    avaliacao.ai_analysis && typeof avaliacao.ai_analysis === 'object'
+      ? (avaliacao.ai_analysis as Record<string, unknown>)
+      : null;
+  const analiseTexto = typeof aiAnalysisObj?.analysis === 'string' ? aiAnalysisObj.analysis : null;
+  const recomendacoes = Array.isArray(avaliacao.ai_recommendations)
+    ? (avaliacao.ai_recommendations as Array<{ category?: string; text?: string; priority?: string }>)
+    : [];
+
   const skfBiceps = typeof measurements.skf_biceps === 'number' ? (measurements.skf_biceps as number) : null;
   const anamneseTexto =
     avaliacao.anamnesis && typeof avaliacao.anamnesis === 'object'
@@ -163,10 +173,32 @@ export default async function DetalheAvaliacaoPage({
           </dl>
 
           <div className="mt-4 border-t border-border pt-4">
-            <AnalisarIaStub />
+            <AnalisarAvaliacaoIa assessmentId={id} />
           </div>
         </CardContent>
       </Card>
+
+      {/* Análise de IA aprovada */}
+      {analiseTexto ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Análise com IA</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="whitespace-pre-wrap text-sm text-foreground">{analiseTexto}</p>
+            {recomendacoes.length > 0 ? (
+              <ul className="space-y-1">
+                {recomendacoes.map((r, i) => (
+                  <li key={`${r.category ?? 'rec'}-${i}`} className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{r.category}</span>
+                    {r.priority ? ` (${r.priority})` : ''}: {r.text}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Dobras e circunferências */}
       {dobras.length > 0 || circunferencias.length > 0 ? (

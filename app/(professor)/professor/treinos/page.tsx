@@ -6,6 +6,7 @@ import { EmptyState, ErrorState } from '@/components/patterns';
 import { Button } from '@/components/ui/button';
 import { FichaCard } from '@/components/professor/treinos/ficha-card';
 import { CriarDeModelo } from '@/components/professor/treinos/criar-de-modelo';
+import { SugerirTreinoIa } from '@/components/professor/ia/sugerir-treino';
 import type { PlanStatus } from '@/types/database.types';
 
 /**
@@ -55,6 +56,7 @@ export default async function TreinosPage() {
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
+          <SugerirTreinoIa alunos={alunos} />
           <CriarDeModelo modelos={modelos} alunos={alunos} />
           <Button asChild className="min-h-11">
             <Link href="/professor/treinos/nova">
