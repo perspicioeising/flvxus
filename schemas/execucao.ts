@@ -62,3 +62,12 @@ export const finalizarSessaoSchema = z.object({
 export type IniciarSessaoInput = z.infer<typeof iniciarSessaoSchema>;
 export type RegistrarSerieInput = z.infer<typeof registrarSerieSchema>;
 export type FinalizarSessaoInput = z.infer<typeof finalizarSessaoSchema>;
+
+/**
+ * Tipo de ENTRADA de `registrarSerieSchema` (antes dos preprocessos). O cliente
+ * envia `reps_done`/`load_done` como string (inputs numéricos aceitando vírgula
+ * decimal) e `completed`/`set_number` em suas formas brutas; o `safeParse` na
+ * Server Action coage tudo para o tipo de saída. A UI usa este tipo para não
+ * precisar converter antes de chamar a action.
+ */
+export type RegistrarSerieEntrada = z.input<typeof registrarSerieSchema>;
