@@ -7,9 +7,14 @@ sem Docker**. São equivalentes às versões modulares em `supabase/functions/`
 
 | Arquivo inline | Nome da função (deve ser EXATO) | Job |
 |----------------|--------------------------------|-----|
-| `generate-diet.ts` | `generate-diet` | Gera rascunho de dieta |
-| `suggest-workout.ts` | `suggest-workout` | Gera rascunho de treino |
-| `analyze-assessment.ts` | `analyze-assessment` | Analisa avaliação física |
+| `generate-diet.txt` | `generate-diet` | Gera rascunho de dieta |
+| `suggest-workout.txt` | `suggest-workout` | Gera rascunho de treino |
+| `analyze-assessment.txt` | `analyze-assessment` | Analisa avaliação física |
+
+> Os arquivos têm extensão `.txt` (não `.ts`) de propósito: são **código Deno** para
+> copiar e colar no dashboard do Supabase, não módulos do app Next. Manter `.ts` fazia o
+> `next build` tentar compilá-los e falhar (`Cannot find module 'npm:zod@3'`). Abra o `.txt`,
+> selecione tudo e cole no editor de Edge Functions.
 
 ## Passo a passo (tudo pelo navegador)
 
