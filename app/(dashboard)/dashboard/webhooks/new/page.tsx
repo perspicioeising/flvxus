@@ -2,13 +2,13 @@
 
 import { WebhookFormCarousel } from '@/components/webhooks/WebhookFormCarousel';
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/browser';
 import { useRouter } from 'next/navigation';
 
 export default function NewWebhookPage() {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {

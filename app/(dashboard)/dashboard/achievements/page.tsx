@@ -118,7 +118,7 @@ export default function AchievementsPage() {
     return Math.floor(Math.random() * 100);
   };
 
-  const renderAchievementIcon = (criteriaType: string): JSX.Element | null => {
+  const renderAchievementIcon = (criteriaType: string) => {
     const criteriaInfo = CRITERIA_TYPES.find((t) => t.value === criteriaType);
     if (!criteriaInfo) return null;
 

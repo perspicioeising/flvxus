@@ -1,58 +1,75 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { NextResponse, type NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
+/**
+ * Middleware de sessao (architecture.md §5.2).
+ *
+ * Responsabilidades:
+ *  - Renovar SEMPRE a sessao via @supabase/ssr (lib/supabase/middleware.ts).
+ *  - Barrar acesso nao autenticado a rotas protegidas (/professor, /aluno e,
+ *    por retrocompatibilidade enquanto a v1 existe, /dashboard), redirecionando
+ *    para /login.
+ *  - Redirecionar usuario ja logado para fora das telas de auth (/login, /register).
+ *
+ * NAO decide papel: o gate por papel ('trainer'/'student') e feito nos layouts
+ * server-side de cada area (§5.2). O middleware roda no edge e nao deve consultar
+ * o banco a cada requisicao.
+ */
 
-  // 🔥 SEMPRE permitir acesso a rotas de autenticação
-  const authRoutes = [
-    '/auth/callback',
-    '/reset-password', 
-    '/set-password',
-    '/login',
-    '/register'
-  ];
-  
-  const isAuthRoute = authRoutes.some(route => req.nextUrl.pathname.startsWith(route));
-  
-  if (isAuthRoute) {
-    console.log('🔓 [MIDDLEWARE] Permitindo acesso a rota de auth:', req.nextUrl.pathname);
-    return res;
-  }
+// Rotas de autenticacao sempre liberadas.
+const AUTH_ROUTES = [
+  '/auth/callback',
+  '/reset-password',
+  '/set-password',
+  '/login',
+  '/register',
+];
 
-  // 🔥 Verificar se é um magic link em qualquer rota
-  const url = req.nextUrl;
-  const hasVerifyToken = url.searchParams.get('token') && url.searchParams.get('type');
-  
+// Prefixos de rota que exigem usuario autenticado.
+const PROTECTED_PREFIXES = ['/professor', '/aluno', '/dashboard'];
+
+export async function middleware(request: NextRequest) {
+  // Renova a sessao em toda requisicao e obtem o usuario resolvido.
+  const { response, user } = await updateSession(request);
+
+  const { pathname, searchParams } = request.nextUrl;
+
+  // Magic link / verificacao em qualquer rota: liberar para o fluxo de auth.
+  const hasVerifyToken = searchParams.get('token') && searchParams.get('type');
   if (hasVerifyToken) {
-    console.log('🔗 [MIDDLEWARE] Magic link detectado, permitindo acesso:', url.pathname);
-    return res;
+    return response;
   }
 
-  // Verificar sessão apenas para rotas protegidas
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
-  // Proteger dashboard sem sessão
-  if (!session && req.nextUrl.pathname.startsWith('/dashboard')) {
-    console.log('🚫 [MIDDLEWARE] Redirecionando para login - sem sessão');
-    return NextResponse.redirect(new URL('/login', req.url));
+  // Usuario logado tentando acessar login/register -> manda para a home logada.
+  if (user && (pathname === '/login' || pathname === '/register')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Se logado e tentando acessar auth pages, redirecionar para dashboard
-  if (session && (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/register')) {
-    console.log('✅ [MIDDLEWARE] Usuário logado, redirecionando para dashboard');
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+  // Rotas de auth seguem liberadas (apos o tratamento acima).
+  if (isAuthRoute) {
+    return response;
   }
 
-  return res;
+  // Barrar nao autenticado em rotas protegidas.
+  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  if (!user && isProtected) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /*
+     * Casa todas as rotas EXCETO:
+     * - assets estaticos do Next (_next/static, _next/image)
+     * - favicon, manifest (PWA) e icones
+     * - arquivos de imagem comuns
+     */
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

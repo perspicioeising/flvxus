@@ -4,8 +4,8 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { createContext, useContext, useState, useEffect } from "react";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Database } from "@/lib/database.types";
+import { createClient } from "@/lib/supabase/browser";
+import { Database } from "@/types/database.types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CapacitorProvider } from "./capacitor-provider";
 
@@ -21,7 +21,7 @@ export function SupabaseProvider({
 }: { 
   children: React.ReactNode;
 }) {
-  const [supabase] = useState(() => createClientComponentClient<Database>());
+  const [supabase] = useState(() => createClient());
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {

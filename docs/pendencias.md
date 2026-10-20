@@ -57,6 +57,45 @@ npm run test:rls                   # troque describe.skip -> describe em tests/r
   apenas declaradas no `package.json`, não instaladas (evitando mexer em `node_modules` fora do
   escopo desta fase). Rodar após `npm install`.
 
+## Fase 3 — Clientes @supabase/ssr (FEAT-002)
+
+### Rotas v1 movidas para `app/_legacy-api/` (fora do roteamento)
+
+Ao adotar o `@supabase/ssr` e remover `@supabase/auth-helpers-nextjs` e as libs de IA do
+Google, **todas** as rotas de `app/api/*` da v1 passaram a quebrar o `next build` (usavam
+`createRouteHandlerClient({ cookies })` do auth-helpers, `@google/generative-ai`, ou helpers
+de `@/webhooks/*`). Em vez de reescrevê-las agora (isso é trabalho das Fases 4–6: áreas
+professor/aluno e IA Anthropic), o diretório inteiro foi **movido para `app/_legacy-api/`**,
+que fica **fora do App Router** (o Next não serve rotas sob uma pasta que não seja `app/api`).
+
+- **Código morto preservado só como referência.** Nada em `app/_legacy-api/` é roteável nem
+  entra no grafo de build das páginas. Serve de consulta ao reconstruir os endpoints na v2.
+- **NÃO reativar.** Essas rotas usam Gemini (removido) e o `@supabase/auth-helpers-nextjs`
+  (removido). Reativá-las quebra o build. Elas serão reescritas como Server Actions / Route
+  Handlers novos (com `lib/supabase/{server,admin}.ts`) ou Edge Functions nas Fases 4–6.
+- Diretório movido como unidade via `git mv app/api app/_legacy-api` (44 arquivos). Ver
+  `app/_legacy-api/README.md`.
+
+### Páginas client v1 migradas para o novo browser client
+
+Três páginas client da v1 importavam `createClientComponentClient` do auth-helpers e teriam
+quebrado o build; o import foi trocado por `createClient` de `lib/supabase/browser.ts`
+(mesma API `auth`/`from`), sem mudar comportamento visível:
+
+- `app/(auth)/set-password/page.tsx` (rota de auth ativa — fluxo de convite/magic link).
+- `app/(dashboard)/dashboard/webhooks/new/page.tsx` (referência v1).
+- `app/(dashboard)/dashboard/webhooks/[id]/edit/page.tsx` (referência v1; também ajustada para
+  `params: Promise<...>` do Next 15, resolvido com `use()`).
+
+### Ainda pendente para as próximas FEATs (typecheck/build da cadeia)
+
+Ajustes de tipo em componentes v1 já detectados pela FEAT-001 (fora do escopo da FEAT-002, que
+cobre só os clientes Supabase e o middleware): `components/ui/calendar.tsx` (react-day-picker
+v8→v9), `components/students/hooks/useSwipeGestures.ts` (RefObject dos @types/react 19),
+`components/my-workouts/components/details/AllUserWorkoutsSection.tsx` (React.AwaitedReactNode
+removido). Demais páginas v1 em `app/(dashboard)/.../page.tsx` podem exigir `params`/
+`searchParams` como `Promise` (PageProps do Next 15) quando forem religadas.
+
 ## Itens fora do escopo da Fase 2 (serão tratados nas fases seguintes)
 
 - Renomear o pacote de `fitconnect-pro` para `flvxus` e subir Next 15/React 19 (ADR 0002) —

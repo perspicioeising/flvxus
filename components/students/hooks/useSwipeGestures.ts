@@ -13,7 +13,7 @@ interface SwipeOptions {
 export function useSwipeGestures(
   handlers: SwipeHandlers,
   options: SwipeOptions = {}
-): RefObject<HTMLDivElement> {
+): RefObject<HTMLDivElement | null> {
   const { threshold = 50, preventScroll = false } = options;
   const touchStartX = useRef<number>(0);
   const touchStartY = useRef<number>(0);
@@ -87,7 +87,7 @@ export function useSwipeGestures(
 }
 
 // Hook para adicionar feedback visual durante swipe
-export function useSwipeFeedback(): RefObject<HTMLDivElement> {
+export function useSwipeFeedback(): RefObject<HTMLDivElement | null> {
   const elementRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -154,7 +154,9 @@ export function useSwipeFeedback(): RefObject<HTMLDivElement> {
 }
 
 // Hook simplificado para usar um ref combinado
-export function useCombinedRefs<T extends HTMLElement>(...refs: RefObject<T>[]): RefObject<T> {
+export function useCombinedRefs<T extends HTMLElement>(
+  ...refs: RefObject<T | null>[]
+): RefObject<T | null> {
   const combinedRef = useRef<T>(null);
   
   useEffect(() => {

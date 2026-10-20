@@ -207,7 +207,7 @@ export function AllUserWorkoutsSection({ onStartWorkout }: AllUserWorkoutsSectio
                   {/* Workouts List */}
                   <div className="p-4 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {dayWorkouts.map((workout: { workout_exercises: string | any[]; level: string; goal: string; id: string; name: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; planName: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; description: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; }, index: any) => {
+                      {dayWorkouts.map((workout: any, index: any) => {
                         const exerciseCount = workout.workout_exercises?.length || 0;
                         const estimatedDuration = exerciseCount * 3;
                         const levelConfig = WORKOUT_LEVELS[workout.level?.toLowerCase() as keyof typeof WORKOUT_LEVELS] || WORKOUT_LEVELS.intermediario;

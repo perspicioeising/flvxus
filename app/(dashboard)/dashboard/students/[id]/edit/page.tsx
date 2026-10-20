@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { StudentFormCarousel } from '@/components/students/components/create/StudentFormCarousel';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, User } from 'lucide-react';
 import {StudentFormData} from '@/types/student'
 
 interface EditStudentPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function EditStudentPage({ params }: EditStudentPageProps) {
+  const { id } = use(params);
   const { toast } = useToast();
   const [studentData, setStudentData] = useState<Partial<StudentFormData> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +23,7 @@ export default function EditStudentPage({ params }: EditStudentPageProps) {
     const fetchStudent = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/students/${params.id}`);
+        const response = await fetch(`/api/students/${id}`);
         
         if (!response.ok) {
           throw new Error('Erro ao buscar dados do aluno');
@@ -60,10 +61,10 @@ export default function EditStudentPage({ params }: EditStudentPageProps) {
       }
     };
 
-    if (params.id) {
+    if (id) {
       fetchStudent();
     }
-  }, [params.id, toast]);
+  }, [id, toast]);
 
   // Loading state
   if (isLoading) {
@@ -110,7 +111,7 @@ export default function EditStudentPage({ params }: EditStudentPageProps) {
   return (
     <StudentFormCarousel
       mode="edit"
-      studentId={params.id}
+      studentId={id}
     />
   );
 }
