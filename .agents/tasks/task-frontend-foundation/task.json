@@ -1,7 +1,0 @@
-{
-  "task_id": "task-frontend-foundation",
-  "task_description": "Fase 3 do Flvxus v2: estabelecer a fundacao do front-end e o design system, migrando a stack para Next 15 + React 19 + @supabase/ssr. Escopo: stack/build, clientes Supabase SSR + middleware, design system (tokens, tema claro/escuro, componentes base, estados padrao loading/vazio/erro), estrutura por papel com gate server-side e navegacao funcional, PWA manifest, revisao do Capacitor, e pagina de showcase do design system. NAO implementar as telas completas de alunos/avaliacoes/treinos/dietas (Fases 4 e 5). Interface 100% pt-BR, mobile-first 360px, acessibilidade AA, nenhum segredo commitado.",
-  "status": "completed",
-  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
-  "blocked_reason": null
-}

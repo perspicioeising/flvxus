@@ -16,7 +16,7 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 - [x] **Fase 0 — Auditoria** (`docs/audit.md`): mapear o que existe, incompleto, quebrado, dívida técnica. ✅ concluída.
 - [x] **Fase 1 — Arquitetura v2** (`docs/architecture.md`, ADRs 0001–0008): stack, estrutura, padrões. ✅ aprovada e verificada.
 - [x] **Fase 2 — Banco Supabase do zero** (`supabase/migrations/`, `docs/database.md`): schema, RLS, storage, seed, tipos TS. ✅ aprovada na revisão de segurança. (Aplicação via CLI pendente de Docker/projeto Supabase — ver pendências.)
-- [ ] **Fase 3 — Design system + front-end**: tokens, componentes, dark/light, mobile-first, i18n pt-BR.
+- [x] **Fase 3 — Design system + front-end**: tokens, componentes, dark/light, mobile-first, i18n pt-BR. ✅ aprovada (convergência + revisão semântica). Stack migrada p/ Next 15 + React 19 + @supabase/ssr; gate server-side por papel; PWA manifest; .env.example.
 - [ ] **Fase 4 — Features professor**: alunos, avaliação física, exercícios, treinos.
 - [ ] **Fase 5 — Features aluno**: área do aluno, execução de treino, dieta, evolução.
 - [ ] **Fase 6 — IA Anthropic**: Edge Functions, prompts versionados, validação Zod, rate limit, logs.
@@ -26,8 +26,8 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 ## Andamento
 
 ### Em andamento
-- Fase 3 — Design system e fundação do front-end (tokens, dark/light, mobile-first, i18n pt-BR,
-  stack Next 15 + React 19 + @supabase/ssr, gate por papel nos layouts).
+- Fase 4 — Features do professor (gestão de alunos, avaliação física com histórico/gráficos,
+  biblioteca de exercícios, montagem de treinos/modelos).
 
 ### Concluído
 - Setup do repositório: resolvido erro de clone no Windows (arquivos `:Zone.Identifier`),
@@ -53,6 +53,17 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
   exercícios; `types/database.types.ts` (à mão, regenerar via CLI); harness de RLS em
   `tests/rls/` (skip até Docker); `docs/database.md` com ER sincronizado. Aprovada na revisão
   de segurança (verifiquei contagens de forma independente: 23 RLS, 90 policies, 0 bucket público).
+- Fase 3 — Fundação do front-end: stack migrada para Next 15.5 + React 19 + `@supabase/ssr`
+  (pacote renomeado para `flvxus`, deps mortas removidas, tsconfig ES2022); clientes Supabase
+  server/browser/middleware/admin; design system (tokens light/dark emerald, tema, estados
+  Loading/Empty/Error); route groups `(marketing)/(professor)/(aluno)` com gate server-side
+  real por papel (fim do `userRole` hardcoded); navegação mobile-first (sidebar + bottom-nav);
+  PWA manifest instalável; Capacitor em HTTPS; fonte Inter self-hospedada (build offline);
+  `.env.example` sem segredos. typecheck/lint/build/test verdes. Aprovada na revisão semântica.
+- Ajustes na integração da Fase 3: `.env.example` com `ANTHROPIC_MODEL=claude-sonnet-5-5`
+  (corrigido do placeholder antigo, consistente com ADR 0001) + variáveis NEXT_PUBLIC_API_URL
+  e WhatsApp; `.agents/` (metadados internos de workflow) removido do tracking e adicionado
+  ao `.gitignore`.
 
 ## Decisões tomadas
 

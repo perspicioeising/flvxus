@@ -45,3 +45,6 @@ next-env.d.ts
 # artefatos internos dos workflows de revisao (nao versionar)
 docs/**/_design-review.*
 docs/**/_*-review.*
+
+# metadados internos dos workflows de agentes (nao versionar)
+/.agents/
