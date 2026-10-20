@@ -2,7 +2,7 @@
 # Portas padrão do CLI. Ajuste apenas se houver conflito local.
 # Aplicação real (supabase start / db reset) exige Docker — ver docs/pendencias.md.
 
-project_id = "flvxus"
+project_id = "nltoaiiquuryjlnikyxy"
 
 [api]
 enabled = true
