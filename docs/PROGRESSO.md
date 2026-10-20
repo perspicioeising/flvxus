@@ -14,7 +14,7 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 ## Fases do relançamento
 
 - [x] **Fase 0 — Auditoria** (`docs/audit.md`): mapear o que existe, incompleto, quebrado, dívida técnica. ✅ concluída.
-- [~] **Fase 1 — Arquitetura v2** (`docs/architecture.md`, `docs/decisions/`): decidir stack, estrutura, padrões. Em andamento (workflow de design).
+- [x] **Fase 1 — Arquitetura v2** (`docs/architecture.md`, ADRs 0001–0008): stack, estrutura, padrões. ✅ aprovada e verificada.
 - [ ] **Fase 2 — Banco Supabase do zero** (`supabase/migrations/`, `docs/database.md`): schema, RLS, storage, seed, tipos TS.
 - [ ] **Fase 3 — Design system + front-end**: tokens, componentes, dark/light, mobile-first, i18n pt-BR.
 - [ ] **Fase 4 — Features professor**: alunos, avaliação física, exercícios, treinos.
@@ -26,7 +26,7 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 ## Andamento
 
 ### Em andamento
-- Fase 1 — Arquitetura e decisões de design da v2 (workflow com fase de design + revisão).
+- Fase 2 — Banco Supabase do zero (migrations versionadas, RLS, storage privado, seed, tipos TS, docs/database.md).
 
 ### Concluído
 - Setup do repositório: resolvido erro de clone no Windows (arquivos `:Zone.Identifier`),
@@ -39,6 +39,13 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
   `node-wav`), Next em canary, e rota quebrada `diets/[id]/routes.ts`.
 - Consulta à documentação oficial da Anthropic (modelos vigentes jun/2026: Opus 5.5,
   Sonnet 5.5, Haiku 5.5, Fable 5.1) registrada em `docs/decisions/0001-ia-anthropic.md`.
+- Fase 1 — Arquitetura v2 completa: `docs/architecture.md` (14 seções + diagrama ER Mermaid)
+  e ADRs 0002–0008. Decisões-chave: Next 15 + React 19 + `@supabase/ssr`; rotas separadas por
+  papel com gate server-side; RLS multi-tenant com contrato por tabela; enums nativos; storage
+  privado com URLs assinadas; Edge Functions Anthropic com rascunho→aprovação; design system
+  sobre shadcn/Radix; PWA + Capacitor; Vitest + harness de RLS + CI. Aprovada na revisão.
+- Repositório migrado para a conta GitHub nova (`perspicioeising/flvxus`); identidade de
+  commits e autenticação (`gh`) reconfiguradas. Commits antigos mantidos; novos vão para a conta nova.
 
 ## Decisões tomadas
 
