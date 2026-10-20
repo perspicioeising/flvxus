@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { HeartPulse, PersonStanding } from 'lucide-react';
+import { HeartPulse, LineChart, PersonStanding } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { signAssessmentPhoto } from '@/lib/storage';
@@ -15,6 +15,8 @@ import {
   AvaliacaoCard,
   type AvaliacaoResumo,
 } from '@/components/aluno/avaliacoes/avaliacao-card';
+import { EvolucaoGraficos } from '@/components/professor/avaliacoes/evolucao-graficos';
+import { montarSerieEvolucao } from '@/components/professor/avaliacoes/evolucao-series';
 import type { Tables } from '@/types/database.types';
 
 /**
@@ -77,10 +79,54 @@ export default async function AlunoAvaliacoesPage() {
         fat_mass_kg: a.fat_mass_kg,
         lean_mass_kg: a.lean_mass_kg,
         photos_consent: a.photos_consent,
+        neck_cm: a.neck_cm,
+        shoulder_cm: a.shoulder_cm,
+        chest_cm: a.chest_cm,
+        waist_cm: a.waist_cm,
+        abdomen_cm: a.abdomen_cm,
+        hip_cm: a.hip_cm,
+        left_arm_cm: a.left_arm_cm,
+        right_arm_cm: a.right_arm_cm,
+        left_thigh_cm: a.left_thigh_cm,
+        right_thigh_cm: a.right_thigh_cm,
+        left_calf_cm: a.left_calf_cm,
+        right_calf_cm: a.right_calf_cm,
+        skf_triceps: a.skf_triceps,
+        skf_subscapular: a.skf_subscapular,
+        skf_chest: a.skf_chest,
+        skf_midaxillary: a.skf_midaxillary,
+        skf_suprailiac: a.skf_suprailiac,
+        skf_abdominal: a.skf_abdominal,
+        skf_thigh: a.skf_thigh,
+        ai_analysis:
+          a.ai_analysis && typeof a.ai_analysis === 'object'
+            ? (a.ai_analysis as Record<string, unknown>)
+            : null,
+        ai_recommendations: Array.isArray(a.ai_recommendations)
+          ? (a.ai_recommendations as Array<{
+              category?: string;
+              text?: string;
+              priority?: string;
+            }>)
+          : [],
         medidas: measurements,
         fotos,
       };
     })
+  );
+
+  // Série de evolução do próprio aluno (todas as avaliações), montada UMA vez.
+  // `montarSerieEvolucao` ordena internamente por `assessed_at` ascendente.
+  const serie = montarSerieEvolucao(
+    fisicas.map((a) => ({
+      assessed_at: a.assessed_at,
+      weight_kg: a.weight_kg,
+      body_fat_pct: a.body_fat_pct,
+      lean_mass_kg: a.lean_mass_kg,
+      waist_cm: a.waist_cm,
+      hip_cm: a.hip_cm,
+      abdomen_cm: a.abdomen_cm,
+    }))
   );
 
   const temConteudo = avaliacoes.length > 0 || posturais.length > 0;
@@ -108,6 +154,20 @@ export default async function AlunoAvaliacoesPage() {
           {avaliacoes.map((avaliacao) => (
             <AvaliacaoCard key={avaliacao.id} avaliacao={avaliacao} />
           ))}
+
+          {serie.length > 1 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <LineChart className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  Sua evolução
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EvolucaoGraficos serie={serie} />
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       ) : null}
 

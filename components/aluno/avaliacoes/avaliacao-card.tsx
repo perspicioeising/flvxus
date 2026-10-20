@@ -7,6 +7,8 @@ import {
   GENERO_LABEL,
   protocoloLabel,
 } from '@/components/professor/avaliacoes/labels';
+import { ComposicaoGrafico } from '@/components/professor/avaliacoes/composicao-grafico';
+import { MedidasVisual } from '@/components/professor/avaliacoes/medidas-visual';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -55,6 +57,30 @@ export interface AvaliacaoResumo {
   fat_mass_kg: number | null;
   lean_mass_kg: number | null;
   photos_consent: boolean;
+  // Circunferências (cm) lidas da linha crua; usadas pelo MedidasVisual.
+  neck_cm: number | null;
+  shoulder_cm: number | null;
+  chest_cm: number | null;
+  waist_cm: number | null;
+  abdomen_cm: number | null;
+  hip_cm: number | null;
+  left_arm_cm: number | null;
+  right_arm_cm: number | null;
+  left_thigh_cm: number | null;
+  right_thigh_cm: number | null;
+  left_calf_cm: number | null;
+  right_calf_cm: number | null;
+  // Dobras cutâneas (mm) lidas da linha crua; usadas pelo MedidasVisual.
+  skf_triceps: number | null;
+  skf_subscapular: number | null;
+  skf_chest: number | null;
+  skf_midaxillary: number | null;
+  skf_suprailiac: number | null;
+  skf_abdominal: number | null;
+  skf_thigh: number | null;
+  // Análise de IA já aprovada (materializada), somente leitura.
+  ai_analysis: Record<string, unknown> | null;
+  ai_recommendations: Array<{ category?: string; text?: string; priority?: string }>;
   medidas: Record<string, unknown>;
   /** URLs assinadas (TTL curto) das fotos da avaliação. */
   fotos: { path: string; url: string }[];
@@ -74,15 +100,22 @@ export function AvaliacaoCard({ avaliacao }: { avaliacao: AvaliacaoResumo }) {
 
   const dobras = DOBRAS_COLUNA.map((k) => ({
     rotulo: DOBRA_LABEL[k],
-    valor: avaliacao[k as keyof AvaliacaoResumo] as number | null,
+    valor: avaliacao[k] as number | null,
   }))
     .concat(skfBiceps != null ? [{ rotulo: DOBRA_LABEL.skf_biceps, valor: skfBiceps }] : [])
-    .filter((d) => d.valor != null);
+    .filter((d): d is { rotulo: string; valor: number } => d.valor != null);
 
   const circunferencias = CIRCUNFERENCIAS.map((k) => ({
     rotulo: CIRCUNFERENCIA_LABEL[k],
-    valor: avaliacao[k as keyof AvaliacaoResumo] as number | null,
-  })).filter((c) => c.valor != null);
+    valor: avaliacao[k] as number | null,
+  })).filter((c): c is { rotulo: string; valor: number } => c.valor != null);
+
+  // Análise de IA já aprovada (somente leitura), espelhando o detalhe do professor.
+  const analiseTexto =
+    typeof avaliacao.ai_analysis?.analysis === 'string'
+      ? (avaliacao.ai_analysis.analysis as string)
+      : null;
+  const recomendacoes = avaliacao.ai_recommendations;
 
   return (
     <Card>
@@ -109,25 +142,36 @@ export function AvaliacaoCard({ avaliacao }: { avaliacao: AvaliacaoResumo }) {
           <Dado rotulo="Massa magra" valor={avaliacao.lean_mass_kg != null ? `${avaliacao.lean_mass_kg} kg` : null} />
         </dl>
 
-        {dobras.length > 0 ? (
-          <div>
-            <h3 className="mb-2 text-sm font-medium text-foreground">Dobras cutâneas (mm)</h3>
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {dobras.map((d) => (
-                <Dado key={d.rotulo} rotulo={d.rotulo} valor={`${d.valor}`} />
-              ))}
-            </dl>
+        <ComposicaoGrafico
+          bmi={avaliacao.bmi}
+          bodyFatPct={avaliacao.body_fat_pct}
+          fatMassKg={avaliacao.fat_mass_kg}
+          leanMassKg={avaliacao.lean_mass_kg}
+          weightKg={avaliacao.weight_kg}
+          gender={avaliacao.gender as 'male' | 'female' | null}
+        />
+
+        {analiseTexto ? (
+          <div className="border-t border-border pt-4">
+            <h3 className="mb-2 text-sm font-medium text-foreground">Análise com IA</h3>
+            <p className="whitespace-pre-wrap text-sm text-foreground">{analiseTexto}</p>
+            {recomendacoes.length > 0 ? (
+              <ul className="mt-3 space-y-1">
+                {recomendacoes.map((r, i) => (
+                  <li key={`${r.category ?? 'rec'}-${i}`} className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{r.category}</span>
+                    {r.priority ? ` (${r.priority})` : ''}: {r.text}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         ) : null}
 
-        {circunferencias.length > 0 ? (
+        {dobras.length > 0 || circunferencias.length > 0 ? (
           <div>
-            <h3 className="mb-2 text-sm font-medium text-foreground">Circunferências (cm)</h3>
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {circunferencias.map((c) => (
-                <Dado key={c.rotulo} rotulo={c.rotulo} valor={`${c.valor}`} />
-              ))}
-            </dl>
+            <h3 className="mb-2 text-sm font-medium text-foreground">Medidas</h3>
+            <MedidasVisual dobras={dobras} circunferencias={circunferencias} />
           </div>
         ) : null}
 
