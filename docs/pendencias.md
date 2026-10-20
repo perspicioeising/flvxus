@@ -502,3 +502,47 @@ de cron ainda não foram religadas na v2 (vivem em `app/_legacy-api/`, desativad
 prático atual é nulo. **Recomendação:** ao reativar as rotas de cron (fase futura), gerar um
 CRON_SECRET novo e usar só no `.env.local`/variáveis da Vercel — nunca no `.env.example`.
 O mesmo cuidado vale para a ANTHROPIC_API_KEY (essa foi corrigida antes de qualquer commit).
+
+## Fase 5 — Convergência/Integração da área do aluno (verificação estática)
+
+Na convergência das FEAT-002/003/004 a suíte completa do worktree rodou verde e as costuras
+entre as três FEATs foram conferidas estaticamente. **O que ficou garantido** (verificação
+estática/compilação, não visual):
+
+- **Gate de papel único:** `requireRole('student')` vive só em `app/(aluno)/layout.tsx`; nenhuma
+  página do aluno repete o gate. As páginas que precisam do usuário usam `getSessionUser()`
+  (início e perfil), como manda o contrato.
+- **Imports compartilhados resolvem** (typecheck + build): `lib/semana`, `lib/datas`,
+  `lib/treino/aderencia`, `lib/dieta/totais`, `lib/storage`, `components/patterns`,
+  `components/ui/*` e o **reuso cross-área** de `components/professor/avaliacoes/evolucao-series`
+  pela tela de Evolução (FEAT-003 consumindo lógica da Fase 4 sem duplicar).
+- **Rotas do `app/(aluno)`:** as 9 rotas (`/aluno`, `/aluno/treinos`, `/aluno/treinos/[id]`,
+  `/aluno/execucao`, `/aluno/execucao/[planId]`, `/aluno/dieta`, `/aluno/evolucao`,
+  `/aluno/avaliacoes`, `/aluno/perfil`) compilam como dinâmicas (`ƒ`) e o menu
+  (`studentNav` em `components/navigation/nav-items.ts`) aponta para as 6 rotas de topo.
+- **Invariante "só liberado":** `status='released'` é filtrado explicitamente em treinos, dieta e
+  execução, e reforçado em `actions/execucao.ts` (recusa plano não liberado) — além do RLS.
+- **Sem `service_role` no fluxo do aluno:** leituras por `lib/supabase/server` (RSC, RLS ativo) e
+  mutações (`actions/execucao.ts`, `actions/perfil.ts`) sempre no contexto do próprio aluno.
+- **Fotos sob consentimento:** a tela de avaliações só assina/exibe fotos quando
+  `photos_consent = true`, por URL assinada de TTL curto.
+- **Scroll do AppShell preservado:** nenhum wrapper novo do aluno usa `h-screen`/`100vh`/
+  `overflow-y`/`overflow-auto` de página; o scroll continua vivendo só no `<main>`
+  (`h-[100dvh]` + `min-h-0`). Os poucos `overflow-hidden` são em miniaturas de imagem (recorte),
+  não em contêineres de rolagem de página.
+
+**O que NÃO é garantido nesta convergência:**
+
+- **Verificação visual:** não há garantia visual. O build/typecheck/lint/test confirmam que o
+  código compila, tipa e passa nos testes, mas **não** renderizam as telas num navegador real
+  (não rodamos `next dev`). Layout, contraste e comportamento tátil mobile-first (alvos ≥44px, mão
+  suada durante o treino) precisam de inspeção manual em dispositivo.
+- **Teste de fluxo real do aluno (iniciar/registrar treino no celular):** depende de **dados
+  liberados por um professor** (`workout_plans`/`diets` com `status='released'`,
+  `physical_assessments`, etc.) num **Supabase real**, com RLS e sessão de aluno autenticada. Sem
+  isso, as telas mostram corretamente o `EmptyState` ("nada liberado"), mas o caminho completo
+  — iniciar sessão, registrar série a série, timer de descanso, finalizar — só pode ser exercido
+  de ponta a ponta contra um banco com dados reais e o par professor↔aluno configurado.
+- Os testes de **RLS** (`tests/rls/*`) continuam **skipados** neste ambiente por falta de
+  Docker/projeto Supabase local (ver seções da Fase 2); a garantia de isolamento por RLS
+  permanece como pendência de ambiente, não de código.
