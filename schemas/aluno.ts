@@ -34,9 +34,28 @@ export const OBJETIVOS = [
 /** Status que o professor pode aplicar a um aluno (subconjunto de `student_status`). */
 export const STATUS_ALUNO = ['active', 'inactive', 'archived'] as const satisfies readonly StudentStatus[];
 
-/** Transforma string vazia em `undefined` para campos opcionais vindos de forms. */
+/**
+ * Opções de gênero. A coluna no banco é `text` livre, mas na UI padronizamos
+ * num conjunto fechado (select) para evitar entrada digitável inconsistente.
+ */
+export const GENEROS = ['masculino', 'feminino', 'outro', 'nao_informado'] as const;
+export type Genero = (typeof GENEROS)[number];
+
+/**
+ * Transforma string vazia/nula/`'undefined'`/`NaN` em `undefined` para campos
+ * opcionais vindos de forms (o input numérico produz `NaN`; selects podem
+ * mandar string vazia). Só então aplica o schema como opcional.
+ */
 const opcionalVazio = (schema: z.ZodTypeAny) =>
-  z.preprocess((valor) => (valor === '' || valor === null ? undefined : valor), schema.optional());
+  z.preprocess((valor) => {
+    if (valor === '' || valor === null || valor === undefined || valor === 'undefined') {
+      return undefined;
+    }
+    if (typeof valor === 'number' && Number.isNaN(valor)) {
+      return undefined;
+    }
+    return valor;
+  }, schema.optional());
 
 /**
  * Campos comuns a criar/editar aluno. `full_name` e `email` obrigatórios; os
@@ -54,12 +73,29 @@ const camposBaseAluno = {
     .email('E-mail inválido.'),
   phone: opcionalVazio(z.string().trim().min(1)),
   birth_date: opcionalVazio(z.string().trim().min(1)),
-  gender: opcionalVazio(z.string().trim().min(1)),
-  height_cm: opcionalVazio(
-    z.coerce.number().positive('A altura deve ser um número positivo.')
+  gender: opcionalVazio(
+    z.enum(GENEROS, { errorMap: () => ({ message: 'Selecione um gênero válido.' }) })
   ),
-  experience_level: opcionalVazio(z.enum(NIVEIS_EXPERIENCIA)),
-  goal: opcionalVazio(z.enum(OBJETIVOS)),
+  // Converte string vazia/NaN -> undefined (opcional); string numérica -> number.
+  height_cm: z.preprocess(
+    (valor) => {
+      if (valor === '' || valor === null || valor === undefined) return undefined;
+      const n = typeof valor === 'number' ? valor : Number(valor);
+      return Number.isNaN(n) ? undefined : n;
+    },
+    z
+      .number({ invalid_type_error: 'A altura deve ser um número.' })
+      .positive('A altura deve ser um número positivo.')
+      .optional()
+  ),
+  experience_level: opcionalVazio(
+    z.enum(NIVEIS_EXPERIENCIA, {
+      errorMap: () => ({ message: 'Selecione um nível válido.' }),
+    })
+  ),
+  goal: opcionalVazio(
+    z.enum(OBJETIVOS, { errorMap: () => ({ message: 'Selecione um objetivo válido.' }) })
+  ),
 };
 
 /** Convite de aluno (cria o perfil role='student'). */

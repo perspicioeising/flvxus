@@ -27,12 +27,12 @@ import {
 import {
   criarAlunoSchema,
   editarAlunoSchema,
+  GENEROS,
   NIVEIS_EXPERIENCIA,
   OBJETIVOS,
-  type CriarAlunoInput,
 } from '@/schemas/aluno';
 import type { EstadoAcao } from '@/actions/alunos';
-import { EXPERIENCIA_LABEL, OBJETIVO_LABEL } from './labels';
+import { EXPERIENCIA_LABEL, GENERO_LABEL, OBJETIVO_LABEL } from './labels';
 
 /** Valor "nenhum" dos selects opcionais (não é um valor do enum). */
 const NENHUM = 'none';
@@ -203,9 +203,24 @@ export function AlunoForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Gênero (opcional)</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
+                <Select
+                  value={field.value || NENHUM}
+                  onValueChange={(v) => field.onChange(v === NENHUM ? '' : v)}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value={NENHUM}>Não informado</SelectItem>
+                    {GENEROS.map((genero) => (
+                      <SelectItem key={genero} value={genero}>
+                        {GENERO_LABEL[genero]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

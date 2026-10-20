@@ -22,6 +22,13 @@ export const EXPERIENCIA_LABEL: Record<ExperienceLevel, string> = {
   advanced: 'Avançado',
 };
 
+export const GENERO_LABEL: Record<'masculino' | 'feminino' | 'outro' | 'nao_informado', string> = {
+  masculino: 'Masculino',
+  feminino: 'Feminino',
+  outro: 'Outro',
+  nao_informado: 'Prefiro não informar',
+};
+
 export const OBJETIVO_LABEL: Record<GoalType, string> = {
   weight_loss: 'Emagrecimento',
   muscle_gain: 'Hipertrofia',
