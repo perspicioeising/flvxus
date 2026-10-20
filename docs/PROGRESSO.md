@@ -13,8 +13,8 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 
 ## Fases do relançamento
 
-- [ ] **Fase 0 — Auditoria** (`docs/audit.md`): mapear o que existe, incompleto, quebrado, dívida técnica.
-- [ ] **Fase 1 — Arquitetura v2** (`docs/architecture.md`, `docs/decisions/`): decidir stack, estrutura, padrões.
+- [x] **Fase 0 — Auditoria** (`docs/audit.md`): mapear o que existe, incompleto, quebrado, dívida técnica. ✅ concluída.
+- [~] **Fase 1 — Arquitetura v2** (`docs/architecture.md`, `docs/decisions/`): decidir stack, estrutura, padrões. Em andamento (workflow de design).
 - [ ] **Fase 2 — Banco Supabase do zero** (`supabase/migrations/`, `docs/database.md`): schema, RLS, storage, seed, tipos TS.
 - [ ] **Fase 3 — Design system + front-end**: tokens, componentes, dark/light, mobile-first, i18n pt-BR.
 - [ ] **Fase 4 — Features professor**: alunos, avaliação física, exercícios, treinos.
@@ -26,11 +26,19 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 ## Andamento
 
 ### Em andamento
-- Fase 0 — Auditoria do código atual (delegada a workflow de investigação).
+- Fase 1 — Arquitetura e decisões de design da v2 (workflow com fase de design + revisão).
 
 ### Concluído
 - Setup do repositório: resolvido erro de clone no Windows (arquivos `:Zone.Identifier`),
   `.gitignore` atualizado para ignorar artefatos "mark of the web" e worktrees.
+- Fase 0 — Auditoria completa do código atual em `docs/audit.md`. Principais achados:
+  banco inconsistente (migrations versionadas vs. 4 SQL manuais; `physical_assessments`
+  com 2 esquemas conflitantes; sem seed), segurança frágil (buckets de Storage públicos
+  sem policy, webhook WhatsApp sem assinatura, 1 rota de IA sem auth), IA Gemini sem
+  Zod/rate-limit/log/anti-injection, zero testes, sem CI, deps inúteis (`i`, `npm`,
+  `node-wav`), Next em canary, e rota quebrada `diets/[id]/routes.ts`.
+- Consulta à documentação oficial da Anthropic (modelos vigentes jun/2026: Opus 5.5,
+  Sonnet 5.5, Haiku 5.5, Fable 5.1) registrada em `docs/decisions/0001-ia-anthropic.md`.
 
 ## Decisões tomadas
 
