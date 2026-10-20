@@ -65,6 +65,10 @@ const suggestWorkoutOutputSchema = z.object({
   disclaimer: z.string().min(1),
 });
 
+// Structured Outputs NÃO aceita `minItems`/`minimum`/`maximum`/`exclusiveMinimum`
+// no schema cru (a API responde 400). Só type/required/enum/properties/
+// additionalProperties. Os limites reais (weekday 0–6, sets>0, listas não vazias)
+// são garantidos pelo Zod de saída (`suggestWorkoutOutputSchema`) após a resposta.
 const TOOL_INPUT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -72,26 +76,24 @@ const TOOL_INPUT_SCHEMA = {
   properties: {
     days: {
       type: 'array',
-      minItems: 1,
       items: {
         type: 'object',
         additionalProperties: false,
         required: ['weekday', 'exercises'],
         properties: {
-          weekday: { type: 'integer', minimum: 0, maximum: 6 },
+          weekday: { type: 'integer' },
           label: { type: ['string', 'null'] },
           exercises: {
             type: 'array',
-            minItems: 1,
             items: {
               type: 'object',
               additionalProperties: false,
               required: ['name', 'sets', 'reps', 'rest_seconds'],
               properties: {
                 name: { type: 'string' },
-                sets: { type: 'integer', exclusiveMinimum: 0 },
+                sets: { type: 'integer' },
                 reps: { type: 'string' },
-                rest_seconds: { type: 'integer', minimum: 0 },
+                rest_seconds: { type: 'integer' },
                 notes: { type: ['string', 'null'] },
               },
             },
@@ -119,7 +121,9 @@ const buildUserMessage = (studentData: string) =>
 
 const JOB_TYPE = 'suggest_workout';
 const TOOL_NAME = 'suggest_workout';
-const MAX_OUTPUT_TOKENS = 4096;
+// Treino com vários dias × exercícios pode passar de 4096 tokens e truncar a
+// resposta (stop_reason=max_tokens → JSON incompleto). 8192 dá folga.
+const MAX_OUTPUT_TOKENS = 8192;
 const TIMEOUT_MS = 60_000;
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
@@ -193,10 +197,18 @@ function extractStructuredOutput(response: any): unknown {
     .filter((b: any) => b?.type === 'text' && typeof b?.text === 'string')
     .map((b: any) => b.text)
     .join('');
-  if (!texto) return undefined;
+  if (!texto) {
+    console.error('[suggest-workout] Sem bloco de texto. stop_reason=' + String(response?.stop_reason));
+    return undefined;
+  }
   try {
     return JSON.parse(texto);
   } catch {
+    if (response?.stop_reason === 'max_tokens') {
+      console.error('[suggest-workout] Resposta truncada por max_tokens — aumente MAX_OUTPUT_TOKENS.');
+    } else {
+      console.error('[suggest-workout] Texto não é JSON válido: ' + texto.slice(0, 500));
+    }
     return undefined;
   }
 }

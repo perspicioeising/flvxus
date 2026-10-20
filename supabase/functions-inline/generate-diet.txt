@@ -102,7 +102,13 @@ const generateDietOutputSchema = z.object({
   disclaimer: z.string().min(1),
 });
 
-// JSON Schema da tool (força o formato na Anthropic; o Zod acima valida de fato).
+// JSON Schema enviado à Anthropic (output_config.format). ATENÇÃO: Structured
+// Outputs NÃO aceita constraints como `minimum`, `maximum`, `exclusiveMinimum`,
+// `minItems`, `minLength`, `maxLength` no schema cru — a API responde 400
+// ("property 'minimum' is not supported"). Mantemos só type/required/enum/
+// properties/additionalProperties. Os limites de valor (>=0, >0, listas não
+// vazias) continuam sendo garantidos pelo Zod de saída (`generateDietOutputSchema`)
+// logo após a resposta. Ver docs: structured-outputs (JSON Schema limitations).
 const TOOL_INPUT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -110,7 +116,6 @@ const TOOL_INPUT_SCHEMA = {
   properties: {
     meals: {
       type: 'array',
-      minItems: 1,
       items: {
         type: 'object',
         additionalProperties: false,
@@ -118,22 +123,21 @@ const TOOL_INPUT_SCHEMA = {
         properties: {
           name: { type: 'string' },
           time: { type: 'string' },
-          order_index: { type: 'integer', minimum: 0 },
+          order_index: { type: 'integer' },
           foods: {
             type: 'array',
-            minItems: 1,
             items: {
               type: 'object',
               additionalProperties: false,
               required: ['food_name', 'quantity', 'unit', 'kcal', 'protein_g', 'carbs_g', 'fat_g'],
               properties: {
                 food_name: { type: 'string' },
-                quantity: { type: 'number', exclusiveMinimum: 0 },
+                quantity: { type: 'number' },
                 unit: { type: 'string' },
-                kcal: { type: 'number', minimum: 0 },
-                protein_g: { type: 'number', minimum: 0 },
-                carbs_g: { type: 'number', minimum: 0 },
-                fat_g: { type: 'number', minimum: 0 },
+                kcal: { type: 'number' },
+                protein_g: { type: 'number' },
+                carbs_g: { type: 'number' },
+                fat_g: { type: 'number' },
               },
             },
           },
@@ -145,13 +149,13 @@ const TOOL_INPUT_SCHEMA = {
       additionalProperties: false,
       required: ['target_kcal', 'protein_g', 'carbs_g', 'fat_g'],
       properties: {
-        target_kcal: { type: 'number', minimum: 0 },
-        protein_g: { type: 'number', minimum: 0 },
-        carbs_g: { type: 'number', minimum: 0 },
-        fat_g: { type: 'number', minimum: 0 },
+        target_kcal: { type: 'number' },
+        protein_g: { type: 'number' },
+        carbs_g: { type: 'number' },
+        fat_g: { type: 'number' },
       },
     },
-    shopping_list: { type: 'array', minItems: 1, items: { type: 'string' } },
+    shopping_list: { type: 'array', items: { type: 'string' } },
     disclaimer: { type: 'string' },
   },
 } as const;
@@ -174,7 +178,10 @@ const buildUserMessage = (studentData: string) =>
 // ----------------------------------------------------------------------------- Constantes
 const JOB_TYPE = 'generate_diet';
 const TOOL_NAME = 'generate_diet';
-const MAX_OUTPUT_TOKENS = 4096;
+// Uma dieta completa (várias refeições × vários alimentos) passa de 4096 tokens
+// e a resposta era truncada (stop_reason=max_tokens → JSON incompleto → parse
+// falha). 8192 dá folga confortável. Ver docs structured-outputs (max_tokens).
+const MAX_OUTPUT_TOKENS = 8192;
 const TIMEOUT_MS = 60_000;
 const RATE_LIMIT_MAX = 10; // chamadas
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // por hora
@@ -275,10 +282,25 @@ function extractStructuredOutput(response: any): unknown {
     .filter((b: any) => b?.type === 'text' && typeof b?.text === 'string')
     .map((b: any) => b.text)
     .join('');
-  if (!texto) return undefined;
+  if (!texto) {
+    // DIAGNÓSTICO: loga a forma da resposta para entender onde está o JSON.
+    console.error(
+      '[generate-diet] Sem bloco de texto. stop_reason=' +
+        String(response?.stop_reason) +
+        ' content=' +
+        JSON.stringify(response?.content)?.slice(0, 800),
+    );
+    return undefined;
+  }
   try {
     return JSON.parse(texto);
   } catch {
+    // Causa comum: resposta truncada por max_tokens (JSON incompleto).
+    if (response?.stop_reason === 'max_tokens') {
+      console.error('[generate-diet] Resposta truncada por max_tokens — aumente MAX_OUTPUT_TOKENS.');
+    } else {
+      console.error('[generate-diet] Texto não é JSON válido: ' + texto.slice(0, 500));
+    }
     return undefined;
   }
 }

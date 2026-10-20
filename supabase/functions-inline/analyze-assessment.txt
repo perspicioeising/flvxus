@@ -57,6 +57,10 @@ const analyzeAssessmentOutputSchema = z.object({
   disclaimer: z.string().min(1),
 });
 
+// Structured Outputs NÃO aceita `minItems`/`minimum`/etc. no schema cru (400).
+// Só type/required/enum/properties/additionalProperties. Os limites reais
+// (lista não vazia, campos obrigatórios) são garantidos pelo Zod de saída
+// (`analyzeAssessmentOutputSchema`) após a resposta.
 const TOOL_INPUT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -65,7 +69,6 @@ const TOOL_INPUT_SCHEMA = {
     analysis: { type: 'string' },
     recommendations: {
       type: 'array',
-      minItems: 1,
       items: {
         type: 'object',
         additionalProperties: false,
@@ -95,9 +98,90 @@ Regras invioláveis:
 const buildUserMessage = (assessmentData: string) =>
   `Analise a avaliação física com base nos dados abaixo.\n\n<dados_da_avaliacao>\n${assessmentData}\n</dados_da_avaliacao>`;
 
+// Colunas relevantes de physical_assessments para a análise (sem dados sensíveis
+// de storage). Carregadas via service role; a posse/tenant é validada antes.
+const ASSESSMENT_COLUMNS =
+  'id, assessed_at, age, gender, protocol, weight_kg, height_cm, bmi, ' +
+  'body_fat_pct, lean_mass_kg, fat_mass_kg, muscle_mass_kg, ' +
+  'neck_cm, shoulder_cm, chest_cm, waist_cm, abdomen_cm, hip_cm, ' +
+  'left_arm_cm, right_arm_cm, left_thigh_cm, right_thigh_cm, left_calf_cm, right_calf_cm, ' +
+  'skf_triceps, skf_subscapular, skf_chest, skf_midaxillary, skf_suprailiac, skf_abdominal, skf_thigh, ' +
+  'measurements, anamnesis, goal, student_id, tenant_id';
+
+const GENERO_PT: Record<string, string> = { male: 'masculino', female: 'feminino' };
+const OBJETIVO_PT: Record<string, string> = {
+  weight_loss: 'emagrecimento',
+  muscle_gain: 'ganho de massa muscular',
+  maintenance: 'manutenção',
+  conditioning: 'condicionamento',
+  rehabilitation: 'reabilitação',
+  performance: 'performance',
+};
+const CIRC_PT: Record<string, string> = {
+  neck_cm: 'pescoço', shoulder_cm: 'ombro', chest_cm: 'tórax', waist_cm: 'cintura',
+  abdomen_cm: 'abdômen', hip_cm: 'quadril', left_arm_cm: 'braço esq.', right_arm_cm: 'braço dir.',
+  left_thigh_cm: 'coxa esq.', right_thigh_cm: 'coxa dir.', left_calf_cm: 'panturrilha esq.',
+  right_calf_cm: 'panturrilha dir.',
+};
+const DOBRA_PT: Record<string, string> = {
+  skf_triceps: 'tríceps', skf_subscapular: 'subescapular', skf_chest: 'peitoral',
+  skf_midaxillary: 'axilar média', skf_suprailiac: 'supra-ilíaca', skf_abdominal: 'abdominal',
+  skf_thigh: 'coxa', skf_biceps: 'bíceps',
+};
+
+const num = (v: unknown): number | null =>
+  v == null ? null : typeof v === 'number' ? v : Number.isFinite(Number(v)) ? Number(v) : null;
+
+// Transforma uma linha de physical_assessments num objeto legível em pt-BR,
+// omitindo campos nulos. É isto (não o assessment_id) que a IA recebe.
+function formatarAvaliacao(row: any): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (row.assessed_at) out.data_avaliacao = row.assessed_at;
+  if (num(row.age) != null) out.idade = num(row.age);
+  if (row.gender) out.genero = GENERO_PT[row.gender] ?? row.gender;
+  if (row.protocol) out.protocolo = row.protocol;
+  if (row.goal) out.objetivo = OBJETIVO_PT[row.goal] ?? row.goal;
+
+  const comp: Record<string, number> = {};
+  if (num(row.weight_kg) != null) comp.peso_kg = num(row.weight_kg)!;
+  if (num(row.height_cm) != null) comp.altura_cm = num(row.height_cm)!;
+  if (num(row.bmi) != null) comp.imc = num(row.bmi)!;
+  if (num(row.body_fat_pct) != null) comp.percentual_gordura = num(row.body_fat_pct)!;
+  if (num(row.fat_mass_kg) != null) comp.massa_gorda_kg = num(row.fat_mass_kg)!;
+  if (num(row.lean_mass_kg) != null) comp.massa_magra_kg = num(row.lean_mass_kg)!;
+  if (num(row.muscle_mass_kg) != null) comp.massa_muscular_kg = num(row.muscle_mass_kg)!;
+  if (Object.keys(comp).length) out.composicao_corporal = comp;
+
+  const circ: Record<string, number> = {};
+  for (const k of Object.keys(CIRC_PT)) {
+    const v = num(row[k]);
+    if (v != null) circ[CIRC_PT[k]] = v;
+  }
+  if (Object.keys(circ).length) out.circunferencias_cm = circ;
+
+  const dobras: Record<string, number> = {};
+  for (const k of ['skf_triceps', 'skf_subscapular', 'skf_chest', 'skf_midaxillary', 'skf_suprailiac', 'skf_abdominal', 'skf_thigh']) {
+    const v = num(row[k]);
+    if (v != null) dobras[DOBRA_PT[k]] = v;
+  }
+  const measurements = row.measurements && typeof row.measurements === 'object' ? row.measurements : {};
+  if (num(measurements.skf_biceps) != null) dobras[DOBRA_PT.skf_biceps] = num(measurements.skf_biceps)!;
+  if (Object.keys(dobras).length) out.dobras_cutaneas_mm = dobras;
+
+  const anamnese =
+    row.anamnesis && typeof row.anamnesis === 'object' && typeof row.anamnesis.texto === 'string'
+      ? row.anamnesis.texto
+      : null;
+  if (anamnese) out.anamnese = anamnese;
+
+  return out;
+}
+
 const JOB_TYPE = 'analyze_assessment';
 const TOOL_NAME = 'analyze_assessment';
-const MAX_OUTPUT_TOKENS = 4096;
+// Análise + recomendações longas podem passar de 4096 tokens e truncar o JSON
+// (stop_reason=max_tokens). 8192 dá folga.
+const MAX_OUTPUT_TOKENS = 8192;
 const TIMEOUT_MS = 60_000;
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
@@ -170,10 +254,18 @@ function extractStructuredOutput(response: any): unknown {
     .filter((b: any) => b?.type === 'text' && typeof b?.text === 'string')
     .map((b: any) => b.text)
     .join('');
-  if (!texto) return undefined;
+  if (!texto) {
+    console.error('[analyze-assessment] Sem bloco de texto. stop_reason=' + String(response?.stop_reason));
+    return undefined;
+  }
   try {
     return JSON.parse(texto);
   } catch {
+    if (response?.stop_reason === 'max_tokens') {
+      console.error('[analyze-assessment] Resposta truncada por max_tokens — aumente MAX_OUTPUT_TOKENS.');
+    } else {
+      console.error('[analyze-assessment] Texto não é JSON válido: ' + texto.slice(0, 500));
+    }
     return undefined;
   }
 }
@@ -215,6 +307,32 @@ Deno.serve(async (req) => {
     // (Sem o consentimento, não é preciso resolver o aluno dono da avaliação
     // aqui; a validação de posse/tenant fica por conta da própria geração.)
 
+    // Carrega a avaliação (service role; valida tenant). SEM isto a IA recebia
+    // só o assessment_id e respondia "sem dados para analisar". Feito ANTES de
+    // registrar o pending para não deixar geração órfã quando a avaliação não
+    // existe ou é de outro tenant.
+    const { data: avaliacao, error: erroAval } = await admin
+      .from('physical_assessments')
+      .select(ASSESSMENT_COLUMNS)
+      .eq('id', input.assessment_id)
+      .maybeSingle();
+    if (erroAval || !avaliacao) throw badRequest('Avaliação não encontrada.');
+    if (avaliacao.tenant_id !== tenantId) throw forbidden('Avaliação de outro tenant.');
+
+    const dados: Record<string, unknown> = { avaliacao_atual: formatarAvaliacao(avaliacao) };
+
+    // Avaliação anterior opcional, para comparação de evolução.
+    if (input.previous_assessment_id) {
+      const { data: anterior } = await admin
+        .from('physical_assessments')
+        .select(ASSESSMENT_COLUMNS)
+        .eq('id', input.previous_assessment_id)
+        .maybeSingle();
+      if (anterior && anterior.tenant_id === tenantId) {
+        dados.avaliacao_anterior = formatarAvaliacao(anterior);
+      }
+    }
+
     const sinceIso = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
     const { count } = await admin.from('ai_usage_logs').select('id', { count: 'exact', head: true })
       .eq('tenant_id', tenantId).eq('user_id', userId).gte('created_at', sinceIso);
@@ -229,7 +347,7 @@ Deno.serve(async (req) => {
 
     const startedAt = Date.now();
     try {
-      const result = await callAnthropic(SYSTEM_PROMPT, buildUserMessage(JSON.stringify(input)));
+      const result = await callAnthropic(SYSTEM_PROMPT, buildUserMessage(JSON.stringify(dados)));
       const structured = extractStructuredOutput(result.response);
       const parsedOutput = analyzeAssessmentOutputSchema.safeParse(structured);
       if (!parsedOutput.success) {

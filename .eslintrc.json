@@ -1,6 +1,11 @@
 {
   "root": true,
   "extends": "next/core-web-vitals",
+  "ignorePatterns": [
+    "supabase/functions/**",
+    "supabase/functions-inline/**",
+    "app/_legacy-api/**"
+  ],
   "rules": {
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off",
