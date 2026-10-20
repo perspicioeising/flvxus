@@ -32,9 +32,10 @@ function seriesReps(sets: number | null, reps: string | null): string | null {
 
 /**
  * Lista de exercícios de um dia da semana, com o cabeçalho do dia e o botão
- * "Iniciar sessão" que leva à execução já filtrada por aquele dia. Quando o
- * grupo não tem dia definido (`weekday = null`), o botão é omitido (a execução
- * do dia depende de um weekday). Mobile-first: alvo ≥ 44px no botão.
+ * "Iniciar sessão" que leva à execução. Para dias com weekday definido o link
+ * já filtra por aquele dia (`?dia=`); para o balde "Sem dia definido"
+ * (`weekday = null`) o link vai para a ficha sem `?dia`, e o seletor de dia na
+ * execução abre no balde sem dia. Mobile-first: alvo ≥ 44px no botão.
  */
 export function DiaLista({
   rotulo,
@@ -51,14 +52,18 @@ export function DiaLista({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 p-4">
         <CardTitle className="text-base">{rotulo}</CardTitle>
-        {weekday !== null ? (
-          <Button asChild size="sm" className="min-h-11">
-            <Link href={`/aluno/execucao/${planId}?dia=${weekday}`}>
-              <Play className="h-4 w-4" aria-hidden="true" />
-              Iniciar sessão
-            </Link>
-          </Button>
-        ) : null}
+        <Button asChild size="sm" className="min-h-11">
+          <Link
+            href={
+              weekday !== null
+                ? `/aluno/execucao/${planId}?dia=${weekday}`
+                : `/aluno/execucao/${planId}`
+            }
+          >
+            <Play className="h-4 w-4" aria-hidden="true" />
+            Iniciar sessão
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent className="space-y-3 p-4 pt-0">
         <ul className="space-y-3">

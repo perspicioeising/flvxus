@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { Dumbbell, Play } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
-import { weekdayAtual } from '@/lib/semana';
 import { EmptyState, ErrorState } from '@/components/patterns';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,12 +14,12 @@ import {
 
 /**
  * Seleção da ficha a treinar. Lista as fichas liberadas (RLS garante posse e
- * `released`); se houver só uma, redireciona direto para a execução dela no dia
- * atual. EmptyState quando nenhuma ficha foi liberada.
+ * `released`); se houver só uma, redireciona direto para a execução dela SEM
+ * forçar o dia de hoje (a tela da ficha mostra o seletor de dia/divisão).
+ * EmptyState quando nenhuma ficha foi liberada.
  */
 export default async function AlunoExecucaoPage() {
   const supabase = await createClient();
-  const weekday = weekdayAtual();
 
   const { data: planos, error } = await supabase
     .from('workout_plans')
@@ -43,7 +42,7 @@ export default async function AlunoExecucaoPage() {
   const fichas = planos ?? [];
 
   if (fichas.length === 1) {
-    redirect(`/aluno/execucao/${fichas[0].id}?dia=${weekday}`);
+    redirect(`/aluno/execucao/${fichas[0].id}`);
   }
 
   return (
@@ -65,7 +64,7 @@ export default async function AlunoExecucaoPage() {
               </CardHeader>
               <CardContent className="p-4">
                 <Button asChild className="min-h-11 w-full">
-                  <Link href={`/aluno/execucao/${ficha.id}?dia=${weekday}`}>
+                  <Link href={`/aluno/execucao/${ficha.id}`}>
                     <Play className="h-4 w-4" aria-hidden="true" />
                     Treinar esta ficha
                   </Link>
@@ -85,7 +84,7 @@ function PageHeader() {
     <header className="space-y-1">
       <h1 className="text-2xl font-bold tracking-tight text-foreground">Treinar</h1>
       <p className="text-sm text-muted-foreground">
-        Escolha a ficha para começar o treino de hoje.
+        Escolha a ficha para começar o treino.
       </p>
     </header>
   );
