@@ -38,25 +38,53 @@ function rotuloData(iso: string): string {
   return `${dia}/${mes}`;
 }
 
+/** Formata dd/mm HH:mm — usado para desambiguar avaliações do mesmo dia. */
+function rotuloDataHora(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const dia = String(d.getUTCDate()).padStart(2, '0');
+  const mes = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const hora = String(d.getUTCHours()).padStart(2, '0');
+  const min = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${dia}/${mes} ${hora}:${min}`;
+}
+
 /**
  * Converte avaliações (em qualquer ordem) numa série ordenada do mais antigo ao
  * mais recente, pronta para os gráficos. Valores ausentes permanecem `null`
  * (recharts ignora/interrompe a linha, sem quebrar).
+ *
+ * Rótulo do eixo X: dd/mm por padrão; quando há mais de uma avaliação no MESMO
+ * dia, esses rótulos repetidos ganham a hora (dd/mm HH:mm) para que seja
+ * possível distinguir a ordem — antes todas apareciam como "20/10" e a evolução
+ * parecia aleatória.
  */
 export function montarSerieEvolucao(avaliacoes: AvaliacaoSerie[]): PontoEvolucao[] {
-  return [...avaliacoes]
+  const ordenadas = [...avaliacoes]
     .filter((a) => !Number.isNaN(new Date(a.assessed_at).getTime()))
-    .sort((a, b) => new Date(a.assessed_at).getTime() - new Date(b.assessed_at).getTime())
-    .map((a) => ({
+    .sort((a, b) => new Date(a.assessed_at).getTime() - new Date(b.assessed_at).getTime());
+
+  // Conta quantas vezes cada rótulo dd/mm aparece para detectar colisões.
+  const contagemPorDia = new Map<string, number>();
+  for (const a of ordenadas) {
+    const r = rotuloData(a.assessed_at);
+    contagemPorDia.set(r, (contagemPorDia.get(r) ?? 0) + 1);
+  }
+
+  return ordenadas.map((a) => {
+    const base = rotuloData(a.assessed_at);
+    const rotulo = (contagemPorDia.get(base) ?? 0) > 1 ? rotuloDataHora(a.assessed_at) : base;
+    return {
       data: a.assessed_at,
-      rotulo: rotuloData(a.assessed_at),
+      rotulo,
       peso: a.weight_kg,
       gordura: a.body_fat_pct,
       massaMagra: a.lean_mass_kg,
       cintura: a.waist_cm,
       quadril: a.hip_cm,
       abdomen: a.abdomen_cm,
-    }));
+    };
+  });
 }
 
 /** Indica se há ao menos dois pontos com valor para uma dada métrica. */
