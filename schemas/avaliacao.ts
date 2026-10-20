@@ -106,12 +106,22 @@ export const CIRCUNFERENCIAS = [
   'right_calf_cm',
 ] as const;
 
-/** Número opcional positivo (string vazia/null → undefined). */
+/**
+ * Normaliza a entrada numérica vinda do form (sempre string): aceita decimal com
+ * vírgula (pt-BR, ex.: "80,5") convertendo para ponto, e trata vazio/nulo como
+ * `undefined`. Sem essa normalização, `z.coerce.number()` faria `Number("80,5")`
+ * virar `NaN` e o parse falharia silenciosamente, impedindo o submit de chegar à
+ * action e os cálculos de rodarem.
+ */
+function normalizarNumero(v: unknown): unknown {
+  if (v === '' || v === null || v === undefined) return undefined;
+  if (typeof v === 'string') return v.trim().replace(',', '.');
+  return v;
+}
+
+/** Número opcional positivo (string vazia/null → undefined; aceita vírgula decimal). */
 const numeroOpcional = (msg: string) =>
-  z.preprocess(
-    (v) => (v === '' || v === null || v === undefined ? undefined : v),
-    z.coerce.number().positive(msg).optional()
-  );
+  z.preprocess(normalizarNumero, z.coerce.number().positive(msg).optional());
 
 /** String opcional (string vazia/null → undefined). */
 const stringOpcional = () =>
@@ -145,7 +155,7 @@ const camposBase = {
   weight_kg: numeroOpcional('O peso deve ser um número positivo (kg).'),
   height_cm: numeroOpcional('A altura deve ser um número positivo (cm).'),
   body_fat_pct: z.preprocess(
-    (v) => (v === '' || v === null || v === undefined ? undefined : v),
+    normalizarNumero,
     z.coerce.number().min(1, 'Informe um %gordura entre 1 e 75.').max(75, 'Informe um %gordura entre 1 e 75.').optional()
   ),
   goal: z.preprocess(
