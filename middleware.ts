@@ -16,9 +16,11 @@ import { updateSession } from '@/lib/supabase/middleware';
  * o banco a cada requisicao.
  */
 
-// Rotas de autenticacao sempre liberadas.
+// Rotas de autenticacao sempre liberadas. `/callback` é o route handler
+// server-side do @supabase/ssr que troca `?code=...` por sessão (o grupo
+// `(auth)` não vira segmento de URL, então a rota pública é `/callback`).
 const AUTH_ROUTES = [
-  '/auth/callback',
+  '/callback',
   '/reset-password',
   '/set-password',
   '/login',
