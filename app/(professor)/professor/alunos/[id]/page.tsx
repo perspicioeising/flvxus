@@ -32,6 +32,7 @@ import {
   statusLabel,
 } from '@/components/professor/alunos/labels';
 import { StudentStatusActions } from '@/components/professor/alunos/student-status-actions';
+import { ResendInviteButton } from '@/components/professor/alunos/resend-invite-button';
 import type {
   ExperienceLevel,
   GoalType,
@@ -139,15 +140,25 @@ export default async function FichaAlunoPage({
             </div>
           </div>
 
-          <Button asChild variant="outline" className="min-h-11">
-            <Link href={`/professor/alunos/${id}/editar`}>
-              <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
-              Editar
-            </Link>
-          </Button>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            {aluno.status === 'pending' ? <ResendInviteButton userId={id} /> : null}
+            <Button asChild variant="outline" className="min-h-11">
+              <Link href={`/professor/alunos/${id}/editar`}>
+                <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                Editar
+              </Link>
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {aluno.status === 'pending' ? (
+            <p className="rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+              Convite enviado. Este aluno ainda não definiu a senha nem ativou a conta.
+              Use <span className="font-medium text-foreground">Reenviar convite</span> se ele
+              não recebeu ou o link expirou.
+            </p>
+          ) : null}
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Dado rotulo="Telefone" valor={aluno.phone} />
             <Dado rotulo="Nascimento" valor={formatarData(aluno.birth_date)} />

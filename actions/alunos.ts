@@ -138,6 +138,56 @@ export async function convidarAluno(
 }
 
 /**
+ * Reenvia o convite a um aluno que ainda não ativou a conta (status 'pending').
+ * Confirma, via RLS (`createClient`), que o aluno pertence ao professor e está
+ * pendente; então reenvia o e-mail de convite com o mesmo `redirectTo`.
+ */
+export async function reenviarConvite(userId: string): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode reenviar convites.' };
+  }
+
+  // Lê o aluno sob RLS: garante que é do tenant do professor e está pendente.
+  const supabase = await createClient();
+  const { data: aluno, error: erroLeitura } = await supabase
+    .from('profiles')
+    .select('email, status, role')
+    .eq('user_id', userId)
+    .eq('role', 'student')
+    .single();
+
+  if (erroLeitura || !aluno) {
+    return { ok: false, message: 'Aluno não encontrado.' };
+  }
+  if (!aluno.email) {
+    return { ok: false, message: 'Este aluno não tem e-mail cadastrado.' };
+  }
+  if (aluno.status !== 'pending') {
+    return { ok: false, message: 'Este aluno já ativou a conta; não há convite a reenviar.' };
+  }
+
+  // Reenvia o convite (mesmo redirectTo do convite original).
+  const admin = createAdminClient(professor.tenantId);
+  const { error: erroConvite } = await admin.authAdmin.inviteUserByEmail(aluno.email, {
+    data: { role: 'student' },
+    redirectTo: siteUrl('/callback?next=/set-password'),
+  });
+
+  if (erroConvite) {
+    return {
+      ok: false,
+      message: `Não foi possível reenviar o convite: ${erroConvite.message}`,
+    };
+  }
+
+  revalidatePath(`/professor/alunos/${userId}`);
+  revalidatePath('/professor/alunos');
+
+  return { ok: true, message: 'Convite reenviado ao aluno.', id: userId };
+}
+
+/**
  * Edita os dados cadastrais de um aluno. Mutação normal via RLS (`createClient`):
  * o RLS garante que o professor só altera alunos do próprio tenant.
  */
