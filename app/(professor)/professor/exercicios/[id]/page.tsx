@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { ExerciseMedia } from '@/components/professor/exercicios/exercise-media';
 import { ExerciseMediaUpload } from '@/components/professor/exercicios/exercise-media-upload';
 import { ExerciseDeleteButton } from '@/components/professor/exercicios/exercise-delete-button';
+import { ExerciseDuplicateButton } from '@/components/professor/exercicios/exercise-duplicate-button';
 
 export default async function ExercicioDetalhePage({
   params,
@@ -85,7 +86,13 @@ export default async function ExercicioDetalhePage({
             </div>
           </div>
 
-          {!ehGlobal ? (
+          {ehGlobal ? (
+            // Exercício do catálogo global: imutável, mas o professor pode
+            // duplicar para o próprio acervo e então personalizar a cópia.
+            <div className="flex shrink-0">
+              <ExerciseDuplicateButton exerciseId={id} />
+            </div>
+          ) : (
             <div className="flex shrink-0 gap-2">
               <Button asChild variant="outline" className="min-h-11">
                 <Link href={`/professor/exercicios/${id}/editar`}>
@@ -95,7 +102,7 @@ export default async function ExercicioDetalhePage({
               </Button>
               <ExerciseDeleteButton exerciseId={id} nome={exercicio.name} />
             </div>
-          ) : null}
+          )}
         </CardHeader>
 
         <CardContent className="space-y-6">

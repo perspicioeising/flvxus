@@ -177,6 +177,69 @@ export async function excluirExercicio(
   return { ok: true, message: 'Exercício excluído.', id: exerciseId };
 }
 
+/**
+ * Duplica um exercício do catálogo global (`tenant_id IS NULL`) para o acervo
+ * do professor, criando uma cópia editável no próprio tenant. O catálogo global
+ * é compartilhado e imutável (RLS); esta action dá ao professor a liberdade de
+ * personalizar sem afetar o catálogo de todos. A mídia (video/thumbnail) NÃO é
+ * copiada — os arquivos vivem no path do exercício de origem; o professor
+ * reenvia a mídia que quiser na cópia.
+ */
+export async function duplicarExercicioParaTenant(
+  exerciseId: string
+): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode duplicar exercícios.' };
+  }
+
+  const supabase = await createClient();
+
+  // Lê o exercício de origem (RLS permite ler o catálogo global e os do tenant).
+  const { data: origem, error: erroLeitura } = await supabase
+    .from('exercises')
+    .select('name, muscle_groups, equipment, instructions, tips, common_errors')
+    .eq('id', exerciseId)
+    .single();
+
+  if (erroLeitura || !origem) {
+    return { ok: false, message: 'Exercício não encontrado.' };
+  }
+
+  // Insere a cópia no tenant do professor (a policy exige tenant_id próprio).
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert({
+      name: origem.name,
+      muscle_groups: origem.muscle_groups,
+      equipment: origem.equipment,
+      instructions: origem.instructions,
+      tips: origem.tips ?? [],
+      common_errors: origem.common_errors ?? [],
+      video_url: null,
+      thumbnail_url: null,
+      tenant_id: professor.tenantId,
+      created_by: professor.userId,
+    })
+    .select('id')
+    .single();
+
+  if (error || !data) {
+    return {
+      ok: false,
+      message: `Não foi possível duplicar: ${error?.message ?? 'erro desconhecido'}`,
+    };
+  }
+
+  revalidatePath('/professor/exercicios');
+
+  return {
+    ok: true,
+    message: 'Exercício duplicado para o seu acervo. Agora você pode editá-lo.',
+    id: data.id,
+  };
+}
+
 export interface UploadMidiaResultado extends EstadoAcao {
   /** Path gravado no Storage (persistido em video_url/thumbnail_url). */
   path?: string;

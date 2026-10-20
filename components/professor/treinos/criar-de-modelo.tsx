@@ -53,6 +53,16 @@ export function CriarDeModelo({
 
   const desabilitado = !modeloId || !studentId || salvando;
 
+  // Motivo de o gatilho ficar indisponível, para explicar ao professor em vez
+  // de só exibir um botão "apagado" sem contexto.
+  const semModelos = modelos.length === 0;
+  const semAlunos = alunos.length === 0;
+  const motivoIndisponivel = semModelos
+    ? 'Crie um modelo de treino primeiro.'
+    : semAlunos
+      ? 'Cadastre um aluno primeiro para montar a ficha dele.'
+      : undefined;
+
   async function criar() {
     if (!modeloId || !studentId) return;
     setSalvando(true);
@@ -80,7 +90,13 @@ export function CriarDeModelo({
           type="button"
           variant="outline"
           className="min-h-11"
-          disabled={modelos.length === 0 || alunos.length === 0}
+          disabled={Boolean(motivoIndisponivel)}
+          title={motivoIndisponivel}
+          aria-label={
+            motivoIndisponivel
+              ? `Criar a partir de modelo — indisponível: ${motivoIndisponivel}`
+              : undefined
+          }
         >
           <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
           Criar a partir de modelo

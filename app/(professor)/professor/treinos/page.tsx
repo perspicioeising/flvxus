@@ -65,6 +65,24 @@ export default async function TreinosPage() {
         </div>
       </header>
 
+      {alunos.length === 0 ? (
+        <p className="rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+          Para montar uma ficha você precisa de um aluno.{' '}
+          <Link href="/professor/alunos/novo" className="font-medium text-foreground underline">
+            Cadastre um aluno
+          </Link>{' '}
+          e o botão “Criar a partir de modelo” será liberado.
+        </p>
+      ) : modelos.length === 0 ? (
+        <p className="rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+          Você ainda não tem modelos de treino.{' '}
+          <Link href="/professor/modelos-treino/novo" className="font-medium text-foreground underline">
+            Crie um modelo
+          </Link>{' '}
+          para reaproveitá-lo em várias fichas.
+        </p>
+      ) : null}
+
       {error ? (
         <ErrorState
           title="Não foi possível carregar as fichas"
