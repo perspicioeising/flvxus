@@ -107,6 +107,47 @@ v8→v9), `components/students/hooks/useSwipeGestures.ts` (RefObject dos @types/
 removido). Demais páginas v1 em `app/(dashboard)/.../page.tsx` podem exigir `params`/
 `searchParams` como `Promise` (PageProps do Next 15) quando forem religadas.
 
+## Fase 6 — IA Anthropic (FEAT-001: fundação)
+
+### Bloqueio de ambiente — `deno check` / runtime Deno (NÃO é falta de código)
+
+Os helpers compartilhados das Edge Functions (`supabase/functions/_shared/*.ts`) e os prompts
+(`supabase/functions/_prompts/*.ts`) rodam em **Deno**, que **não está no PATH** deste ambiente
+(e não há Docker para o `supabase functions serve`). Logo, `deno check` e o deploy das funções
+são **bloqueio de ambiente**, não de código. O lado Next (schemas Zod + lógica pura) foi
+totalmente verificado aqui.
+
+Verificação executada neste ambiente (tudo verde):
+
+- `npm run typecheck` — OK. O diretório `supabase/functions` foi **excluído** do `tsconfig.json`
+  (como já era `app/_legacy-api`), pois é código Deno (imports com extensão `.ts`, `globalThis.Deno`)
+  typechecado por `deno check`, não pelo `tsc` do Next.
+- `npm run lint` — OK (só warnings pré-existentes de `react-hooks/exhaustive-deps`).
+- `npm run build` — OK. Prova que **nada só-Deno vazou** para o bundle Next: os schemas Zod
+  (`schemas/ia/`) são puros e a lógica pura importada pelos testes (`structured-output`,
+  `rate-limit`, `logging`) não arrasta `Deno.*`.
+- `npm run test` — 39 passam / 7 skipped (RLS). Novos testes de schema (bom/ruim) e de lógica
+  pura (parsing+validação Zod com Anthropic FAKE, janela de rate limit, estimativa de custo)
+  verdes; testes existentes seguem verdes.
+
+Revisão estática dos helpers Deno (no lugar do `deno check`):
+
+- `anthropic.ts`: `fetch` e leitor de env injetáveis; `tool_choice` força a saída estruturada;
+  o `signal` do `AbortController` é **sempre** passado ao `fetch` (corrige o bug da v1); a chave
+  **nunca** é logada; modelo vem de `ANTHROPIC_MODEL` (sem string fixa); retry limitado (2) +
+  fallback amigável.
+- `auth-guard.ts`: valida o JWT primeiro; só **depois** resolve papel/tenant via service_role;
+  403 se não for `trainer`.
+- `structured-output.ts` / `rate-limit.ts` / `logging.ts`: parte **pura** (parsing/validação,
+  janela de rate limit, custo) separada dos efeitos (fetch/DB injetáveis) e coberta por Vitest.
+
+Rodar quando houver Deno no PATH:
+
+```bash
+# A partir da raiz do worktree:
+deno check supabase/functions/_shared/*.ts supabase/functions/_prompts/*.ts
+```
+
 ## Itens fora do escopo da Fase 2 (serão tratados nas fases seguintes)
 
 - Renomear o pacote de `fitconnect-pro` para `flvxus` e subir Next 15/React 19 (ADR 0002) —

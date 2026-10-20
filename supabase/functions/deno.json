@@ -1,0 +1,18 @@
+{
+  "// doc": "Config Deno das Edge Functions de IA (Fase 6). O runtime Deno NÃO sobe neste ambiente (sem Docker) — ver docs/pendencias.md. As mesmas versões de zod/@supabase/supabase-js do lado Next são fixadas aqui para alinhar comportamento. O alias @shared aponta para _shared; schemas Zod puros são importados por caminho relativo (../../../schemas/ia/...).",
+  "imports": {
+    "zod": "npm:zod@3.22.4",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.39.7",
+    "@shared/": "./_shared/",
+    "@prompts/": "./_prompts/"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "singleQuote": true,
+    "lineWidth": 100
+  }
+}
