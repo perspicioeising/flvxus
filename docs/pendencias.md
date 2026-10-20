@@ -663,3 +663,42 @@ liberada.
 
 Como não há Docker/projeto Supabase local aqui, a confirmação de quais alunos estão divergentes e
 a recriação precisam ser feitas no projeto hospedado pelo dono.
+
+## Convergência v2 (execução + gamificação + IA + remoção do LGPD)
+
+### Estado real da verificação na convergência (corrige notas "tudo verde" das fases anteriores)
+
+As notas antigas de FEAT-001/FEAT-002 acima dizem que `npm run typecheck` e `npm run build`
+estavam "OK". Isso **não vale mais** para o branch inteiro na convergência — foram observações
+pontuais do momento em que cada fase foi escrita. Sinal de verificação confiável desta fase
+(conforme combinado): **`npm run test` verde + nenhum erro NOVO de `tsc` nos arquivos tocados.**
+
+- `npm run test` — **verde**: 219 passam / 7 skipped (RLS). Único sinal confiável aqui.
+- `npm run typecheck` — **falha com erros PRÉ-EXISTENTES, fora do escopo desta convergência**:
+  - Resolução do Zod 3.25 pelo `tsc` (`moduleResolution: bundler`): todos os `schemas/*.ts`
+    acusam `Property 'string'/'object'/... does not exist` e `Namespace ... has no exported
+    member 'infer'` apontando para `node_modules/zod/dist/types/v3/external`. É condição de
+    **ferramenta/ambiente** (o Vitest resolve o Zod em runtime e por isso os testes passam), não
+    um defeito introduzido pelas FEATs. Mexer nisso exigiria tocar `tsconfig.json`/`node_modules`
+    — fora do escopo de costura entre FEATs.
+  - Código só-Deno (`supabase/functions-inline/*.ts`, `supabase/functions/_shared/structured-output.ts`):
+    `Cannot find name 'Deno'`, `Cannot find module 'npm:...'` — esperado (typechecado por
+    `deno check`, não pelo `tsc` do Next).
+  - Legado: `actions/treinos.ts` (ex.: `item` implícito `any`) e testes `schemas-auth`/
+    `schemas-avaliacao`/`ia/anthropic-parsing`.
+- `npm run build` — falha em `actions/treinos.ts:134` (`Parameter 'item' implicitly has an 'any'
+  type`), legado fora do escopo. Um build 100% limpo depende dessa 1 linha (opcional, não tocado
+  nesta convergência para não misturar com a costura entre FEATs).
+
+### Costura corrigida — seletor de dia da execução travava no deep-link `?dia`
+
+A página `app/(aluno)/aluno/execucao/[planId]/page.tsx` pré-filtrava os itens pelo `?dia` da URL
+e passava **só os daquele dia** para o Client `SessaoExecucao`. Como o seletor de dia
+(`SeletorDia`) se esconde quando há ≤ 1 dia, um aluno que entrava pelo atalho da ficha
+(`dia-lista.tsx`/`ficha-card.tsx` geram `/aluno/execucao/{id}?dia=N`) ficava **preso naquele
+dia**, sem conseguir trocar de divisão num plano com vários dias.
+
+Correção: a página agora passa **sempre todos os itens** da ficha e encaminha o dia pedido como
+`diaInicial` (nova prop opcional de `SessaoExecucao`). O Client abre no dia do deep-link quando
+ele tem itens e, caso contrário, no primeiro dia com exercícios — mantendo a troca de dia livre
+pelo seletor. Sem mudança de comportamento para quem entra sem `?dia`.
