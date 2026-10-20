@@ -1,13 +1,119 @@
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, CheckCircle2, LineChart } from 'lucide-react';
 
-import { PageStub } from '@/components/navigation/page-stub';
+import { createClient } from '@/lib/supabase/server';
+import { resumoAderencia } from '@/lib/treino/aderencia';
+import { montarSerieEvolucao } from '@/components/professor/avaliacoes/evolucao-series';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { EmptyState, ErrorState } from '@/components/patterns';
+import { GraficosAluno } from '@/components/aluno/evolucao/graficos-aluno';
 
-export default function AlunoEvolucaoPage() {
+/** Janela padrão (dias) do resumo de aderência. */
+const JANELA_ADERENCIA_DIAS = 30;
+
+/**
+ * Evolução do próprio aluno — somente leitura. Leitura via RSC sob RLS (o aluno
+ * só vê as próprias linhas). Reusa `montarSerieEvolucao` e o `EvolucaoLineChart`
+ * da Fase 4 para peso, %gordura e cintura, e resume a aderência de treino a
+ * partir das sessões concluídas (`workout_sessions.finished_at`).
+ */
+export default async function AlunoEvolucaoPage() {
+  const supabase = await createClient();
+
+  const [avaliacoesRes, sessoesRes] = await Promise.all([
+    supabase
+      .from('physical_assessments')
+      .select('assessed_at, weight_kg, body_fat_pct, lean_mass_kg, waist_cm, hip_cm, abdomen_cm')
+      .order('assessed_at', { ascending: true }),
+    supabase
+      .from('workout_sessions')
+      .select('finished_at')
+      .not('finished_at', 'is', null),
+  ]);
+
+  if (avaliacoesRes.error || sessoesRes.error) {
+    return (
+      <section className="mx-auto w-full max-w-3xl space-y-6">
+        <PageHeader />
+        <ErrorState
+          title="Não foi possível carregar sua evolução"
+          description="Ocorreu um erro ao buscar seus dados. Atualize a página para tentar novamente."
+        />
+      </section>
+    );
+  }
+
+  const serie = montarSerieEvolucao(avaliacoesRes.data ?? []);
+  const aderencia = resumoAderencia(sessoesRes.data ?? [], JANELA_ADERENCIA_DIAS);
+
   return (
-    <PageStub
-      title="Evolução"
-      icon={BarChart3}
-      description="Acompanhe sua evolução com gráficos ao longo do tempo. Em construção."
-    />
+    <section className="mx-auto w-full max-w-3xl space-y-6">
+      <PageHeader />
+
+      {/* Aderência de treino */}
+      <Card>
+        <CardHeader className="p-4 pb-0">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <CheckCircle2 className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            Aderência de treino
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <dl className="grid grid-cols-2 gap-4">
+            <Resumo
+              rotulo={`Concluídos (${JANELA_ADERENCIA_DIAS} dias)`}
+              valor={String(aderencia.concluidasPeriodo)}
+            />
+            <Resumo rotulo="Concluídos (total)" valor={String(aderencia.concluidasTotal)} />
+          </dl>
+        </CardContent>
+      </Card>
+
+      {/* Gráficos de avaliação */}
+      <Card>
+        <CardHeader className="p-4 pb-0">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <LineChart className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            Evolução das avaliações
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          {serie.length < 2 ? (
+            <EmptyState
+              icon={BarChart3}
+              title="Evolução indisponível"
+              description="Você precisa de ao menos duas avaliações registradas para visualizar os gráficos."
+            />
+          ) : (
+            <GraficosAluno serie={serie} />
+          )}
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+/** Cabeçalho da tela de evolução (reusado no caminho de erro). */
+function PageHeader() {
+  return (
+    <header className="space-y-1">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">Evolução</h1>
+      <p className="text-sm text-muted-foreground">
+        Acompanhe seus treinos concluídos e a evolução das suas avaliações ao longo do tempo.
+      </p>
+    </header>
+  );
+}
+
+function Resumo({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{rotulo}</dt>
+      <dd className="text-2xl font-bold text-foreground">{valor}</dd>
+    </div>
   );
 }
