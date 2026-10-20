@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { criarAvaliacaoSchema } from '@/schemas/avaliacao';
+import { criarAvaliacaoSchema, type CriarAvaliacaoInput } from '@/schemas/avaliacao';
 import { calcularComposicao, type ProtocoloCalculo } from '@/lib/assessment';
 
 /**
@@ -36,7 +36,7 @@ function entradaDoForm(valores: Record<string, string>): Record<string, FormData
 }
 
 /** Monta a entrada de `calcularComposicao` a partir dos dados já validados. */
-function entradaComposicao(dados: ReturnType<typeof criarAvaliacaoSchema.safeParse> extends { success: true; data: infer D } ? D : never) {
+function entradaComposicao(dados: CriarAvaliacaoInput) {
   return {
     protocol: dados.protocol as ProtocoloCalculo,
     genero: (dados.gender ?? 'male') as 'male' | 'female',
