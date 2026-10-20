@@ -47,7 +47,8 @@ function erroDeCampo(flatten: {
  */
 function linhaAvaliacao(
   dados: CriarAvaliacaoInput,
-  professor: { userId: string; tenantId: string }
+  professor: { userId: string; tenantId: string },
+  measurementsExistentes?: Record<string, unknown> | null
 ) {
   const composicao = calcularComposicao({
     protocol: dados.protocol as ProtocoloCalculo,
@@ -83,6 +84,10 @@ function linhaAvaliacao(
     body_fat_pct: arredonda(composicao.bodyFatPct, 2),
     fat_mass_kg: arredonda(composicao.fatMassKg, 2),
     lean_mass_kg: arredonda(composicao.leanMassKg, 2),
+    // O produto trata massa magra como massa muscular estimada; persistimos o
+    // mesmo valor em `muscle_mass_kg` para que a coluna não fique sempre nula
+    // (nenhum protocolo atual estima massa muscular separada).
+    muscle_mass_kg: arredonda(composicao.leanMassKg, 2),
   };
 
   if (dados.assessed_at) {
@@ -102,9 +107,15 @@ function linhaAvaliacao(
   }
 
   // `measurements` jsonb guarda o que não tem coluna: dobra bíceps (Durnin).
-  const extras: Record<string, number> = {};
+  // Mesclamos com o measurements existente (na edição) para PRESERVAR as fotos
+  // gravadas em `measurements.photos` — antes a edição sobrescrevia o objeto e
+  // apagava as fotos.
+  const extras: Record<string, unknown> = { ...(measurementsExistentes ?? {}) };
   if (typeof dados.skf_biceps === 'number') {
     extras.skf_biceps = dados.skf_biceps;
+  } else {
+    // Protocolo sem bíceps: remove uma dobra residual de uma edição anterior.
+    delete extras.skf_biceps;
   }
   linha.measurements = extras;
 
@@ -184,7 +195,20 @@ export async function editarAvaliacao(
   }
 
   const supabase = await createClient();
-  const linha = linhaAvaliacao(parsed.data, professor);
+
+  // Lê o measurements atual (via RLS) para preservar o que não vem do form —
+  // especialmente `measurements.photos`.
+  const { data: atual } = await supabase
+    .from('physical_assessments')
+    .select('measurements')
+    .eq('id', assessmentId)
+    .maybeSingle();
+
+  const linha = linhaAvaliacao(
+    parsed.data,
+    professor,
+    (atual?.measurements as Record<string, unknown> | null) ?? null
+  );
   // Não reescrevemos trainer_id/tenant_id na edição (RLS garante a posse).
   delete linha.trainer_id;
   delete linha.tenant_id;
