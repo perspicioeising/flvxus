@@ -351,3 +351,60 @@ decisão em `docs/decisions/0010-painel-professor-avaliacao-vencida.md`). Tornar
 configurável por tenant exigiria uma nova coluna no schema v2 (ex.: `tenants.reassessment_days`),
 fora do escopo desta fase. Caso se queira personalizar por personal, adicionar a coluna em
 migration futura e ler o valor no RSC do painel.
+
+## Configuração do Supabase Auth para convites
+
+> **Esta seção é para você (dono do projeto).** O onboarding de aluno depende de
+> configuração no **painel do Supabase** e do **domínio de produção** — coisas que
+> moram fora do código e que **não dá para testar aqui**. O código já foi corrigido;
+> falta conferir o painel conforme o passo a passo abaixo.
+
+### Como o fluxo funciona agora (resumo)
+
+1. O professor convida o aluno → o código chama `inviteUserByEmail` **com** `redirectTo`
+   apontando para `${NEXT_PUBLIC_SITE_URL}/callback?next=/set-password`
+   (`actions/alunos.ts`, via `lib/site-url.ts`).
+2. O aluno recebe o e-mail de convite do Supabase e clica no link.
+3. O link cai em **`/callback`** (route handler server-side, `app/(auth)/callback/route.ts`),
+   que troca o `?code=...` por uma sessão (cookies) com `exchangeCodeForSession`.
+4. Como o destino é `set-password`, o aluno é encaminhado para **`/set-password`**, onde a
+   sessão já existe e ele apenas define a senha (`updateUser`). O perfil vira `active` e ele
+   entra em `/aluno`.
+
+### O que conferir no painel (Authentication > URL Configuration)
+
+No painel do seu projeto Supabase, em **Authentication → URL Configuration**:
+
+1. **Site URL**: defina a URL base do app em produção, por exemplo
+   `https://flvxus.vercel.app`. É para onde o Supabase manda o usuário quando um link
+   **não** traz `redirectTo`.
+2. **Redirect URLs** (lista de URLs permitidas): adicione as URLs de callback usadas pelo
+   código. Elas precisam **casar exatamente** com `${NEXT_PUBLIC_SITE_URL}/callback`. Inclua:
+   - Produção: `https://flvxus.vercel.app/callback`
+   - Desenvolvimento local: `http://localhost:3000/callback`
+   - Se preferir liberar os destinos com query, pode usar curingas suportados pelo Supabase,
+     ex.: `https://flvxus.vercel.app/callback*` e `http://localhost:3000/callback*`.
+   Se a Redirect URL **não** estiver nessa lista, o Supabase **ignora** o `redirectTo` do
+   convite e manda o aluno para a Site URL raiz — exatamente o bug que travava o onboarding.
+
+### Variável de ambiente
+
+- `NEXT_PUBLIC_SITE_URL` precisa estar definida **no ambiente de produção** (ex.: Vercel) como
+  `https://flvxus.vercel.app`. Em desenvolvimento, o fallback é `http://localhost:3000`
+  (`lib/site-url.ts`). O domínio de produção **não** é hardcodado no código: ele vem
+  exclusivamente dessa variável.
+
+### Template de e-mail de convite
+
+- Em **Authentication → Email Templates → Invite user**, o template deve usar
+  `{{ .ConfirmationURL }}`. Essa variável respeita o `redirectTo` passado em
+  `inviteUserByEmail`, então o link do e-mail já aponta para o `/callback` correto. Não é
+  preciso montar a URL de callback manualmente no template.
+
+### Por que não dá para testar o e-mail aqui
+
+O envio real do e-mail de convite depende do projeto Supabase hospedado, do provedor de SMTP
+configurado e do domínio de produção. Nada disso roda no ambiente de build/CI local. Portanto,
+a validação de ponta a ponta (receber o e-mail e clicar no link) precisa ser feita por você,
+em produção/staging, após conferir os itens acima. As verificações automáticas aqui cobrem
+`typecheck`, `lint`, `build` e os testes de unidade.
