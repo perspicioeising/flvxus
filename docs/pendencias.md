@@ -205,3 +205,10 @@ path `{tenant}/{student}/{assessment}/...`) e, em seguida, envia as fotos seleci
 upload de uma foto falhar, a avaliação **já foi gravada** — o professor vê um toast de erro e
 pode reenviar pela tela de edição. Não há rollback transacional entre a linha e os objetos de
 Storage (limitação do Storage do Supabase, fora do controle desta fase).
+### Limiar de "avaliação vencida" fixo em 90 dias (não configurável por tenant)
+O painel do professor (FEAT-005) considera vencida a última avaliação de um aluno ativo com mais
+de **90 dias** (constante `DIAS_AVALIACAO_VENCIDA` em `components/professor/dashboard/index.ts`,
+decisão em `docs/decisions/0010-painel-professor-avaliacao-vencida.md`). Tornar esse limiar
+configurável por tenant exigiria uma nova coluna no schema v2 (ex.: `tenants.reassessment_days`),
+fora do escopo desta fase. Caso se queira personalizar por personal, adicionar a coluna em
+migration futura e ler o valor no RSC do painel.
