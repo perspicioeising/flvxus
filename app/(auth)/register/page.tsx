@@ -1,11 +1,11 @@
 'use client';
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Dumbbell, Zap, Eye, EyeOff, Loader2, ArrowLeft, Mail, Lock, User, Building } from "lucide-react";
+import type { z } from "zod";
+import { Dumbbell, Zap, Eye, EyeOff, Loader2, ArrowLeft, Mail, Lock, User, Building, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -19,134 +19,135 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useSupabase } from "@/app/providers";
+import { cadastroProfessorSchema } from "@/schemas/auth";
 
-const formSchema = z.object({
-  name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres" }),
-  email: z.string().email({ message: "Por favor, insira um email válido" }),
-  password: z.string().min(8, { message: "A senha deve ter pelo menos 8 caracteres" }),
-  businessName: z.string().min(2, { message: "O nome da empresa deve ter pelo menos 2 caracteres" }),
-});
+type FormValues = z.infer<typeof cadastroProfessorSchema>;
 
 function RegisterContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { supabase } = useSupabase();
-  const searchParams = useSearchParams();
-  const plan = searchParams.get("plan") || "free";
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailEnviado, setEmailEnviado] = useState<string | null>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(cadastroProfessorSchema),
     defaultValues: {
       name: "",
+      businessName: "",
       email: "",
       password: "",
-      businessName: "",
+      confirmPassword: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormValues) {
     setIsLoading(true);
-    
+
     try {
-      console.log('🚀 [REGISTER] Iniciando registro via API...');
-
-      // Usar nossa API customizada
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: values.name,
-          email: values.email,
-          password: values.password,
-          businessName: values.businessName,
-          plan: plan
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro no registro');
-      }
-
-      console.log('✅ [REGISTER] Registro bem-sucedido:', data);
-
-      toast({
-        title: "Conta criada com sucesso! 🎉",
-        description: "Fazendo login automaticamente...",
-      });
-
-      // Fazer login com as credenciais
-      console.log('🔐 [REGISTER] Fazendo login...');
-      
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      // Cadastro via Supabase Auth (@supabase/ssr). O trigger handle_new_user()
+      // cria o tenant + profile(role='trainer') a partir de `full_name`.
+      const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
+        options: {
+          data: {
+            full_name: values.name,
+            business_name: values.businessName,
+          },
+          emailRedirectTo:
+            typeof window !== "undefined"
+              ? `${window.location.origin}/callback`
+              : undefined,
+        },
       });
 
-      if (loginError) {
-        console.warn('⚠️ [REGISTER] Erro no login automático:', loginError);
+      if (error) {
+        const jaCadastrado =
+          error.status === 422 ||
+          /already registered|already been registered|user already/i.test(error.message);
+
         toast({
-          title: "Conta criada!",
-          description: "Redirecionando para o login...",
+          variant: "destructive",
+          title: "Falha no cadastro",
+          description: jaCadastrado
+            ? "Este e-mail já está cadastrado. Faça login ou use outro e-mail."
+            : error.message || "Algo deu errado. Por favor, tente novamente.",
         });
-        setTimeout(() => {
-          router.push(`/login?email=${encodeURIComponent(values.email)}`);
-        }, 1000);
+
+        if (jaCadastrado) {
+          form.setError("email", {
+            message: "Este e-mail já está cadastrado.",
+          });
+        }
         return;
       }
 
-      console.log('✅ [REGISTER] Login bem-sucedido!');
+      // Quando a confirmação de e-mail está habilitada no projeto, o signUp
+      // retorna o usuário SEM sessão: mostramos a tela "verifique seu e-mail".
+      if (!data.session) {
+        setEmailEnviado(values.email);
+        toast({
+          title: "Confirme seu e-mail 📧",
+          description: "Enviamos um link de confirmação para o seu e-mail.",
+        });
+        return;
+      }
 
-      // Aguardar um pouco para garantir que a sessão foi estabelecida
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Redirecionar para dashboard
-      router.push("/dashboard");
-      
+      // Sem confirmação de e-mail: já há sessão → vai direto para a área do professor.
+      toast({
+        title: "Conta criada com sucesso! 🎉",
+        description: "Redirecionando para o seu painel...",
+      });
+      router.push("/professor");
+      router.refresh();
     } catch (error: any) {
-      console.error('❌ [REGISTER] Erro no registro:', error);
       toast({
         variant: "destructive",
         title: "Falha no cadastro",
-        description: error.message || "Algo deu errado. Por favor, tente novamente.",
+        description: error?.message || "Algo deu errado. Por favor, tente novamente.",
       });
     } finally {
       setIsLoading(false);
     }
   }
 
-  const getPlanInfo = () => {
-    switch(plan) {
-      case 'monthly':
-        return {
-          name: 'Mensal',
-          color: 'from-green-600 to-emerald-600',
-          description: 'R$ 59,90/mês - Para trainers profissionais',
-          features: ['Até 1000 alunos', 'IA ilimitada', '5 treinadores']
-        };
-      case 'annual':
-        return {
-          name: 'Anual',
-          color: 'from-yellow-600 to-orange-600',
-          description: 'R$ 399,90/ano - Melhor custo-benefício',
-          features: ['Alunos ilimitados', 'IA ilimitada', '20 treinadores']
-        };
-      default:
-        return {
-          name: 'Gratuito',
-          color: 'from-gray-600 to-slate-600',
-          description: '14 dias grátis - Teste todas as funcionalidades',
-          features: ['Até 5 alunos', 'IA limitada', '1 treinador']
-        };
-    }
-  };
-
-  const planInfo = getPlanInfo();
+  if (emailEnviado) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-app-gradient overflow-hidden py-8">
+        <div className="relative w-full max-w-md mx-4">
+          <div className="relative bg-app-overlay backdrop-blur-xl border border-app-border-accent/30 rounded-3xl shadow-app-xl overflow-hidden">
+            <div className="relative p-8 text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-app-btn-primary via-app-btn-accent to-app-btn-secondary rounded-2xl flex items-center justify-center shadow-app-large">
+                  <MailCheck className="h-8 w-8 text-white" />
+                </div>
+              </div>
+              <h1 className="text-2xl font-black text-app-heading mb-3">
+                Verifique seu e-mail
+              </h1>
+              <p className="text-app-text-secondary mb-2">
+                Enviamos um link de confirmação para
+              </p>
+              <p className="text-app-text-primary font-semibold mb-6 break-all">
+                {emailEnviado}
+              </p>
+              <p className="text-app-text-muted text-sm mb-8">
+                Abra o link para ativar sua conta e acessar a plataforma.
+              </p>
+              <Link href="/login">
+                <Button className="w-full btn-gradient-primary text-white font-bold h-14 rounded-2xl border-0">
+                  Ir para o login
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-app-gradient overflow-hidden py-8">
@@ -199,27 +200,9 @@ function RegisterContent() {
                   Crie sua conta
                 </h1>
                 
-                {/* Plan Badge */}
-                {/* <div className="inline-flex items-center gap-2 px-4 py-2 bg-app-card backdrop-blur-sm rounded-2xl border border-app-border-accent/50 shadow-app-medium mb-4">
-                  <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${planInfo.color}`}></div>
-                  <span className="text-sm font-semibold text-app-text-primary">
-                    Plano {planInfo.name}
-                  </span>
-                </div> */}
-                
-                {/* <p className="text-app-text-secondary text-base mb-2">
-                  {planInfo.description}
-                </p> */}
-                
-                {/* Features */}
-                {/* <div className="text-xs text-app-text-muted space-y-1">
-                  {planInfo.features.map((feature, index) => (
-                    <div key={index} className="flex items-center justify-center gap-1">
-                      <div className="w-1 h-1 bg-app-text-accent rounded-full"></div>
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div> */}
+                <p className="text-app-text-secondary text-base">
+                  Comece a organizar seus alunos e treinos
+                </p>
               </div>
 
               {/* Form */}
@@ -328,6 +311,40 @@ function RegisterContent() {
                                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-app-text-muted hover:text-app-text-primary transition-colors duration-300"
                               >
                                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                              </button>
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-bold text-app-text-primary uppercase tracking-wider">
+                          Confirmar Senha
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-r from-app-btn-secondary/20 to-app-btn-primary/20 rounded-xl blur opacity-50"></div>
+                            <div className="relative">
+                              <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-app-btn-secondary" />
+                              <Input
+                                type={showConfirmPassword ? "text" : "password"}
+                                placeholder="Repita a senha"
+                                className="relative h-14 text-lg bg-app-card backdrop-blur-sm border-0 rounded-xl shadow-app-medium focus:bg-app-card focus:shadow-app-large transition-all duration-300 pl-12 pr-12 text-app-text-primary placeholder:text-app-text-muted"
+                                {...field}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-app-text-muted hover:text-app-text-primary transition-colors duration-300"
+                              >
+                                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                               </button>
                             </div>
                           </div>
