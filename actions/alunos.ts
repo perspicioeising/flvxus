@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { siteUrl } from '@/lib/site-url';
 import {
   alterarStatusSchema,
   criarAlunoSchema,
@@ -88,9 +89,19 @@ export async function convidarAluno(
   const admin = createAdminClient(professor.tenantId);
 
   // 1) Cria o usuário de auth e dispara o convite por e-mail.
+  //
+  // `redirectTo` é OBRIGATÓRIO para o onboarding funcionar: sem ele o Supabase
+  // manda o aluno para a Site URL raiz (e ele fica preso sem definir senha).
+  // Apontamos para a rota de callback server-side (`/callback`) com o destino
+  // `next=/set-password`; o callback troca o `code` por sessão (cookies) e
+  // encaminha para a tela de definir senha. A URL base vem de NEXT_PUBLIC_SITE_URL
+  // (lib/site-url.ts) — o domínio de produção nunca é hardcodado aqui. O valor
+  // de `${siteUrl}/callback` precisa estar na lista de Redirect URLs do painel
+  // do Supabase (ver docs/pendencias.md).
   const { data: convite, error: erroConvite } =
     await admin.authAdmin.inviteUserByEmail(dados.email, {
       data: { full_name: dados.full_name, role: 'student' },
+      redirectTo: siteUrl('/callback?next=/set-password'),
     });
 
   if (erroConvite || !convite?.user) {
