@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "As tres Edge Functions Deno (generate-diet, suggest-workout, analyze-assessment) que usam a fundacao da FEAT-001, mais o registro no config.toml e a documentacao docs/ia.md. Cada funcao: auth-guard (JWT+papel trainer), rate limit/teto de tokens/timeout, grava rascunho em ai_generations (pending->succeeded/failed), chama Anthropic com saida estruturada validada por Zod (schemas/ia/), grava ai_usage_logs em sucesso OU falha, retorna o rascunho e NUNCA materializa em diets/workout_plans. Depende da FEAT-001 (helpers, schemas e prompts). weekly_adherence FICA FORA.",
+  "status": "pending",
+  "steps": [
+    "Ler PRIMEIRO docs/pendencias/task-fase6-ia/context.json, este arquivo e os findings da FEAT-001; nao re-explorar o que o context.json ja diz.",
+    "Criar supabase/functions/generate-diet/index.ts (job_type=generate_diet): na ordem (a) auth-guard (JWT+papel trainer; 401/403); (b) validar o corpo de entrada com Zod (student_id, goal, restrictions[], assessment_id?, target_kcal?); (c) rate-limit + teto de tokens + timeout; (d) inserir ai_generations status=pending carimbando tenant_id; (e) chamar Anthropic com o prompt de sistema + dados do aluno como DADOS (mensagem user); (f) validar a saida com schemas/ia/generate-diet; (g) gravar ai_usage_logs (sucesso OU falha) e atualizar ai_generations para succeeded (output jsonb validado) ou failed; (h) retornar o rascunho. NAO materializar em diets.",
+    "Criar supabase/functions/suggest-workout/index.ts (job_type=suggest_workout) seguindo a MESMA ordem de guarda-corpos; input student_id, goal, experience_level, days_per_week, assessment_id?; saida validada por schemas/ia/suggest-workout; rascunho em ai_generations; NAO materializa em workout_plans.",
+    "Criar supabase/functions/analyze-assessment/index.ts (job_type=analyze_assessment) seguindo a MESMA ordem; input assessment_id (+ anterior para comparacao, opcional); saida validada por schemas/ia/analyze-assessment; grava rascunho revisavel em ai_generations.",
+    "Editar supabase/config.toml: adicionar [functions.generate-diet], [functions.suggest-workout], [functions.analyze-assessment] (ex.: verify_jwt=true).",
+    "Criar docs/ia.md (pt-BR): contrato entrada/saida de cada funcao e quem pode chamar (so professor); fluxo rascunho->aprovacao; rate limit/teto de tokens/timeout; log de uso em ai_usage_logs; prompts versionados e anti-injection; COMO fazer deploy (supabase functions deploy <nome>, supabase secrets set ANTHROPIC_API_KEY=..., resolver o ID de snapshot via Models API GET /v1/models e fixar em ANTHROPIC_MODEL); e o PONTO DE INTEGRACAO com a UI (como a Fase 4/5 chama as funcoes de uma Server Action passando o JWT do usuario, SEM editar as telas do professor).",
+    "Atualizar docs/pendencias.md com o bloqueio de ambiente da Fase 6: deno check/supabase functions serve/deploy dependem de Docker/Deno/projeto Supabase (ausentes aqui); teste end-to-end real depende de ANTHROPIC_API_KEY + deploy. Registrar o que foi verificado estaticamente e os comandos a rodar quando houver ambiente.",
+    "Rodar a verificacao completa do lado Next e (se possivel) deno check nas funcoes. Commitar localmente na branch feat/v2-ia em commits pequenos pt-BR (funcoes; config.toml; docs). NUNCA push. Registrar achados em findings."
+  ],
+  "acceptance_criteria": [
+    "As tres pastas supabase/functions/{generate-diet,suggest-workout,analyze-assessment}/index.ts existem e seguem a ordem de guarda-corpos (auth-guard -> validacao Zod de entrada -> rate-limit/teto/timeout -> ai_generations pending -> Anthropic -> validacao Zod de saida -> ai_usage_logs + ai_generations succeeded/failed -> retorno).",
+    "Nenhuma funcao materializa automaticamente em diets/workout_plans (so rascunho em ai_generations). weekly_adherence NAO foi implementado.",
+    "config.toml tem as tres entradas [functions.*]; docs/ia.md cobre contratos, deploy, rascunho->aprovacao e o ponto de integracao com a UI; docs/pendencias.md registra o bloqueio de ambiente Deno/deploy.",
+    "npm run typecheck && npm run lint && npm run build && npm run test continuam verdes (lado Next intacto, testes existentes verdes)."
+  ],
+  "verification": [
+    "npm run typecheck",
+    "npm run lint",
+    "npm run build",
+    "npm run test",
+    "deno check supabase/functions/**/index.ts SE deno existir no PATH; senao revisao estatica conferindo a ordem dos guarda-corpos e nota em docs/pendencias.md"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

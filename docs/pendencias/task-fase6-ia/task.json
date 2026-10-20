@@ -1,0 +1,7 @@
+{
+  "task_id": "task-fase6-ia",
+  "task_description": "Fase 6 do Flvxus v2: camada de IA Anthropic sob supabase/functions/ e schemas/ia/. Três Edge Functions Deno (generate-diet, suggest-workout, analyze-assessment) com auth-guard (JWT+papel trainer), rate limit + teto de tokens + timeout real (AbortController com signal passado ao fetch), log em ai_usage_logs, rascunho em ai_generations (nunca materializa sozinho), saida estruturada validada com Zod (schemas/ia/), prompts de sistema versionados anti-injection em pt-BR, config Deno/config.toml e docs/ia.md. weekly_adherence fica FORA (adiado). Nao contradiz ADR 0001 nem architecture.md §8.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}
