@@ -21,8 +21,8 @@ import type { EstadoAcao } from '@/actions/alunos';
  * MUTAÇÃO NORMAL via `createClient()` (RLS ativo): nunca filtramos `tenant_id`
  * manualmente. Os CÁLCULOS (bmi/%gordura/massas) são feitos NO SERVIDOR via
  * `lib/assessment` — o cliente nunca grava esses valores derivados. Fotos vão
- * para o bucket PRIVADO `assessment-photos` e só se `photos_consent=true`
- * (LGPD, ADR 0005).
+ * para o bucket PRIVADO `assessment-photos` (LGPD adiado: sem gate de
+ * consentimento; ADR 0005 reservado para reintrodução futura).
  */
 
 export type { EstadoAcao } from '@/actions/alunos';
@@ -230,9 +230,9 @@ export async function editarAvaliacao(
 }
 
 /**
- * Faz upload de uma foto de avaliação no bucket privado. SÓ é permitido quando
- * a avaliação tem `photos_consent=true` (LGPD). Os paths são gravados em
- * `measurements.photos` para posterior assinatura (URL de TTL curto).
+ * Faz upload de uma foto de avaliação no bucket privado. LGPD adiado: não há
+ * mais gate de consentimento. Os paths são gravados em `measurements.photos`
+ * para posterior assinatura (URL de TTL curto).
  */
 export async function uploadFotoAvaliacao(
   assessmentId: string,
@@ -251,7 +251,9 @@ export async function uploadFotoAvaliacao(
 
   const supabase = await createClient();
 
-  // Confere o consentimento e recupera o student_id (via RLS).
+  // Recupera o student_id (via RLS). LGPD adiado por decisão de escopo:
+  // o upload de fotos NÃO depende mais de `photos_consent`. Reintroduzir o
+  // gate se o LGPD voltar ao escopo.
   const { data: avaliacao, error: erroLeitura } = await supabase
     .from('physical_assessments')
     .select('id, student_id, photos_consent, measurements')
@@ -260,13 +262,6 @@ export async function uploadFotoAvaliacao(
 
   if (erroLeitura || !avaliacao) {
     return { ok: false, message: 'Avaliação não encontrada.' };
-  }
-
-  if (!avaliacao.photos_consent) {
-    return {
-      ok: false,
-      message: 'Upload recusado: o aluno não consentiu o armazenamento de fotos (LGPD).',
-    };
   }
 
   let path: string;

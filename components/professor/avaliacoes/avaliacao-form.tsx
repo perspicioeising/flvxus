@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -107,7 +106,9 @@ function valoresPadrao(iniciais?: Partial<AvaliacaoFormValues>, alunoFixo?: stri
     body_fat_pct: iniciais?.body_fat_pct ?? '',
     goal: iniciais?.goal ?? '',
     anamnesis: iniciais?.anamnesis ?? '',
-    photos_consent: iniciais?.photos_consent ?? 'false',
+    // LGPD adiado por decisão de escopo: fotos liberadas por padrão (sem gate de
+    // consentimento). Reintroduzir a checkbox se o LGPD voltar.
+    photos_consent: iniciais?.photos_consent ?? 'true',
   };
   for (const c of CIRCUNFERENCIAS_FORM) base[c] = iniciais?.[c] ?? '';
   for (const d of Object.keys(DOBRA_LABEL)) base[d] = iniciais?.[d] ?? '';
@@ -136,7 +137,6 @@ export function AvaliacaoForm({
 
   const protocolo = form.watch('protocol');
   const genero = form.watch('gender') as 'male' | 'female' | '';
-  const consentimento = form.watch('photos_consent') === 'true';
 
   /** Dobras exigidas pelo protocolo/gênero selecionados (para a etapa 3). */
   const dobrasExigidas: DobraKey[] = React.useMemo(() => {
@@ -174,8 +174,8 @@ export function AvaliacaoForm({
         return;
       }
 
-      // Upload de fotos (só com consentimento e id retornado).
-      if (values.photos_consent === 'true' && arquivos.length > 0 && onUploadFoto && resultado.id) {
+      // Upload de fotos (LGPD adiado: sem gate de consentimento).
+      if (arquivos.length > 0 && onUploadFoto && resultado.id) {
         for (const arquivo of arquivos) {
           const fotoFd = new FormData();
           fotoFd.append('foto', arquivo);
@@ -498,25 +498,8 @@ export function AvaliacaoForm({
           </fieldset>
         </div>
 
-        {/* Etapa 4 — Fotos + consentimento */}
+        {/* Etapa 4 — Fotos (LGPD adiado: sem gate de consentimento) */}
         <div hidden={etapa !== 3} className="space-y-5">
-          <div className="flex items-start gap-3 rounded-lg border border-border p-4">
-            <Checkbox
-              id="photos_consent"
-              checked={consentimento}
-              onCheckedChange={(v) => form.setValue('photos_consent', v === true ? 'true' : 'false')}
-            />
-            <div className="space-y-1">
-              <Label htmlFor="photos_consent" className="font-medium">
-                O aluno consente o armazenamento de fotos (LGPD)
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                As fotos são dados de saúde: ficam em bucket privado e só são exibidas por link
-                temporário. Sem consentimento, o envio é bloqueado.
-              </p>
-            </div>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="fotos">Fotos da avaliação (opcional)</Label>
             <Input
@@ -524,16 +507,12 @@ export function AvaliacaoForm({
               type="file"
               accept="image/*"
               multiple
-              disabled={!consentimento}
               onChange={(e) => setArquivos(Array.from(e.target.files ?? []))}
             />
-            {!consentimento ? (
-              <p className="text-sm text-muted-foreground">
-                Marque o consentimento acima para habilitar o envio de fotos.
-              </p>
-            ) : arquivos.length > 0 ? (
-              <p className="text-sm text-muted-foreground">{arquivos.length} arquivo(s) selecionado(s).</p>
-            ) : null}
+            <p className="text-sm text-muted-foreground">
+              As fotos ficam em bucket privado e só são exibidas por link temporário.
+              {arquivos.length > 0 ? ` ${arquivos.length} arquivo(s) selecionado(s).` : ''}
+            </p>
           </div>
         </div>
 
