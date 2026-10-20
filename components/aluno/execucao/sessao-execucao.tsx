@@ -35,16 +35,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { agruparPorDia } from '@/lib/semana';
 import { TimerDescanso } from './timer-descanso';
+import { ExercicioInfo } from './exercicio-info';
+import { SeletorDia, type OpcaoDia } from './seletor-dia';
 
-/** Item prescrito do dia, com o que a UI de execução precisa. */
+/** Item prescrito, com tudo que a UI de execução precisa exibir. */
 export interface ItemExecucao {
   id: string;
   nome: string;
+  /** Dia da semana (0..6) ou `null` (sem dia definido) deste item. */
+  weekday: number | null;
   sets: number;
   reps: string | null;
   cargaAlvo: number | null;
   descansoSegundos: number | null;
+  observacoes: string | null;
+  instrucoes: string | null;
+  dicas: string[];
+  errosComuns: string[];
+  gruposMusculares: string[];
+  equipamento: string[];
+  /** URL JÁ ASSINADA do vídeo (TTL curto, bucket privado) ou `null`. */
+  videoUrl: string | null;
+  /** URL JÁ ASSINADA da thumbnail (TTL curto) ou `null`. */
+  thumbnailUrl: string | null;
 }
 
 /** Estado local de uma série (uma linha do exercício). */
@@ -83,7 +98,35 @@ export function SessaoExecucao({
   const [nota, setNota] = React.useState('');
   const [pendente, startTransition] = React.useTransition();
 
-  // Estado inicial: uma série por set prescrito, com os defaults da prescrição.
+  // Dias com itens (só os que têm exercícios; inclui o balde "Sem dia definido").
+  const grupos = React.useMemo(
+    () => agruparPorDia(itens, (item) => item.weekday),
+    [itens]
+  );
+  const opcoes: OpcaoDia[] = React.useMemo(
+    () =>
+      grupos.map((g) => ({
+        weekday: g.weekday,
+        rotulo: g.rotulo,
+        total: g.itens.length,
+      })),
+    [grupos]
+  );
+
+  // Dia escolhido: começa no primeiro grupo com itens (nunca força o dia de hoje).
+  const [diaSelecionado, setDiaSelecionado] = React.useState<number | null>(
+    () => grupos[0]?.weekday ?? null
+  );
+
+  // Itens do dia atualmente selecionado (ou todos, se não houver seletor).
+  const itensVisiveis = React.useMemo(() => {
+    const grupo = grupos.find((g) => g.weekday === diaSelecionado);
+    return grupo ? grupo.itens : (grupos[0]?.itens ?? []);
+  }, [grupos, diaSelecionado]);
+
+  // Estado inicial: uma série por set prescrito de TODOS os itens da ficha, com
+  // os defaults da prescrição. Guardamos todos para preservar o que o aluno já
+  // marcou ao alternar entre dias; a UI mostra só os itens do dia selecionado.
   const [series, setSeries] = React.useState<Record<string, EstadoSerie>>(() => {
     const inicial: Record<string, EstadoSerie> = {};
     for (const item of itens) {
@@ -99,20 +142,28 @@ export function SessaoExecucao({
     return inicial;
   });
 
-  // Progresso global reaproveitando a lógica pura compartilhada.
+  // Progresso do DIA selecionado (só as séries dos itens visíveis), usando a
+  // lógica pura compartilhada.
+  const idsVisiveis = React.useMemo(
+    () => new Set(itensVisiveis.map((item) => item.id)),
+    [itensVisiveis]
+  );
   const logs: SerieLog[] = React.useMemo(
     () =>
-      Object.entries(series).map(([chave, estado]) => {
-        const [plan_item_id, setStr] = chave.split(':');
-        return {
-          plan_item_id,
-          set_number: Number(setStr),
-          completed: estado.completed,
-          reps_done: estado.reps === '' ? null : Number(estado.reps),
-          load_done: estado.carga === '' ? null : Number(estado.carga.replace(',', '.')),
-        };
-      }),
-    [series]
+      Object.entries(series)
+        .map(([chave, estado]) => {
+          const [plan_item_id, setStr] = chave.split(':');
+          return {
+            plan_item_id,
+            set_number: Number(setStr),
+            completed: estado.completed,
+            reps_done: estado.reps === '' ? null : Number(estado.reps),
+            load_done:
+              estado.carga === '' ? null : Number(estado.carga.replace(',', '.')),
+          };
+        })
+        .filter((log) => log.plan_item_id !== null && idsVisiveis.has(log.plan_item_id)),
+    [series, idsVisiveis]
   );
   const progresso = progressoSessao(logs);
   const tudoFeito = progresso.total > 0 && progresso.feitas === progresso.total;
@@ -215,6 +266,13 @@ export function SessaoExecucao({
 
   return (
     <div className="space-y-6">
+      {/* Seletor de dia/divisão: só aparece quando há mais de um dia com itens. */}
+      <SeletorDia
+        opcoes={opcoes}
+        selecionado={diaSelecionado}
+        onSelecionar={setDiaSelecionado}
+      />
+
       {/* Barra de progresso fixa no topo do conteúdo. */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
@@ -226,7 +284,7 @@ export function SessaoExecucao({
         <Progress value={progresso.pct} aria-label="Progresso do treino" />
       </div>
 
-      {itens.map((item) => (
+      {itensVisiveis.map((item) => (
         <Card key={item.id}>
           <CardHeader className="p-4 pb-0">
             <CardTitle className="flex items-center justify-between gap-2 text-base">
@@ -239,6 +297,23 @@ export function SessaoExecucao({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-4">
+            <ExercicioInfo
+              info={{
+                nome: item.nome,
+                videoUrl: item.videoUrl,
+                thumbnailUrl: item.thumbnailUrl,
+                sets: item.sets,
+                reps: item.reps,
+                cargaAlvo: item.cargaAlvo,
+                descansoSegundos: item.descansoSegundos,
+                observacoes: item.observacoes,
+                instrucoes: item.instrucoes,
+                dicas: item.dicas,
+                errosComuns: item.errosComuns,
+                gruposMusculares: item.gruposMusculares,
+                equipamento: item.equipamento,
+              }}
+            />
             <ul className="space-y-3">
               {Array.from({ length: item.sets }).map((_, index) => {
                 const setNumber = index + 1;

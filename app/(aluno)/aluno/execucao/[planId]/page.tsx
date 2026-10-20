@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
+import { signExerciseMedia } from '@/lib/storage';
 import { WEEKDAY_LABEL } from '@/lib/semana';
 import { EmptyState } from '@/components/patterns';
 import {
@@ -10,11 +11,22 @@ import {
   type ItemExecucao,
 } from '@/components/aluno/execucao/sessao-execucao';
 
-/** Extrai o nome do exercício de um join `exercises` (array ou objeto). */
-function nomeExercicio(exercises: unknown): string {
+/** Shape do join `exercises` que precisamos (array ou objeto, conforme o join). */
+interface ExercicioJoin {
+  name: string | null;
+  muscle_groups: string[] | null;
+  equipment: string[] | null;
+  video_url: string | null;
+  thumbnail_url: string | null;
+  instructions: string | null;
+  tips: string[] | null;
+  common_errors: string[] | null;
+}
+
+/** Normaliza o join `exercises` (array ou objeto) para um único registro. */
+function exercicioDoJoin(exercises: unknown): ExercicioJoin | null {
   const e = Array.isArray(exercises) ? exercises[0] : exercises;
-  const nome = (e as { name: string | null } | null)?.name;
-  return nome?.trim() || 'Exercício';
+  return (e as ExercicioJoin | null) ?? null;
 }
 
 /** Converte o searchParam `?dia` num weekday válido (0..6) ou `null`. */
@@ -26,11 +38,16 @@ function parseDia(valor: string | string[] | undefined): number | null {
 }
 
 /**
- * Execução de uma ficha liberada. Carrega os itens do dia indicado por `?dia`
- * (senão, todos os itens da ficha) e entrega ao Client Component de execução. A
- * sessão NÃO é criada aqui — só ao confirmar o início (primeiro toque), para
+ * Execução de uma ficha liberada. Carrega SEMPRE todos os itens da ficha e
+ * entrega ao Client Component, que mostra um seletor dos dias/divisões com
+ * exercícios (incluindo o balde "Sem dia definido") e filtra os itens do dia
+ * escolhido — sem forçar o dia de hoje. Quando `?dia` vem na URL (atalho a
+ * partir da ficha), já começa naquele dia, mas o aluno ainda pode trocar.
+ *
+ * A sessão NÃO é criada aqui — só ao confirmar o início (primeiro toque), para
  * não gravar sessão vazia ao abrir a tela. RLS limita a fichas `released` do
- * próprio aluno (vazio → 404).
+ * próprio aluno (vazio → 404). A mídia de cada exercício é assinada AQUI (no
+ * servidor, bucket privado) e entregue já pronta; o Client nunca assina URL.
  */
 export default async function AlunoExecucaoFichaPage({
   params,
@@ -56,30 +73,54 @@ export default async function AlunoExecucaoFichaPage({
     notFound();
   }
 
-  let query = supabase
+  const { data: itensData } = await supabase
     .from('workout_plan_items')
-    .select('id, weekday, order_index, sets, reps, rest_seconds, target_load, exercises(name)')
+    .select(
+      'id, weekday, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors)'
+    )
     .eq('plan_id', planId)
     .order('order_index', { ascending: true });
 
-  if (weekday !== null) {
-    query = query.eq('weekday', weekday);
-  }
+  // Assina a mídia de cada item no servidor (bucket privado, nunca URL pública).
+  const itens: ItemExecucao[] = await Promise.all(
+    (itensData ?? []).map(async (item) => {
+      const ex = exercicioDoJoin(item.exercises);
+      const [videoUrl, thumbnailUrl] = await Promise.all([
+        ex?.video_url ? signExerciseMedia(ex.video_url) : Promise.resolve(null),
+        ex?.thumbnail_url ? signExerciseMedia(ex.thumbnail_url) : Promise.resolve(null),
+      ]);
 
-  const { data: itensData } = await query;
+      return {
+        id: item.id,
+        nome: ex?.name?.trim() || 'Exercício',
+        weekday: item.weekday,
+        // Sem séries prescritas, assumimos 1 para que haja ao menos uma linha.
+        sets: item.sets && item.sets > 0 ? item.sets : 1,
+        reps: item.reps,
+        cargaAlvo: item.target_load,
+        descansoSegundos: item.rest_seconds,
+        observacoes: item.notes,
+        instrucoes: ex?.instructions ?? null,
+        dicas: ex?.tips ?? [],
+        errosComuns: ex?.common_errors ?? [],
+        gruposMusculares: ex?.muscle_groups ?? [],
+        equipamento: ex?.equipment ?? [],
+        videoUrl,
+        thumbnailUrl,
+      } satisfies ItemExecucao;
+    })
+  );
 
-  const itens: ItemExecucao[] = (itensData ?? []).map((item) => ({
-    id: item.id,
-    nome: nomeExercicio(item.exercises),
-    // Sem séries prescritas, assumimos 1 para que haja ao menos uma linha.
-    sets: item.sets && item.sets > 0 ? item.sets : 1,
-    reps: item.reps,
-    cargaAlvo: item.target_load,
-    descansoSegundos: item.rest_seconds,
-  }));
+  // Se veio `?dia`, começa já filtrado por ele (desde que tenha itens); senão,
+  // o Client abre no primeiro dia com exercícios.
+  const itensDoDia =
+    weekday !== null ? itens.filter((item) => item.weekday === weekday) : itens;
+  const itensIniciais = itensDoDia.length > 0 ? itensDoDia : itens;
 
   const subtitulo =
-    weekday !== null ? WEEKDAY_LABEL[weekday] : 'Todos os exercícios da ficha';
+    weekday !== null && itensDoDia.length > 0
+      ? WEEKDAY_LABEL[weekday]
+      : 'Escolha o dia e comece o treino';
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -98,11 +139,11 @@ export default async function AlunoExecucaoFichaPage({
 
       {itens.length === 0 ? (
         <EmptyState
-          title="Nenhum exercício para este dia"
-          description="Não há exercícios prescritos para o dia selecionado nesta ficha."
+          title="Nenhum exercício nesta ficha"
+          description="Esta ficha ainda não tem exercícios prescritos. Fale com seu professor."
         />
       ) : (
-        <SessaoExecucao planId={ficha.id} itens={itens} />
+        <SessaoExecucao planId={ficha.id} itens={itensIniciais} />
       )}
     </section>
   );
