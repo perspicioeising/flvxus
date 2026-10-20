@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/patterns';
 import { AnalisarAvaliacaoIa } from '@/components/professor/ia/analisar-avaliacao';
 import { ComposicaoGrafico } from '@/components/professor/avaliacoes/composicao-grafico';
+import { MedidasVisual } from '@/components/professor/avaliacoes/medidas-visual';
 import { EvolucaoGraficos } from '@/components/professor/avaliacoes/evolucao-graficos';
 import { montarSerieEvolucao } from '@/components/professor/avaliacoes/evolucao-series';
 import {
@@ -116,12 +117,12 @@ export default async function DetalheAvaliacaoPage({
     valor: (avaliacao as Record<string, unknown>)[k] as number | null,
   }))
     .concat(skfBiceps != null ? [{ rotulo: DOBRA_LABEL.skf_biceps, valor: skfBiceps }] : [])
-    .filter((d) => d.valor != null);
+    .filter((d): d is { rotulo: string; valor: number } => d.valor != null);
 
   const circunferencias = CIRCUNFERENCIAS.map((k) => ({
     rotulo: CIRCUNFERENCIA_LABEL[k],
     valor: (avaliacao as Record<string, unknown>)[k] as number | null,
-  })).filter((c) => c.valor != null);
+  })).filter((c): c is { rotulo: string; valor: number } => c.valor != null);
 
   return (
     <section className="mx-auto w-full max-w-4xl space-y-6">
@@ -218,27 +219,8 @@ export default async function DetalheAvaliacaoPage({
           <CardHeader>
             <CardTitle className="text-lg">Medidas</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {dobras.length > 0 ? (
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-foreground">Dobras cutâneas (mm)</h3>
-                <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  {dobras.map((d) => (
-                    <Dado key={d.rotulo} rotulo={d.rotulo} valor={`${d.valor}`} />
-                  ))}
-                </dl>
-              </div>
-            ) : null}
-            {circunferencias.length > 0 ? (
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-foreground">Circunferências (cm)</h3>
-                <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  {circunferencias.map((c) => (
-                    <Dado key={c.rotulo} rotulo={c.rotulo} valor={`${c.valor}`} />
-                  ))}
-                </dl>
-              </div>
-            ) : null}
+          <CardContent>
+            <MedidasVisual dobras={dobras} circunferencias={circunferencias} />
           </CardContent>
         </Card>
       ) : null}
