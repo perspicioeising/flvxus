@@ -6,8 +6,9 @@
  * `workout_plans`: o professor revisa e aprova depois (ADR 0001 §6).
  *
  * Segue a MESMA ordem de guarda-corpos de `generate-diet` (architecture §8):
- * CORS -> auth-guard (JWT+trainer) -> Zod de entrada -> consentimento
- * ai_processing -> rate-limit/teto/timeout -> ai_generations pending ->
+ * CORS -> auth-guard (JWT+trainer) -> Zod de entrada ->
+ * (consentimento removido por decisão de escopo; reintroduzir se LGPD voltar) ->
+ * rate-limit/teto/timeout -> ai_generations pending ->
  * Anthropic (dados como DADOS) -> Zod de saída -> ai_usage_logs + update -> retorno.
  */
 
@@ -70,10 +71,7 @@ Deno.serve(async (req) => {
     }
     const input = parsedInput.data;
 
-    const consented = await runtime.hasAiConsent(ctx.tenantId, input.student_id);
-    if (!consented) {
-      throw badRequest('O aluno não concedeu consentimento de processamento por IA.');
-    }
+    // consentimento removido por decisão de escopo; reintroduzir se LGPD voltar.
 
     const decision = await checkRateLimit(
       (sinceIso) => runtime.countRecentCalls(ctx.tenantId, ctx.userId, sinceIso),

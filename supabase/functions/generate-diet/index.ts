@@ -9,7 +9,7 @@
  *   1. CORS preflight
  *   2. auth-guard: valida JWT e papel trainer (401/403)
  *   3. validação Zod da entrada
- *   4. consentimento `ai_processing` do aluno (architecture §11)
+ *   4. (consentimento removido por decisão de escopo; reintroduzir se LGPD voltar)
  *   5. rate-limit + teto de tokens + timeout real
  *   6. insere ai_generations status=pending (carimba tenant_id)
  *   7. chama Anthropic com o system prompt + dados do aluno como DADOS
@@ -76,11 +76,7 @@ Deno.serve(async (req) => {
     }
     const input = parsedInput.data;
 
-    // 4. consentimento ai_processing do aluno (architecture §11).
-    const consented = await runtime.hasAiConsent(ctx.tenantId, input.student_id);
-    if (!consented) {
-      throw badRequest('O aluno não concedeu consentimento de processamento por IA.');
-    }
+    // 4. consentimento removido por decisão de escopo; reintroduzir se LGPD voltar.
 
     // 5. rate-limit por usuário na janela padrão (teto/timeout aplicados adiante).
     const decision = await checkRateLimit(

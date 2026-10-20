@@ -18,9 +18,10 @@
 //   5. Deixe "Verify JWT" LIGADO (a função também valida o papel internamente).
 //
 // Guarda-corpos (ADR 0001 / architecture §8): CORS -> JWT+trainer -> Zod de
-// entrada -> consentimento ai_processing -> rate-limit/teto/timeout ->
-// ai_generations pending -> Anthropic (dados como DADOS) -> Zod de saída ->
-// ai_usage_logs + update -> retorna rascunho. NUNCA materializa em `diets`.
+// entrada -> (consentimento removido por decisão de escopo; reintroduzir se
+// LGPD voltar) -> rate-limit/teto/timeout -> ai_generations pending ->
+// Anthropic (dados como DADOS) -> Zod de saída -> ai_usage_logs + update ->
+// retorna rascunho. NUNCA materializa em `diets`.
 // =============================================================================
 
 import { z } from 'npm:zod@3';
@@ -303,15 +304,7 @@ Deno.serve(async (req) => {
     if (!parsedInput.success) throw badRequest('Entrada inválida para geração de dieta.');
     const input = parsedInput.data;
 
-    // 4. Consentimento ai_processing do aluno.
-    const { data: consent } = await admin
-      .from('consent_records')
-      .select('granted, revoked_at, created_at')
-      .eq('tenant_id', tenantId).eq('user_id', input.student_id).eq('consent_type', 'ai_processing')
-      .order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (!consent || !consent.granted || consent.revoked_at != null) {
-      throw badRequest('O aluno não concedeu consentimento de processamento por IA.');
-    }
+    // 4. consentimento removido por decisão de escopo; reintroduzir se LGPD voltar.
 
     // 5. Rate-limit por usuário.
     const sinceIso = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();

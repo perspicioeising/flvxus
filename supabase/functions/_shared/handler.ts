@@ -5,8 +5,12 @@
  * `analyze-assessment`) seguem a MESMA ordem de guarda-corpos; o que muda é o
  * prompt, o schema de entrada e o schema de saída. Este módulo concentra os
  * EFEITOS (client service_role, verificação de JWT, consulta de perfil,
- * consentimento, rate-limit, inserts/updates em `ai_generations`, log de uso e
- * preço por modelo) para que cada `index.ts` fique só com a orquestração.
+ * rate-limit, inserts/updates em `ai_generations`, log de uso e preço por
+ * modelo) para que cada `index.ts` fique só com a orquestração.
+ *
+ * consentimento removido por decisão de escopo; reintroduzir se LGPD voltar
+ * (antes havia `hasAiConsent`/`resolveAssessmentStudent` para checar o
+ * consentimento `ai_processing` do aluno — ver docs/pendencias.md).
  *
  * Decisões (ADR 0001 §5 / architecture §4.4 / §8):
  * - `service_role` só é usado APÓS o auth-guard validar JWT+papel; toda query
@@ -196,9 +200,6 @@ export interface GenerationResult {
 export interface Runtime {
   verifyJwt: (authorizationHeader: string | null) => Promise<AuthenticatedUser | null>;
   resolveProfile: (userId: string) => Promise<ProfileContext | null>;
-  hasAiConsent: (tenantId: string, studentId: string) => Promise<boolean>;
-  /** Resolve o aluno dono de uma avaliação física (para checar consentimento). */
-  resolveAssessmentStudent: (tenantId: string, assessmentId: string) => Promise<string | null>;
   countRecentCalls: (tenantId: string, userId: string, sinceIso: string) => Promise<number>;
   insertPendingGeneration: (input: PendingGenerationInput) => Promise<string>;
   finishGeneration: (id: string, result: GenerationResult) => Promise<void>;
@@ -284,31 +285,8 @@ export function buildRuntime(env: EnvReader = defaultEnvReader): Runtime {
       return { tenantId: data.tenant_id as string, role: data.role as UserRole };
     },
 
-    async hasAiConsent(tenantId, studentId) {
-      // Consentimento ai_processing concedido e não revogado (architecture §11).
-      const { data, error } = await admin
-        .from('consent_records')
-        .select('granted, revoked_at, created_at')
-        .eq('tenant_id', tenantId)
-        .eq('user_id', studentId)
-        .eq('consent_type', 'ai_processing')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (error || !data) return false;
-      return Boolean(data.granted) && data.revoked_at == null;
-    },
-
-    async resolveAssessmentStudent(tenantId, assessmentId) {
-      const { data, error } = await admin
-        .from('physical_assessments')
-        .select('student_id')
-        .eq('tenant_id', tenantId)
-        .eq('id', assessmentId)
-        .maybeSingle();
-      if (error || !data) return null;
-      return (data.student_id as string) ?? null;
-    },
+    // consentimento removido por decisão de escopo; reintroduzir se LGPD voltar
+    // (aqui ficavam `hasAiConsent` e `resolveAssessmentStudent`).
 
     async countRecentCalls(tenantId, userId, sinceIso) {
       const { count, error } = await admin

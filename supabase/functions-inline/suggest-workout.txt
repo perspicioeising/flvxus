@@ -223,13 +223,7 @@ Deno.serve(async (req) => {
     if (!parsedInput.success) throw badRequest('Entrada inválida para sugestão de treino.');
     const input = parsedInput.data;
 
-    const { data: consent } = await admin
-      .from('consent_records').select('granted, revoked_at, created_at')
-      .eq('tenant_id', tenantId).eq('user_id', input.student_id).eq('consent_type', 'ai_processing')
-      .order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (!consent || !consent.granted || consent.revoked_at != null) {
-      throw badRequest('O aluno não concedeu consentimento de processamento por IA.');
-    }
+    // consentimento removido por decisão de escopo; reintroduzir se LGPD voltar.
 
     const sinceIso = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
     const { count } = await admin.from('ai_usage_logs').select('id', { count: 'exact', head: true })

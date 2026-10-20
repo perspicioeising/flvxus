@@ -47,16 +47,16 @@ Repita para `suggest-workout` e `analyze-assessment`.
 ### 3. Pré-requisitos no banco (já cobertos pelas migrations)
 
 As funções leem/gravam nas tabelas `ai_generations`, `ai_usage_logs`,
-`consent_records`, `profiles` e `physical_assessments`, todas criadas pelas
-migrations da Fase 2. Garanta que as migrations foram aplicadas (incluindo a
+`profiles` e `physical_assessments`, todas criadas pelas migrations da Fase 2.
+Garanta que as migrations foram aplicadas (incluindo a
 `20261020120000_fix_handle_new_user_convite_aluno.sql`).
 
-### 4. Consentimento de IA é obrigatório
+### 4. Consentimento de IA (removido por decisão de escopo)
 
-Antes de gerar dieta/treino/análise para um aluno, o aluno precisa ter concedido o
-consentimento `ai_processing` (tabela `consent_records`). Sem isso, a função recusa
-com "O aluno não concedeu consentimento de processamento por IA." — é uma proteção
-LGPD intencional.
+O LGPD/consentimento foi **adiado por decisão do usuário** (ver `docs/pendencias.md`).
+As funções **não checam mais** o consentimento `ai_processing` do aluno antes de
+gerar dieta/treino/análise. A tabela `consent_records` continua no banco, sem uso.
+Para reintroduzir a checagem, veja o passo a passo em `docs/pendencias.md`.
 
 ## Como o app chama estas funções
 

@@ -8,8 +8,9 @@
  * aprova depois (ADR 0001 §6).
  *
  * Segue a MESMA ordem de guarda-corpos (architecture §8): CORS -> auth-guard
- * (JWT+trainer) -> Zod de entrada -> consentimento ai_processing do aluno dono
- * da avaliação -> rate-limit/teto/timeout -> ai_generations pending ->
+ * (JWT+trainer) -> Zod de entrada ->
+ * (consentimento removido por decisão de escopo; reintroduzir se LGPD voltar) ->
+ * rate-limit/teto/timeout -> ai_generations pending ->
  * Anthropic (dados como DADOS) -> Zod de saída -> ai_usage_logs + update -> retorno.
  */
 
@@ -63,15 +64,9 @@ Deno.serve(async (req) => {
     }
     const input = parsedInput.data;
 
-    // Consentimento ai_processing é do ALUNO dono da avaliação (architecture §11).
-    const studentId = await runtime.resolveAssessmentStudent(ctx.tenantId, input.assessment_id);
-    if (!studentId) {
-      throw badRequest('Avaliação não encontrada no tenant.');
-    }
-    const consented = await runtime.hasAiConsent(ctx.tenantId, studentId);
-    if (!consented) {
-      throw badRequest('O aluno não concedeu consentimento de processamento por IA.');
-    }
+    // consentimento removido por decisão de escopo; reintroduzir se LGPD voltar.
+    // (Sem o consentimento, não é preciso resolver o aluno dono da avaliação
+    // aqui; a validação de posse/tenant fica por conta da própria geração.)
 
     const decision = await checkRateLimit(
       (sinceIso) => runtime.countRecentCalls(ctx.tenantId, ctx.userId, sinceIso),

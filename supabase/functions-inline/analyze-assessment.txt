@@ -10,7 +10,8 @@
 //
 // Gera RASCUNHO de análise (análise textual + recomendações); grava em
 // ai_generations; NÃO escreve direto em physical_assessments (o professor
-// aprova depois). O consentimento ai_processing é do ALUNO dono da avaliação.
+// aprova depois). consentimento removido por decisão de escopo; reintroduzir
+// se LGPD voltar.
 // =============================================================================
 
 import { z } from 'npm:zod@3';
@@ -197,20 +198,9 @@ Deno.serve(async (req) => {
     if (!parsedInput.success) throw badRequest('Entrada inválida para análise de avaliação.');
     const input = parsedInput.data;
 
-    // Consentimento é do ALUNO dono da avaliação: resolve o student_id primeiro.
-    const { data: assessment } = await admin
-      .from('physical_assessments').select('student_id')
-      .eq('tenant_id', tenantId).eq('id', input.assessment_id).maybeSingle();
-    if (!assessment || !assessment.student_id) throw badRequest('Avaliação não encontrada no tenant.');
-    const studentId = assessment.student_id as string;
-
-    const { data: consent } = await admin
-      .from('consent_records').select('granted, revoked_at, created_at')
-      .eq('tenant_id', tenantId).eq('user_id', studentId).eq('consent_type', 'ai_processing')
-      .order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (!consent || !consent.granted || consent.revoked_at != null) {
-      throw badRequest('O aluno não concedeu consentimento de processamento por IA.');
-    }
+    // consentimento removido por decisão de escopo; reintroduzir se LGPD voltar.
+    // (Sem o consentimento, não é preciso resolver o aluno dono da avaliação
+    // aqui; a validação de posse/tenant fica por conta da própria geração.)
 
     const sinceIso = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
     const { count } = await admin.from('ai_usage_logs').select('id', { count: 'exact', head: true })
