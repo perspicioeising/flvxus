@@ -105,11 +105,39 @@ export async function convidarAluno(
     });
 
   if (erroConvite || !convite?.user) {
+    const motivo = (erroConvite?.message ?? '').toLowerCase();
+    // Caso mais comum: o e-mail já existe em auth.users (convite anterior, ou
+    // já é usuário). A Supabase recusa o convite duplicado. Damos uma mensagem
+    // acionável em vez do erro cru.
+    const jaExiste =
+      motivo.includes('already') ||
+      motivo.includes('registered') ||
+      motivo.includes('exists') ||
+      motivo.includes('duplicate');
+
+    if (jaExiste) {
+      return {
+        ok: false,
+        message:
+          'Este e-mail já tem uma conta. Se o aluno já aparece na sua lista como ' +
+          'pendente, use "Reenviar convite" na ficha dele. Se não aparece, ele pode ' +
+          'pertencer a outra conta — use outro e-mail.',
+        fieldErrors: { email: 'E-mail já cadastrado.' },
+      };
+    }
+
+    // Log no servidor (aparece nos logs da Vercel) para diagnóstico — sem expor
+    // segredos. Ajuda a distinguir falha de SMTP, service_role ausente, etc.
+    console.error('[convidarAluno] Falha no inviteUserByEmail:', erroConvite?.message);
+
     return {
       ok: false,
-      message:
-        erroConvite?.message ??
-        'Não foi possível convidar o aluno. Verifique o e-mail e tente novamente.',
+      // Expõe o motivo real do Supabase (ajuda a diagnosticar) com fallback.
+      message: erroConvite?.message
+        ? `Não foi possível convidar: ${erroConvite.message}`
+        : 'Não foi possível convidar o aluno (resposta vazia do servidor de auth). ' +
+          'Verifique se SUPABASE_SERVICE_ROLE_KEY está nas variáveis da Vercel e se o ' +
+          'envio de e-mail (SMTP) está configurado no Supabase.',
       fieldErrors: { email: 'Não foi possível convidar este e-mail.' },
     };
   }
