@@ -1,13 +1,7 @@
 import { getSessionUser } from '@/lib/auth';
-import { formatarData } from '@/lib/datas';
 import { createClient } from '@/lib/supabase/server';
 import { ErrorState } from '@/components/patterns';
 import { PerfilForm } from '@/components/aluno/perfil/perfil-form';
-import {
-  LgpdControles,
-  type ConsentimentoAtual,
-  type SolicitacaoResumo,
-} from '@/components/aluno/perfil/lgpd-controles';
 import {
   Card,
   CardContent,
@@ -15,16 +9,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import type { ConsentType } from '@/types/database.types';
 
 /**
- * Perfil do aluno + LGPD (FEAT-004). Leitura via RSC sob RLS: o aluno vê
- * apenas o próprio `profiles`, seus `consent_records` e `data_requests` (as
- * policies garantem o isolamento — não refiltramos posse). O gate de papel é
- * do layout da área.
+ * Perfil do aluno. Leitura via RSC sob RLS: o aluno vê apenas o próprio
+ * `profiles` (a policy garante o isolamento — não refiltramos posse). O gate
+ * de papel é do layout da área.
  *
- * Mostra: (a) formulário de dados pessoais (`atualizarPerfil`), (b) controles
- * LGPD — consentimentos e solicitações de export/exclusão — e (c) logout.
+ * Mostra apenas o formulário de dados pessoais (`atualizarPerfil`). O logout
+ * vive no AppShell (sidebar/bottom-nav) do layout do aluno.
+ *
+ * LGPD adiado por decisão de escopo (FEAT-003): o perfil não pede mais
+ * consentimentos nem solicitações de export/exclusão. Para reativar, ver
+ * docs/pendencias.md.
  */
 export default async function AlunoPerfilPage() {
   const aluno = await getSessionUser();
@@ -42,30 +38,13 @@ export default async function AlunoPerfilPage() {
 
   const supabase = await createClient();
 
-  const [
-    { data: perfil, error: erroPerfil },
-    { data: consentimentos, error: erroConsentimentos },
-    { data: solicitacoes, error: erroSolicitacoes },
-  ] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('full_name, email, phone, birth_date, gender, height_cm')
-      .eq('user_id', aluno.userId)
-      .single(),
-    supabase
-      .from('consent_records')
-      .select('consent_type, granted, created_at')
-      .eq('user_id', aluno.userId)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('data_requests')
-      .select('id, request_type, status, requested_at')
-      .eq('user_id', aluno.userId)
-      .order('requested_at', { ascending: false })
-      .limit(10),
-  ]);
+  const { data: perfil, error: erroPerfil } = await supabase
+    .from('profiles')
+    .select('full_name, email, phone, birth_date, gender, height_cm')
+    .eq('user_id', aluno.userId)
+    .single();
 
-  if (erroPerfil || !perfil || erroConsentimentos || erroSolicitacoes) {
+  if (erroPerfil || !perfil) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
         <PageHeader />
@@ -76,26 +55,6 @@ export default async function AlunoPerfilPage() {
       </section>
     );
   }
-
-  // Último consentimento por tipo (a consulta já vem do mais recente ao mais antigo).
-  const consentimentoAtual: ConsentimentoAtual[] = [];
-  const vistos = new Set<ConsentType>();
-  for (const registro of consentimentos ?? []) {
-    if (!vistos.has(registro.consent_type)) {
-      vistos.add(registro.consent_type);
-      consentimentoAtual.push({
-        consent_type: registro.consent_type,
-        granted: registro.granted,
-      });
-    }
-  }
-
-  const solicitacoesResumo: SolicitacaoResumo[] = (solicitacoes ?? []).map((s) => ({
-    id: s.id,
-    request_type: s.request_type,
-    status: s.status,
-    requestedAtLabel: formatarData(s.requested_at),
-  }));
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -120,11 +79,6 @@ export default async function AlunoPerfilPage() {
           />
         </CardContent>
       </Card>
-
-      <LgpdControles
-        consentimentos={consentimentoAtual}
-        solicitacoes={solicitacoesResumo}
-      />
     </section>
   );
 }
@@ -135,7 +89,7 @@ function PageHeader() {
     <header className="space-y-1">
       <h1 className="text-2xl font-bold tracking-tight text-foreground">Perfil</h1>
       <p className="text-sm text-muted-foreground">
-        Seus dados, consentimentos e privacidade. Atualize o que precisar.
+        Seus dados pessoais. Atualize o que precisar.
       </p>
     </header>
   );
