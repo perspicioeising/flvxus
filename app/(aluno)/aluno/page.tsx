@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Activity, BarChart3, Dumbbell, Utensils } from 'lucide-react';
+import { Activity, BarChart3, Dumbbell, Trophy, Utensils } from 'lucide-react';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -31,6 +31,7 @@ const ATALHOS: Atalho[] = [
   { href: '/aluno/treinos', label: 'Treinos', icon: Activity },
   { href: '/aluno/dieta', label: 'Dieta', icon: Utensils },
   { href: '/aluno/evolucao', label: 'Evolução', icon: BarChart3 },
+  { href: '/aluno/conquistas', label: 'Conquistas', icon: Trophy },
 ];
 
 /** Extrai o nome do exercício de um join `exercises` (array ou objeto). */
@@ -119,7 +120,7 @@ export default async function AlunoHomePage() {
         />
       )}
 
-      <nav aria-label="Atalhos" className="grid grid-cols-3 gap-3">
+      <nav aria-label="Atalhos" className="grid grid-cols-2 gap-3">
         {ATALHOS.map(({ href, label, icon: Icon }) => (
           <Button
             key={href}
