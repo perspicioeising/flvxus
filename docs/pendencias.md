@@ -205,6 +205,52 @@ path `{tenant}/{student}/{assessment}/...`) e, em seguida, envia as fotos seleci
 upload de uma foto falhar, a avaliação **já foi gravada** — o professor vê um toast de erro e
 pode reenviar pela tela de edição. Não há rollback transacional entre a linha e os objetos de
 Storage (limitação do Storage do Supabase, fora do controle desta fase).
+## Autenticação v2 — cadastro de professor religado ao trigger (FEAT-auth)
+
+### `businessName` coletado no cadastro não vira nome do tenant
+
+A tela `app/(auth)/register/page.tsx` foi religada à arquitetura v2: em vez do
+`fetch('/api/auth/register')` (rota morta movida para `app/_legacy-api/` na Fase 3,
+causando **404 em produção**), o cadastro agora usa
+`supabase.auth.signUp({ email, password, options: { data: { full_name, business_name }, emailRedirectTo } })`
+pelo browser client (`lib/supabase/browser.ts`), sem service_role. O trigger
+`handle_new_user()` (migration `20261020090100_core_e_funcoes.sql`, `SECURITY DEFINER`)
+cria o **tenant + profile(role='trainer')** automaticamente.
+
+Limitação conhecida: o trigger lê **apenas** `full_name` de `raw_user_meta_data` e nomeia
+o tenant com esse valor (`coalesce(full_name, 'Meu negócio')`). O campo **`business_name`**,
+que a UI coleta, é enviado em `options.data` e fica **preservado em
+`auth.users.raw_user_meta_data`**, mas **não** é usado para nomear o tenant hoje.
+
+- **Decisão (sem migration nova):** manter o campo na UI (bom para UX e para dados futuros)
+  e gravar `business_name` nos metadados. Não foi criada migration para não mudar o contrato
+  do banco fora de escopo.
+- **Quando for desejado usar `business_name` como nome do tenant:** alterar o
+  `handle_new_user()` em **nova migration versionada** (timestamp `YYYYMMDDHHMMSS`) para ler
+  `coalesce(new.raw_user_meta_data ->> 'business_name', new.raw_user_meta_data ->> 'full_name', new.email)`
+  ao inserir em `public.tenants(name)`. Como o dado já está nos metadados, nenhuma reescrita de
+  usuários existentes é necessária além do ajuste do trigger.
+
+### Confirmação de e-mail (tela "verifique seu e-mail")
+
+O cadastro trata os dois cenários sem depender de `config.toml` (que só vale em dev local):
+
+- Se o `signUp` retorna **sessão** (confirmação de e-mail desligada no projeto hospedado),
+  redireciona direto para `/professor`.
+- Se retorna usuário **sem sessão** (confirmação habilitada), mostra a tela
+  "verifique seu e-mail" com o endereço e um atalho para `/login`. O `emailRedirectTo`
+  aponta para `/callback`, que já roteia por papel.
+
+E-mail já cadastrado é tratado com mensagem amigável em pt-BR (sem vazar detalhes do erro).
+
+### Login e demais telas de auth passaram a rotear por papel (fim das rotas mortas)
+
+Login, callback e set-password apontavam para `/dashboard` / `/dashboard/student` (área v1).
+Agora leem `profiles.role` e redirecionam para `/professor` (trainer) ou `/aluno` (student).
+O gate definitivo continua server-side nos `layout.tsx` de cada área (`lib/auth`). Logout já
+existe na navegação v2 (`components/navigation/*`) via `supabase.auth.signOut()` + `/login`;
+`actions/auth.ts` também expõe uma Server Action `sair()` equivalente para uso server-side.
+
 ### Limiar de "avaliação vencida" fixo em 90 dias (não configurável por tenant)
 O painel do professor (FEAT-005) considera vencida a última avaliação de um aluno ativo com mais
 de **90 dias** (constante `DIAS_AVALIACAO_VENCIDA` em `components/professor/dashboard/index.ts`,
