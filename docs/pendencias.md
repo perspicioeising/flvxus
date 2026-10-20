@@ -173,3 +173,35 @@ que avança com essa questão mais tarde). Nenhum deles muda o propósito do app
 avaliação, sem o resumo semanal), 7 (testes/qualidade) e 8 (revisão final) seguem normalmente,
 porém **sem** construir telas de gamificação, agenda, resumo semanal nem service worker. Esses
 itens entram no `docs/REVISAO-FINAL.md` como "próximos passos sugeridos".
+
+## Fase 4 — FEAT-003 (Avaliação Física)
+
+### Lacunas de coluna em `physical_assessments` (contornadas via `measurements` jsonb)
+
+O schema v2 de `physical_assessments` (migration `20261020090300_avaliacoes.sql`) tem colunas
+dedicadas para as dobras `skf_triceps`, `skf_subscapular`, `skf_chest`, `skf_midaxillary`,
+`skf_suprailiac`, `skf_abdominal` e `skf_thigh`, mas **não** para a dobra **bíceps**. O
+protocolo **Durnin & Womersley** exige a dobra do bíceps (4 dobras: bíceps, tríceps,
+subescapular, suprailíaca). Em vez de criar migration nova (fora do escopo desta fase, conforme
+`context.json`/`plan.md`), a dobra do bíceps é gravada em `measurements` jsonb sob a chave
+`skf_biceps` (gravação em `actions/avaliacoes.ts`, leitura no detalhe e na edição). Se no futuro
+a precisão/consulta exigir coluna própria, adicionar `skf_biceps numeric` à tabela e migrar os
+valores de `measurements`.
+
+### Fotos de avaliação sem coluna/tabela dedicada
+
+Não há coluna nem tabela para os **paths das fotos** de avaliação (o bucket privado
+`assessment-photos` existe em `20261020090900_storage.sql`, mas a linha de
+`physical_assessments` não referencia os arquivos). Os paths são persistidos em
+`measurements.photos` (array de strings) pela action `uploadFotoAvaliacao`, e exibidos sempre
+por **URL assinada** de TTL curto (`lib/storage.signAssessmentPhoto`), respeitando
+`photos_consent` (LGPD). Caso se queira indexar/consultar fotos, considerar uma tabela
+`assessment_photos` futura; por ora o jsonb atende sem nova migration.
+
+### Upload de fotos ocorre após a criação da avaliação
+
+O formulário multi-etapa cria a avaliação primeiro (precisa do `assessment_id` para montar o
+path `{tenant}/{student}/{assessment}/...`) e, em seguida, envia as fotos selecionadas. Se o
+upload de uma foto falhar, a avaliação **já foi gravada** — o professor vê um toast de erro e
+pode reenviar pela tela de edição. Não há rollback transacional entre a linha e os objetos de
+Storage (limitação do Storage do Supabase, fora do controle desta fase).
