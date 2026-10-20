@@ -108,10 +108,13 @@ export async function iniciarSessao(planId: string): Promise<EstadoAcao> {
 }
 
 /**
- * Registra (ou atualiza) uma série executada em `workout_set_logs`. Faz upsert
- * por `(session_id, plan_item_id, set_number)`: se a série já foi registrada,
- * atualiza `reps_done`/`load_done`/`completed`; caso contrário, insere. Isso
- * deixa o toque idempotente — marcar/desmarcar a mesma série não duplica linhas.
+ * Registra (ou atualiza) uma série executada em `workout_set_logs`. Faz um
+ * ÚNICO UPSERT por `(session_id, plan_item_id, set_number)` com
+ * `onConflict` nessas colunas: se a série já existe, atualiza
+ * `reps_done`/`load_done`/`completed`; caso contrário, insere. O índice único
+ * `workout_set_logs_sessao_item_set_uidx` (migration 20261021090000) resolve o
+ * conflito no banco, fechando a corrida que o antigo read-then-write deixava
+ * aberta e tornando o toque idempotente (marcar/desmarcar não duplica linhas).
  */
 export async function registrarSerie(input: RegistrarSerieEntrada): Promise<EstadoAcao> {
   const aluno = await getSessionUser();
@@ -131,57 +134,30 @@ export async function registrarSerie(input: RegistrarSerieEntrada): Promise<Esta
   const dados = parsed.data;
   const supabase = await createClient();
 
-  // Procura uma série já registrada para este (sessão, item, número).
-  const { data: existente, error: erroBusca } = await supabase
+  const { data: registrada, error: erroUpsert } = await supabase
     .from('workout_set_logs')
-    .select('id')
-    .eq('session_id', dados.session_id)
-    .eq('plan_item_id', dados.plan_item_id)
-    .eq('set_number', dados.set_number)
-    .maybeSingle();
-
-  if (erroBusca) {
-    return { ok: false, message: `Não foi possível registrar a série: ${erroBusca.message}` };
-  }
-
-  if (existente) {
-    const { error: erroUpdate } = await supabase
-      .from('workout_set_logs')
-      .update({
+    .upsert(
+      {
+        session_id: dados.session_id,
+        plan_item_id: dados.plan_item_id,
+        set_number: dados.set_number,
         reps_done: dados.reps_done ?? null,
         load_done: dados.load_done ?? null,
         completed: dados.completed,
-      })
-      .eq('id', existente.id);
-
-    if (erroUpdate) {
-      return { ok: false, message: `Não foi possível atualizar a série: ${erroUpdate.message}` };
-    }
-
-    return { ok: true, message: 'Série atualizada.', id: existente.id };
-  }
-
-  const { data: inserida, error: erroInsert } = await supabase
-    .from('workout_set_logs')
-    .insert({
-      session_id: dados.session_id,
-      plan_item_id: dados.plan_item_id,
-      set_number: dados.set_number,
-      reps_done: dados.reps_done ?? null,
-      load_done: dados.load_done ?? null,
-      completed: dados.completed,
-    })
+      },
+      { onConflict: 'session_id,plan_item_id,set_number' }
+    )
     .select('id')
     .single();
 
-  if (erroInsert || !inserida) {
+  if (erroUpsert || !registrada) {
     return {
       ok: false,
-      message: `Não foi possível registrar a série: ${erroInsert?.message ?? 'erro desconhecido'}`,
+      message: `Não foi possível registrar a série: ${erroUpsert?.message ?? 'erro desconhecido'}`,
     };
   }
 
-  return { ok: true, message: 'Série registrada.', id: inserida.id };
+  return { ok: true, message: 'Série registrada.', id: registrada.id };
 }
 
 /**
