@@ -433,7 +433,61 @@ commitada na branch `feat/v2-aluno` (commit `0f22dd0`). Faltam reexecutar: FEAT-
 Execução), FEAT-003 (Dieta + Evolução + Avaliações) e FEAT-004 (Perfil + LGPD), mais a
 convergência e o rebase. O trabalho será retomado a partir da branch existente.
 
+## LGPD adiado por decisão do usuário (v2-execucao-ia — FEAT-003)
+
+Durante a Fase de execução IA↔UI, o usuário decidiu **adiar o LGPD/consentimento**, que estava
+atrapalhando o uso do app (erros nas queries de LGPD derrubavam a tela de perfil inteira, e a
+dependência de consentimento travava a geração por IA). A FEAT-003 removeu o LGPD da UI do aluno
+e da IA. **Esta decisão de escopo diverge do `docs/decisions/0012-lgpd-aluno.md` (LGPD do
+aluno)** — o ADR permanece como está (não foi reescrito); esta seção registra a divergência.
+
+### O que foi removido
+
+- **UI do aluno (`app/(aluno)/aluno/perfil/page.tsx`):** o perfil **não** consulta mais
+  `consent_records` nem `data_requests`, e **não** renderiza mais os controles de LGPD. A tela
+  ficou simples: card de **Dados pessoais** (`PerfilForm` → `atualizarPerfil`) + **logout** (o
+  logout vive no `AppShell`/navegação do aluno — `components/navigation/*`). Isso também deixou o
+  perfil mais robusto: um erro nas queries de LGPD não derruba mais a página.
+- **Componente `components/aluno/perfil/lgpd-controles.tsx`:** removido do repositório (não há
+  mais import órfão no app).
+- **Actions `registrarConsentimento`/`solicitarDados` em `actions/perfil.ts`:** removidas (não
+  eram usadas por mais nada). Os **schemas** `registrarConsentimentoSchema`/`solicitarDadosSchema`
+  em `schemas/perfil.ts` permanecem (ainda cobertos por `tests/unit/schemas-perfil.test.ts`),
+  sem uso na UI.
+- **Edge Functions (IA):** a checagem de consentimento `ai_processing` foi removida das **3
+  modulares** (`supabase/functions/{generate-diet,suggest-workout,analyze-assessment}/index.ts`
+  e o runtime `supabase/functions/_shared/handler.ts` — tiramos `hasAiConsent` e
+  `resolveAssessmentStudent`, que só serviam ao consentimento) e das **3 inline**
+  (`supabase/functions-inline/*.ts`). As versões inline e modular ficaram **sincronizadas**. Em
+  cada ponto ficou o comentário **"consentimento removido por decisão de escopo; reintroduzir se
+  LGPD voltar"**. Todos os demais guarda-corpos permanecem (JWT+trainer, Zod de entrada,
+  rate-limit/teto/timeout, `ai_generations` pending, Anthropic, Zod de saída, `ai_usage_logs`,
+  rascunho→aprovação). O `supabase/functions-inline/README.md` foi ajustado para refletir que o
+  consentimento não é mais exigido.
+
+### O que NÃO foi feito (de propósito)
+
+- As tabelas `consent_records` e `data_requests` **NÃO** foram dropadas — continuam no banco,
+  sem uso. Nenhuma migration nova foi criada.
+
+### Como reativar o LGPD (passo a passo)
+
+1. **UI do aluno:** reintroduzir `components/aluno/perfil/lgpd-controles.tsx` (recuperável do
+   histórico git) e, em `app/(aluno)/aluno/perfil/page.tsx`, voltar as queries a `consent_records`
+   e `data_requests` e a renderização de `<LgpdControles>`.
+2. **Actions:** recriar `registrarConsentimento`/`solicitarDados` em `actions/perfil.ts`
+   (os schemas já existem em `schemas/perfil.ts`).
+3. **Edge Functions:** reintroduzir o bloco de consentimento `ai_processing` nas 3 modulares e
+   nas 3 inline (restaurar `hasAiConsent`/`resolveAssessmentStudent` no `_shared/handler.ts`),
+   no ponto marcado pelo comentário de reintrodução, mantendo inline↔modular em sincronia.
+4. Conferir o restante da pendência de processamento de export/exclusão (abaixo) e o
+   `docs/decisions/0012-lgpd-aluno.md`.
+
 ## Fase 5 — FEAT-004 (Perfil + LGPD): processamento de export/exclusão
+
+> **Nota (FEAT-003):** o LGPD do aluno foi **adiado** (ver a seção "LGPD adiado por decisão do
+> usuário" acima). A descrição abaixo reflete o estado **anterior** da tela e fica como
+> referência para quando o LGPD for reativado.
 
 A tela de Perfil do aluno (`app/(aluno)/aluno/perfil/page.tsx`) já permite ao aluno editar os
 próprios dados (`atualizarPerfil`), registrar/revogar consentimentos (`consent_records`,
