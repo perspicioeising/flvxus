@@ -18,16 +18,17 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Alternar tema"
           className="relative p-2 rounded-xl hover:bg-app-border-accent/20 transition-all duration-300 group"
         >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0 text-app-btn-accent" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100 text-app-achievement-workout" />
-          <span className="sr-only">Toggle theme</span>
-          
-          {/* Subtle glow effect */}
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0 text-app-btn-accent" aria-hidden="true" />
+          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100 text-app-achievement-workout" aria-hidden="true" />
+          <span className="sr-only">Alternar tema</span>
+
+          {/* Acento sutil de hover */}
           <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-app-btn-accent/20 to-app-achievement-workout/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm -z-10"></div>
         </Button>
       </DropdownMenuTrigger>

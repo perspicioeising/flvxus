@@ -1,6 +1,6 @@
 'use client';
 
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { createContext, useContext, useState, useEffect } from "react";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
@@ -55,7 +55,7 @@ export function useSupabase() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+    <ThemeProvider>
       <TooltipProvider>
         <CapacitorProvider>
           <SupabaseProvider>
