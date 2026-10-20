@@ -15,7 +15,7 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 
 - [x] **Fase 0 — Auditoria** (`docs/audit.md`): mapear o que existe, incompleto, quebrado, dívida técnica. ✅ concluída.
 - [x] **Fase 1 — Arquitetura v2** (`docs/architecture.md`, ADRs 0001–0008): stack, estrutura, padrões. ✅ aprovada e verificada.
-- [ ] **Fase 2 — Banco Supabase do zero** (`supabase/migrations/`, `docs/database.md`): schema, RLS, storage, seed, tipos TS.
+- [x] **Fase 2 — Banco Supabase do zero** (`supabase/migrations/`, `docs/database.md`): schema, RLS, storage, seed, tipos TS. ✅ aprovada na revisão de segurança. (Aplicação via CLI pendente de Docker/projeto Supabase — ver pendências.)
 - [ ] **Fase 3 — Design system + front-end**: tokens, componentes, dark/light, mobile-first, i18n pt-BR.
 - [ ] **Fase 4 — Features professor**: alunos, avaliação física, exercícios, treinos.
 - [ ] **Fase 5 — Features aluno**: área do aluno, execução de treino, dieta, evolução.
@@ -26,7 +26,8 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 ## Andamento
 
 ### Em andamento
-- Fase 2 — Banco Supabase do zero (migrations versionadas, RLS, storage privado, seed, tipos TS, docs/database.md).
+- Fase 3 — Design system e fundação do front-end (tokens, dark/light, mobile-first, i18n pt-BR,
+  stack Next 15 + React 19 + @supabase/ssr, gate por papel nos layouts).
 
 ### Concluído
 - Setup do repositório: resolvido erro de clone no Windows (arquivos `:Zone.Identifier`),
@@ -46,6 +47,12 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
   sobre shadcn/Radix; PWA + Capacitor; Vitest + harness de RLS + CI. Aprovada na revisão.
 - Repositório migrado para a conta GitHub nova (`perspicioeising/flvxus`); identidade de
   commits e autenticação (`gh`) reconfiguradas. Commits antigos mantidos; novos vão para a conta nova.
+- Fase 2 — Banco Supabase v2 do zero: removidas 21 SQLs legadas; 10 migrations versionadas;
+  13 enums nativos; 23 tabelas de negócio com RLS (90 policies) isolando por tenant, aluno só
+  vê o próprio e só treino/dieta liberados; 4 buckets privados com policies; seed pt-BR de
+  exercícios; `types/database.types.ts` (à mão, regenerar via CLI); harness de RLS em
+  `tests/rls/` (skip até Docker); `docs/database.md` com ER sincronizado. Aprovada na revisão
+  de segurança (verifiquei contagens de forma independente: 23 RLS, 90 policies, 0 bucket público).
 
 ## Decisões tomadas
 
