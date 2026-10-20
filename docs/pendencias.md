@@ -433,6 +433,27 @@ commitada na branch `feat/v2-aluno` (commit `0f22dd0`). Faltam reexecutar: FEAT-
 Execução), FEAT-003 (Dieta + Evolução + Avaliações) e FEAT-004 (Perfil + LGPD), mais a
 convergência e o rebase. O trabalho será retomado a partir da branch existente.
 
+## Fase 5 — FEAT-004 (Perfil + LGPD): processamento de export/exclusão
+
+A tela de Perfil do aluno (`app/(aluno)/aluno/perfil/page.tsx`) já permite ao aluno editar os
+próprios dados (`atualizarPerfil`), registrar/revogar consentimentos (`consent_records`,
+append-only) e **abrir** solicitações de exportação/exclusão (`data_requests`, `status =
+'requested'`), além do logout. Decisão em `docs/decisions/0012-lgpd-aluno.md`.
+
+O **processamento efetivo** das solicitações **não** foi implementado nesta fase (é pendência,
+não falta de UI): exige uma rotina de backend com **service_role** (fora do contexto do aluno)
+que leia `data_requests` com `status = 'requested'` e:
+
+- **Export:** monte o pacote de dados do titular no bucket privado `data-exports`, grave o
+  `export_path` e avance o status `requested → processing → completed` (entregando por URL
+  assinada de TTL curto).
+- **Delete:** execute a exclusão/anonimização (respeitando cascatas e dados de terceiros) e
+  avance o status para `completed`/`rejected`.
+
+A policy de `update` de `data_requests` não libera o titular, então só o sistema/service_role
+avança o status — coerente com o ADR 0012. Enquanto a rotina não existe, as solicitações ficam
+registradas e visíveis ao aluno com status `Solicitado`.
+
 ## Testes: excluir `.worktrees/` da suíte (ruído)
 
 O Vitest da `main` está varrendo também `.worktrees/**`, duplicando testes e carregando arquivos
