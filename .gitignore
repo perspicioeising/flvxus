@@ -41,3 +41,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# artefatos internos dos workflows de revisao (nao versionar)
+docs/**/_design-review.*
+docs/**/_*-review.*
