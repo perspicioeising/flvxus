@@ -1,13 +1,98 @@
-import { ClipboardList } from 'lucide-react';
+import Link from 'next/link';
+import { ClipboardList, Plus } from 'lucide-react';
 
-import { PageStub } from '@/components/navigation/page-stub';
+import { createClient } from '@/lib/supabase/server';
+import { EmptyState, ErrorState } from '@/components/patterns';
+import { Button } from '@/components/ui/button';
+import { FichaCard } from '@/components/professor/treinos/ficha-card';
+import { CriarDeModelo } from '@/components/professor/treinos/criar-de-modelo';
+import type { PlanStatus } from '@/types/database.types';
 
-export default function ProfessorTreinosPage() {
+/**
+ * Listagem de FICHAS por aluno (`workout_plans`). Leitura via RSC (RLS entrega
+ * só as fichas do tenant/professor). Oferece criar do zero ou a partir de um
+ * modelo.
+ */
+export default async function TreinosPage() {
+  const supabase = await createClient();
+
+  const [{ data: fichasData, error }, { data: modelosData }, { data: alunosData }] =
+    await Promise.all([
+      supabase
+        .from('workout_plans')
+        .select('id, name, status, profiles!workout_plans_student_id_fkey(full_name)')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('workouts')
+        .select('id, name')
+        .eq('is_template', true)
+        .order('name', { ascending: true }),
+      supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .eq('role', 'student')
+        .order('full_name', { ascending: true }),
+    ]);
+
+  const fichas = (fichasData ?? []).map((f) => ({
+    id: f.id,
+    name: f.name,
+    status: f.status as PlanStatus,
+    alunoNome:
+      (f.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
+  }));
+
+  const modelos = modelosData ?? [];
+  const alunos = alunosData ?? [];
+
   return (
-    <PageStub
-      title="Treinos"
-      icon={ClipboardList}
-      description="Montagem de fichas e rotinas por aluno, com reaproveitamento por modelos. Em construção."
-    />
+    <section className="mx-auto w-full max-w-4xl space-y-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Treinos</h1>
+          <p className="text-sm text-muted-foreground">
+            Fichas de treino por aluno. Só fichas liberadas ficam visíveis ao aluno.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <CriarDeModelo modelos={modelos} alunos={alunos} />
+          <Button asChild className="min-h-11">
+            <Link href="/professor/treinos/nova">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Nova ficha
+            </Link>
+          </Button>
+        </div>
+      </header>
+
+      {error ? (
+        <ErrorState
+          title="Não foi possível carregar as fichas"
+          description="Ocorreu um erro ao buscar as fichas. Tente novamente."
+        />
+      ) : fichas.length === 0 ? (
+        <div className="flex flex-col items-center gap-4">
+          <EmptyState
+            icon={ClipboardList}
+            title="Nenhuma ficha ainda"
+            description="Crie a primeira ficha de treino para um aluno, do zero ou a partir de um modelo."
+          />
+          <Button asChild className="min-h-11">
+            <Link href="/professor/treinos/nova">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Nova ficha
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {fichas.map((ficha) => (
+            <li key={ficha.id}>
+              <FichaCard ficha={ficha} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
