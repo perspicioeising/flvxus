@@ -113,3 +113,42 @@ removido). Demais páginas v1 em `app/(dashboard)/.../page.tsx` podem exigir `pa
   Fase 3, para não misturar mudança de build com a reconstrução do banco.
 - Edge Functions de IA (Anthropic), prompts versionados e schemas Zod (ADR 0001) — Fase 6.
 - Front-end, design system e gate por papel nos layouts (§5.2) — Fases 3 a 5.
+
+## Fase 3 — FEAT-004 (route groups, navegação, PWA, Capacitor)
+
+### Service worker / offline (PWA) — pendente por escopo (ADR 0009)
+
+Nesta fase o PWA se limita ao **manifest instalável** (`app/manifest.ts`). O **service worker /
+cache offline** fica como esboço documentado, a ser implementado em fase posterior com a
+abordagem nativa do Next ou um sucessor mantido (ex.: Serwist) — **não** `next-pwa` (ADR 0009).
+
+Esboço de escopo do SW quando for implementado:
+
+- **Cachear o app shell e assets estáticos** (HTML de rotas públicas, CSS/JS buildados, ícones,
+  fontes self-hospedadas em `app/fonts/`) com estratégia _stale-while-revalidate_/_cache-first_
+  para assets versionados.
+- **NÃO cachear dados sensíveis** (respostas de avaliações, fotos, dietas, qualquer PII/dado de
+  saúde) — exigência de **LGPD**. Requisições autenticadas ao Supabase/Edge Functions ficam
+  sempre _network-only_.
+- Registrar o SW só em produção e tratar atualização de versão (skipWaiting controlado) para não
+  servir shell obsoleto.
+
+### Capacitor — tensão `webDir: "out"` × export estático
+
+O `capacitor.config.json` mantém `webDir: "out"` (valor herdado), mas o app **não** é exportado
+estaticamente (`next.config.js` não usa `output: 'export'`; a v2 depende de RSC/Server Actions).
+A estratégia (ADR 0007/0009) é o Capacitor empacotar o app **hospedado** via `server.url`
+(`https://flvxus.com.br`, `cleartext: false`) — ou seja, o webview carrega a URL remota e o
+`webDir` não é efetivamente usado para servir a aplicação. Pendências:
+
+- Confirmar a URL hospedada por ambiente via `NEXT_PUBLIC_SITE_URL` (já consumida em
+  `lib/api-config.ts`) e, quando houver pipeline de build nativo, decidir entre manter o
+  `server.url` remoto (atual) ou gerar um shell mínimo em `out/` para o primeiro paint offline.
+- Reavaliar `webDir` quando o SW existir (um shell cacheável pode tornar o `webDir` útil).
+
+### Rotas v1 eventualmente movidas (referência cruzada)
+
+As rotas de API da v1 foram movidas em **FEAT-002** para `app/_legacy-api/` (fora do roteamento),
+documentadas acima nesta mesma página. A FEAT-004 não moveu rotas v1 adicionais; o
+`app/(dashboard)/` permanece como referência das Fases 4-6. As novas áreas por papel vivem em
+`app/(professor)/` e `app/(aluno)/`, com gate server-side em cada `layout.tsx` (§5.2).

@@ -1,11 +1,14 @@
 // lib/api-config.ts
 import { Capacitor } from '@capacitor/core';
 
+// URL hospedada (HTTPS) usada pelo app nativo empacotado pelo Capacitor
+// (ADR 0007/0009). Configurável por NEXT_PUBLIC_SITE_URL; fallback no domínio.
+const HOSTED_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://flvxus.com.br';
+
 export const getApiUrl = (path: string): string => {
   // Se estiver no ambiente nativo, usar URL absoluta
   if (Capacitor.isNativePlatform()) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://flvxus.com.br';
-    return `${baseUrl}${path}`;
+    return `${HOSTED_SITE_URL}${path}`;
   }
   
   // Se estiver na web, usar caminho relativo

@@ -1,5 +1,5 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import { Providers } from './providers';
 import { cn } from '@/lib/utils';
@@ -19,26 +19,32 @@ const inter = localFont({
   variable: '--font-sans',
 });
 
+// O Web App Manifest é emitido por app/manifest.ts (PWA — ADR 0009); o Next
+// adiciona o <link rel="manifest"> automaticamente, por isso não há mais
+// `manifest: '/manifest.json'` aqui.
 export const metadata: Metadata = {
-  title: 'FLVXUS | Personal Trainer Management Platform',
-  description: 'Complete solution for personal trainers to manage students, workouts, and evaluations',
-  manifest: '/manifest.json',
-  themeColor: '#10b981',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover'
-  },
+  title: 'Flvxus | Plataforma para personal trainers',
+  description:
+    'Gestão de alunos, avaliação física, treinos, dietas e evolução para personal trainers.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'FLVXUS'
+    title: 'Flvxus',
   },
   formatDetection: {
-    telephone: false
-  }
+    telephone: false,
+  },
+};
+
+// themeColor e viewport vivem em `export const viewport` (Next 15); mantê-los em
+// `metadata` é desaconselhado e gera warning de build.
+export const viewport: Viewport = {
+  themeColor: '#10b981',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -53,7 +59,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/icon-512x512.png" />
       </head>
       <body className={cn(inter.className, "min-h-screen bg-background antialiased")}>
         <Providers>
