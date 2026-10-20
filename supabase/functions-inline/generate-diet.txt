@@ -15,7 +15,7 @@
 //        ANTHROPIC_MODEL    = claude-sonnet-5-5
 //      (SUPABASE_URL, SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY já são
 //       injetados automaticamente pelo runtime do Supabase.)
-//   5. Deixe "Verify JWT" LIGADO (a função também valida o papel internamente).
+//   5. Deixe "Verify JWT" LIGADO (a função também vacalida o papel internamente).
 //
 // Guarda-corpos (ADR 0001 / architecture §8): CORS -> JWT+trainer -> Zod de
 // entrada -> (consentimento removido por decisão de escopo; reintroduzir se
@@ -232,6 +232,10 @@ async function callAnthropic(system: string, userContent: string) {
         signal: controller.signal,
       });
       if (!res.ok) {
+        // DIAGNÓSTICO: loga status + corpo do erro da Anthropic (sem a chave).
+        let errBody = '';
+        try { errBody = await res.text(); } catch { errBody = '(sem corpo)'; }
+        console.error(`[generate-diet] Anthropic HTTP ${res.status}: ${errBody}`);
         if ((res.status === 429 || res.status >= 500) && attempt < maxRetries) {
           lastErr = new Error(`status ${res.status}`);
           await sleep(250 * (attempt + 1));
@@ -353,6 +357,9 @@ Deno.serve(async (req) => {
       throw aiErr;
     }
   } catch (err) {
+    // DIAGNÓSTICO: loga o erro real (código/status/mensagem) antes de responder.
+    const info = err instanceof AiError ? `${err.code} ${err.status} ${err.message}` : String(err);
+    console.error('[generate-diet] Falha:', info);
     return errorResponse(err);
   }
 });
