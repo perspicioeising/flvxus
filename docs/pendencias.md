@@ -152,3 +152,24 @@ As rotas de API da v1 foram movidas em **FEAT-002** para `app/_legacy-api/` (for
 documentadas acima nesta mesma página. A FEAT-004 não moveu rotas v1 adicionais; o
 `app/(dashboard)/` permanece como referência das Fases 4-6. As novas áreas por papel vivem em
 `app/(professor)/` e `app/(aluno)/`, com gate server-side em cada `layout.tsx` (§5.2).
+
+## Escopo adiado da v2 (decisão do usuário — 2026-10-20)
+
+Para focar o relançamento no **caminho crítico do produto** (alunos → avaliação física →
+treino → área do aluno → geração de dieta com IA) e acelerar a conclusão, o usuário decidiu
+**cortar/adiar da v2** os itens abaixo. Eles **não** serão implementados nas fases atuais e
+ficam registrados aqui como **próximos passos**, a serem retomados depois (o usuário sinalizou
+que avança com essa questão mais tarde). Nenhum deles muda o propósito do app; são incrementos.
+
+| Item | Decisão | Observações para quando for retomado |
+|------|---------|--------------------------------------|
+| **Gamificação / conquistas** | Adiado | As tabelas `achievements`/`user_achievements` e `profiles.total_points`/`last_workout_date` JÁ existem no banco v2 (Fase 2), então a base de dados está pronta; falta apenas a UI e a função que concede conquistas ao fechar sessão de treino. Não construir telas de conquistas na v2 atual. |
+| **Agenda / calendário** | Adiado | A tabela `appointments` (com RLS) JÁ existe no banco v2; falta a UI de agenda e, se desejado, lembretes. Não construir a tela de agenda agora. |
+| **Resumo semanal de aderência por IA** | Adiado | Previsto no ADR 0001 como um dos usos de IA (`ai_job_type = weekly_adherence`). As demais funções de IA (gerar dieta, sugerir treino, analisar avaliação) seguem no escopo da Fase 6; apenas o resumo semanal fica para depois. |
+| **PWA offline / service worker** | Adiado | Já era pendência por escopo (ADR 0009). O manifest instalável permanece; o service worker/cache offline fica para fase posterior, respeitando a regra LGPD de nunca cachear dado de saúde. |
+| **WhatsApp** | Adiado (decisão anterior) | Reconstrução segura (verify token + verificação de assinatura `x-hub-signature-256`) fica para fase própria. O usuário já tem access token e phone number ID; o `WHATSAPP_VERIFY_TOKEN` é um valor que ele mesmo define. Variáveis já estão no `.env.example` em branco. |
+
+**Impacto no plano de fases:** as Fases 5 (área do aluno), 6 (IA — dieta/treino/análise de
+avaliação, sem o resumo semanal), 7 (testes/qualidade) e 8 (revisão final) seguem normalmente,
+porém **sem** construir telas de gamificação, agenda, resumo semanal nem service worker. Esses
+itens entram no `docs/REVISAO-FINAL.md` como "próximos passos sugeridos".

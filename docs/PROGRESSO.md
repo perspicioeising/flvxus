@@ -71,6 +71,7 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 |------|---------|--------|
 | 2026-10-19 | IA migra de Google Gemini para API da Anthropic via Supabase Edge Functions | Requisito do produto; segredo só no servidor; validação de JWT/role. |
 | 2026-10-19 | Migrations SQL legadas serão auditadas; banco v2 reescrito do zero versionado por timestamp | Migrations atuais têm nomes não-versionados (`avaliacao.sql`, `dieta.sql`) e dívida acumulada. |
+| 2026-10-20 | Cortar/adiar da v2: gamificação, agenda, resumo semanal por IA, PWA offline e WhatsApp | Foco no caminho crítico (alunos → avaliação → treino → área do aluno → dieta com IA) para acelerar o relançamento. Detalhado em `docs/pendencias.md` → "Escopo adiado da v2". Retomar depois. |
 
 ## Pendências
 
