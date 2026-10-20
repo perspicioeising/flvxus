@@ -18,7 +18,7 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 - [x] **Fase 2 — Banco Supabase do zero** (`supabase/migrations/`, `docs/database.md`): schema, RLS, storage, seed, tipos TS. ✅ aprovada na revisão de segurança. (Aplicação via CLI pendente de Docker/projeto Supabase — ver pendências.)
 - [x] **Fase 3 — Design system + front-end**: tokens, componentes, dark/light, mobile-first, i18n pt-BR. ✅ aprovada (convergência + revisão semântica). Stack migrada p/ Next 15 + React 19 + @supabase/ssr; gate server-side por papel; PWA manifest; .env.example.
 - [x] **Fase 4 — Features professor**: alunos, avaliação física, exercícios, treinos. ✅ integrada na main (aprovada na revisão, 93 testes).
-- [ ] **Fase 5 — Features aluno**: área do aluno, execução de treino, dieta, evolução.
+- [x] **Fase 5 — Features aluno**: área do aluno, execução de treino, dieta, evolução. ✅ integrada na main (aprovada na revisão semântica, 182 testes). CAMINHO CRÍTICO COMPLETO.
 - [x] **Fase 6 — IA Anthropic**: Edge Functions, prompts versionados, validação Zod, rate limit, logs. ✅ integrada (aprovada; deploy depende de ANTHROPIC_API_KEY + CLI).
 - [ ] **Fase 7 — Qualidade**: testes de RLS e lógica crítica, lint, typecheck, README.
 - [ ] **Fase 8 — Revisão final** (`docs/REVISAO-FINAL.md`): checklist de publicação.
