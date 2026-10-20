@@ -5,6 +5,7 @@ import { ChevronLeft, LineChart, Pencil } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { signAssessmentPhoto } from '@/lib/storage';
+import { uploadFotoAvaliacao, type EstadoAcao } from '@/actions/avaliacoes';
 import { formatarData } from '@/lib/datas';
 import {
   Card,
@@ -18,6 +19,7 @@ import { EmptyState } from '@/components/patterns';
 import { AnalisarAvaliacaoIa } from '@/components/professor/ia/analisar-avaliacao';
 import { ComposicaoGrafico } from '@/components/professor/avaliacoes/composicao-grafico';
 import { MedidasVisual } from '@/components/professor/avaliacoes/medidas-visual';
+import { UploadFotos } from '@/components/professor/avaliacoes/upload-fotos';
 import { EvolucaoGraficos } from '@/components/professor/avaliacoes/evolucao-graficos';
 import { montarSerieEvolucao } from '@/components/professor/avaliacoes/evolucao-series';
 import {
@@ -59,6 +61,13 @@ export default async function DetalheAvaliacaoPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+
+  // Adaptador de upload: injeta o id da rota e reusa a action existente
+  // (mesmo padrão de `[id]/editar/page.tsx`).
+  async function uploadFoto(formData: FormData): Promise<EstadoAcao> {
+    'use server';
+    return uploadFotoAvaliacao(id, undefined, formData);
+  }
 
   const { data: avaliacao, error } = await supabase
     .from('physical_assessments')
@@ -243,11 +252,7 @@ export default async function DetalheAvaliacaoPage({
           <CardTitle className="text-lg">Fotos</CardTitle>
         </CardHeader>
         <CardContent>
-          {!avaliacao.photos_consent ? (
-            <p className="text-sm text-muted-foreground">
-              Sem consentimento do aluno para armazenamento de fotos (LGPD).
-            </p>
-          ) : fotos.length === 0 ? (
+          {fotos.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma foto enviada.</p>
           ) : (
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -265,6 +270,9 @@ export default async function DetalheAvaliacaoPage({
               ))}
             </ul>
           )}
+          <div className="mt-4">
+            <UploadFotos onUploadFoto={uploadFoto} />
+          </div>
         </CardContent>
       </Card>
 
