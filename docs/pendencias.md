@@ -408,3 +408,33 @@ configurado e do domínio de produção. Nada disso roda no ambiente de build/CI
 a validação de ponta a ponta (receber o e-mail e clicar no link) precisa ser feita por você,
 em produção/staging, após conferir os itens acima. As verificações automáticas aqui cobrem
 `typecheck`, `lint`, `build` e os testes de unidade.
+
+## Upload de vídeo de exercício — limite de corpo da Server Action
+
+O upload de vídeo/thumbnail de exercício (área do professor) passava pela Server Action e
+estourava o limite padrão do Next 15 (1 MB) com o erro **413 "Body exceeded 1 MB limit"**.
+
+**Correção aplicada:** `next.config.js` → `experimental.serverActions.bodySizeLimit = '50mb'`,
+suficiente para vídeos curtos de demonstração.
+
+**Melhoria recomendada (não aplicada agora):** para arquivos grandes, o ideal é **upload direto
+ao Supabase Storage** usando *signed upload URL* (`createSignedUploadUrl`), em vez de trafegar o
+arquivo pela Server Action (que roda em função serverless com limites de tempo/memória e custo
+por payload). O fluxo seria: o cliente pede uma URL assinada de upload ao servidor, envia o
+arquivo direto ao Storage, e então só grava o `path` no banco. Fica como próximo passo de
+robustez para a mídia de exercícios. Na Vercel, atenção também ao limite de corpo da plataforma
+por plano — o `bodySizeLimit` do Next não contorna um teto do provedor.
+
+## Fase 5 (área do aluno) — interrompida por limite de uso
+
+O workflow da Fase 5 foi interrompido no meio (FEAT-002) por "Usage limit reached" — **não** foi
+erro de código. A **FEAT-001** (fundação da área do aluno + tela de Início) ficou pronta e
+commitada na branch `feat/v2-aluno` (commit `0f22dd0`). Faltam reexecutar: FEAT-002 (Treinos +
+Execução), FEAT-003 (Dieta + Evolução + Avaliações) e FEAT-004 (Perfil + LGPD), mais a
+convergência e o rebase. O trabalho será retomado a partir da branch existente.
+
+## Testes: excluir `.worktrees/` da suíte (ruído)
+
+O Vitest da `main` está varrendo também `.worktrees/**`, duplicando testes e carregando arquivos
+de branches em progresso (causa falsos "0 test"/falhas que não são da main). Ajustar o
+`vitest.config.ts` para ignorar `.worktrees/**` na fase de qualidade (Fase 7).
