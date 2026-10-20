@@ -438,3 +438,46 @@ convergência e o rebase. O trabalho será retomado a partir da branch existente
 O Vitest da `main` está varrendo também `.worktrees/**`, duplicando testes e carregando arquivos
 de branches em progresso (causa falsos "0 test"/falhas que não são da main). Ajustar o
 `vitest.config.ts` para ignorar `.worktrees/**` na fase de qualidade (Fase 7).
+
+## Domínio oficial e a URL que "volta sozinha" no Supabase
+
+**Domínio oficial escolhido pelo usuário:** `https://flvxus.vercel.app`.
+
+O projeto tem dois domínios na Vercel apontando para o mesmo app:
+`https://flvxus.vercel.app` (oficial) e `https://flvxus-perspicioeising.vercel.app` (domínio
+canônico gerado pela Vercel para o projeto).
+
+**Sintoma relatado:** ao remover/salvar a Site URL no Supabase, ela **volta sozinha** depois.
+
+**Causa:** a integração oficial **Supabase ↔ Vercel** sincroniza automaticamente as
+Auth Redirect URLs / Site URL com o domínio do deploy da Vercel a cada deploy. Por isso a URL
+reaparece mesmo após ser removida manualmente — não é bug, é a integração reescrevendo o valor.
+
+**Como fixar `flvxus.vercel.app` como oficial (passos no painel — ação do usuário):**
+
+1. **Desligar a sincronização automática** para parar de brigar com ela. Em uma destas vias:
+   - Vercel → Project → **Settings → Integrations** → integração do Supabase → desabilitar a
+     sincronização de "Auth Redirect URLs" (ou remover a integração se não for usada para mais
+     nada), **ou**
+   - Supabase → **Integrations** → integração Vercel → desconectar a parte de Auth URLs.
+2. **Vercel → Settings → Environment Variables** (ambiente Production):
+   `NEXT_PUBLIC_SITE_URL = https://flvxus.vercel.app` e `NEXT_PUBLIC_API_URL = https://flvxus.vercel.app`.
+   Refazer o deploy depois de salvar.
+3. **Supabase → Authentication → URL Configuration**:
+   - **Site URL**: `https://flvxus.vercel.app`
+   - **Redirect URLs**: `https://flvxus.vercel.app/callback*` e `http://localhost:3000/callback*`.
+4. (Opcional) Se quiser manter a integração ligada, a alternativa é aceitar o domínio
+   `flvxus-perspicioeising.vercel.app` como oficial e setar `NEXT_PUBLIC_SITE_URL` nele — aí a
+   integração e o código concordam e a URL não "volta" porque já está correta.
+
+> O código não tem domínio hardcoded: tudo vem de `NEXT_PUBLIC_SITE_URL` (`lib/site-url.ts`).
+> Basta alinhar essa variável, as Redirect URLs do Supabase e (se for o caso) desligar a sync.
+
+## Segredo versionado por engano: CRON_SECRET (corrigido)
+
+O `.env.example` continha um `CRON_SECRET` com valor REAL (hash de 64 chars), que foi commitado
+no commit `887cc04` e empurrado ao GitHub. Já foi **restaurado para placeholder**. Como as rotas
+de cron ainda não foram religadas na v2 (vivem em `app/_legacy-api/`, desativadas), o impacto
+prático atual é nulo. **Recomendação:** ao reativar as rotas de cron (fase futura), gerar um
+CRON_SECRET novo e usar só no `.env.local`/variáveis da Vercel — nunca no `.env.example`.
+O mesmo cuidado vale para a ANTHROPIC_API_KEY (essa foi corrigida antes de qualquer commit).
