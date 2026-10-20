@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/patterns';
 import { AnalisarAvaliacaoIa } from '@/components/professor/ia/analisar-avaliacao';
+import { ComposicaoGrafico } from '@/components/professor/avaliacoes/composicao-grafico';
 import { EvolucaoGraficos } from '@/components/professor/avaliacoes/evolucao-graficos';
 import { montarSerieEvolucao } from '@/components/professor/avaliacoes/evolucao-series';
 import {
@@ -171,6 +172,17 @@ export default async function DetalheAvaliacaoPage({
               valor={avaliacao.lean_mass_kg != null ? `${avaliacao.lean_mass_kg} kg` : null}
             />
           </dl>
+
+          <div className="mt-6">
+            <ComposicaoGrafico
+              bmi={avaliacao.bmi}
+              bodyFatPct={avaliacao.body_fat_pct}
+              fatMassKg={avaliacao.fat_mass_kg}
+              leanMassKg={avaliacao.lean_mass_kg}
+              weightKg={avaliacao.weight_kg}
+              gender={avaliacao.gender as 'male' | 'female' | null}
+            />
+          </div>
 
           <div className="mt-4 border-t border-border pt-4">
             <AnalisarAvaliacaoIa assessmentId={id} />

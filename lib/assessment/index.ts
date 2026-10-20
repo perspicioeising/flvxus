@@ -29,6 +29,10 @@
  *       Db = C − M·log(Σ)
  */
 
+// Classificação (faixas) de %gordura e IMC — apenas classifica valores já
+// calculados (rótulos pt-BR + cores do tema), sem recalcular composição.
+export * from './classificacao';
+
 /** Gêneros aceitos pelos cálculos. Demais valores recaem em 'male'/'female' explícito. */
 export type GeneroCalculo = 'male' | 'female';
 
