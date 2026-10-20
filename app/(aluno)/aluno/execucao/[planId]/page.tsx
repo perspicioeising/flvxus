@@ -111,16 +111,14 @@ export default async function AlunoExecucaoFichaPage({
     })
   );
 
-  // Se veio `?dia`, começa já filtrado por ele (desde que tenha itens); senão,
-  // o Client abre no primeiro dia com exercícios.
-  const itensDoDia =
-    weekday !== null ? itens.filter((item) => item.weekday === weekday) : itens;
-  const itensIniciais = itensDoDia.length > 0 ? itensDoDia : itens;
+  // O Client recebe SEMPRE todos os itens e monta o seletor de dias; o `?dia`
+  // (deep-link a partir da ficha) só define o dia inicial, sem travar a troca.
+  const temDiaPedido =
+    weekday !== null && itens.some((item) => item.weekday === weekday);
 
-  const subtitulo =
-    weekday !== null && itensDoDia.length > 0
-      ? WEEKDAY_LABEL[weekday]
-      : 'Escolha o dia e comece o treino';
+  const subtitulo = temDiaPedido
+    ? WEEKDAY_LABEL[weekday as number]
+    : 'Escolha o dia e comece o treino';
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -143,7 +141,7 @@ export default async function AlunoExecucaoFichaPage({
           description="Esta ficha ainda não tem exercícios prescritos. Fale com seu professor."
         />
       ) : (
-        <SessaoExecucao planId={ficha.id} itens={itensIniciais} />
+        <SessaoExecucao planId={ficha.id} itens={itens} diaInicial={weekday} />
       )}
     </section>
   );

@@ -87,9 +87,16 @@ function chaveSerie(itemId: string, setNumber: number): string {
 export function SessaoExecucao({
   planId,
   itens,
+  diaInicial = null,
 }: {
   planId: string;
   itens: ItemExecucao[];
+  /**
+   * Dia (0..6) em que o seletor deve abrir — ex.: deep-link `?dia=N` a partir
+   * da ficha. Só é respeitado se houver itens nesse dia; senão cai no primeiro
+   * dia com exercícios. `null` = sem preferência.
+   */
+  diaInicial?: number | null;
 }) {
   const router = useRouter();
   const [sessionId, setSessionId] = React.useState<string | null>(null);
@@ -113,9 +120,14 @@ export function SessaoExecucao({
     [grupos]
   );
 
-  // Dia escolhido: começa no primeiro grupo com itens (nunca força o dia de hoje).
+  // Dia escolhido: se o deep-link (`diaInicial`) aponta um dia que tem itens,
+  // abre nele; senão, começa no primeiro grupo com itens (nunca força o dia de
+  // hoje). A troca de dia continua livre pelo seletor.
   const [diaSelecionado, setDiaSelecionado] = React.useState<number | null>(
-    () => grupos[0]?.weekday ?? null
+    () =>
+      diaInicial !== null && grupos.some((g) => g.weekday === diaInicial)
+        ? diaInicial
+        : grupos[0]?.weekday ?? null
   );
 
   // Itens do dia atualmente selecionado (ou todos, se não houver seletor).
