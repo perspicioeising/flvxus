@@ -148,6 +148,58 @@ Rodar quando houver Deno no PATH:
 deno check supabase/functions/_shared/*.ts supabase/functions/_prompts/*.ts
 ```
 
+### FEAT-002 — Edge Functions de rota (generate-diet / suggest-workout / analyze-assessment)
+
+As três Edge Functions de rota e o runtime compartilhado foram adicionados:
+`supabase/functions/{generate-diet,suggest-workout,analyze-assessment}/index.ts`
+e `supabase/functions/_shared/handler.ts` (efeitos Supabase: client service_role,
+verificação de JWT, consulta de perfil/consentimento, rate-limit, inserts/updates
+em `ai_generations`, log de uso e preço por modelo). O `config.toml` ganhou as
+seções `[functions.generate-diet|suggest-workout|analyze-assessment]` com
+`verify_jwt = true`. Contratos, deploy e o ponto de integração com a UI estão em
+`docs/ia.md`.
+
+Verificação executada neste ambiente (tudo verde):
+
+- `npm run typecheck` — OK (as rotas Deno seguem excluídas do `tsc`; são código
+  Deno com imports `.ts`, `Deno.serve`/`Deno.env` e `npm:@supabase/supabase-js`).
+- `npm run lint` — OK (só warnings pré-existentes de `react-hooks/exhaustive-deps`).
+- `npm run build` — OK. Prova que **nada só-Deno vazou** para o bundle Next: as
+  rotas de `professor/*` compilam normalmente e `handler.ts` (que importa
+  `@supabase/supabase-js` no estilo Deno) não é arrastado para o grafo do Next.
+- `npm run test` — 39 passam / 7 skipped (RLS). A lógica pura reaproveitada
+  (parsing/validação Zod, janela de rate limit, custo) segue coberta e verde.
+
+Revisão estática das rotas (no lugar do `deno check`, Deno fora do PATH):
+
+- Ordem dos guarda-corpos idêntica nas três (CORS → auth-guard JWT+trainer →
+  Zod de entrada → consentimento `ai_processing` → rate-limit/teto/timeout →
+  `ai_generations` pending → Anthropic com dados como DADOS → Zod de saída →
+  `ai_usage_logs` (sucesso OU falha) + `ai_generations` succeeded/failed → retorno).
+- Nenhuma função materializa em `diets`/`workout_plans` (só rascunho em
+  `ai_generations`). `weekly_adherence` NÃO foi implementado (adiado).
+- `service_role` só é usado após o auth-guard validar JWT+papel; toda query
+  carimba `tenant_id`. As colunas usadas conferem com `types/database.types.ts`
+  (`ai_generations`, `ai_usage_logs`, `profiles`, `consent_records`,
+  `physical_assessments`).
+
+Bloqueio de ambiente (depende de Docker/Deno/projeto Supabase):
+
+```bash
+# Checagem de tipos Deno das rotas (quando houver Deno no PATH):
+deno check supabase/functions/**/index.ts
+
+# Subir/servir e testar end-to-end (quando houver Docker + projeto Supabase):
+supabase functions serve generate-diet
+supabase secrets set ANTHROPIC_API_KEY="..."       # nunca commitado
+supabase secrets set ANTHROPIC_MODEL="claude-sonnet-<snapshot>"
+supabase functions deploy generate-diet suggest-workout analyze-assessment
+```
+
+> O teste end-to-end real da IA depende de `ANTHROPIC_API_KEY` + deploy das
+> funções — bloqueio de ambiente, não de código. Ver `docs/ia.md` para o passo a
+> passo de deploy e o ponto de integração com a UI.
+
 ## Itens fora do escopo da Fase 2 (serão tratados nas fases seguintes)
 
 - Renomear o pacote de `fitconnect-pro` para `flvxus` e subir Next 15/React 19 (ADR 0002) —
