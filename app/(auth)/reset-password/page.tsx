@@ -25,8 +25,8 @@ import { Dumbbell } from 'lucide-react';
     if (password !== confirmPassword) {
       toast({
         variant: "destructive",
-        title: "Passwords don't match",
-        description: "Please ensure both passwords are identical.",
+        title: "As senhas não coincidem",
+        description: "Verifique se as duas senhas são idênticas.",
       });
       return;
     }
@@ -34,8 +34,8 @@ import { Dumbbell } from 'lucide-react';
     if (password.length < 8) {
       toast({
         variant: "destructive",
-        title: "Password too short",
-        description: "Password must be at least 8 characters long.",
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 8 caracteres.",
       });
       return;
     }
@@ -47,7 +47,7 @@ import { Dumbbell } from 'lucide-react';
       const accessToken = searchParams.get('access_token');
       
       if (!accessToken) {
-        throw new Error('No access token found');
+        throw new Error('Token de acesso não encontrado.');
       }
 
       // Update the user's password using the access token
@@ -63,15 +63,15 @@ import { Dumbbell } from 'lucide-react';
       if (error) throw error;
 
       toast({
-        title: "Password set successfully",
-        description: "You can now log in with your new password.",
+        title: "Senha definida com sucesso",
+        description: "Agora você já pode entrar com a nova senha.",
       });
 
       router.push('/login');
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error setting password",
+        title: "Erro ao definir a senha",
         description: error.message,
       });
     } finally {
@@ -86,31 +86,31 @@ import { Dumbbell } from 'lucide-react';
           <div className="flex justify-center mb-4">
             <Dumbbell className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">Set Your Password</CardTitle>
+          <CardTitle className="text-2xl text-center">Defina sua senha</CardTitle>
           <CardDescription className="text-center">
-            Create a secure password for your account
+            Crie uma senha segura para a sua conta
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">Nova senha</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your new password"
+                placeholder="Digite sua nova senha"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirmar senha</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your new password"
+                placeholder="Confirme sua nova senha"
               />
             </div>
             <Button 
@@ -118,7 +118,7 @@ import { Dumbbell } from 'lucide-react';
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? "Setting password..." : "Set Password"}
+              {isLoading ? "Definindo senha..." : "Definir senha"}
             </Button>
           </form>
         </CardContent>

@@ -208,9 +208,10 @@ export default function SetPasswordPage() {
       // Aguardar um pouco antes de redirecionar
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Redirecionar para dashboard
-      console.log('🎯 [SET PASSWORD] Redirecionando para dashboard...');
-      window.location.href = '/dashboard';
+      // Redirecionar por papel (trainer → /professor, student → /aluno).
+      const destino = profile?.role === 'student' ? '/aluno' : '/professor';
+      console.log('🎯 [SET PASSWORD] Redirecionando para', destino);
+      window.location.href = destino;
 
     } catch (error: any) {
       console.error('❌ [SET PASSWORD] Erro ao definir senha:', error);

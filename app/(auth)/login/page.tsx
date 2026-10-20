@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
+import type { z } from "zod";
 import { Dumbbell, Zap, Eye, EyeOff, Loader2, ArrowLeft, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,11 +19,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useSupabase } from "@/app/providers";
+import { loginSchema } from "@/schemas/auth";
 
-const formSchema = z.object({
-  email: z.string().email({ message: "Por favor, insira um email válido" }),
-  password: z.string().min(8, { message: "A senha deve ter pelo menos 8 caracteres" }),
-});
+type FormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,39 +30,49 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormValues) {
     setIsLoading(true);
-    
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
-      
-      if (error) {
+
+      if (error || !data.user) {
         toast({
           variant: "destructive",
           title: "Falha no login",
-          description: error.message,
+          description: error?.message ?? "Não foi possível entrar. Verifique suas credenciais.",
         });
         return;
       }
-      
+
+      // Redireciona por papel lendo profiles.role (trainer → /professor,
+      // student → /aluno). O gate definitivo é server-side nos layouts.
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .single();
+
+      const destino = profile?.role === "student" ? "/aluno" : "/professor";
+
       toast({
         title: "Login bem-sucedido! 🎉",
-        description: "Redirecionando para o dashboard...",
+        description: "Redirecionando...",
       });
-      
-      router.push("/dashboard");
-      
+
+      router.push(destino);
+      router.refresh();
     } catch (error: any) {
       toast({
         variant: "destructive",

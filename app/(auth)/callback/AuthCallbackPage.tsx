@@ -37,7 +37,7 @@ export default function AuthCallbackPage() {
 
           const userMetadata = data.user?.user_metadata
           if (userMetadata?.role === 'student' || redirectTo?.includes('set-password')) {
-            router.push('/set-password?new_user=true&welcome=true')
+            router.push('/set-password')
             return
           }
         }
@@ -78,9 +78,9 @@ export default function AuthCallbackPage() {
         }
 
         if (profile.role === 'student') {
-          router.push('/dashboard/student')
+          router.push('/aluno')
         } else {
-          router.push('/dashboard')
+          router.push('/professor')
         }
       } catch (error) {
         console.error('💥 [AUTH CALLBACK] Erro inesperado:', error)
