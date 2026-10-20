@@ -575,3 +575,37 @@ conflitar — aquele workflow mexe em treinos/execução):
 
 Impacto: toca treinos (professor) + execução (aluno) + possível migration. Fazer como fase
 própria, com revisão.
+
+## Execução — alunos legados com tenant divergente (FEAT-001)
+
+A correção do trigger `handle_new_user()` (migration `20261020120000_fix_handle_new_user_convite_aluno.sql`)
+garante que todo aluno convidado **depois** dela nasce com o **tenant e o trainer corretos do
+professor** — a Server Action `convidarAluno` cria o `profile` com `role='student'` e o
+`tenant_id` do professor, e o trigger não cria mais um tenant próprio para o aluno. Esses alunos
+executam o treino normalmente: o `with check` de `workout_sessions_insert`
+(`tenant_id = app_tenant_id() AND student_id = auth.uid()`) passa, porque o `app_tenant_id()` do
+aluno é o mesmo tenant da ficha liberada.
+
+**O caso pendente são os alunos LEGADOS** — convidados **antes** daquela migration, quando o
+trigger antigo criava um tenant próprio para o aluno (role nascia como `trainer`, colidindo com
+o `profile 'student'` da action). Esses alunos podem ter ficado com **tenant divergente** do
+professor. Para eles, ao tentar **iniciar uma sessão de treino**, o `with check` de
+`workout_sessions_insert` **falha**, porque o `app_tenant_id()` do aluno não bate com o
+`tenant_id` carimbado na sessão/ficha. O sintoma é não conseguir iniciar o treino mesmo com ficha
+liberada.
+
+**Recomendação (ação do dono do projeto, fora do código):**
+
+- **Recriar os alunos legados afetados**: remover o convite/usuário legado e convidá-lo de novo
+  pela tela do professor (que agora usa o trigger corrigido), para que ele nasça com o tenant e o
+  trainer corretos. É o caminho mais seguro e sem efeitos colaterais de dados.
+- **NÃO aplicar correção automática de dados** no fluxo do aluno e **NÃO usar `service_role`** em
+  nenhuma Server Action/RSC do aluno para "consertar" o tenant em runtime — isso violaria o
+  isolamento por tenant e o contrato (`service_role` jamais no fluxo do aluno).
+- Se no futuro for preciso migrar os legados em massa, fazer via **migration/rotina
+  administrativa** dedicada (com `service_role`, fora do app do aluno), realinhando
+  `profiles.tenant_id`/`trainer_id` dos alunos ao tenant do professor que os convidou — com
+  cuidado para não quebrar FKs de sessões/logs já existentes.
+
+Como não há Docker/projeto Supabase local aqui, a confirmação de quais alunos estão divergentes e
+a recriação precisam ser feitas no projeto hospedado pelo dono.
