@@ -1,0 +1,128 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, Dumbbell, LogOut } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { useSupabase } from '@/app/providers';
+import type { UserRole } from '@/types/database.types';
+import {
+  getNavItems,
+  isNavItemActive,
+  roleLabel,
+} from '@/components/navigation/nav-items';
+
+interface AppSidebarProps {
+  role: UserRole;
+  rootHref: string;
+}
+
+/**
+ * Sidebar de desktop (md+), colapsável. Superfícies sólidas dos tokens (ADR
+ * 0006), foco visível e alvos de toque confortáveis. O papel vem do layout
+ * server-side (sem fetch client).
+ */
+export function AppSidebar({ role, rootHref }: AppSidebarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { supabase } = useSupabase();
+  const [collapsed, setCollapsed] = useState(false);
+  const items = getNavItems(role);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
+
+  return (
+    <aside
+      className={cn(
+        'relative hidden md:flex flex-col border-r border-border bg-card transition-[width] duration-300 ease-in-out',
+        collapsed ? 'w-[72px]' : 'w-64',
+      )}
+    >
+      {/* Identidade */}
+      <div className="flex h-16 items-center gap-3 border-b border-border px-4">
+        <Link
+          href={rootHref}
+          className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Flvxus — página inicial"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Dumbbell className="h-5 w-5" aria-hidden="true" />
+          </span>
+          {!collapsed && (
+            <span className="flex flex-col leading-tight">
+              <span className="text-base font-bold tracking-tight">Flvxus</span>
+              <span className="text-xs text-muted-foreground">{roleLabel(role)}</span>
+            </span>
+          )}
+        </Link>
+      </div>
+
+      {/* Botão de colapso */}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => setCollapsed((v) => !v)}
+        aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+        aria-pressed={collapsed}
+        className="absolute -right-3 top-5 z-10 h-6 w-6 rounded-full"
+      >
+        {collapsed ? (
+          <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+        ) : (
+          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
+      </Button>
+
+      {/* Navegação */}
+      <nav className="flex-1 overflow-y-auto p-3" aria-label="Navegação principal">
+        <ul className="space-y-1">
+          {items.map((item) => {
+            const active = isNavItemActive(item, pathname, [rootHref]);
+            const Icon = item.icon;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  title={collapsed ? item.label : undefined}
+                  className={cn(
+                    'flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    collapsed && 'justify-center px-0',
+                    active
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground hover:bg-accent hover:text-accent-foreground',
+                  )}
+                >
+                  <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Sair */}
+      <div className="border-t border-border p-3">
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className={cn(
+            'min-h-11 w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive',
+            collapsed && 'justify-center',
+          )}
+          title={collapsed ? 'Sair da conta' : undefined}
+        >
+          <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
+          {!collapsed && <span>Sair da conta</span>}
+        </Button>
+      </div>
+    </aside>
+  );
+}
