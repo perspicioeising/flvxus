@@ -20,6 +20,10 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 - [x] **Fase 4 — Features professor**: alunos, avaliação física, exercícios, treinos. ✅ integrada na main (aprovada na revisão, 93 testes).
 - [x] **Fase 5 — Features aluno**: área do aluno, execução de treino, dieta, evolução. ✅ integrada na main (aprovada na revisão semântica, 182 testes). CAMINHO CRÍTICO COMPLETO.
 - [x] **Fase 6 — IA Anthropic**: Edge Functions, prompts versionados, validação Zod, rate limit, logs. ✅ integrada (aprovada; deploy depende de ANTHROPIC_API_KEY + CLI).
+- [x] **Fase extra — Execução/Gamificação/IA↔UI**: ✅ integrada na main (`b42b1fa`). Execução
+  de treino do aluno corrigida (seletor de dia + vídeo + detalhes), avaliação física corrigida
+  (bug do decimal com vírgula), gamificação (conquistas/pontos ao finalizar), IA↔UI
+  (rascunho→aprovação), LGPD removido da UI e das Edge Functions, Zod fixado em 3.23.8 (build).
 - [ ] **Fase 7 — Qualidade**: testes de RLS e lógica crítica, lint, typecheck, README.
 - [ ] **Fase 8 — Revisão final** (`docs/REVISAO-FINAL.md`): checklist de publicação.
 
