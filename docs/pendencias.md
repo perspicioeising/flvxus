@@ -546,3 +546,32 @@ estática/compilação, não visual):
 - Os testes de **RLS** (`tests/rls/*`) continuam **skipados** neste ambiente por falta de
   Docker/projeto Supabase local (ver seções da Fase 2); a garantia de isolamento por RLS
   permanece como pendência de ambiente, não de código.
+
+## Melhoria a implementar: ficha por DIVISÃO (A/B/C), multi-modelo
+
+**Decisão do usuário (2026-10-20):** ao criar uma ficha a partir de modelos, o professor
+deve poder **selecionar VÁRIOS modelos** (ex.: Treino A + Treino B + Treino C), e cada modelo
+vira uma **DIVISÃO** da ficha (A, B, C...), **sem dia da semana fixo**. O aluno escolhe qual
+divisão treina quando vai à academia (mais flexível que amarrar a seg/qua/sex).
+
+Estado atual: `CriarDeModelo` (`components/professor/treinos/criar-de-modelo.tsx`) só aceita
+UM modelo via `Select` único; os itens da ficha usam `weekday` (0-6).
+
+Design a implementar (DEPOIS de integrar o workflow de execução/gamificação/IA, para não
+conflitar — aquele workflow mexe em treinos/execução):
+
+1. **Modelo de dados:** o conceito de "divisão" (A/B/C) não é dia da semana. Opções:
+   (a) adicionar coluna `division text` (ou `division_label`) em `workout_plan_items` via
+   migration versionada, mantendo `weekday` como opcional/legado; ou (b) reinterpretar a
+   ficha em blocos. Preferir (a): rótulo de divisão explícito (ex.: "A", "B", "C" ou o nome
+   do modelo de origem). Decidir e registrar em ADR.
+2. **UI de criação:** trocar o `Select` único por seleção MÚLTIPLA de modelos (checkbox/lista),
+   definindo a ordem/rótulo de cada divisão. `criarFichaDeModelo` (`actions/treinos.ts`) passa
+   a aceitar uma lista de modelos e copiar os itens de cada um carimbando a divisão.
+3. **Execução do aluno:** o seletor da tela de execução passa a ser por DIVISÃO (A/B/C), não
+   por dia da semana. Alinhar com a FEAT-001 (que corrigiu o "preso ao dia atual").
+4. **Seeds:** atualizar `seed-treinos-modelo.sql` (a ficha ABC de teste) para o novo modelo
+   de divisão quando ele existir.
+
+Impacto: toca treinos (professor) + execução (aluno) + possível migration. Fazer como fase
+própria, com revisão.
