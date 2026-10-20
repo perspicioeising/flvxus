@@ -19,9 +19,10 @@ import type { Tables } from '@/types/database.types';
 
 /**
  * Avaliações do próprio aluno — somente leitura. Leitura via RSC sob RLS (o
- * aluno só vê as próprias linhas). As fotos de avaliação física são exibidas
- * APENAS quando `photos_consent` for verdadeiro e vêm por URL assinada de TTL
- * curto (`signAssessmentPhoto`, bucket privado). Nenhum `service_role`.
+ * aluno só vê as próprias linhas). As fotos de avaliação física vêm por URL
+ * assinada de TTL curto (`signAssessmentPhoto`, bucket privado). LGPD adiado
+ * por decisão de escopo: a exibição não depende mais de `photos_consent`.
+ * Nenhum `service_role`.
  */
 export default async function AlunoAvaliacoesPage() {
   const supabase = await createClient();
@@ -52,14 +53,13 @@ export default async function AlunoAvaliacoesPage() {
   const fisicas = fisicasRes.data ?? [];
   const posturais = posturaisRes.data ?? [];
 
-  // Assina as fotos SÓ das avaliações com consentimento (LGPD).
+  // Assina as fotos de todas as avaliações (LGPD adiado: sem gate de consentimento).
   const avaliacoes: AvaliacaoResumo[] = await Promise.all(
     fisicas.map(async (a) => {
       const measurements = (a.measurements as Record<string, unknown> | null) ?? {};
-      const paths =
-        a.photos_consent && Array.isArray(measurements.photos)
-          ? (measurements.photos as string[])
-          : [];
+      const paths = Array.isArray(measurements.photos)
+        ? (measurements.photos as string[])
+        : [];
       const fotos = (
         await Promise.all(paths.map(async (p) => ({ path: p, url: await signAssessmentPhoto(p) })))
       ).filter((f): f is { path: string; url: string } => f.url != null);

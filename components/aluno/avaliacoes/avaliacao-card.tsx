@@ -56,14 +56,15 @@ export interface AvaliacaoResumo {
   lean_mass_kg: number | null;
   photos_consent: boolean;
   medidas: Record<string, unknown>;
-  /** URLs assinadas (TTL curto) das fotos — só quando `photos_consent`. */
+  /** URLs assinadas (TTL curto) das fotos da avaliação. */
   fotos: { path: string; url: string }[];
 }
 
 /**
  * Card de uma avaliação física do próprio aluno. Reusa os rótulos/estrutura do
- * detalhe do professor. As fotos aparecem APENAS quando `photos_consent` e já
- * chegam como URLs assinadas (geradas no servidor via `signAssessmentPhoto`).
+ * detalhe do professor. As fotos chegam como URLs assinadas (geradas no
+ * servidor via `signAssessmentPhoto`). LGPD adiado: a exibição não depende
+ * mais de `photos_consent`.
  */
 export function AvaliacaoCard({ avaliacao }: { avaliacao: AvaliacaoResumo }) {
   const skfBiceps =
@@ -132,11 +133,7 @@ export function AvaliacaoCard({ avaliacao }: { avaliacao: AvaliacaoResumo }) {
 
         <div>
           <h3 className="mb-2 text-sm font-medium text-foreground">Fotos</h3>
-          {!avaliacao.photos_consent ? (
-            <p className="text-sm text-muted-foreground">
-              Fotos não exibidas: não há consentimento registrado para armazenamento de fotos (LGPD).
-            </p>
-          ) : avaliacao.fotos.length === 0 ? (
+          {avaliacao.fotos.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma foto nesta avaliação.</p>
           ) : (
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
