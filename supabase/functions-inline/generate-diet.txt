@@ -210,13 +210,16 @@ async function callAnthropic(system: string, userContent: string) {
   if (!apiKey) throw aiFailure('ANTHROPIC_API_KEY não configurado.');
   if (!model) throw aiFailure('ANTHROPIC_MODEL não configurado.');
 
+  // Structured Outputs nativo (output_config.format). Os modelos da geração 5+
+  // (ex.: Sonnet 5.5) NÃO aceitam tool_choice forçado ('tool'/'any') — por isso
+  // usamos output_config em vez do truque de tool-use. A resposta vem como JSON
+  // no bloco de texto. Ver docs.claude.com/build-with-claude/structured-outputs.
   const body = JSON.stringify({
     model,
     max_tokens: MAX_OUTPUT_TOKENS,
     system,
     messages: [{ role: 'user', content: userContent }],
-    tools: [{ name: TOOL_NAME, description: 'Retorna o rascunho estruturado da dieta.', input_schema: TOOL_INPUT_SCHEMA }],
-    tool_choice: { type: 'tool', name: TOOL_NAME },
+    output_config: { format: { type: 'json_schema', schema: TOOL_INPUT_SCHEMA } },
   });
 
   const maxRetries = 2;
@@ -264,10 +267,20 @@ async function callAnthropic(system: string, userContent: string) {
   throw aiFailure();
 }
 
-function extractToolInput(response: any, toolName: string): unknown {
+// Extrai o JSON estruturado da resposta. Com output_config.format, o conteúdo
+// vem como texto JSON no(s) bloco(s) type:'text'. Concatena e faz parse seguro.
+function extractStructuredOutput(response: any): unknown {
   const blocks = response?.content ?? [];
-  const block = blocks.find((b: any) => b?.type === 'tool_use' && b?.name === toolName);
-  return block?.input;
+  const texto = blocks
+    .filter((b: any) => b?.type === 'text' && typeof b?.text === 'string')
+    .map((b: any) => b.text)
+    .join('');
+  if (!texto) return undefined;
+  try {
+    return JSON.parse(texto);
+  } catch {
+    return undefined;
+  }
 }
 
 // ----------------------------------------------------------------------------- Handler
@@ -331,9 +344,12 @@ Deno.serve(async (req) => {
       const result = await callAnthropic(SYSTEM_PROMPT, buildUserMessage(JSON.stringify(input)));
 
       // 8. Valida a saída com Zod antes de gravar.
-      const toolInput = extractToolInput(result.response, TOOL_NAME);
-      const parsedOutput = generateDietOutputSchema.safeParse(toolInput);
-      if (!parsedOutput.success) throw aiFailure();
+      const structured = extractStructuredOutput(result.response);
+      const parsedOutput = generateDietOutputSchema.safeParse(structured);
+      if (!parsedOutput.success) {
+        console.error('[generate-diet] Saída não passou no Zod:', JSON.stringify(structured)?.slice(0, 500));
+        throw aiFailure();
+      }
 
       // 9a. Log + ai_generations succeeded.
       await admin.from('ai_usage_logs').insert({

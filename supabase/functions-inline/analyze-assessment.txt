@@ -126,11 +126,12 @@ async function callAnthropic(system: string, userContent: string) {
   const model = Deno.env.get('ANTHROPIC_MODEL');
   if (!apiKey) throw aiFailure('ANTHROPIC_API_KEY não configurado.');
   if (!model) throw aiFailure('ANTHROPIC_MODEL não configurado.');
+  // Structured Outputs nativo (output_config.format) — Sonnet 5.5 não aceita
+  // tool_choice forçado. A resposta vem como JSON no bloco de texto.
   const body = JSON.stringify({
     model, max_tokens: MAX_OUTPUT_TOKENS, system,
     messages: [{ role: 'user', content: userContent }],
-    tools: [{ name: TOOL_NAME, description: 'Retorna o rascunho estruturado da análise de avaliação.', input_schema: TOOL_INPUT_SCHEMA }],
-    tool_choice: { type: 'tool', name: TOOL_NAME },
+    output_config: { format: { type: 'json_schema', schema: TOOL_INPUT_SCHEMA } },
   });
   const maxRetries = 2;
   let lastErr: unknown;
@@ -144,6 +145,9 @@ async function callAnthropic(system: string, userContent: string) {
         body, signal: controller.signal,
       });
       if (!res.ok) {
+        let errBody = '';
+        try { errBody = await res.text(); } catch { errBody = '(sem corpo)'; }
+        console.error(`[analyze-assessment] Anthropic HTTP ${res.status}: ${errBody}`);
         if ((res.status === 429 || res.status >= 500) && attempt < maxRetries) {
           lastErr = new Error(`status ${res.status}`); await sleep(250 * (attempt + 1)); continue;
         }
@@ -159,10 +163,19 @@ async function callAnthropic(system: string, userContent: string) {
   void lastErr; throw aiFailure();
 }
 
-function extractToolInput(response: any, toolName: string): unknown {
+// Extrai o JSON estruturado (output_config.format): vem como texto JSON.
+function extractStructuredOutput(response: any): unknown {
   const blocks = response?.content ?? [];
-  const block = blocks.find((b: any) => b?.type === 'tool_use' && b?.name === toolName);
-  return block?.input;
+  const texto = blocks
+    .filter((b: any) => b?.type === 'text' && typeof b?.text === 'string')
+    .map((b: any) => b.text)
+    .join('');
+  if (!texto) return undefined;
+  try {
+    return JSON.parse(texto);
+  } catch {
+    return undefined;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -217,9 +230,12 @@ Deno.serve(async (req) => {
     const startedAt = Date.now();
     try {
       const result = await callAnthropic(SYSTEM_PROMPT, buildUserMessage(JSON.stringify(input)));
-      const toolInput = extractToolInput(result.response, TOOL_NAME);
-      const parsedOutput = analyzeAssessmentOutputSchema.safeParse(toolInput);
-      if (!parsedOutput.success) throw aiFailure();
+      const structured = extractStructuredOutput(result.response);
+      const parsedOutput = analyzeAssessmentOutputSchema.safeParse(structured);
+      if (!parsedOutput.success) {
+        console.error('[analyze-assessment] Saída não passou no Zod:', JSON.stringify(structured)?.slice(0, 500));
+        throw aiFailure();
+      }
 
       await admin.from('ai_usage_logs').insert({
         tenant_id: tenantId, user_id: userId, job_type: JOB_TYPE, model: result.model,
@@ -239,6 +255,8 @@ Deno.serve(async (req) => {
       throw aiErr;
     }
   } catch (err) {
+    const info = err instanceof AiError ? `${err.code} ${err.status} ${err.message}` : String(err);
+    console.error('[analyze-assessment] Falha:', info);
     return errorResponse(err);
   }
 });
