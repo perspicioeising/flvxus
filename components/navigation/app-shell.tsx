@@ -18,12 +18,16 @@ interface AppShellProps {
  */
 export function AppShell({ role, rootHref, children }: AppShellProps) {
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    // h-[100dvh] fixa a altura à viewport (dvh acompanha as barras do navegador
+    // mobile) e `overflow-hidden` impede o scroll no container raiz — assim o
+    // scroll vive SÓ no <main>, que tem um teto de altura para rolar contra.
+    <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground">
       <AppSidebar role={role} rootHref={rootHref} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AppHeader role={role} rootHref={rootHref} />
-        {/* pb extra no mobile para não ficar sob a bottom-nav */}
-        <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-6 md:pb-6">
+        {/* O <main> é a área rolável. pb extra no mobile para o conteúdo não
+            ficar sob a bottom-nav fixa. */}
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-24 md:p-6 md:pb-6">
           {children}
         </main>
       </div>
