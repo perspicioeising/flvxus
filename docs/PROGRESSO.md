@@ -17,7 +17,7 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 - [x] **Fase 1 — Arquitetura v2** (`docs/architecture.md`, ADRs 0001–0008): stack, estrutura, padrões. ✅ aprovada e verificada.
 - [x] **Fase 2 — Banco Supabase do zero** (`supabase/migrations/`, `docs/database.md`): schema, RLS, storage, seed, tipos TS. ✅ aprovada na revisão de segurança. (Aplicação via CLI pendente de Docker/projeto Supabase — ver pendências.)
 - [x] **Fase 3 — Design system + front-end**: tokens, componentes, dark/light, mobile-first, i18n pt-BR. ✅ aprovada (convergência + revisão semântica). Stack migrada p/ Next 15 + React 19 + @supabase/ssr; gate server-side por papel; PWA manifest; .env.example.
-- [ ] **Fase 4 — Features professor**: alunos, avaliação física, exercícios, treinos.
+- [x] **Fase 4 — Features professor**: alunos, avaliação física, exercícios, treinos. ✅ integrada na main (aprovada na revisão, 93 testes).
 - [ ] **Fase 5 — Features aluno**: área do aluno, execução de treino, dieta, evolução.
 - [ ] **Fase 6 — IA Anthropic**: Edge Functions, prompts versionados, validação Zod, rate limit, logs.
 - [ ] **Fase 7 — Qualidade**: testes de RLS e lógica crítica, lint, typecheck, README.
@@ -26,8 +26,9 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 ## Andamento
 
 ### Em andamento
-- Fase 4 — Features do professor (gestão de alunos, avaliação física com histórico/gráficos,
-  biblioteca de exercícios, montagem de treinos/modelos).
+- Fase 6 — IA Anthropic (Edge Functions) em paralelo: gerar dieta, sugerir treino, analisar
+  avaliação; Zod, rate limit, log de uso, anti-injection, rascunho→aprovação.
+- A seguir: Fase 5 (área do aluno), integração IA↔UI, Fase 7 (qualidade/CI/README), Fase 8 (revisão final).
 
 ### Concluído
 - Setup do repositório: resolvido erro de clone no Windows (arquivos `:Zone.Identifier`),
@@ -64,6 +65,15 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
   (corrigido do placeholder antigo, consistente com ADR 0001) + variáveis NEXT_PUBLIC_API_URL
   e WhatsApp; `.agents/` (metadados internos de workflow) removido do tracking e adicionado
   ao `.gitignore`.
+- Fase 4 — Features do professor integrada na main (aprovada na revisão semântica): gestão de
+  alunos (listagem/busca/convite via service_role §4.4/ficha 360), biblioteca de exercícios
+  (CRUD + mídia privada assinada), avaliação física (cálculos no servidor testados — IMC, Siri,
+  Pollock 3/7, Guedes, Durnin; formulário multi-etapa; histórico; gráficos recharts; fotos em
+  bucket privado respeitando consentimento LGPD), montagem de treinos (modelos reutilizáveis +
+  fichas por aluno, transição de status rascunho→liberado garantida por RLS, reordenação
+  acessível) e painel real do professor (RSC sob RLS). 93 testes passando. ADR 0010 (limiar de
+  avaliação vencida = 90 dias). Achado low não-bloqueante: termo de busca interpolado em `.or()`
+  do PostgREST (contido pelo RLS) — tratar como robustez na Fase 7.
 
 ## Decisões tomadas
 
