@@ -87,6 +87,17 @@ quebrado o build; o import foi trocado por `createClient` de `lib/supabase/brows
 - `app/(dashboard)/dashboard/webhooks/[id]/edit/page.tsx` (referência v1; também ajustada para
   `params: Promise<...>` do Next 15, resolvido com `use()`).
 
+### Fontes self-hospedadas (build determinístico, sem rede)
+
+O `app/layout.tsx` da v1 usava `next/font/google` (Inter), que faz fetch ao Google Fonts no
+build — isso quebra em ambientes atrás de proxy TLS (certificado self-signed) e deixa o build
+dependente de rede. A Inter foi **self-hospedada** via `next/font/local` (decisão do usuário):
+woff2 (latin 400/500/600/700) versionados em `app/fonts/` com `OFL.txt` (SIL OFL 1.1), origem
+`@fontsource/inter` (devDependency). Ganhos: build determinístico/offline, melhor LCP e mais
+aderência à LGPD (sem expor o IP do usuário ao Google). A variável `--font-sans` foi exposta
+no `<html>` para o design system (FEAT-003) consolidar os tokens de tipografia sem re-tocar o
+layout.
+
 ### Ainda pendente para as próximas FEATs (typecheck/build da cadeia)
 
 Ajustes de tipo em componentes v1 já detectados pela FEAT-001 (fora do escopo da FEAT-002, que
