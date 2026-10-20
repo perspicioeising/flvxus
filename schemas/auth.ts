@@ -12,10 +12,18 @@ import { z } from 'zod';
  * `full_name` de `raw_user_meta_data`. Nenhum service_role é usado aqui.
  */
 
-/** Senha forte mínima: pelo menos 8 caracteres. */
-const senha = z
+/**
+ * Regra ÚNICA de senha da aplicação: pelo menos 8 caracteres. É reutilizada no
+ * cadastro de professor (`signUp`) e na definição de senha do aluno convidado
+ * (`updateUser`), garantindo que ambos os fluxos exijam exatamente o mesmo
+ * critério. NÃO duplicar/alterar esta regra em outro lugar.
+ */
+export const senhaSchema = z
   .string({ required_error: 'Informe a senha.' })
   .min(8, 'A senha deve ter pelo menos 8 caracteres.');
+
+/** Alias interno para manter a legibilidade dos schemas abaixo. */
+const senha = senhaSchema;
 
 /**
  * Cadastro de professor. `name` vira `full_name` (o trigger usa para nomear o
@@ -59,5 +67,22 @@ export const loginSchema = z.object({
     .min(1, 'Informe a senha.'),
 });
 
+/**
+ * Definição de senha do aluno convidado (tela /set-password). Usa a MESMA regra
+ * de senha do cadastro de professor (`senhaSchema`) e confirma a digitação.
+ */
+export const definirSenhaSchema = z
+  .object({
+    password: senhaSchema,
+    confirmPassword: z
+      .string({ required_error: 'Confirme a senha.' })
+      .min(1, 'Confirme a senha.'),
+  })
+  .refine((dados) => dados.password === dados.confirmPassword, {
+    message: 'As senhas não coincidem.',
+    path: ['confirmPassword'],
+  });
+
 export type CadastroProfessorInput = z.infer<typeof cadastroProfessorSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type DefinirSenhaInput = z.infer<typeof definirSenhaSchema>;
