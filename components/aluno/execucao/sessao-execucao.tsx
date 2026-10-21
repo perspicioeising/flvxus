@@ -2,7 +2,14 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronLeft, ChevronRight, Flag, Loader2 } from 'lucide-react';
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Flag,
+  Loader2,
+  Pencil,
+} from 'lucide-react';
 
 import {
   exercicioConcluido,
@@ -186,6 +193,25 @@ export function SessaoExecucao({
   const [serieAtualPorItem, setSerieAtualPorItem] = React.useState<
     Record<string, number>
   >({});
+
+  // Séries concluídas REABERTAS para correção (erro de digitação de reps/carga).
+  // Guarda as chaves `itemId:setNumber` em edição; é um overlay independente da
+  // "série atual" — editar uma série passada não move a navegação nem o descanso.
+  const [seriesEmEdicao, setSeriesEmEdicao] = React.useState<Set<string>>(
+    () => new Set()
+  );
+
+  function abrirEdicao(itemId: string, setNumber: number) {
+    setSeriesEmEdicao((s) => new Set(s).add(chaveSerie(itemId, setNumber)));
+  }
+
+  function fecharEdicao(itemId: string, setNumber: number) {
+    setSeriesEmEdicao((s) => {
+      const proximo = new Set(s);
+      proximo.delete(chaveSerie(itemId, setNumber));
+      return proximo;
+    });
+  }
 
   // Estado inicial: uma série por set prescrito de TODOS os itens da ficha, com
   // os defaults da prescrição. Guardamos todos para preservar o que o aluno já
@@ -375,6 +401,53 @@ export function SessaoExecucao({
     });
   }
 
+  /**
+   * Regrava uma série JÁ concluída com os valores corrigidos (reps/carga). Usa
+   * o mesmo upsert idempotente de `alternarSerie`, mas com `completed: true`
+   * FIXO — editar não desmarca — e SEM tocar no descanso nem na série atual:
+   * corrigir um registro antigo não deve reiniciar o timer de descanso (que é
+   * para a conclusão de uma série nova) nem mover a navegação.
+   */
+  async function salvarEdicaoSerie(itemId: string, setNumber: number) {
+    const chave = chaveSerie(itemId, setNumber);
+    const estado = series[chave];
+    if (!estado) return;
+
+    const idSessao = await garantirSessao();
+    if (!idSessao) return;
+
+    setSeries((atual) => ({
+      ...atual,
+      [chave]: { ...atual[chave], salvando: true },
+    }));
+
+    startTransition(async () => {
+      const r = await registrarSerie({
+        session_id: idSessao,
+        plan_item_id: itemId,
+        set_number: setNumber,
+        reps_done: estado.reps,
+        load_done: estado.carga,
+        completed: true,
+      });
+
+      setSeries((atual) => ({
+        ...atual,
+        [chave]: { ...atual[chave], salvando: false },
+      }));
+
+      if (r.ok) {
+        // Volta ao resumo com os novos valores (já no estado local).
+        fecharEdicao(itemId, setNumber);
+      } else {
+        toast({
+          title: r.message ?? 'Não foi possível registrar a série.',
+          variant: 'destructive',
+        });
+      }
+    });
+  }
+
   async function concluir() {
     if (!sessionId) {
       // Sessão nunca foi criada (nenhuma série marcada) — nada a finalizar.
@@ -484,11 +557,100 @@ export function SessaoExecucao({
               return (
                 <ul className="space-y-2" aria-label="Séries concluídas">
                   {concluidas.map((setNumber) => {
-                    const estado = series[chaveSerie(itemAtual.id, setNumber)];
+                    const chave = chaveSerie(itemAtual.id, setNumber);
+                    const estado = series[chave];
+                    const editando = seriesEmEdicao.has(chave);
+
+                    // Modo edição: reabre os inputs daquela série (pré-preenchidos
+                    // com os valores atuais) para corrigir reps/carga e re-concluir.
+                    if (editando) {
+                      return (
+                        <li
+                          key={chave}
+                          className="space-y-3 rounded-lg border border-primary/40 bg-primary/5 p-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              Série {setNumber} de {itemAtual.sets}
+                            </span>
+                          </div>
+
+                          <div className="flex items-end gap-3">
+                            <div className="flex-1 space-y-1">
+                              <Label htmlFor={`${chave}-reps`} className="text-xs">
+                                Reps
+                              </Label>
+                              <Input
+                                id={`${chave}-reps`}
+                                inputMode="numeric"
+                                value={estado.reps}
+                                placeholder={itemAtual.reps ?? undefined}
+                                onChange={(e) =>
+                                  atualizarCampo(chave, 'reps', e.target.value)
+                                }
+                                className="h-11"
+                              />
+                            </div>
+
+                            <div className="flex-1 space-y-1">
+                              <Label htmlFor={`${chave}-carga`} className="text-xs">
+                                Carga (kg)
+                              </Label>
+                              <Input
+                                id={`${chave}-carga`}
+                                inputMode="decimal"
+                                value={estado.carga}
+                                onChange={(e) =>
+                                  atualizarCampo(chave, 'carga', e.target.value)
+                                }
+                                className="h-11"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <Button
+                              type="button"
+                              variant="default"
+                              className="min-h-11 flex-1"
+                              aria-label={`Salvar série ${setNumber}`}
+                              disabled={estado.salvando || iniciando}
+                              onClick={() =>
+                                salvarEdicaoSerie(itemAtual.id, setNumber)
+                              }
+                            >
+                              {estado.salvando ? (
+                                <Loader2
+                                  className="h-5 w-5 animate-spin"
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <Check className="h-5 w-5" aria-hidden="true" />
+                              )}
+                              Salvar
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="min-h-11"
+                              aria-label={`Cancelar edição da série ${setNumber}`}
+                              disabled={estado.salvando}
+                              onClick={() =>
+                                fecharEdicao(itemAtual.id, setNumber)
+                              }
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        </li>
+                      );
+                    }
+
+                    // Resumo somente-leitura (padrão) com botão de editar.
                     return (
                       <li
-                        key={chaveSerie(itemAtual.id, setNumber)}
-                        className="flex items-center justify-between rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm"
+                        key={chave}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm"
                       >
                         <span className="flex items-center gap-2 font-medium text-foreground">
                           <Check
@@ -497,9 +659,23 @@ export function SessaoExecucao({
                           />
                           Série {setNumber}
                         </span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {estado.reps !== '' ? `${estado.reps} reps` : '—'}
-                          {estado.carga !== '' ? ` · ${estado.carga} kg` : ''}
+                        <span className="flex items-center gap-2">
+                          <span className="tabular-nums text-muted-foreground">
+                            {estado.reps !== '' ? `${estado.reps} reps` : '—'}
+                            {estado.carga !== '' ? ` · ${estado.carga} kg` : ''}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="min-h-11 min-w-11"
+                            aria-label={`Editar série ${setNumber}`}
+                            onClick={() =>
+                              abrirEdicao(itemAtual.id, setNumber)
+                            }
+                          >
+                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                          </Button>
                         </span>
                       </li>
                     );
