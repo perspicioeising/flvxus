@@ -49,16 +49,20 @@ function erroDeCampo(flatten: {
  * Inicia uma sessão de treino a partir de uma ficha liberada. Confirma por
  * query que o plano é do aluno (RLS) e está `released` — senão recusa, para não
  * abrir sessão de rascunho. Carimba `tenant_id`/`student_id` do aluno logado e
- * `started_at` (default do banco cobre, mas deixamos explícito). Retorna o id
- * da sessão criada.
+ * `started_at` (default do banco cobre, mas deixamos explícito). Quando a ficha
+ * é por divisão, carimba também `division` (A/B/C/…); fichas legadas por
+ * weekday não passam `division` e gravam `null`. Retorna o id da sessão criada.
  */
-export async function iniciarSessao(planId: string): Promise<EstadoAcao> {
+export async function iniciarSessao(
+  planId: string,
+  division?: string
+): Promise<EstadoAcao> {
   const aluno = await getSessionUser();
   if (!aluno || aluno.role !== 'student') {
     return { ok: false, message: 'Apenas o aluno pode iniciar um treino.' };
   }
 
-  const parsed = iniciarSessaoSchema.safeParse({ plan_id: planId });
+  const parsed = iniciarSessaoSchema.safeParse({ plan_id: planId, division });
   if (!parsed.success) {
     return {
       ok: false,
@@ -90,6 +94,7 @@ export async function iniciarSessao(planId: string): Promise<EstadoAcao> {
       tenant_id: aluno.tenantId,
       student_id: aluno.userId,
       plan_id: plano.id,
+      division: parsed.data.division ?? null,
       started_at: new Date().toISOString(),
     })
     .select('id')

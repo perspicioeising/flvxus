@@ -18,6 +18,28 @@ describe('iniciarSessaoSchema', () => {
   it('rejeita plan_id que não é uuid', () => {
     expect(iniciarSessaoSchema.safeParse({ plan_id: 'nao-eh-uuid' }).success).toBe(false);
   });
+
+  it('aceita division válida', () => {
+    const r = iniciarSessaoSchema.safeParse({ plan_id: PLAN_ID, division: 'A' });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.division).toBe('A');
+    }
+  });
+
+  it('trata division ausente como opcional', () => {
+    const r = iniciarSessaoSchema.safeParse({ plan_id: PLAN_ID });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.division).toBeUndefined();
+    }
+  });
+
+  it('rejeita division vazia', () => {
+    expect(
+      iniciarSessaoSchema.safeParse({ plan_id: PLAN_ID, division: '' }).success
+    ).toBe(false);
+  });
 });
 
 describe('registrarSerieSchema', () => {
