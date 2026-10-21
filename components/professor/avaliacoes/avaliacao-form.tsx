@@ -146,6 +146,9 @@ export function AvaliacaoForm({
   }, [protocolo, genero]);
 
   async function onSubmit(values: AvaliacaoFormValues) {
+    // Guarda: só permite submit na última etapa (Fotos). Barra qualquer
+    // disparo fora dela (inclusive Enter).
+    if (etapa !== ETAPAS.length - 1) return;
     setEnviando(true);
     try {
       const fd = new FormData();
@@ -222,7 +225,17 @@ export function AvaliacaoForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" noValidate>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        onKeyDown={(e) => {
+          // Fora da etapa Fotos, Enter não deve submeter o formulário.
+          // Preserva Enter dentro de <textarea> (quebra de linha).
+          if (e.target instanceof HTMLTextAreaElement) return;
+          if (e.key === 'Enter' && !ehUltima) e.preventDefault();
+        }}
+        className="space-y-6"
+        noValidate
+      >
         <ol className="flex flex-wrap gap-2" aria-label="Etapas da avaliação">
           {ETAPAS.map((rotulo, i) => (
             <li key={rotulo}>
@@ -529,11 +542,11 @@ export function AvaliacaoForm({
           </Button>
 
           {ehUltima ? (
-            <Button type="submit" className="min-h-11" disabled={enviando}>
+            <Button key="salvar" type="submit" className="min-h-11" disabled={enviando}>
               {enviando ? 'Salvando…' : modo === 'criar' ? 'Salvar avaliação' : 'Salvar alterações'}
             </Button>
           ) : (
-            <Button type="button" className="min-h-11" onClick={avancar} disabled={enviando}>
+            <Button key="proxima" type="button" className="min-h-11" onClick={avancar} disabled={enviando}>
               Próxima
             </Button>
           )}
