@@ -1,6 +1,5 @@
-import { Film, Image as ImageIcon } from 'lucide-react';
-
 import { Badge } from '@/components/ui/badge';
+import { ExerciseVideoPlayer } from '@/components/shared/exercise-video-player';
 
 /** Dados de exibição de um exercício na execução (mídia + prescrição + dicas). */
 export interface ExercicioInfo {
@@ -73,36 +72,11 @@ export function ExercicioInfo({ info }: { info: ExercicioInfo }) {
 
   return (
     <div className="space-y-4">
-      {info.videoUrl ? (
-        <figure className="space-y-2">
-          <figcaption className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Film className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            Vídeo demonstrativo
-          </figcaption>
-          <video
-            controls
-            preload="metadata"
-            poster={info.thumbnailUrl ?? undefined}
-            className="w-full rounded-xl border border-border bg-black"
-          >
-            <source src={info.videoUrl} />
-            Seu navegador não suporta a reprodução deste vídeo.
-          </video>
-        </figure>
-      ) : info.thumbnailUrl ? (
-        <figure className="space-y-2">
-          <figcaption className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <ImageIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            Imagem
-          </figcaption>
-          {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada de TTL curto do Storage privado; não é otimizável pelo next/image. */}
-          <img
-            src={info.thumbnailUrl}
-            alt={`Demonstração do exercício ${info.nome}`}
-            className="w-full rounded-xl border border-border"
-          />
-        </figure>
-      ) : null}
+      <ExerciseVideoPlayer
+        videoUrl={info.videoUrl}
+        thumbnailUrl={info.thumbnailUrl}
+        nome={info.nome}
+      />
 
       {info.gruposMusculares.length > 0 || info.equipamento.length > 0 ? (
         <div className="flex flex-wrap gap-2">
