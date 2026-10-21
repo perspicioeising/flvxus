@@ -20,6 +20,12 @@ import { ExercisePicker, type ExercicioDisponivel } from './exercise-picker';
 /** Valor sem dia da semana no Select (o Radix não aceita value vazio). */
 const SEM_DIA = 'none';
 
+/** Valor sem divisão definida no Select (o Radix não aceita value vazio). */
+const SEM_DIVISAO = 'none';
+
+/** Rótulos de divisão disponíveis no seletor (A/B/C/D/E). */
+const DIVISOES = ['A', 'B', 'C', 'D', 'E'] as const;
+
 /** Um item de prescrição no editor (modelo ou ficha). */
 export interface ItemEditavel {
   /** Chave estável para o React (não é persistida). */
@@ -33,6 +39,8 @@ export interface ItemEditavel {
   notes: string;
   /** Apenas quando `comDiaSemana` — dia da semana (0..6) ou null. */
   weekday: number | null;
+  /** Apenas quando `comDivisao` — rótulo da divisão (ex.: 'A') ou null. */
+  division?: string | null;
 }
 
 /** Cria um item vazio a partir do exercício escolhido. */
@@ -47,6 +55,7 @@ export function novoItem(exercicio: ExercicioDisponivel): ItemEditavel {
     target_load: '',
     notes: '',
     weekday: null,
+    division: null,
   };
 }
 
@@ -63,11 +72,13 @@ export function ItemEditor({
   onChange,
   exercicios,
   comDiaSemana = false,
+  comDivisao = false,
 }: {
   itens: ItemEditavel[];
   onChange: (itens: ItemEditavel[]) => void;
   exercicios: ExercicioDisponivel[];
   comDiaSemana?: boolean;
+  comDivisao?: boolean;
 }) {
   function adicionar(exercicio: ExercicioDisponivel) {
     onChange([...itens, novoItem(exercicio)]);
@@ -218,6 +229,32 @@ export function ItemEditor({
                       {DIAS_SEMANA.map((dia) => (
                         <SelectItem key={dia.valor} value={String(dia.valor)}>
                           {dia.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+
+              {comDivisao ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor={`${item.key}-division`}>Divisão</Label>
+                  <Select
+                    value={item.division == null || item.division === '' ? SEM_DIVISAO : item.division}
+                    onValueChange={(valor) =>
+                      atualizar(indice, {
+                        division: valor === SEM_DIVISAO ? null : valor,
+                      })
+                    }
+                  >
+                    <SelectTrigger id={`${item.key}-division`} className="sm:w-56">
+                      <SelectValue placeholder="Divisão única" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={SEM_DIVISAO}>Divisão única</SelectItem>
+                      {DIVISOES.map((divisao) => (
+                        <SelectItem key={divisao} value={divisao}>
+                          Divisão {divisao}
                         </SelectItem>
                       ))}
                     </SelectContent>

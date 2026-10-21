@@ -78,7 +78,7 @@ export function FichaForm({
       student_id: studentId,
       name,
       source_workout_id: sourceWorkoutId ?? undefined,
-      itens: itensEditaveisParaInput(itens, true),
+      itens: itensEditaveisParaInput(itens, true, true),
     };
 
     const parsed = fichaSchema.safeParse(entrada);
@@ -175,6 +175,7 @@ export function FichaForm({
           onChange={setItens}
           exercicios={exercicios}
           comDiaSemana
+          comDivisao
         />
       </div>
 

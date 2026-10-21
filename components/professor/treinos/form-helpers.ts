@@ -5,11 +5,12 @@ import type { ItemEditavel } from './item-editor';
  * que os schemas Zod esperam. Os schemas (`schemas/treino.ts`) já fazem a
  * coerção/normalização de strings vazias → `undefined`, então aqui só montamos
  * o objeto com `order_index` sequencial (a ordem da lista é a verdade) e, nas
- * fichas, o `weekday`.
+ * fichas, o `weekday` e a `division`.
  */
 export function itensEditaveisParaInput(
   itens: ItemEditavel[],
-  comDiaSemana: boolean
+  comDiaSemana: boolean,
+  comDivisao = false
 ): Array<Record<string, unknown>> {
   return itens.map((item, indice) => {
     const base: Record<string, unknown> = {
@@ -23,6 +24,9 @@ export function itensEditaveisParaInput(
     };
     if (comDiaSemana) {
       base.weekday = item.weekday ?? undefined;
+    }
+    if (comDivisao) {
+      base.division = item.division ?? undefined;
     }
     return base;
   });

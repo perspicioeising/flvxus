@@ -44,7 +44,7 @@ export default async function FichaDetalhePage({
       supabase
         .from('workout_plan_items')
         .select(
-          'id, exercise_id, weekday, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name)'
+          'id, exercise_id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name)'
         )
         .eq('plan_id', id)
         .order('order_index', { ascending: true }),
@@ -67,6 +67,7 @@ export default async function FichaDetalhePage({
     target_load: num(item.target_load),
     notes: item.notes ?? '',
     weekday: item.weekday,
+    division: item.division,
   }));
 
   const alunos: AlunoOpcao[] = alunosData ?? [];
