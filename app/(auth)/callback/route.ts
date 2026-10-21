@@ -21,24 +21,51 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  // Fluxo "verify" (token_hash): formato robusto entre dispositivos usado pelos
+  // e-mails de convite/magic link/recovery quando o template aponta para
+  // `/callback?token_hash=...&type=...`. Coexiste com o PKCE (`?code=`).
+  const tokenHash = searchParams.get('token_hash');
+  const type = searchParams.get('type');
   const next = searchParams.get('next') ?? searchParams.get('redirect_to');
 
-  // Sem `code` não há o que trocar: link inválido/incompleto.
-  if (!code) {
+  // Precisa de UM dos dois: `code` (PKCE) ou `token_hash` (verify). Sem nenhum,
+  // o link é inválido/incompleto.
+  if (!code && !tokenHash) {
     return NextResponse.redirect(`${origin}/login?error=invalid_link`);
   }
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  let userId: string | null = null;
 
-  if (error || !data.user) {
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error || !data.user) {
+      return NextResponse.redirect(`${origin}/login?error=invalid_link`);
+    }
+    userId = data.user.id;
+  } else if (tokenHash) {
+    // `verifyOtp` troca o token_hash por sessão (grava cookies). `type` vem do
+    // template (ex.: 'invite', 'magiclink', 'recovery', 'signup', 'email').
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: (type ?? 'invite') as 'invite' | 'magiclink' | 'recovery' | 'signup' | 'email',
+    });
+    if (error || !data.user) {
+      return NextResponse.redirect(`${origin}/login?error=invalid_link`);
+    }
+    userId = data.user.id;
+  }
+
+  if (!userId) {
     return NextResponse.redirect(`${origin}/login?error=invalid_link`);
   }
 
   // Convite para definir senha: encaminha direto para a tela de senha. A sessão
   // já foi criada acima (cookies), então /set-password apenas exibe o form.
-  if (next && next.includes('set-password')) {
+  // Um convite (type=invite) sempre leva o aluno a definir a senha, mesmo que o
+  // `next` não tenha sido propagado pelo provedor de e-mail.
+  if ((next && next.includes('set-password')) || type === 'invite') {
     return NextResponse.redirect(`${origin}/set-password`);
   }
 
@@ -47,7 +74,7 @@ export async function GET(request: NextRequest) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('user_id', data.user.id)
+    .eq('user_id', userId)
     .single();
 
   if (!profile) {
