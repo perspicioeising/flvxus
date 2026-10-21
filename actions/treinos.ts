@@ -5,9 +5,11 @@ import { revalidatePath } from 'next/cache';
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
+  criarFichaMultiModeloSchema,
   fichaSchema,
   modeloSchema,
   transicaoPermitida,
+  type CriarFichaMultiModeloInput,
   type FichaInput,
   type ItemFichaInput,
   type ItemModeloInput,
@@ -77,6 +79,7 @@ function itemFichaParaLinha(planId: string, item: ItemFichaInput, indice: number
     plan_id: planId,
     exercise_id: item.exercise_id,
     weekday: item.weekday ?? null,
+    division: item.division ?? null,
     order_index: item.order_index ?? indice,
     sets: item.sets ?? null,
     reps: item.reps ?? null,
@@ -453,6 +456,113 @@ export async function criarFichaDeModelo(
   revalidatePath('/professor/treinos');
 
   return { ok: true, message: 'Ficha criada a partir do modelo.', id: plan.id };
+}
+
+/**
+ * Cria uma FICHA a partir de MÚLTIPLOS modelos, um por divisão (A/B/C/D/E). Para
+ * cada modelo recebido (na ordem), copia os itens de `workout_exercises` para
+ * `workout_plan_items` carimbando `division = modelo.division` e `weekday = null`.
+ * O `order_index` é GLOBAL e CONTÍNUO na ficha inteira (0..N-1), atribuído na
+ * ordem das divisões e, dentro de cada divisão, na ordem dos itens do modelo —
+ * `division` é apenas um rótulo e `order_index` nunca repete na mesma ficha.
+ *
+ * `source_workout_id`: igual ao único modelo quando há apenas um; `null` quando
+ * há mais de um (ficha multi-origem não tem procedência única). A ficha nasce em
+ * `draft`; o aluno só a vê quando liberada (RLS).
+ */
+export async function criarFichaMultiModelo(
+  entrada: CriarFichaMultiModeloInput
+): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode criar fichas.' };
+  }
+
+  const parsed = criarFichaMultiModeloSchema.safeParse(entrada);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: 'Verifique os campos destacados.',
+      fieldErrors: erroDeCampo(parsed.error.flatten()),
+    };
+  }
+
+  const supabase = await createClient();
+
+  // Lê os itens de cada modelo (RLS garante que são do tenant) e monta as
+  // linhas de workout_plan_items já carimbando a divisão, com order_index
+  // GLOBAL e contínuo na ordem das divisões (A antes de B antes de C...).
+  const linhas: Array<Omit<ReturnType<typeof itemFichaParaLinha>, 'plan_id'>> = [];
+  let ordemGlobal = 0;
+  for (const modelo of parsed.data.modelos) {
+    const { data: itensModelo, error: erroItensModelo } = await supabase
+      .from('workout_exercises')
+      .select('exercise_id, order_index, sets, reps, rest_seconds, target_load, notes')
+      .eq('workout_id', modelo.source_workout_id)
+      .order('order_index', { ascending: true });
+
+    if (erroItensModelo) {
+      return { ok: false, message: `Não foi possível ler o modelo: ${erroItensModelo.message}` };
+    }
+
+    if (!itensModelo || itensModelo.length === 0) {
+      return {
+        ok: false,
+        message: `O modelo da divisão "${modelo.division}" não possui exercícios para copiar.`,
+      };
+    }
+
+    for (const item of itensModelo) {
+      linhas.push({
+        exercise_id: item.exercise_id,
+        weekday: null,
+        division: modelo.division,
+        order_index: ordemGlobal,
+        sets: item.sets,
+        reps: item.reps,
+        rest_seconds: item.rest_seconds,
+        target_load: item.target_load,
+        notes: item.notes,
+      });
+      ordemGlobal += 1;
+    }
+  }
+
+  const { data: plan, error: erroPlan } = await supabase
+    .from('workout_plans')
+    .insert({
+      tenant_id: professor.tenantId,
+      trainer_id: professor.userId,
+      student_id: parsed.data.student_id,
+      name: parsed.data.name,
+      status: 'draft',
+      source_workout_id:
+        parsed.data.modelos.length === 1
+          ? parsed.data.modelos[0].source_workout_id
+          : null,
+    })
+    .select('id')
+    .single();
+
+  if (erroPlan || !plan) {
+    return {
+      ok: false,
+      message: `Não foi possível criar a ficha: ${erroPlan?.message ?? 'erro desconhecido'}`,
+    };
+  }
+
+  const { error: erroItens } = await supabase
+    .from('workout_plan_items')
+    .insert(linhas.map((linha) => ({ ...linha, plan_id: plan.id })));
+
+  if (erroItens) {
+    await supabase.from('workout_plans').delete().eq('id', plan.id);
+    return { ok: false, message: `Não foi possível copiar os exercícios: ${erroItens.message}` };
+  }
+
+  revalidatePath('/professor/treinos');
+
+  return { ok: true, message: 'Ficha criada a partir dos modelos.', id: plan.id };
 }
 
 // =============================================================================

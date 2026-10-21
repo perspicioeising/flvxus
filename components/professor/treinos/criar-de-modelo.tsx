@@ -6,6 +6,7 @@ import { Copy } from 'lucide-react';
 
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -24,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { criarFichaDeModelo } from '@/actions/treinos';
+import { criarFichaMultiModelo } from '@/actions/treinos';
 import type { AlunoOpcao } from './ficha-form';
 
 export interface ModeloOpcao {
@@ -32,10 +33,30 @@ export interface ModeloOpcao {
   name: string;
 }
 
+/** Rótulos posicionais padrão de divisão, na ordem de seleção dos modelos. */
+const ROTULOS_PADRAO = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+
 /**
- * Diálogo para criar uma FICHA a partir de um MODELO: escolhe o modelo de
- * origem e o aluno; a Server Action copia os itens do modelo para a nova ficha
- * (com `source_workout_id`). A ficha nasce como rascunho.
+ * Rótulo efetivo de um modelo selecionado: o valor digitado pelo professor
+ * (com trim); se vazio, o rótulo posicional padrão da ordem de seleção
+ * (1º = "A", 2º = "B", …). Nunca retorna string vazia — se o padrão posicional
+ * acabar, cai para o nome do modelo (ou o id, como último recurso).
+ */
+function rotuloEfetivo(
+  digitado: string | undefined,
+  posicao: number,
+  modelo: ModeloOpcao
+): string {
+  const limpo = (digitado ?? '').trim();
+  if (limpo) return limpo;
+  return ROTULOS_PADRAO[posicao] ?? (modelo.name.trim() || modelo.id);
+}
+
+/**
+ * Diálogo para criar uma FICHA a partir de UM OU MAIS MODELOS, cada um virando
+ * uma divisão (A/B/C/D/E). A ordem de seleção define o rótulo padrão; o
+ * professor pode renomear cada divisão. A Server Action copia os itens de cada
+ * modelo para a nova ficha carimbando a divisão. A ficha nasce como rascunho.
  */
 export function CriarDeModelo({
   modelos,
@@ -46,12 +67,15 @@ export function CriarDeModelo({
 }) {
   const router = useRouter();
   const [aberto, setAberto] = React.useState(false);
-  const [modeloId, setModeloId] = React.useState('');
+  // Ordem de marcação (define o rótulo posicional padrão).
+  const [selecionados, setSelecionados] = React.useState<string[]>([]);
+  // Rótulo editável por modelo (vazio => usa o padrão posicional).
+  const [rotulos, setRotulos] = React.useState<Record<string, string>>({});
   const [studentId, setStudentId] = React.useState('');
   const [nome, setNome] = React.useState('');
   const [salvando, setSalvando] = React.useState(false);
 
-  const desabilitado = !modeloId || !studentId || salvando;
+  const desabilitado = selecionados.length === 0 || !studentId || !nome.trim() || salvando;
 
   // Motivo de o gatilho ficar indisponível, para explicar ao professor em vez
   // de só exibir um botão "apagado" sem contexto.
@@ -63,11 +87,28 @@ export function CriarDeModelo({
       ? 'Cadastre um aluno primeiro para montar a ficha dele.'
       : undefined;
 
+  function alternarModelo(id: string, marcado: boolean) {
+    setSelecionados((atual) =>
+      marcado ? [...atual, id] : atual.filter((m) => m !== id)
+    );
+  }
+
   async function criar() {
-    if (!modeloId || !studentId) return;
+    if (selecionados.length === 0 || !studentId || !nome.trim()) return;
+
+    const modeloPorId = new Map(modelos.map((m) => [m.id, m]));
+    const payloadModelos = selecionados.map((id, i) => ({
+      source_workout_id: id,
+      division: rotuloEfetivo(rotulos[id], i, modeloPorId.get(id) as ModeloOpcao),
+    }));
+
     setSalvando(true);
     try {
-      const r = await criarFichaDeModelo(modeloId, studentId, nome);
+      const r = await criarFichaMultiModelo({
+        student_id: studentId,
+        name: nome.trim(),
+        modelos: payloadModelos,
+      });
       if (r.ok) {
         toast({ title: r.message ?? 'Ficha criada.' });
         setAberto(false);
@@ -104,28 +145,51 @@ export function CriarDeModelo({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Criar ficha a partir de modelo</DialogTitle>
+          <DialogTitle>Criar ficha a partir de modelos</DialogTitle>
           <DialogDescription>
-            Os exercícios do modelo serão copiados para uma nova ficha do aluno.
-            Você poderá ajustá-los depois.
+            Marque um ou mais modelos. Cada modelo vira uma divisão (A, B, C…) da
+            ficha do aluno. Você poderá ajustar os exercícios depois.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="origem-modelo">Modelo de origem</Label>
-            <Select value={modeloId} onValueChange={setModeloId}>
-              <SelectTrigger id="origem-modelo">
-                <SelectValue placeholder="Selecione o modelo" />
-              </SelectTrigger>
-              <SelectContent>
-                {modelos.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <Label>Modelos (um por divisão)</Label>
+            <ul className="space-y-2">
+              {modelos.map((m) => {
+                const marcado = selecionados.includes(m.id);
+                const posicao = selecionados.indexOf(m.id);
+                return (
+                  <li
+                    key={m.id}
+                    className="flex items-center gap-3 rounded-lg border border-border px-3 py-2"
+                  >
+                    <Checkbox
+                      id={`modelo-${m.id}`}
+                      checked={marcado}
+                      onCheckedChange={(v) => alternarModelo(m.id, v === true)}
+                    />
+                    <Label
+                      htmlFor={`modelo-${m.id}`}
+                      className="min-w-0 flex-1 cursor-pointer truncate font-normal"
+                    >
+                      {m.name}
+                    </Label>
+                    {marcado ? (
+                      <Input
+                        aria-label={`Rótulo da divisão para ${m.name}`}
+                        className="h-9 w-24"
+                        value={rotulos[m.id] ?? ''}
+                        onChange={(e) =>
+                          setRotulos((atual) => ({ ...atual, [m.id]: e.target.value }))
+                        }
+                        placeholder={ROTULOS_PADRAO[posicao] ?? 'Divisão'}
+                      />
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
 
           <div className="space-y-1.5">
@@ -145,12 +209,12 @@ export function CriarDeModelo({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="origem-nome">Nome da ficha (opcional)</Label>
+            <Label htmlFor="origem-nome">Nome da ficha</Label>
             <Input
               id="origem-nome"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              placeholder="Deixe em branco para usar o nome do modelo"
+              placeholder="Ex.: Treino ABC - Hipertrofia"
             />
           </div>
         </div>
