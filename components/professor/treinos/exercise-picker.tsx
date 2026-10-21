@@ -15,7 +15,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+/** Valor do Select quando nenhum grupo muscular está selecionado. */
+const GRUPO_TODOS = 'todos';
 
 /** Exercício disponível para prescrição (subconjunto de `exercises`). */
 export interface ExercicioDisponivel {
@@ -38,17 +48,31 @@ export function ExercisePicker({
 }) {
   const [aberto, setAberto] = React.useState(false);
   const [busca, setBusca] = React.useState('');
+  const [grupo, setGrupo] = React.useState(GRUPO_TODOS);
+
+  // União ordenada dos grupos musculares presentes no catálogo recebido.
+  const grupos = React.useMemo(() => {
+    const todos = new Set<string>();
+    for (const e of exercicios) {
+      for (const g of e.muscle_groups ?? []) todos.add(g);
+    }
+    return Array.from(todos).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [exercicios]);
 
   const filtrados = React.useMemo(() => {
     const q = busca.trim().toLowerCase();
-    if (!q) return exercicios;
-    return exercicios.filter((e) => e.name.toLowerCase().includes(q));
-  }, [busca, exercicios]);
+    return exercicios.filter((e) => {
+      const casaNome = !q || e.name.toLowerCase().includes(q);
+      const casaGrupo = grupo === GRUPO_TODOS || (e.muscle_groups ?? []).includes(grupo);
+      return casaNome && casaGrupo;
+    });
+  }, [busca, grupo, exercicios]);
 
   function selecionar(exercicio: ExercicioDisponivel) {
     onSelecionar(exercicio);
     setAberto(false);
     setBusca('');
+    setGrupo(GRUPO_TODOS);
   }
 
   return (
@@ -68,25 +92,48 @@ export function ExercisePicker({
         </DialogHeader>
 
         <div className="space-y-3">
-          <div>
-            <Label htmlFor="busca-exercicio-picker" className="sr-only">
-              Buscar exercício
-            </Label>
-            <div className="relative">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <Input
-                id="busca-exercicio-picker"
-                type="search"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Nome do exercício"
-                className="pl-9"
-                autoFocus
-              />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex-1">
+              <Label htmlFor="busca-exercicio-picker" className="sr-only">
+                Buscar exercício
+              </Label>
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="busca-exercicio-picker"
+                  type="search"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Nome do exercício"
+                  className="pl-9"
+                  autoFocus
+                />
+              </div>
             </div>
+
+            {grupos.length > 0 ? (
+              <div className="sm:w-48">
+                <Label htmlFor="grupo-exercicio-picker" className="sr-only">
+                  Filtrar por grupo muscular
+                </Label>
+                <Select value={grupo} onValueChange={setGrupo}>
+                  <SelectTrigger id="grupo-exercicio-picker">
+                    <SelectValue placeholder="Grupo muscular" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={GRUPO_TODOS}>Todos os grupos</SelectItem>
+                    {grupos.map((g) => (
+                      <SelectItem key={g} value={g}>
+                        {g}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
           </div>
 
           {filtrados.length === 0 ? (
