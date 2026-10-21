@@ -181,7 +181,11 @@ export function SessaoExecucao({
     for (const item of itens) {
       for (let n = 1; n <= item.sets; n += 1) {
         inicial[chaveSerie(item.id, n)] = {
-          reps: item.reps ?? '',
+          // `reps` fica VAZIO: a prescrição (`item.reps`) costuma ser uma FAIXA
+          // de texto ("10-12") e `reps_done` é um inteiro (quantas o aluno fez).
+          // Pré-preencher com a faixa fazia o registro falhar na validação Zod.
+          // A faixa prescrita vira placeholder no input.
+          reps: '',
           carga: item.cargaAlvo !== null ? String(item.cargaAlvo) : '',
           completed: false,
           salvando: false,
@@ -294,11 +298,13 @@ export function SessaoExecucao({
           const proximaChave = chaveSerie(itemId, setNumber + 1);
           const proximaSerie = proximo[proximaChave];
           if (item && proximaSerie && !proximaSerie.completed) {
-            const defaultReps = item.reps ?? '';
+            // `reps` nasce vazio (não herda a faixa prescrita); a carga nasce
+            // da prescrição. A próxima série ainda está "intocada" quando bate
+            // esses defaults — só então herdamos os valores desta série.
             const defaultCarga =
               item.cargaAlvo !== null ? String(item.cargaAlvo) : '';
             if (
-              proximaSerie.reps === defaultReps &&
+              proximaSerie.reps === '' &&
               proximaSerie.carga === defaultCarga
             ) {
               proximo[proximaChave] = {
@@ -453,6 +459,7 @@ export function SessaoExecucao({
                           id={`${chave}-reps`}
                           inputMode="numeric"
                           value={estado.reps}
+                          placeholder={itemAtual.reps ?? undefined}
                           onChange={(e) =>
                             atualizarCampo(chave, 'reps', e.target.value)
                           }

@@ -6,7 +6,9 @@ import * as React from 'react';
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+// Antes era 1000000ms (~16min): o toast ficava preso na tela até o próximo.
+// 5s é tempo suficiente para ler e some sozinho.
+const TOAST_REMOVE_DELAY = 5000;
 
 type ToasterToast = ToastProps & {
   id: string;
