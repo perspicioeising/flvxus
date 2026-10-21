@@ -161,8 +161,9 @@ export async function registrarSerie(input: RegistrarSerieEntrada): Promise<Esta
 }
 
 /**
- * Finaliza uma sessão: carimba `finished_at = now()` e grava a nota opcional.
- * RLS garante que o aluno só finaliza a própria sessão.
+ * Finaliza uma sessão: carimba `finished_at = now()` e grava a nota e a
+ * intensidade percebida (RPE 1..10) opcionais. RLS garante que o aluno só
+ * finaliza a própria sessão.
  */
 export async function finalizarSessao(input: FinalizarSessaoInput): Promise<EstadoAcao> {
   const aluno = await getSessionUser();
@@ -186,6 +187,7 @@ export async function finalizarSessao(input: FinalizarSessaoInput): Promise<Esta
     .update({
       finished_at: new Date().toISOString(),
       notes: parsed.data.notes ?? null,
+      perceived_intensity: parsed.data.perceived_intensity ?? null,
     })
     .eq('id', parsed.data.session_id);
 

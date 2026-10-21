@@ -126,4 +126,76 @@ describe('finalizarSessaoSchema', () => {
   it('rejeita session_id inválido', () => {
     expect(finalizarSessaoSchema.safeParse({ session_id: 'x' }).success).toBe(false);
   });
+
+  it('aceita perceived_intensity nos limites 1 e 10', () => {
+    const um = finalizarSessaoSchema.safeParse({
+      session_id: SESSION_ID,
+      perceived_intensity: 1,
+    });
+    expect(um.success).toBe(true);
+    if (um.success) {
+      expect(um.data.perceived_intensity).toBe(1);
+    }
+
+    const dez = finalizarSessaoSchema.safeParse({
+      session_id: SESSION_ID,
+      perceived_intensity: 10,
+    });
+    expect(dez.success).toBe(true);
+    if (dez.success) {
+      expect(dez.data.perceived_intensity).toBe(10);
+    }
+  });
+
+  it('converte perceived_intensity em string para número', () => {
+    const r = finalizarSessaoSchema.safeParse({
+      session_id: SESSION_ID,
+      perceived_intensity: '7',
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.perceived_intensity).toBe(7);
+    }
+  });
+
+  it('trata perceived_intensity ausente ou vazio como opcional', () => {
+    const ausente = finalizarSessaoSchema.safeParse({ session_id: SESSION_ID });
+    expect(ausente.success).toBe(true);
+    if (ausente.success) {
+      expect(ausente.data.perceived_intensity).toBeUndefined();
+    }
+
+    const vazio = finalizarSessaoSchema.safeParse({
+      session_id: SESSION_ID,
+      perceived_intensity: '',
+    });
+    expect(vazio.success).toBe(true);
+    if (vazio.success) {
+      expect(vazio.data.perceived_intensity).toBeUndefined();
+    }
+  });
+
+  it('rejeita perceived_intensity fora de 1..10 (0 e 11)', () => {
+    expect(
+      finalizarSessaoSchema.safeParse({
+        session_id: SESSION_ID,
+        perceived_intensity: 0,
+      }).success
+    ).toBe(false);
+    expect(
+      finalizarSessaoSchema.safeParse({
+        session_id: SESSION_ID,
+        perceived_intensity: 11,
+      }).success
+    ).toBe(false);
+  });
+
+  it('rejeita perceived_intensity não inteiro', () => {
+    expect(
+      finalizarSessaoSchema.safeParse({
+        session_id: SESSION_ID,
+        perceived_intensity: 5.5,
+      }).success
+    ).toBe(false);
+  });
 });

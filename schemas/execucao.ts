@@ -50,13 +50,29 @@ export const registrarSerieSchema = z.object({
   completed: z.coerce.boolean().default(false),
 });
 
-/** Finalização de uma sessão (carimba `finished_at`, com nota opcional). */
+/**
+ * Intensidade percebida (RPE) opcional: inteiro de 1 a 10. Vazio/ausente →
+ * `undefined`. Segue o padrão de preprocess do arquivo (FormData envia string).
+ * Espelha a coluna `perceived_intensity` (`smallint`, nullable) de
+ * `workout_sessions`.
+ */
+const intensidadePercebidaOpcional = z.preprocess((valor) => {
+  if (valor === '' || valor === null || valor === undefined) return undefined;
+  if (typeof valor === 'string') {
+    const n = Number(valor);
+    return Number.isNaN(n) ? valor : n;
+  }
+  return valor;
+}, z.number().int().min(1).max(10).optional());
+
+/** Finalização de uma sessão (carimba `finished_at`, com nota e RPE opcionais). */
 export const finalizarSessaoSchema = z.object({
   session_id: z.string().uuid('Sessão inválida.'),
   notes: z.preprocess(
     (valor) => (valor === '' || valor === null ? undefined : valor),
     z.string().trim().min(1).optional()
   ),
+  perceived_intensity: intensidadePercebidaOpcional,
 });
 
 export type IniciarSessaoInput = z.infer<typeof iniciarSessaoSchema>;

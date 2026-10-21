@@ -344,6 +344,7 @@ export interface Database {
           started_at: string;
           finished_at: string | null;
           notes: string | null;
+          perceived_intensity: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -355,6 +356,7 @@ export interface Database {
           started_at?: string;
           finished_at?: string | null;
           notes?: string | null;
+          perceived_intensity?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -366,6 +368,7 @@ export interface Database {
           started_at?: string;
           finished_at?: string | null;
           notes?: string | null;
+          perceived_intensity?: number | null;
           created_at?: string;
           updated_at?: string;
         };

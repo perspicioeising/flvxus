@@ -107,6 +107,9 @@ export function SessaoExecucao({
   const [iniciando, setIniciando] = React.useState(false);
   const [finalizando, setFinalizando] = React.useState(false);
   const [nota, setNota] = React.useState('');
+  // Intensidade percebida (RPE 1..10) opcional ao finalizar. `null` = não
+  // informada (não bloqueia a finalização).
+  const [intensidade, setIntensidade] = React.useState<number | null>(null);
   const [pendente, startTransition] = React.useTransition();
 
   // Dias com itens (só os que têm exercícios; inclui o balde "Sem dia definido").
@@ -382,6 +385,7 @@ export function SessaoExecucao({
     const r = await finalizarSessao({
       session_id: sessionId,
       notes: nota.trim() === '' ? undefined : nota.trim(),
+      perceived_intensity: intensidade ?? undefined,
     });
     setFinalizando(false);
 
@@ -653,6 +657,47 @@ export function SessaoExecucao({
                 : `Você marcou ${progresso.feitas} de ${progresso.total} séries. Finalizar mesmo assim?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {/* Intensidade percebida (RPE 1..10), opcional: não bloqueia
+              finalizar. Toque para marcar/desmarcar (toggle). */}
+          <div className="space-y-2">
+            <span id="rpe-label" className="text-sm font-medium text-foreground">
+              Intensidade do treino (opcional)
+            </span>
+            <div
+              role="group"
+              aria-labelledby="rpe-label"
+              className="flex flex-wrap gap-2"
+            >
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((valor) => {
+                const ativo = intensidade === valor;
+                return (
+                  <button
+                    key={valor}
+                    type="button"
+                    aria-pressed={ativo}
+                    aria-label={`Intensidade ${valor}`}
+                    onClick={() =>
+                      setIntensidade((atual) =>
+                        atual === valor ? null : valor
+                      )
+                    }
+                    className={cn(
+                      'min-h-11 min-w-11 flex-1 rounded-full border text-sm font-medium transition-colors',
+                      ativo
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-background text-foreground hover:bg-muted'
+                    )}
+                  >
+                    {valor}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>1 · Muito leve</span>
+              <span>10 · Máximo</span>
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="nota-sessao" className="text-sm">
               Observações (opcional)
