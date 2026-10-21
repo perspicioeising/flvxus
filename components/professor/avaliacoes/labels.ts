@@ -22,6 +22,11 @@ export function protocoloLabel(protocol: AssessmentProtocol | null): string {
   return protocol ? PROTOCOLO_LABEL[protocol] : '—';
 }
 
+/** Rótulos pt-BR de campos escalares da avaliação (sem grupo próprio). */
+export const CAMPO_LABEL: Record<string, string> = {
+  inbody_score: 'Pontuação InBody',
+};
+
 /** Rótulos das circunferências (colunas `*_cm`). */
 export const CIRCUNFERENCIA_LABEL: Record<string, string> = {
   neck_cm: 'Pescoço',

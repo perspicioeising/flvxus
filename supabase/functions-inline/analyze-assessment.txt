@@ -102,7 +102,7 @@ const buildUserMessage = (assessmentData: string) =>
 // de storage). Carregadas via service role; a posse/tenant é validada antes.
 const ASSESSMENT_COLUMNS =
   'id, assessed_at, age, gender, protocol, weight_kg, height_cm, bmi, ' +
-  'body_fat_pct, lean_mass_kg, fat_mass_kg, muscle_mass_kg, ' +
+  'body_fat_pct, lean_mass_kg, fat_mass_kg, muscle_mass_kg, inbody_score, ' +
   'neck_cm, shoulder_cm, chest_cm, waist_cm, abdomen_cm, hip_cm, ' +
   'left_arm_cm, right_arm_cm, left_thigh_cm, right_thigh_cm, left_calf_cm, right_calf_cm, ' +
   'left_flexed_arm_cm, right_flexed_arm_cm, left_forearm_cm, right_forearm_cm, ' +
@@ -156,6 +156,7 @@ function formatarAvaliacao(row: any): Record<string, unknown> {
   if (num(row.fat_mass_kg) != null) comp.massa_gorda_kg = num(row.fat_mass_kg)!;
   if (num(row.lean_mass_kg) != null) comp.massa_magra_kg = num(row.lean_mass_kg)!;
   if (num(row.muscle_mass_kg) != null) comp.massa_muscular_kg = num(row.muscle_mass_kg)!;
+  if (num(row.inbody_score) != null) comp.pontuacao_inbody = num(row.inbody_score)!;
   if (Object.keys(comp).length) out.composicao_corporal = comp;
 
   const circ: Record<string, number> = {};

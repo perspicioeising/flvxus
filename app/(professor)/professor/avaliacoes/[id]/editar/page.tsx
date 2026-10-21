@@ -14,6 +14,7 @@ const CAMPOS_NUMERICOS = [
   'weight_kg',
   'height_cm',
   'body_fat_pct',
+  'inbody_score',
   'neck_cm',
   'shoulder_cm',
   'chest_cm',

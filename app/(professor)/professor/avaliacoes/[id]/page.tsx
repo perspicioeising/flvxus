@@ -167,6 +167,10 @@ export default async function DetalheAvaliacaoPage({
               rotulo="Massa magra"
               valor={avaliacao.lean_mass_kg != null ? `${avaliacao.lean_mass_kg} kg` : null}
             />
+            <Dado
+              rotulo="Pontuação InBody"
+              valor={avaliacao.inbody_score != null ? String(avaliacao.inbody_score) : null}
+            />
           </dl>
 
           <div className="mt-6">

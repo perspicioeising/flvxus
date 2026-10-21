@@ -42,6 +42,7 @@ export interface AvaliacaoResumo {
   body_fat_pct: number | null;
   fat_mass_kg: number | null;
   lean_mass_kg: number | null;
+  inbody_score: number | null;
   photos_consent: boolean;
   // Circunferências (cm) lidas da linha crua; usadas pelo MedidasVisual.
   neck_cm: number | null;
@@ -134,6 +135,7 @@ export function AvaliacaoCard({ avaliacao }: { avaliacao: AvaliacaoResumo }) {
           <Dado rotulo="% Gordura" valor={avaliacao.body_fat_pct != null ? `${avaliacao.body_fat_pct}%` : null} />
           <Dado rotulo="Massa gorda" valor={avaliacao.fat_mass_kg != null ? `${avaliacao.fat_mass_kg} kg` : null} />
           <Dado rotulo="Massa magra" valor={avaliacao.lean_mass_kg != null ? `${avaliacao.lean_mass_kg} kg` : null} />
+          <Dado rotulo="Pontuação InBody" valor={avaliacao.inbody_score != null ? String(avaliacao.inbody_score) : null} />
         </dl>
 
         <ComposicaoGrafico
