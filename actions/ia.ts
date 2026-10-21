@@ -15,6 +15,7 @@ import {
   mapearTreinoParaItens,
   mapearAnaliseParaAvaliacao,
   nomesDeExerciciosDoTreino,
+  normalizarGoalRestrictions,
 } from '@/lib/ia/materializacao';
 import {
   gerarDietaInputSchema,
@@ -196,9 +197,48 @@ export async function analisarAvaliacao(input: unknown): Promise<EstadoGeracao> 
     };
   }
 
-  const resultado = await invocarFuncaoIa('analyze-assessment', parsed.data);
+  // Resolve a avaliação ANTERIOR do mesmo aluno para a IA comparar a evolução.
+  // O client manda só o assessment_id; aqui buscamos (via RLS) a avaliação
+  // imediatamente anterior (mesmo aluno, assessed_at < a atual, a mais recente)
+  // e injetamos previous_assessment_id — a Edge Function já sabe usá-lo. Sem
+  // isto a IA respondia "não há avaliação anterior para comparação".
+  const corpo = { ...parsed.data };
+  if (!corpo.previous_assessment_id) {
+    const anteriorId = await resolverAvaliacaoAnterior(corpo.assessment_id);
+    if (anteriorId) corpo.previous_assessment_id = anteriorId;
+  }
+
+  const resultado = await invocarFuncaoIa('analyze-assessment', corpo);
   if (resultado.ok) revalidatePath(`/professor/avaliacoes/${parsed.data.assessment_id}`);
   return resultado;
+}
+
+/**
+ * Dado o id de uma avaliação, acha a avaliação imediatamente anterior do mesmo
+ * aluno (menor `assessed_at` que a atual, a mais recente dentre elas). Lê via
+ * RLS (o professor só enxerga avaliações do próprio tenant). Retorna `null` se
+ * não houver anterior ou se a avaliação atual não for encontrada.
+ */
+async function resolverAvaliacaoAnterior(assessmentId: string): Promise<string | null> {
+  const supabase = await createClient();
+
+  const { data: atual } = await supabase
+    .from('physical_assessments')
+    .select('student_id, assessed_at')
+    .eq('id', assessmentId)
+    .maybeSingle();
+  if (!atual) return null;
+
+  const { data: anterior } = await supabase
+    .from('physical_assessments')
+    .select('id')
+    .eq('student_id', atual.student_id)
+    .lt('assessed_at', atual.assessed_at)
+    .order('assessed_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return anterior?.id ?? null;
 }
 
 /**
@@ -294,6 +334,8 @@ export async function aprovarGeracao(generationId: string): Promise<EstadoAcao> 
         trainerId: guard.userId,
         studentId,
         assessmentId: typeof input.assessment_id === 'string' ? input.assessment_id : null,
+        goal: input.goal,
+        restrictions: input.restrictions,
         draft: validado.draft as GenerateDietOutput,
       });
       targetTable = 'diets';
@@ -407,10 +449,18 @@ async function materializarDieta(
     trainerId: string;
     studentId: string;
     assessmentId: string | null;
+    goal: unknown;
+    restrictions: unknown;
     draft: GenerateDietOutput;
   }
 ): Promise<string> {
   const { diet, refeicoes, shopping_list } = mapearDietaParaLinhas(args.draft);
+  // `goal`/`restrictions` vêm do input da geração (texto livre); normalizamos
+  // para o que cabe na linha `diets` (enum `goal_type` + `text[]`).
+  const { goal, restrictions } = normalizarGoalRestrictions({
+    goal: args.goal,
+    restrictions: args.restrictions,
+  });
 
   const { data: dietaCriada, error: erroDieta } = await supabase
     .from('diets')
@@ -419,6 +469,8 @@ async function materializarDieta(
       student_id: args.studentId,
       trainer_id: args.trainerId,
       status: 'draft',
+      goal,
+      restrictions,
       target_kcal: diet.target_kcal,
       protein_g: diet.protein_g,
       carbs_g: diet.carbs_g,

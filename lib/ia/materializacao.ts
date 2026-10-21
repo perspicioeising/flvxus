@@ -12,10 +12,47 @@
 import type { GenerateDietOutput, DietMealFood } from '@/schemas/ia/generate-diet';
 import type { SuggestWorkoutOutput } from '@/schemas/ia/suggest-workout';
 import type { AnalyzeAssessmentOutput } from '@/schemas/ia/analyze-assessment';
+import type { GoalType } from '@/types/database.types';
 
 // -----------------------------------------------------------------------------
 // Dieta
 // -----------------------------------------------------------------------------
+
+/** Membros válidos do enum `goal_type` (espelha `types/database.types.ts`). */
+const GOAL_TYPES = [
+  'weight_loss',
+  'muscle_gain',
+  'maintenance',
+  'conditioning',
+  'rehabilitation',
+  'performance',
+] as const satisfies readonly GoalType[];
+
+/**
+ * Normaliza `goal`/`restrictions` vindos de `ai_generations.input` para o que
+ * cabe na linha `diets`:
+ *   - `goal`: só preserva quando o valor é EXATAMENTE um membro de `goal_type`
+ *     (o input costuma ser texto livre, que não bate com o enum → `null`);
+ *   - `restrictions`: mantém apenas as strings de um array; qualquer outra
+ *     coisa (ausente/não-array) vira `[]` (coluna `text[] not null default '{}'`).
+ *
+ * PURO — sem Supabase/React — para ficar coberto por teste sem mocks.
+ */
+export function normalizarGoalRestrictions(input: {
+  goal?: unknown;
+  restrictions?: unknown;
+}): { goal: GoalType | null; restrictions: string[] } {
+  const goal =
+    typeof input.goal === 'string' && (GOAL_TYPES as readonly string[]).includes(input.goal)
+      ? (input.goal as GoalType)
+      : null;
+
+  const restrictions = Array.isArray(input.restrictions)
+    ? (input.restrictions as unknown[]).filter((r): r is string => typeof r === 'string')
+    : [];
+
+  return { goal, restrictions };
+}
 
 /** Linha de `diets` (sem id/tenant_id/student_id/trainer_id, carimbados no insert). */
 export interface LinhaDieta {

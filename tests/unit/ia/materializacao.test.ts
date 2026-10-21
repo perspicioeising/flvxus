@@ -5,6 +5,7 @@ import {
   mapearTreinoParaItens,
   mapearAnaliseParaAvaliacao,
   nomesDeExerciciosDoTreino,
+  normalizarGoalRestrictions,
 } from '@/lib/ia/materializacao';
 import type { GenerateDietOutput } from '@/schemas/ia/generate-diet';
 import type { SuggestWorkoutOutput } from '@/schemas/ia/suggest-workout';
@@ -104,6 +105,30 @@ describe('mapearTreinoParaItens', () => {
 
   it('lança quando um nome não resolve', () => {
     expect(() => mapearTreinoParaItens(treinoDraft, () => null)).toThrow(/não resolvido/i);
+  });
+});
+
+describe('normalizarGoalRestrictions', () => {
+  it('descarta goal de texto livre que não é membro do enum', () => {
+    const r = normalizarGoalRestrictions({ goal: 'perda de gordura mantendo massa' });
+    expect(r.goal).toBeNull();
+  });
+
+  it('preserva goal quando é um membro válido do enum', () => {
+    const r = normalizarGoalRestrictions({ goal: 'muscle_gain' });
+    expect(r.goal).toBe('muscle_gain');
+  });
+
+  it('filtra/preserva restrictions quando é um array de strings', () => {
+    const r = normalizarGoalRestrictions({
+      restrictions: ['lactose', 42, 'glúten', null],
+    });
+    expect(r.restrictions).toEqual(['lactose', 'glúten']);
+  });
+
+  it('retorna [] quando restrictions está ausente ou não é array', () => {
+    expect(normalizarGoalRestrictions({}).restrictions).toEqual([]);
+    expect(normalizarGoalRestrictions({ restrictions: 'lactose' }).restrictions).toEqual([]);
   });
 });
 

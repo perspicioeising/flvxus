@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatarData } from '@/lib/datas';
 import { GerarDietaIa, type AlunoOpcao } from '@/components/professor/ia/gerar-dieta';
+import { DietaStatusControl } from '@/components/professor/dietas/status-control';
+import { STATUS_LABEL, STATUS_VARIANTE } from '@/components/professor/treinos/labels';
+import type { PlanStatus } from '@/types/database.types';
 
 /**
  * Tela de DIETAS do professor. Oferece a geração de dieta com IA
@@ -31,7 +34,7 @@ export default async function ProfessorDietasPage() {
   const alunos: AlunoOpcao[] = alunosData ?? [];
   const dietas = (dietasData ?? []).map((d) => ({
     id: d.id,
-    status: d.status,
+    status: d.status as PlanStatus,
     targetKcal: d.target_kcal,
     createdAt: d.created_at,
     alunoNome:
@@ -68,17 +71,20 @@ export default async function ProfessorDietasPage() {
             {dietas.map((d) => (
               <li key={d.id}>
                 <Card>
-                  <CardContent className="flex items-center justify-between gap-3 p-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-foreground">
-                        {d.alunoNome ?? 'Aluno'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatarData(d.createdAt)}
-                        {d.targetKcal != null ? ` · ${d.targetKcal} kcal` : ''}
-                      </p>
+                  <CardContent className="space-y-4 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {d.alunoNome ?? 'Aluno'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatarData(d.createdAt)}
+                          {d.targetKcal != null ? ` · ${d.targetKcal} kcal` : ''}
+                        </p>
+                      </div>
+                      <Badge variant={STATUS_VARIANTE[d.status]}>{STATUS_LABEL[d.status]}</Badge>
                     </div>
-                    <Badge variant="secondary">{d.status}</Badge>
+                    <DietaStatusControl dietId={d.id} statusAtual={d.status} />
                   </CardContent>
                 </Card>
               </li>
