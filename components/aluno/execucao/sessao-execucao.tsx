@@ -167,11 +167,22 @@ export function SessaoExecucao({
     string | null
   >(null);
 
+  // Reinicia o timer de descanso a cada série concluída: a key do
+  // <TimerDescanso> combina este contador, forçando a remontagem (que zera e
+  // auto-inicia) mesmo entre séries do MESMO exercício.
+  const [descansoResetKey, setDescansoResetKey] = React.useState(0);
+
   // Ao navegar entre exercícios ou trocar de dia, esconde o descanso acoplado
   // (ele volta a aparecer quando o aluno concluir uma série do novo item).
   React.useEffect(() => {
     setDescansoAtivoItemId(null);
   }, [indiceAtual, diaSelecionado]);
+
+  // Série atual mostrada (com inputs) por exercício. A UI exibe UMA série por
+  // vez; as já concluídas aparecem em resumo compacto. Chave = item.id.
+  const [serieAtualPorItem, setSerieAtualPorItem] = React.useState<
+    Record<string, number>
+  >({});
 
   // Estado inicial: uma série por set prescrito de TODOS os itens da ficha, com
   // os defaults da prescrição. Guardamos todos para preservar o que o aluno já
@@ -228,6 +239,23 @@ export function SessaoExecucao({
       itemAtual ? logs.filter((log) => log.plan_item_id === itemAtual.id) : [],
     [logs, itemAtual]
   );
+
+  // Série atual do exercício visível: usa o estado explícito (quando o aluno já
+  // avançou neste item) ou cai na primeira série ainda não concluída; fallback
+  // na série 1, sempre limitada a `itemAtual.sets`.
+  const serieAtual = React.useMemo(() => {
+    if (!itemAtual) return 1;
+    const explicito = serieAtualPorItem[itemAtual.id];
+    if (explicito !== undefined) {
+      return Math.min(Math.max(explicito, 1), itemAtual.sets);
+    }
+    for (let n = 1; n <= itemAtual.sets; n += 1) {
+      const estado = series[chaveSerie(itemAtual.id, n)];
+      if (!estado?.completed) return n;
+    }
+    // Todas concluídas: permanece na última (o botão "Próximo" já realça).
+    return itemAtual.sets;
+  }, [itemAtual, serieAtualPorItem, series]);
 
   /** Garante uma sessão criada; retorna o id ou null se falhar. */
   async function garantirSessao(): Promise<string | null> {
@@ -322,6 +350,17 @@ export function SessaoExecucao({
       if (r.ok && novoCompleted) {
         // Descanso acoplado: dispara o timer auto-iniciado deste exercício.
         setDescansoAtivoItemId(itemId);
+        // Reinicia o descanso a cada série concluída (remonta o TimerDescanso).
+        setDescansoResetKey((k) => k + 1);
+        // Avança para a próxima série (uma por vez); na última, permanece nela
+        // — o botão "Próximo exercício" passa a realçar via exercicioConcluido.
+        const item = itens.find((it) => it.id === itemId);
+        if (item) {
+          setSerieAtualPorItem((m) => ({
+            ...m,
+            [itemId]: Math.min((m[itemId] ?? setNumber) + 1, item.sets),
+          }));
+        }
       }
 
       if (!r.ok) {
@@ -427,14 +466,53 @@ export function SessaoExecucao({
               }}
             />
 
-            <ul className="space-y-3">
-              {Array.from({ length: itemAtual.sets }).map((_, index) => {
-                const setNumber = index + 1;
-                const chave = chaveSerie(itemAtual.id, setNumber);
-                const estado = series[chave];
-                if (!estado) return null;
+            {/* Resumo compacto das séries JÁ concluídas deste exercício (sem
+                inputs), para a tela ficar limpa e o descanso fácil de ver. */}
+            {(() => {
+              const concluidas = Array.from(
+                { length: itemAtual.sets },
+                (_, index) => index + 1
+              ).filter((setNumber) => {
+                const estado = series[chaveSerie(itemAtual.id, setNumber)];
+                return estado?.completed;
+              });
+              if (concluidas.length === 0) return null;
+              return (
+                <ul className="space-y-2" aria-label="Séries concluídas">
+                  {concluidas.map((setNumber) => {
+                    const estado = series[chaveSerie(itemAtual.id, setNumber)];
+                    return (
+                      <li
+                        key={chaveSerie(itemAtual.id, setNumber)}
+                        className="flex items-center justify-between rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm"
+                      >
+                        <span className="flex items-center gap-2 font-medium text-foreground">
+                          <Check
+                            className="h-4 w-4 text-primary"
+                            aria-hidden="true"
+                          />
+                          Série {setNumber}
+                        </span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {estado.reps !== '' ? `${estado.reps} reps` : '—'}
+                          {estado.carga !== '' ? ` · ${estado.carga} kg` : ''}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()}
 
-                return (
+            {/* Exatamente UMA série por vez (a série atual) com inputs. */}
+            {(() => {
+              const setNumber = serieAtual;
+              const chave = chaveSerie(itemAtual.id, setNumber);
+              const estado = series[chave];
+              if (!estado) return null;
+
+              return (
+                <ul className="space-y-3">
                   <li
                     key={chave}
                     className={cn(
@@ -446,7 +524,7 @@ export function SessaoExecucao({
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-muted-foreground">
-                        Série {setNumber}
+                        Série {setNumber} de {itemAtual.sets}
                       </span>
                     </div>
 
@@ -502,16 +580,16 @@ export function SessaoExecucao({
                       {estado.completed ? 'Série concluída' : 'Concluir série'}
                     </Button>
                   </li>
-                );
-              })}
-            </ul>
+                </ul>
+              );
+            })()}
 
             {/* Descanso acoplado: só aparece após concluir uma série deste
                 exercício e quando há descanso prescrito; auto-inicia. */}
             {itemAtual.descansoSegundos &&
             descansoAtivoItemId === itemAtual.id ? (
               <TimerDescanso
-                key={itemAtual.id}
+                key={`${itemAtual.id}:${descansoResetKey}`}
                 segundos={itemAtual.descansoSegundos}
                 autoIniciar
               />
