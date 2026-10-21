@@ -300,6 +300,7 @@ export interface Database {
           plan_id: string;
           exercise_id: string;
           weekday: number | null;
+          division: string | null;
           order_index: number;
           sets: number | null;
           reps: string | null;
@@ -313,6 +314,7 @@ export interface Database {
           plan_id: string;
           exercise_id: string;
           weekday?: number | null;
+          division?: string | null;
           order_index?: number;
           sets?: number | null;
           reps?: string | null;
@@ -326,6 +328,7 @@ export interface Database {
           plan_id?: string;
           exercise_id?: string;
           weekday?: number | null;
+          division?: string | null;
           order_index?: number;
           sets?: number | null;
           reps?: string | null;
@@ -344,6 +347,7 @@ export interface Database {
           started_at: string;
           finished_at: string | null;
           notes: string | null;
+          division: string | null;
           perceived_intensity: number | null;
           created_at: string;
           updated_at: string;
@@ -356,6 +360,7 @@ export interface Database {
           started_at?: string;
           finished_at?: string | null;
           notes?: string | null;
+          division?: string | null;
           perceived_intensity?: number | null;
           created_at?: string;
           updated_at?: string;
@@ -368,6 +373,7 @@ export interface Database {
           started_at?: string;
           finished_at?: string | null;
           notes?: string | null;
+          division?: string | null;
           perceived_intensity?: number | null;
           created_at?: string;
           updated_at?: string;
