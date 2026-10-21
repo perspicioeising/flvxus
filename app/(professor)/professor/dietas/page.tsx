@@ -84,6 +84,12 @@ export default async function ProfessorDietasPage() {
                       </div>
                       <Badge variant={STATUS_VARIANTE[d.status]}>{STATUS_LABEL[d.status]}</Badge>
                     </div>
+                    <Link
+                      href={`/professor/dietas/${d.id}`}
+                      className="inline-flex min-h-11 items-center text-sm font-medium text-foreground underline"
+                    >
+                      Ver detalhes
+                    </Link>
                     <DietaStatusControl dietId={d.id} statusAtual={d.status} />
                   </CardContent>
                 </Card>
