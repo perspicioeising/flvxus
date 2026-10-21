@@ -5,7 +5,14 @@ import { createClient } from '@/lib/supabase/browser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Lock, Mail, User, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { senhaSchema } from '@/schemas/auth';
@@ -136,17 +143,14 @@ export default function SetPasswordPage() {
 
   if (isValidating) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-0 shadow-2xl rounded-3xl">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="relative mb-6">
-              <div className="w-16 h-16 border-4 border-green-200 dark:border-green-800 rounded-full animate-spin border-t-green-600 dark:border-t-green-400"></div>
-              <div className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-ping border-t-green-400 dark:border-t-green-500"></div>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <Loader2 className="mb-6 h-10 w-10 animate-spin text-primary" aria-hidden="true" />
+            <h3 className="mb-2 text-lg font-semibold text-foreground">
               Processando seu acesso...
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-center text-sm">
+            <p className="text-sm text-muted-foreground">
               Validando o seu convite
             </p>
           </CardContent>
@@ -157,19 +161,24 @@ export default function SetPasswordPage() {
 
   if (error && !userInfo) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-0 shadow-2xl rounded-3xl">
-          <CardContent className="text-center py-12">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Link inválido
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-3 text-center">
+            <div
+              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive"
+              aria-hidden="true"
+            >
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <CardTitle>Link inválido</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent>
             <Button
               onClick={() => {
                 window.location.href = '/login';
               }}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              className="w-full min-h-11"
             >
               Ir para Login
             </Button>
@@ -180,68 +189,65 @@ export default function SetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50/40 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-0 shadow-2xl rounded-3xl">
-        <CardHeader className="text-center pb-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-            <Lock className="h-10 w-10 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-3 text-center">
+          <div
+            className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+            aria-hidden="true"
+          >
+            <Lock className="h-6 w-6" />
           </div>
-
-          <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Bem-vindo!
-          </CardTitle>
-
-          <p className="text-gray-600 dark:text-gray-400">
+          <CardTitle>Bem-vindo!</CardTitle>
+          <CardDescription>
             Defina sua senha para acessar a plataforma
-          </p>
+          </CardDescription>
 
           {userInfo && (
-            <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-              <div className="space-y-2">
-                <div className="flex items-center justify-center gap-2 text-green-800 dark:text-green-300">
-                  <User className="h-4 w-4" />
-                  <span className="font-semibold">{userInfo.name}</span>
-                </div>
-                <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400 text-sm">
-                  <Mail className="h-4 w-4" />
-                  <span>{userInfo.email}</span>
-                </div>
-                {userInfo.role === 'student' && (
-                  <p className="text-xs text-green-600 dark:text-green-400 text-center">
-                    Convite de: {userInfo.trainerName}
-                  </p>
-                )}
+            <div className="mt-2 space-y-2 rounded-lg border bg-muted/50 p-4 text-left">
+              <div className="flex items-center justify-center gap-2 text-foreground">
+                <User className="h-4 w-4" aria-hidden="true" />
+                <span className="font-semibold">{userInfo.name}</span>
               </div>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-4 w-4" aria-hidden="true" />
+                <span>{userInfo.email}</span>
+              </div>
+              {userInfo.role === 'student' && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Convite de: {userInfo.trainerName}
+                </p>
+              )}
             </div>
           )}
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent>
           <form onSubmit={handleSetPassword} className="space-y-5">
             {/* Nova Senha */}
             <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-sm font-semibold text-gray-800 dark:text-gray-200"
-              >
-                Nova Senha
-              </Label>
+              <Label htmlFor="password">Nova senha</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10 bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 h-12 text-base"
+                  className="min-h-11 pr-10"
                   placeholder="Mínimo 8 caracteres"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                  )}
                 </button>
               </div>
             </div>
@@ -250,48 +256,44 @@ export default function SetPasswordPage() {
             {password && (
               <div
                 className={`flex items-center gap-2 text-xs transition-colors ${
-                  senhaValida ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+                  senhaValida ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
-                <CheckCircle className="h-3 w-3" />
+                <CheckCircle className="h-3 w-3" aria-hidden="true" />
                 <span>Mínimo 8 caracteres</span>
               </div>
             )}
 
             {/* Confirmar Senha */}
             <div className="space-y-2">
-              <Label
-                htmlFor="confirmPassword"
-                className="text-sm font-semibold text-gray-800 dark:text-gray-200"
-              >
-                Confirmar Senha
-              </Label>
+              <Label htmlFor="confirmPassword">Confirmar senha</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pr-10 bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 h-12 text-base"
+                  className="min-h-11 pr-10"
                   placeholder="Confirme sua senha"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4" aria-hidden="true" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4" aria-hidden="true" />
                   )}
                 </button>
               </div>
 
               {confirmPassword && !senhasConferem && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
+                <p className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3 w-3" aria-hidden="true" />
                   As senhas não coincidem
                 </p>
               )}
@@ -299,29 +301,27 @@ export default function SetPasswordPage() {
 
             {/* Erro */}
             {error && (
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
-                </div>
-              </div>
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
             {/* Botão de Confirmar */}
             <Button
               type="submit"
               disabled={!senhaValida || !senhasConferem || isLoading}
-              className="w-full h-14 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white rounded-xl font-bold text-lg shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:transform-none disabled:opacity-50 border-0"
+              className="w-full min-h-11"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                  Definindo Senha...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                  Definindo senha...
                 </>
               ) : (
                 <>
-                  <Lock className="w-5 h-5 mr-3" />
-                  Definir Senha e Entrar
+                  <Lock className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Definir senha e entrar
                 </>
               )}
             </Button>
