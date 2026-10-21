@@ -5,12 +5,17 @@ import { SessaoExecucao, type ItemExecucao } from './sessao-execucao';
 
 // Mock das Server Actions: o teste foca no fluxo de UI de edição, não no banco.
 const registrarSerie = vi.fn(async (_arg: unknown) => ({ ok: true, id: 'log-1' }));
-const iniciarSessao = vi.fn(async (_arg: unknown) => ({ ok: true, id: 'sess-1' }));
+const iniciarSessao = vi.fn(async (..._args: unknown[]) => ({
+  ok: true,
+  id: 'sess-1',
+}));
 const finalizarSessao = vi.fn(async (_arg: unknown) => ({ ok: true, id: 'sess-1' }));
 
 vi.mock('@/actions/execucao', () => ({
   registrarSerie: (arg: unknown) => registrarSerie(arg),
-  iniciarSessao: (arg: unknown) => iniciarSessao(arg),
+  // Repassa TODOS os argumentos: o eixo divisão chama `iniciarSessao(planId,
+  // divisao)`, e o caminho legado chama `iniciarSessao(planId)` (um argumento).
+  iniciarSessao: (...args: unknown[]) => iniciarSessao(...args),
   finalizarSessao: (arg: unknown) => finalizarSessao(arg),
 }));
 
@@ -169,5 +174,93 @@ describe('SessaoExecucao — editar série já concluída', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('SessaoExecucao — eixo de agrupamento (divisão vs. dia)', () => {
+  it('ficha por divisão mostra o SeletorDivisao e filtra os itens da divisão ativa', () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[
+          itemFake({ id: 'a1', nome: 'Supino A', division: 'A', weekday: null }),
+          itemFake({ id: 'b1', nome: 'Agacho B', division: 'B', weekday: null }),
+        ]}
+      />
+    );
+
+    // Seletor de DIVISÃO presente (e não o de dia).
+    expect(
+      screen.getByRole('group', { name: 'Escolha a divisão do treino' })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('group', { name: 'Escolha o dia do treino' })
+    ).not.toBeInTheDocument();
+
+    // Abre na primeira divisão ('A'): só o item da divisão A está visível.
+    expect(screen.getByText('Supino A')).toBeInTheDocument();
+    expect(screen.queryByText('Agacho B')).not.toBeInTheDocument();
+  });
+
+  it('ficha por divisão carimba a divisão ativa ao concluir a primeira série', async () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[
+          itemFake({ id: 'a1', nome: 'Supino A', division: 'A', weekday: null }),
+          itemFake({ id: 'b1', nome: 'Agacho B', division: 'B', weekday: null }),
+        ]}
+      />
+    );
+
+    await concluirSerieAtual('10');
+
+    expect(iniciarSessao).toHaveBeenCalledWith('plan-1', 'A');
+  });
+
+  it('ao trocar de divisão, mostra os itens da nova divisão', () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[
+          itemFake({ id: 'a1', nome: 'Supino A', division: 'A', weekday: null }),
+          itemFake({ id: 'b1', nome: 'Agacho B', division: 'B', weekday: null }),
+        ]}
+      />
+    );
+
+    const seletor = screen.getByRole('group', {
+      name: 'Escolha a divisão do treino',
+    });
+    fireEvent.click(within(seletor).getByText(/^B/));
+
+    expect(screen.getByText('Agacho B')).toBeInTheDocument();
+    expect(screen.queryByText('Supino A')).not.toBeInTheDocument();
+  });
+
+  it('ficha legada por dia chama iniciarSessao com UM argumento (regressão)', async () => {
+    // Dois dias para garantir que o SeletorDia aparece (auto-esconde com ≤ 1).
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[
+          itemFake({ id: 'd1', nome: 'Supino seg', weekday: 1 }),
+          itemFake({ id: 'd2', nome: 'Agacho ter', weekday: 2 }),
+        ]}
+      />
+    );
+
+    // Seletor de DIA presente (e não o de divisão).
+    expect(
+      screen.getByRole('group', { name: 'Escolha o dia do treino' })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('group', { name: 'Escolha a divisão do treino' })
+    ).not.toBeInTheDocument();
+
+    await concluirSerieAtual('10');
+
+    // UM único argumento — fichas legadas não carimbam divisão.
+    expect(iniciarSessao).toHaveBeenCalledWith('plan-1');
   });
 });

@@ -47,9 +47,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { agruparPorDia } from '@/lib/semana';
+import { agruparPorDivisao } from '@/lib/divisao';
 import { TimerDescanso } from './timer-descanso';
 import { ExercicioInfo } from './exercicio-info';
 import { SeletorDia, type OpcaoDia } from './seletor-dia';
+import { SeletorDivisao, type OpcaoDivisao } from './seletor-divisao';
 
 /** Item prescrito, com tudo que a UI de execução precisa exibir. */
 export interface ItemExecucao {
@@ -57,6 +59,12 @@ export interface ItemExecucao {
   nome: string;
   /** Dia da semana (0..6) ou `null` (sem dia definido) deste item. */
   weekday: number | null;
+  /**
+   * Divisão (ex.: 'A') ou `null` deste item. Quando algum item tem divisão, a
+   * ficha inteira é tratada por divisão (e não por dia). Opcional para não
+   * quebrar fichas/fakes legados que só carregam `weekday`.
+   */
+  division?: string | null;
   sets: number;
   reps: string | null;
   cargaAlvo: number | null;
@@ -99,15 +107,23 @@ export function SessaoExecucao({
   planId,
   itens,
   diaInicial = null,
+  divisaoInicial = null,
 }: {
   planId: string;
   itens: ItemExecucao[];
   /**
    * Dia (0..6) em que o seletor deve abrir — ex.: deep-link `?dia=N` a partir
    * da ficha. Só é respeitado se houver itens nesse dia; senão cai no primeiro
-   * dia com exercícios. `null` = sem preferência.
+   * dia com exercícios. `null` = sem preferência. Usado só no eixo DIA (legado).
    */
   diaInicial?: number | null;
+  /**
+   * Divisão (ex.: 'A') em que o seletor deve abrir — ex.: deep-link `?divisao=A`
+   * a partir da ficha. Só é respeitada se houver itens nessa divisão; senão cai
+   * na primeira divisão com exercícios. `null` = sem preferência. Usada só no
+   * eixo DIVISÃO.
+   */
+  divisaoInicial?: string | null;
 }) {
   const router = useRouter();
   const [sessionId, setSessionId] = React.useState<string | null>(null);
@@ -119,19 +135,44 @@ export function SessaoExecucao({
   const [intensidade, setIntensidade] = React.useState<number | null>(null);
   const [pendente, startTransition] = React.useTransition();
 
+  // Eixo de agrupamento da ficha: se QUALQUER item tem divisão, a ficha é por
+  // divisão (A/B/C/…); senão é legada por dia da semana. Detecção barata e
+  // determinística — o professor grava um eixo só por ficha.
+  const porDivisao = React.useMemo(
+    () => itens.some((i) => (i.division ?? null) !== null),
+    [itens]
+  );
+
+  // --- Eixo DIA (legado): mantido byte-a-byte em comportamento. ---
   // Dias com itens (só os que têm exercícios; inclui o balde "Sem dia definido").
-  const grupos = React.useMemo(
+  const gruposDia = React.useMemo(
     () => agruparPorDia(itens, (item) => item.weekday),
     [itens]
   );
-  const opcoes: OpcaoDia[] = React.useMemo(
+  const opcoesDia: OpcaoDia[] = React.useMemo(
     () =>
-      grupos.map((g) => ({
+      gruposDia.map((g) => ({
         weekday: g.weekday,
         rotulo: g.rotulo,
         total: g.itens.length,
       })),
-    [grupos]
+    [gruposDia]
+  );
+
+  // --- Eixo DIVISÃO: espelho do eixo dia, usando `agruparPorDivisao` (que já
+  // ordena por localeCompare pt-BR com o balde "Divisão única" por último). ---
+  const gruposDivisao = React.useMemo(
+    () => agruparPorDivisao(itens, (item) => item.division ?? null),
+    [itens]
+  );
+  const opcoesDivisao: OpcaoDivisao[] = React.useMemo(
+    () =>
+      gruposDivisao.map((g) => ({
+        division: g.division,
+        rotulo: g.rotulo,
+        total: g.itens.length,
+      })),
+    [gruposDivisao]
   );
 
   // Dia escolhido: se o deep-link (`diaInicial`) aponta um dia que tem itens,
@@ -139,24 +180,51 @@ export function SessaoExecucao({
   // hoje). A troca de dia continua livre pelo seletor.
   const [diaSelecionado, setDiaSelecionado] = React.useState<number | null>(
     () =>
-      diaInicial !== null && grupos.some((g) => g.weekday === diaInicial)
+      diaInicial !== null && gruposDia.some((g) => g.weekday === diaInicial)
         ? diaInicial
-        : grupos[0]?.weekday ?? null
+        : gruposDia[0]?.weekday ?? null
   );
 
-  // Itens do dia atualmente selecionado (ou todos, se não houver seletor).
-  const itensVisiveis = React.useMemo(() => {
-    const grupo = grupos.find((g) => g.weekday === diaSelecionado);
-    return grupo ? grupo.itens : (grupos[0]?.itens ?? []);
-  }, [grupos, diaSelecionado]);
+  // Divisão escolhida: espelho exato da regra do dia. Fallback = primeira
+  // divisão com itens (pode ser o balde "Divisão única" se não houver nomeadas).
+  const [divisaoSelecionada, setDivisaoSelecionada] = React.useState<
+    string | null
+  >(() =>
+    divisaoInicial != null &&
+    gruposDivisao.some((g) => g.division === divisaoInicial)
+      ? divisaoInicial
+      : gruposDivisao[0]?.division ?? null
+  );
 
-  // Fluxo guiado: um exercício por vez. `indiceAtual` navega dentro do dia.
+  // Itens do grupo atualmente selecionado, ramificando pelo eixo da ficha.
+  const itensVisiveis = React.useMemo(() => {
+    if (porDivisao) {
+      const grupo = gruposDivisao.find((g) => g.division === divisaoSelecionada);
+      return grupo ? grupo.itens : (gruposDivisao[0]?.itens ?? []);
+    }
+    const grupo = gruposDia.find((g) => g.weekday === diaSelecionado);
+    return grupo ? grupo.itens : (gruposDia[0]?.itens ?? []);
+  }, [
+    porDivisao,
+    gruposDia,
+    gruposDivisao,
+    diaSelecionado,
+    divisaoSelecionada,
+  ]);
+
+  // Valor do grupo ativo (dia OU divisão) — usado como dependência dos resets
+  // para que trocar de divisão também volte ao exercício 0 e esconda o descanso.
+  const grupoAtivo: number | string | null = porDivisao
+    ? divisaoSelecionada
+    : diaSelecionado;
+
+  // Fluxo guiado: um exercício por vez. `indiceAtual` navega dentro do grupo.
   const [indiceAtual, setIndiceAtual] = React.useState(0);
 
-  // Ao trocar de dia, volta ao primeiro exercício.
+  // Ao trocar de grupo (dia ou divisão), volta ao primeiro exercício.
   React.useEffect(() => {
     setIndiceAtual(0);
-  }, [diaSelecionado]);
+  }, [grupoAtivo]);
 
   // Clamp defensivo: nunca indexar fora quando a lista do dia encolher.
   React.useEffect(() => {
@@ -182,11 +250,12 @@ export function SessaoExecucao({
   // auto-inicia) mesmo entre séries do MESMO exercício.
   const [descansoResetKey, setDescansoResetKey] = React.useState(0);
 
-  // Ao navegar entre exercícios ou trocar de dia, esconde o descanso acoplado
-  // (ele volta a aparecer quando o aluno concluir uma série do novo item).
+  // Ao navegar entre exercícios ou trocar de grupo (dia/divisão), esconde o
+  // descanso acoplado (ele volta a aparecer quando o aluno concluir uma série
+  // do novo item).
   React.useEffect(() => {
     setDescansoAtivoItemId(null);
-  }, [indiceAtual, diaSelecionado]);
+  }, [indiceAtual, grupoAtivo]);
 
   // Série atual mostrada (com inputs) por exercício. A UI exibe UMA série por
   // vez; as já concluídas aparecem em resumo compacto. Chave = item.id.
@@ -291,7 +360,9 @@ export function SessaoExecucao({
     if (sessionId) return sessionId;
     setIniciando(true);
     try {
-      const r = await iniciarSessao(planId);
+      const r = porDivisao
+        ? await iniciarSessao(planId, divisaoSelecionada ?? undefined)
+        : await iniciarSessao(planId);
       if (r.ok && r.id) {
         setSessionId(r.id);
         return r.id;
@@ -476,12 +547,21 @@ export function SessaoExecucao({
 
   return (
     <div className="space-y-6">
-      {/* Seletor de dia/divisão: só aparece quando há mais de um dia com itens. */}
-      <SeletorDia
-        opcoes={opcoes}
-        selecionado={diaSelecionado}
-        onSelecionar={setDiaSelecionado}
-      />
+      {/* Seletor do eixo da ficha: divisão (A/B/C/…) ou dia (legado). Cada um
+          se auto-esconde quando há ≤ 1 opção. */}
+      {porDivisao ? (
+        <SeletorDivisao
+          opcoes={opcoesDivisao}
+          selecionado={divisaoSelecionada}
+          onSelecionar={setDivisaoSelecionada}
+        />
+      ) : (
+        <SeletorDia
+          opcoes={opcoesDia}
+          selecionado={diaSelecionado}
+          onSelecionar={setDiaSelecionado}
+        />
+      )}
 
       {/* Barra de progresso fixa no topo do conteúdo. */}
       <div className="space-y-2">
