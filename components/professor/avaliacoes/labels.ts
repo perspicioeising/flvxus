@@ -36,6 +36,14 @@ export const CIRCUNFERENCIA_LABEL: Record<string, string> = {
   right_thigh_cm: 'Coxa dir.',
   left_calf_cm: 'Panturrilha esq.',
   right_calf_cm: 'Panturrilha dir.',
+  left_flexed_arm_cm: 'Braço contraído esq.',
+  right_flexed_arm_cm: 'Braço contraído dir.',
+  left_forearm_cm: 'Antebraço esq.',
+  right_forearm_cm: 'Antebraço dir.',
+  left_mid_thigh_cm: 'Coxa medial esq.',
+  right_mid_thigh_cm: 'Coxa medial dir.',
+  left_distal_thigh_cm: 'Coxa distal esq.',
+  right_distal_thigh_cm: 'Coxa distal dir.',
 };
 
 /** Rótulos das dobras cutâneas (colunas `skf_*` + bíceps em measurements). */

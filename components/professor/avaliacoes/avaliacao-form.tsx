@@ -27,6 +27,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  ANAMNESE_TEXTO_PADRAO,
+  CIRCUNFERENCIAS,
   criarAvaliacaoSchema,
   DOBRAS_POR_PROTOCOLO,
   PROTOCOLOS,
@@ -50,21 +52,6 @@ const OBJETIVOS: GoalType[] = [
   'rehabilitation',
   'performance',
 ];
-
-const CIRCUNFERENCIAS_FORM = [
-  'neck_cm',
-  'shoulder_cm',
-  'chest_cm',
-  'waist_cm',
-  'abdomen_cm',
-  'hip_cm',
-  'left_arm_cm',
-  'right_arm_cm',
-  'left_thigh_cm',
-  'right_thigh_cm',
-  'left_calf_cm',
-  'right_calf_cm',
-] as const;
 
 /** Opção de aluno para o select da etapa 1. */
 export interface OpcaoAluno {
@@ -94,7 +81,11 @@ export interface AvaliacaoFormProps {
 
 const ETAPAS = ['Dados básicos', 'Protocolo', 'Medidas', 'Fotos'] as const;
 
-function valoresPadrao(iniciais?: Partial<AvaliacaoFormValues>, alunoFixo?: string): AvaliacaoFormValues {
+function valoresPadrao(
+  modo: 'criar' | 'editar',
+  iniciais?: Partial<AvaliacaoFormValues>,
+  alunoFixo?: string
+): AvaliacaoFormValues {
   const base: Record<string, string> = {
     student_id: alunoFixo ?? iniciais?.student_id ?? '',
     assessed_at: iniciais?.assessed_at ?? '',
@@ -105,12 +96,14 @@ function valoresPadrao(iniciais?: Partial<AvaliacaoFormValues>, alunoFixo?: stri
     height_cm: iniciais?.height_cm ?? '',
     body_fat_pct: iniciais?.body_fat_pct ?? '',
     goal: iniciais?.goal ?? '',
-    anamnesis: iniciais?.anamnesis ?? '',
+    // No modo criar a anamnese vem pré-preenchida com o roteiro padrão; no modo
+    // editar carrega o valor salvo (sem sobrescrever o que o professor digitou).
+    anamnesis: iniciais?.anamnesis ?? (modo === 'criar' ? ANAMNESE_TEXTO_PADRAO : ''),
     // LGPD adiado por decisão de escopo: fotos liberadas por padrão (sem gate de
     // consentimento). Reintroduzir a checkbox se o LGPD voltar.
     photos_consent: iniciais?.photos_consent ?? 'true',
   };
-  for (const c of CIRCUNFERENCIAS_FORM) base[c] = iniciais?.[c] ?? '';
+  for (const c of CIRCUNFERENCIAS) base[c] = iniciais?.[c] ?? '';
   for (const d of Object.keys(DOBRA_LABEL)) base[d] = iniciais?.[d] ?? '';
   return base as AvaliacaoFormValues;
 }
@@ -131,7 +124,7 @@ export function AvaliacaoForm({
 
   const form = useForm<AvaliacaoFormValues>({
     resolver: zodResolver(criarAvaliacaoSchema) as never,
-    defaultValues: valoresPadrao(valoresIniciais, alunoFixo),
+    defaultValues: valoresPadrao(modo, valoresIniciais, alunoFixo),
     mode: 'onBlur',
   });
 
@@ -491,7 +484,7 @@ export function AvaliacaoForm({
               Circunferências (cm, opcionais)
             </legend>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {CIRCUNFERENCIAS_FORM.map((campo) => (
+              {CIRCUNFERENCIAS.map((campo) => (
                 <FormField
                   key={campo}
                   control={form.control}

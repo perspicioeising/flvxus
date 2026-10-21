@@ -105,6 +105,8 @@ const ASSESSMENT_COLUMNS =
   'body_fat_pct, lean_mass_kg, fat_mass_kg, muscle_mass_kg, ' +
   'neck_cm, shoulder_cm, chest_cm, waist_cm, abdomen_cm, hip_cm, ' +
   'left_arm_cm, right_arm_cm, left_thigh_cm, right_thigh_cm, left_calf_cm, right_calf_cm, ' +
+  'left_flexed_arm_cm, right_flexed_arm_cm, left_forearm_cm, right_forearm_cm, ' +
+  'left_mid_thigh_cm, right_mid_thigh_cm, left_distal_thigh_cm, right_distal_thigh_cm, ' +
   'skf_triceps, skf_subscapular, skf_chest, skf_midaxillary, skf_suprailiac, skf_abdominal, skf_thigh, ' +
   'measurements, anamnesis, goal, student_id, tenant_id';
 
@@ -122,6 +124,10 @@ const CIRC_PT: Record<string, string> = {
   abdomen_cm: 'abdômen', hip_cm: 'quadril', left_arm_cm: 'braço esq.', right_arm_cm: 'braço dir.',
   left_thigh_cm: 'coxa esq.', right_thigh_cm: 'coxa dir.', left_calf_cm: 'panturrilha esq.',
   right_calf_cm: 'panturrilha dir.',
+  left_flexed_arm_cm: 'braço contraído esq.', right_flexed_arm_cm: 'braço contraído dir.',
+  left_forearm_cm: 'antebraço esq.', right_forearm_cm: 'antebraço dir.',
+  left_mid_thigh_cm: 'coxa medial esq.', right_mid_thigh_cm: 'coxa medial dir.',
+  left_distal_thigh_cm: 'coxa distal esq.', right_distal_thigh_cm: 'coxa distal dir.',
 };
 const DOBRA_PT: Record<string, string> = {
   skf_triceps: 'tríceps', skf_subscapular: 'subescapular', skf_chest: 'peitoral',

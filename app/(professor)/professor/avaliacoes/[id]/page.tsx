@@ -28,21 +28,7 @@ import {
   GENERO_LABEL,
   protocoloLabel,
 } from '@/components/professor/avaliacoes/labels';
-
-const CIRCUNFERENCIAS = [
-  'neck_cm',
-  'shoulder_cm',
-  'chest_cm',
-  'waist_cm',
-  'abdomen_cm',
-  'hip_cm',
-  'left_arm_cm',
-  'right_arm_cm',
-  'left_thigh_cm',
-  'right_thigh_cm',
-  'left_calf_cm',
-  'right_calf_cm',
-] as const;
+import { CIRCUNFERENCIAS } from '@/schemas/avaliacao';
 
 const DOBRAS_COLUNA = [
   'skf_triceps',

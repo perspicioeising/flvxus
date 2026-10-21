@@ -17,21 +17,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import type { AssessmentProtocol } from '@/types/database.types';
-
-const CIRCUNFERENCIAS = [
-  'neck_cm',
-  'shoulder_cm',
-  'chest_cm',
-  'waist_cm',
-  'abdomen_cm',
-  'hip_cm',
-  'left_arm_cm',
-  'right_arm_cm',
-  'left_thigh_cm',
-  'right_thigh_cm',
-  'left_calf_cm',
-  'right_calf_cm',
-] as const;
+import { CIRCUNFERENCIAS } from '@/schemas/avaliacao';
 
 const DOBRAS_COLUNA = [
   'skf_triceps',
@@ -70,6 +56,14 @@ export interface AvaliacaoResumo {
   right_thigh_cm: number | null;
   left_calf_cm: number | null;
   right_calf_cm: number | null;
+  left_flexed_arm_cm: number | null;
+  right_flexed_arm_cm: number | null;
+  left_forearm_cm: number | null;
+  right_forearm_cm: number | null;
+  left_mid_thigh_cm: number | null;
+  right_mid_thigh_cm: number | null;
+  left_distal_thigh_cm: number | null;
+  right_distal_thigh_cm: number | null;
   // Dobras cutâneas (mm) lidas da linha crua; usadas pelo MedidasVisual.
   skf_triceps: number | null;
   skf_subscapular: number | null;

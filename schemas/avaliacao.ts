@@ -104,7 +104,37 @@ export const CIRCUNFERENCIAS = [
   'right_thigh_cm',
   'left_calf_cm',
   'right_calf_cm',
+  'left_flexed_arm_cm',
+  'right_flexed_arm_cm',
+  'left_forearm_cm',
+  'right_forearm_cm',
+  'left_mid_thigh_cm',
+  'right_mid_thigh_cm',
+  'left_distal_thigh_cm',
+  'right_distal_thigh_cm',
 ] as const;
+
+/**
+ * Texto padrão da Anamnese (roteiro pt-BR). Pré-preenche o campo livre no modo
+ * criar; o professor edita o que for necessário. A gravação continua como
+ * `{ texto }` (jsonb) — este texto é só o valor inicial.
+ */
+export const ANAMNESE_TEXTO_PADRAO = `Histórico de saúde: doenças preexistentes, histórico cardiovascular, pressão arterial:
+
+Lesões e limitações: dores, cirurgias, restrições de movimento:
+
+Medicamentos e suplementos:
+
+Rotina diária: trabalho, nível de atividade física, tempo disponível para treinar:
+
+Hábitos de vida: alimentação, hidratação, qualidade do sono, estresse:
+
+Disponibilidade para treinar: dias da semana e duração das sessões:
+
+Histórico familiar: doenças cardiovasculares e outras condições:
+
+Sinais/sintomas durante o exercício: dor no peito, tontura, falta de ar incomum, desmaios:
+`;
 
 /**
  * Normaliza a entrada numérica vinda do form (sempre string): aceita decimal com
