@@ -38,6 +38,17 @@ function parseDia(valor: string | string[] | undefined): number | null {
 }
 
 /**
+ * Converte o searchParam `?divisao` num rótulo de divisão ou `null`. O Next já
+ * entrega o valor URL-decodificado, então só fazemos `trim`; vazio vira `null`.
+ */
+function parseDivisao(valor: string | string[] | undefined): string | null {
+  const bruto = Array.isArray(valor) ? valor[0] : valor;
+  if (bruto === undefined) return null;
+  const limpo = bruto.trim();
+  return limpo === '' ? null : limpo;
+}
+
+/**
  * Execução de uma ficha liberada. Carrega SEMPRE todos os itens da ficha e
  * entrega ao Client Component, que mostra um seletor dos dias/divisões com
  * exercícios (incluindo o balde "Sem dia definido") e filtra os itens do dia
@@ -54,11 +65,12 @@ export default async function AlunoExecucaoFichaPage({
   searchParams,
 }: {
   params: Promise<{ planId: string }>;
-  searchParams: Promise<{ dia?: string | string[] }>;
+  searchParams: Promise<{ dia?: string | string[]; divisao?: string | string[] }>;
 }) {
   const { planId } = await params;
-  const { dia } = await searchParams;
+  const { dia, divisao } = await searchParams;
   const weekday = parseDia(dia);
+  const divisaoPedida = parseDivisao(divisao);
 
   const supabase = await createClient();
 
@@ -76,7 +88,7 @@ export default async function AlunoExecucaoFichaPage({
   const { data: itensData } = await supabase
     .from('workout_plan_items')
     .select(
-      'id, weekday, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors)'
+      'id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors)'
     )
     .eq('plan_id', planId)
     .order('order_index', { ascending: true });
@@ -94,6 +106,7 @@ export default async function AlunoExecucaoFichaPage({
         id: item.id,
         nome: ex?.name?.trim() || 'Exercício',
         weekday: item.weekday,
+        division: item.division,
         // Sem séries prescritas, assumimos 1 para que haja ao menos uma linha.
         sets: item.sets && item.sets > 0 ? item.sets : 1,
         reps: item.reps,
@@ -111,14 +124,29 @@ export default async function AlunoExecucaoFichaPage({
     })
   );
 
-  // O Client recebe SEMPRE todos os itens e monta o seletor de dias; o `?dia`
-  // (deep-link a partir da ficha) só define o dia inicial, sem travar a troca.
-  const temDiaPedido =
-    weekday !== null && itens.some((item) => item.weekday === weekday);
+  // O Client recebe SEMPRE todos os itens e monta o seletor do eixo da ficha; o
+  // deep-link (`?dia`/`?divisao`) só define o grupo inicial, sem travar a troca.
+  // Eixo detectado pelos itens: se algum tem divisão, a ficha é por divisão.
+  const porDivisao = itens.some((item) => (item.division ?? null) !== null);
 
-  const subtitulo = temDiaPedido
-    ? WEEKDAY_LABEL[weekday as number]
-    : 'Escolha o dia e comece o treino';
+  // Divisão pedida válida só se existir entre as divisões carregadas.
+  const temDivisaoPedida =
+    porDivisao &&
+    divisaoPedida !== null &&
+    itens.some((item) => (item.division ?? null) === divisaoPedida);
+
+  const temDiaPedido =
+    !porDivisao &&
+    weekday !== null &&
+    itens.some((item) => item.weekday === weekday);
+
+  const subtitulo = porDivisao
+    ? temDivisaoPedida
+      ? (divisaoPedida as string)
+      : 'Escolha a divisão e comece o treino'
+    : temDiaPedido
+      ? WEEKDAY_LABEL[weekday as number]
+      : 'Escolha o dia e comece o treino';
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -141,7 +169,12 @@ export default async function AlunoExecucaoFichaPage({
           description="Esta ficha ainda não tem exercícios prescritos. Fale com seu professor."
         />
       ) : (
-        <SessaoExecucao planId={ficha.id} itens={itens} diaInicial={weekday} />
+        <SessaoExecucao
+          planId={ficha.id}
+          itens={itens}
+          diaInicial={porDivisao ? null : weekday}
+          divisaoInicial={porDivisao ? divisaoPedida : null}
+        />
       )}
     </section>
   );
