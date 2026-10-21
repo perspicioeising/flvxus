@@ -1,5 +1,7 @@
 import { BarChart3, CheckCircle2, LineChart } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
+import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { resumoAderencia } from '@/lib/treino/aderencia';
 import { montarSerieEvolucao } from '@/components/professor/avaliacoes/evolucao-series';
@@ -11,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { EmptyState, ErrorState } from '@/components/patterns';
 import { GraficosAluno } from '@/components/aluno/evolucao/graficos-aluno';
+import { SecaoEvolucao } from '@/components/professor/alunos/secao-evolucao';
 
 /** Janela padrão (dias) do resumo de aderência. */
 const JANELA_ADERENCIA_DIAS = 30;
@@ -22,16 +25,23 @@ const JANELA_ADERENCIA_DIAS = 30;
  * partir das sessões concluídas (`workout_sessions.finished_at`).
  */
 export default async function AlunoEvolucaoPage() {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) {
+    redirect('/login');
+  }
+
   const supabase = await createClient();
 
   const [avaliacoesRes, sessoesRes] = await Promise.all([
     supabase
       .from('physical_assessments')
       .select('assessed_at, weight_kg, body_fat_pct, lean_mass_kg, waist_cm, hip_cm, abdomen_cm')
+      .eq('student_id', sessionUser.userId)
       .order('assessed_at', { ascending: true }),
     supabase
       .from('workout_sessions')
       .select('finished_at')
+      .eq('student_id', sessionUser.userId)
       .not('finished_at', 'is', null),
   ]);
 
@@ -72,6 +82,10 @@ export default async function AlunoEvolucaoPage() {
           </dl>
         </CardContent>
       </Card>
+
+      {/* Evolução de execução (carga, volume, frequência e alertas) — mesma
+          visão que o professor já tem na ficha do aluno. */}
+      <SecaoEvolucao studentId={sessionUser.userId} />
 
       {/* Gráficos de avaliação */}
       <Card>
