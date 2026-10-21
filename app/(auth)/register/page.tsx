@@ -152,23 +152,23 @@ function RegisterContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3 text-center">
+   <div className="flex min-h-dvh items-center justify-center bg-app-gradient px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+      <Card className="w-full max-w-md border-app-muted shadow-app-large motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+        <CardHeader className="space-y-3 pb-6 text-center">
           <div
-            className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(var(--primary-soft))] text-[hsl(var(--primary-soft-foreground))] ring-1 ring-primary/20"
             aria-hidden="true"
           >
-            <Dumbbell className="h-6 w-6" />
+            <Dumbbell className="h-7 w-7" />
           </div>
           <CardTitle>Crie sua conta</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-balance">
             Comece a organizar seus alunos e treinos
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -177,8 +177,11 @@ function RegisterContent() {
                     <FormLabel>Nome completo</FormLabel>
                     <FormControl>
                       <Input
+                        autoComplete="name"
+                        autoCapitalize="words"
+                        enterKeyHint="next"
                         placeholder="Seu nome completo"
-                        className="min-h-11"
+                        className="min-h-11 text-base md:text-sm"
                         {...field}
                       />
                     </FormControl>
@@ -195,8 +198,11 @@ function RegisterContent() {
                     <FormLabel>Nome da empresa</FormLabel>
                     <FormControl>
                       <Input
+                        autoComplete="organization"
+                        autoCapitalize="words"
+                        enterKeyHint="next"
                         placeholder="Nome do seu negócio"
-                        className="min-h-11"
+                        className="min-h-11 text-base md:text-sm"
                         {...field}
                       />
                     </FormControl>
@@ -214,8 +220,14 @@ function RegisterContent() {
                     <FormControl>
                       <Input
                         type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        enterKeyHint="next"
                         placeholder="seu@email.com"
-                        className="min-h-11"
+                        className="min-h-11 text-base md:text-sm"
                         {...field}
                       />
                     </FormControl>
@@ -234,15 +246,20 @@ function RegisterContent() {
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          enterKeyHint="next"
                           placeholder="Mínimo 8 caracteres"
-                          className="min-h-11 pr-10"
+                          className="min-h-11 pr-11 text-base md:text-sm"
                           {...field}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -267,15 +284,20 @@ function RegisterContent() {
                       <div className="relative">
                         <Input
                           type={showConfirmPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          enterKeyHint="go"
                           placeholder="Repita a senha"
-                          className="min-h-11 pr-10"
+                          className="min-h-11 pr-11 text-base md:text-sm"
                           {...field}
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -290,7 +312,7 @@ function RegisterContent() {
                 )}
               />
 
-              <Button type="submit" className="w-full min-h-11" disabled={isLoading}>
+              <Button type="submit" className="w-full min-h-11 text-base md:text-sm" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
@@ -305,7 +327,10 @@ function RegisterContent() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Já tem uma conta?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link
+              href="/login"
+              className="rounded-sm font-medium text-app-accent underline-offset-4 hover:underline"
+            >
               Faça login
             </Link>
           </p>
@@ -319,9 +344,16 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex min-h-dvh items-center justify-center bg-background p-4"
+        >
+          <div
+            className="flex flex-col items-center gap-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300"
+            style={{ animationDelay: "150ms", animationFillMode: "backwards" }}
+          >
+            <Loader2 className="h-10 w-10 animate-spin text-app-accent" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">Carregando...</p>
           </div>
         </div>

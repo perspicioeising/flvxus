@@ -92,23 +92,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3 text-center">
+   <div className="flex min-h-dvh items-center justify-center bg-app-gradient px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+      <Card className="w-full max-w-md border-app-muted shadow-app-large motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+        <CardHeader className="space-y-3 pb-6 text-center">
           <div
-            className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[hsl(var(--primary-soft))] text-[hsl(var(--primary-soft-foreground))] ring-1 ring-primary/20"
             aria-hidden="true"
           >
-            <Dumbbell className="h-6 w-6" />
+            <Dumbbell className="h-7 w-7" />
           </div>
-          <CardTitle>Bem-vindo de volta</CardTitle>
-          <CardDescription>
+          <CardTitle>Bem-vindo</CardTitle>
+          <CardDescription className="text-balance">
             Acesse sua conta e continue sua jornada
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -118,8 +118,14 @@ export default function LoginPage() {
                     <FormControl>
                       <Input
                         type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        enterKeyHint="next"
                         placeholder="seu@email.com"
-                        className="min-h-11"
+                        className="min-h-11 text-base md:text-sm"
                         {...field}
                       />
                     </FormControl>
@@ -133,11 +139,11 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <FormLabel>Senha</FormLabel>
                       <Link
                         href="/forgot-password"
-                        className="text-sm font-medium text-primary hover:underline"
+                        className="-my-1 rounded-sm py-1 text-sm font-medium text-app-accent underline-offset-4 hover:underline"
                       >
                         Esqueceu a senha?
                       </Link>
@@ -146,15 +152,20 @@ export default function LoginPage() {
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          enterKeyHint="go"
                           placeholder="Sua senha"
-                          className="min-h-11 pr-10"
+                          className="min-h-11 pr-11 text-base md:text-sm"
                           {...field}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -169,7 +180,7 @@ export default function LoginPage() {
                 )}
               />
 
-              <Button type="submit" className="w-full min-h-11" disabled={isLoading}>
+              <Button type="submit" className="w-full min-h-11 text-base md:text-sm" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
@@ -184,7 +195,10 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Não tem uma conta?{" "}
-            <Link href="/register" className="font-medium text-primary hover:underline">
+            <Link
+              href="/register"
+              className="rounded-sm font-medium text-app-accent underline-offset-4 hover:underline"
+            >
               Cadastre-se gratuitamente
             </Link>
           </p>
