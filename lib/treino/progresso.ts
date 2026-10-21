@@ -54,6 +54,14 @@ export function seriesPorItem(logs: SerieLog[]): Map<string, SerieLog[]> {
 }
 
 /**
+ * Um exercício está concluído quando tem ao menos uma série registrada e todas
+ * elas estão com `completed === true`. Lista vazia ⇒ `false`.
+ */
+export function exercicioConcluido(logsDoItem: SerieLog[]): boolean {
+  return logsDoItem.length > 0 && logsDoItem.every((log) => log.completed);
+}
+
+/**
  * Volume total da sessão: Σ (reps_done × load_done) sobre as séries. Valores
  * nulos de reps/carga são tratados como 0, sem quebrar.
  */

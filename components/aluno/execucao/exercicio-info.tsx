@@ -1,4 +1,14 @@
+'use client';
+
+import { ChevronDown } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { ExerciseVideoPlayer } from '@/components/shared/exercise-video-player';
 
 /** Dados de exibição de um exercício na execução (mídia + prescrição + dicas). */
@@ -18,17 +28,6 @@ export interface ExercicioInfo {
   errosComuns: string[];
   gruposMusculares: string[];
   equipamento: string[];
-}
-
-/** Uma linha de "rótulo: valor" da prescrição, quando o valor existe. */
-function LinhaPrescricao({ rotulo, valor }: { rotulo: string; valor: string | null }) {
-  if (!valor) return null;
-  return (
-    <div className="flex gap-1">
-      <dt className="text-muted-foreground">{rotulo}:</dt>
-      <dd className="text-foreground">{valor}</dd>
-    </div>
-  );
 }
 
 /** Uma seção de texto do exercício (instruções/observações), quando há conteúdo. */
@@ -58,17 +57,22 @@ function SecaoLista({ titulo, itens }: { titulo: string; itens: string[] }) {
 }
 
 /**
- * Mídia e informações completas de um exercício durante a execução. As URLs de
+ * Mídia e informações de um exercício durante a execução. As URLs de
  * vídeo/thumbnail chegam JÁ ASSINADAS do RSC (bucket privado, nunca URL
- * pública) — este componente só exibe, reusando o padrão de
- * `components/professor/exercicios/exercise-media.tsx` (<video controls poster>).
- * Mostra séries, reps, carga alvo, descanso, observações, instruções, dicas e
- * erros comuns.
+ * pública) — este componente só exibe, reusando o `ExerciseVideoPlayer`
+ * compartilhado.
+ *
+ * A prescrição (séries × reps, carga alvo, descanso) NÃO é renderizada aqui:
+ * ela vive como linha de badges em `sessao-execucao.tsx` (fonte única da
+ * verdade). Grupos musculares/equipamento ficam como badges visíveis; as
+ * instruções/dicas/erros/observações ficam colapsadas por padrão.
  */
 export function ExercicioInfo({ info }: { info: ExercicioInfo }) {
-  const descanso =
-    info.descansoSegundos !== null ? `${info.descansoSegundos}s` : null;
-  const carga = info.cargaAlvo !== null ? `${info.cargaAlvo} kg` : null;
+  const temDetalhes =
+    (info.observacoes?.trim() ?? '') !== '' ||
+    (info.instrucoes?.trim() ?? '') !== '' ||
+    info.dicas.length > 0 ||
+    info.errosComuns.length > 0;
 
   return (
     <div className="space-y-4">
@@ -93,17 +97,29 @@ export function ExercicioInfo({ info }: { info: ExercicioInfo }) {
         </div>
       ) : null}
 
-      <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <LinhaPrescricao rotulo="Séries" valor={String(info.sets)} />
-        <LinhaPrescricao rotulo="Repetições" valor={info.reps} />
-        <LinhaPrescricao rotulo="Carga alvo" valor={carga} />
-        <LinhaPrescricao rotulo="Descanso" valor={descanso} />
-      </dl>
-
-      <SecaoTexto titulo="Observações do professor" texto={info.observacoes} />
-      <SecaoTexto titulo="Instruções" texto={info.instrucoes} />
-      <SecaoLista titulo="Dicas" itens={info.dicas} />
-      <SecaoLista titulo="Erros comuns" itens={info.errosComuns} />
+      {temDetalhes ? (
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="group min-h-11 w-full justify-between"
+            >
+              Ver instruções e dicas
+              <ChevronDown
+                className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180"
+                aria-hidden="true"
+              />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 pt-4">
+            <SecaoTexto titulo="Observações do professor" texto={info.observacoes} />
+            <SecaoTexto titulo="Instruções" texto={info.instrucoes} />
+            <SecaoLista titulo="Dicas" itens={info.dicas} />
+            <SecaoLista titulo="Erros comuns" itens={info.errosComuns} />
+          </CollapsibleContent>
+        </Collapsible>
+      ) : null}
     </div>
   );
 }

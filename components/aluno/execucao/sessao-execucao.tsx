@@ -2,9 +2,13 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Flag, Loader2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Flag, Loader2 } from 'lucide-react';
 
-import { progressoSessao, type SerieLog } from '@/lib/treino/progresso';
+import {
+  exercicioConcluido,
+  progressoSessao,
+  type SerieLog,
+} from '@/lib/treino/progresso';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -136,6 +140,39 @@ export function SessaoExecucao({
     return grupo ? grupo.itens : (grupos[0]?.itens ?? []);
   }, [grupos, diaSelecionado]);
 
+  // Fluxo guiado: um exercício por vez. `indiceAtual` navega dentro do dia.
+  const [indiceAtual, setIndiceAtual] = React.useState(0);
+
+  // Ao trocar de dia, volta ao primeiro exercício.
+  React.useEffect(() => {
+    setIndiceAtual(0);
+  }, [diaSelecionado]);
+
+  // Clamp defensivo: nunca indexar fora quando a lista do dia encolher.
+  React.useEffect(() => {
+    setIndiceAtual((i) => {
+      const max = Math.max(itensVisiveis.length - 1, 0);
+      return i > max ? max : i;
+    });
+  }, [itensVisiveis.length]);
+
+  const itemAtual =
+    itensVisiveis.length > 0
+      ? itensVisiveis[Math.min(indiceAtual, itensVisiveis.length - 1)]
+      : undefined;
+
+  // Mostra o descanso acoplado (auto-iniciado) somente após concluir uma série
+  // do exercício atual. Guardamos o id do item para resetar ao navegar/trocar.
+  const [descansoAtivoItemId, setDescansoAtivoItemId] = React.useState<
+    string | null
+  >(null);
+
+  // Ao navegar entre exercícios ou trocar de dia, esconde o descanso acoplado
+  // (ele volta a aparecer quando o aluno concluir uma série do novo item).
+  React.useEffect(() => {
+    setDescansoAtivoItemId(null);
+  }, [indiceAtual, diaSelecionado]);
+
   // Estado inicial: uma série por set prescrito de TODOS os itens da ficha, com
   // os defaults da prescrição. Guardamos todos para preservar o que o aluno já
   // marcou ao alternar entre dias; a UI mostra só os itens do dia selecionado.
@@ -179,6 +216,14 @@ export function SessaoExecucao({
   );
   const progresso = progressoSessao(logs);
   const tudoFeito = progresso.total > 0 && progresso.feitas === progresso.total;
+
+  // Logs apenas do exercício atual, para saber se ele já está concluído e
+  // realçar o botão "Próximo" como próxima ação sugerida.
+  const logsItemAtual: SerieLog[] = React.useMemo(
+    () =>
+      itemAtual ? logs.filter((log) => log.plan_item_id === itemAtual.id) : [],
+    [logs, itemAtual]
+  );
 
   /** Garante uma sessão criada; retorna o id ou null se falhar. */
   async function garantirSessao(): Promise<string | null> {
@@ -233,14 +278,45 @@ export function SessaoExecucao({
         completed: novoCompleted,
       });
 
-      setSeries((atual) => ({
-        ...atual,
-        [chave]: {
+      setSeries((atual) => {
+        const proximo = { ...atual };
+        proximo[chave] = {
           ...atual[chave],
           completed: r.ok ? novoCompleted : atual[chave].completed,
           salvando: false,
-        },
-      }));
+        };
+
+        // Ao concluir uma série com sucesso, herda os valores desta série para
+        // a PRÓXIMA ainda não editada do mesmo exercício — só sobrescreve se a
+        // próxima continua no default da prescrição (não apaga edição manual).
+        if (r.ok && novoCompleted) {
+          const item = itens.find((it) => it.id === itemId);
+          const proximaChave = chaveSerie(itemId, setNumber + 1);
+          const proximaSerie = proximo[proximaChave];
+          if (item && proximaSerie && !proximaSerie.completed) {
+            const defaultReps = item.reps ?? '';
+            const defaultCarga =
+              item.cargaAlvo !== null ? String(item.cargaAlvo) : '';
+            if (
+              proximaSerie.reps === defaultReps &&
+              proximaSerie.carga === defaultCarga
+            ) {
+              proximo[proximaChave] = {
+                ...proximaSerie,
+                reps: estadoAtual.reps,
+                carga: estadoAtual.carga,
+              };
+            }
+          }
+        }
+
+        return proximo;
+      });
+
+      if (r.ok && novoCompleted) {
+        // Descanso acoplado: dispara o timer auto-iniciado deste exercício.
+        setDescansoAtivoItemId(itemId);
+      }
 
       if (!r.ok) {
         toast({
@@ -296,40 +372,59 @@ export function SessaoExecucao({
         <Progress value={progresso.pct} aria-label="Progresso do treino" />
       </div>
 
-      {itensVisiveis.map((item) => (
-        <Card key={item.id}>
-          <CardHeader className="p-4 pb-0">
-            <CardTitle className="flex items-center justify-between gap-2 text-base">
-              <span>{item.nome}</span>
-              {item.reps ? (
-                <Badge variant="secondary" className="shrink-0">
-                  {item.sets} × {item.reps}
+      {itemAtual ? (
+        <Card key={itemAtual.id}>
+          <CardHeader className="space-y-3 p-4 pb-0">
+            <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+              <span aria-live="polite">
+                Exercício {indiceAtual + 1} de {itensVisiveis.length}
+              </span>
+            </div>
+            <CardTitle className="text-xl font-bold text-foreground">
+              {itemAtual.nome}
+            </CardTitle>
+            {/* Prescrição como linha de badges — fonte única da verdade. */}
+            <div className="flex flex-wrap gap-2">
+              {itemAtual.reps ? (
+                <Badge variant="secondary">
+                  {itemAtual.sets} × {itemAtual.reps}
+                </Badge>
+              ) : (
+                <Badge variant="secondary">{itemAtual.sets} séries</Badge>
+              )}
+              {itemAtual.cargaAlvo !== null ? (
+                <Badge variant="outline">Carga alvo: {itemAtual.cargaAlvo} kg</Badge>
+              ) : null}
+              {itemAtual.descansoSegundos !== null ? (
+                <Badge variant="outline">
+                  Descanso: {itemAtual.descansoSegundos}s
                 </Badge>
               ) : null}
-            </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3 p-4">
+          <CardContent className="space-y-4 p-4">
             <ExercicioInfo
               info={{
-                nome: item.nome,
-                videoUrl: item.videoUrl,
-                thumbnailUrl: item.thumbnailUrl,
-                sets: item.sets,
-                reps: item.reps,
-                cargaAlvo: item.cargaAlvo,
-                descansoSegundos: item.descansoSegundos,
-                observacoes: item.observacoes,
-                instrucoes: item.instrucoes,
-                dicas: item.dicas,
-                errosComuns: item.errosComuns,
-                gruposMusculares: item.gruposMusculares,
-                equipamento: item.equipamento,
+                nome: itemAtual.nome,
+                videoUrl: itemAtual.videoUrl,
+                thumbnailUrl: itemAtual.thumbnailUrl,
+                sets: itemAtual.sets,
+                reps: itemAtual.reps,
+                cargaAlvo: itemAtual.cargaAlvo,
+                descansoSegundos: itemAtual.descansoSegundos,
+                observacoes: itemAtual.observacoes,
+                instrucoes: itemAtual.instrucoes,
+                dicas: itemAtual.dicas,
+                errosComuns: itemAtual.errosComuns,
+                gruposMusculares: itemAtual.gruposMusculares,
+                equipamento: itemAtual.equipamento,
               }}
             />
+
             <ul className="space-y-3">
-              {Array.from({ length: item.sets }).map((_, index) => {
+              {Array.from({ length: itemAtual.sets }).map((_, index) => {
                 const setNumber = index + 1;
-                const chave = chaveSerie(item.id, setNumber);
+                const chave = chaveSerie(itemAtual.id, setNumber);
                 const estado = series[chave];
                 if (!estado) return null;
 
@@ -337,68 +432,120 @@ export function SessaoExecucao({
                   <li
                     key={chave}
                     className={cn(
-                      'flex flex-wrap items-end gap-3 rounded-lg border p-3',
+                      'space-y-3 rounded-lg border p-3',
                       estado.completed
                         ? 'border-primary/40 bg-primary/5'
                         : 'border-border'
                     )}
                   >
-                    <span className="self-center text-sm font-medium text-muted-foreground">
-                      Série {setNumber}
-                    </span>
-
-                    <div className="w-20 space-y-1">
-                      <Label htmlFor={`${chave}-reps`} className="text-xs">
-                        Reps
-                      </Label>
-                      <Input
-                        id={`${chave}-reps`}
-                        inputMode="numeric"
-                        value={estado.reps}
-                        onChange={(e) => atualizarCampo(chave, 'reps', e.target.value)}
-                        className="h-11"
-                      />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Série {setNumber}
+                      </span>
                     </div>
 
-                    <div className="w-24 space-y-1">
-                      <Label htmlFor={`${chave}-carga`} className="text-xs">
-                        Carga (kg)
-                      </Label>
-                      <Input
-                        id={`${chave}-carga`}
-                        inputMode="decimal"
-                        value={estado.carga}
-                        onChange={(e) => atualizarCampo(chave, 'carga', e.target.value)}
-                        className="h-11"
-                      />
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1 space-y-1">
+                        <Label htmlFor={`${chave}-reps`} className="text-xs">
+                          Reps
+                        </Label>
+                        <Input
+                          id={`${chave}-reps`}
+                          inputMode="numeric"
+                          value={estado.reps}
+                          onChange={(e) =>
+                            atualizarCampo(chave, 'reps', e.target.value)
+                          }
+                          className="h-11"
+                        />
+                      </div>
+
+                      <div className="flex-1 space-y-1">
+                        <Label htmlFor={`${chave}-carga`} className="text-xs">
+                          Carga (kg)
+                        </Label>
+                        <Input
+                          id={`${chave}-carga`}
+                          inputMode="decimal"
+                          value={estado.carga}
+                          onChange={(e) =>
+                            atualizarCampo(chave, 'carga', e.target.value)
+                          }
+                          className="h-11"
+                        />
+                      </div>
                     </div>
 
                     <Button
                       type="button"
                       variant={estado.completed ? 'default' : 'outline'}
-                      className="ml-auto min-h-11 min-w-11"
+                      className="min-h-11 w-full"
                       aria-pressed={estado.completed}
                       disabled={estado.salvando || iniciando}
-                      onClick={() => alternarSerie(item.id, setNumber)}
+                      onClick={() => alternarSerie(itemAtual.id, setNumber)}
                     >
                       {estado.salvando ? (
-                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        <Loader2
+                          className="h-5 w-5 animate-spin"
+                          aria-hidden="true"
+                        />
                       ) : (
                         <Check className="h-5 w-5" aria-hidden="true" />
                       )}
-                      {estado.completed ? 'Feita' : 'Marcar'}
+                      {estado.completed ? 'Série concluída' : 'Concluir série'}
                     </Button>
                   </li>
                 );
               })}
             </ul>
 
-            {item.descansoSegundos ? (
-              <TimerDescanso segundos={item.descansoSegundos} />
+            {/* Descanso acoplado: só aparece após concluir uma série deste
+                exercício e quando há descanso prescrito; auto-inicia. */}
+            {itemAtual.descansoSegundos &&
+            descansoAtivoItemId === itemAtual.id ? (
+              <TimerDescanso
+                key={itemAtual.id}
+                segundos={itemAtual.descansoSegundos}
+                autoIniciar
+              />
             ) : null}
           </CardContent>
         </Card>
-      ))}
+      ) : null}
+
+      {/* Navegação entre exercícios do dia. */}
+      {itensVisiveis.length > 0 ? (
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-14 flex-1"
+            disabled={indiceAtual === 0}
+            onClick={() => setIndiceAtual((i) => Math.max(i - 1, 0))}
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            Anterior
+          </Button>
+          <Button
+            type="button"
+            variant={
+              itemAtual && exercicioConcluido(logsItemAtual)
+                ? 'default'
+                : 'outline'
+            }
+            className="min-h-14 flex-1"
+            disabled={indiceAtual >= itensVisiveis.length - 1}
+            onClick={() =>
+              setIndiceAtual((i) =>
+                Math.min(i + 1, itensVisiveis.length - 1)
+              )
+            }
+          >
+            Próximo
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          </Button>
+        </div>
+      ) : null}
 
       <AlertDialog>
         <AlertDialogTrigger asChild>

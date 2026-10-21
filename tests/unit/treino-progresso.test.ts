@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  exercicioConcluido,
   progressoSessao,
   seriesPorItem,
   volumeSessao,
@@ -74,6 +75,28 @@ describe('volumeSessao', () => {
 
   it('é 0 para lista vazia', () => {
     expect(volumeSessao([])).toBe(0);
+  });
+});
+
+describe('exercicioConcluido', () => {
+  it('é false para lista vazia', () => {
+    expect(exercicioConcluido([])).toBe(false);
+  });
+
+  it('é false quando apenas parte das séries foi concluída', () => {
+    const logs = [
+      serie({ set_number: 1, completed: true }),
+      serie({ set_number: 2, completed: false }),
+    ];
+    expect(exercicioConcluido(logs)).toBe(false);
+  });
+
+  it('é true quando todas as séries foram concluídas', () => {
+    const logs = [
+      serie({ set_number: 1, completed: true }),
+      serie({ set_number: 2, completed: true }),
+    ];
+    expect(exercicioConcluido(logs)).toBe(true);
   });
 });
 

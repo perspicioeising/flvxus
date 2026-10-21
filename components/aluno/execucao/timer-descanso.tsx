@@ -18,15 +18,22 @@ function formatar(segundos: number): string {
  * reiniciar e pular. Alvos ≥ 44px; sem depender de hover. `haptics` é
  * best-effort via `navigator.vibrate` ao concluir, quando disponível.
  */
-export function TimerDescanso({ segundos }: { segundos: number }) {
+export function TimerDescanso({
+  segundos,
+  autoIniciar = false,
+}: {
+  segundos: number;
+  autoIniciar?: boolean;
+}) {
   const [restante, setRestante] = React.useState(segundos);
-  const [rodando, setRodando] = React.useState(false);
+  const [rodando, setRodando] = React.useState(autoIniciar);
 
-  // Reinicia o alvo quando a prescrição muda (ex.: outro exercício).
+  // Reinicia o alvo quando a prescrição muda (ex.: outro exercício). Com
+  // `autoIniciar`, já começa rodando; senão, fica parado aguardando o toque.
   React.useEffect(() => {
     setRestante(segundos);
-    setRodando(false);
-  }, [segundos]);
+    setRodando(autoIniciar);
+  }, [segundos, autoIniciar]);
 
   React.useEffect(() => {
     if (!rodando) return;
