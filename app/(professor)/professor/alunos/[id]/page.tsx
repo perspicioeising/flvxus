@@ -33,6 +33,7 @@ import {
 } from '@/components/professor/alunos/labels';
 import { StudentStatusActions } from '@/components/professor/alunos/student-status-actions';
 import { ResendInviteButton } from '@/components/professor/alunos/resend-invite-button';
+import { SecaoEvolucao } from '@/components/professor/alunos/secao-evolucao';
 import type {
   ExperienceLevel,
   GoalType,
@@ -259,6 +260,9 @@ export default async function FichaAlunoPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Evolução (progressão de carga, volume, frequência, alertas e composição) */}
+      <SecaoEvolucao studentId={id} />
 
       {/* Dieta */}
       <Card>
