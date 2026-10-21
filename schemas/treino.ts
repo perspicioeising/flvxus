@@ -89,10 +89,20 @@ const weekdayOpcional = z.preprocess((valor) => {
   return valor;
 }, z.number().int().min(0).max(6).optional());
 
-/** Item de uma FICHA (`workout_plan_items`) — acrescenta `weekday`. */
+/**
+ * Rótulo curto de divisão ('A', 'B', 'C' ou nome do modelo), opcional. Vazio/
+ * nulo → `undefined`. Espelha `workout_plan_items.division` (text nullable).
+ */
+const divisaoOpcional = z.preprocess(
+  (valor) => (valor === '' || valor === null ? undefined : valor),
+  z.string().trim().min(1).max(40).optional()
+);
+
+/** Item de uma FICHA (`workout_plan_items`) — acrescenta `weekday` e `division`. */
 export const itemFichaSchema = z.object({
   ...camposPrescricao,
   weekday: weekdayOpcional,
+  division: divisaoOpcional,
 });
 
 // -----------------------------------------------------------------------------
@@ -133,6 +143,50 @@ export type ItemModeloInput = z.infer<typeof itemModeloSchema>;
 export type ItemFichaInput = z.infer<typeof itemFichaSchema>;
 export type ModeloInput = z.infer<typeof modeloSchema>;
 export type FichaInput = z.infer<typeof fichaSchema>;
+
+// -----------------------------------------------------------------------------
+// Montagem de FICHA por DIVISÃO (A/B/C), a partir de múltiplos modelos
+// -----------------------------------------------------------------------------
+
+/**
+ * Um modelo escolhido para virar uma divisão da ficha: o modelo de origem e o
+ * rótulo curto da divisão ('A', 'B', 'C' ou nome do modelo). O rótulo nunca é
+ * vazio — o cliente aplica o padrão posicional (A/B/C/D/E) antes de validar.
+ */
+export const divisaoModeloSchema = z.object({
+  source_workout_id: z.string().uuid('Modelo inválido.'),
+  division: z.string().trim().min(1, 'Informe o rótulo da divisão.').max(40),
+});
+
+/**
+ * Criação de FICHA multi-modelo por divisão: um aluno, um nome e ao menos um
+ * modelo, cada um com seu rótulo de divisão único (case-insensitive, com trim).
+ * O aluno executa as divisões na ordem que conseguir ir à academia (sem dia
+ * fixo).
+ */
+export const criarFichaMultiModeloSchema = z
+  .object({
+    student_id: z.string().uuid('Aluno inválido.'),
+    name: z.string().trim().min(1, 'Informe o nome da ficha.'),
+    modelos: z
+      .array(divisaoModeloSchema)
+      .min(1, 'Selecione ao menos um modelo.'),
+  })
+  .refine(
+    ({ modelos }) => {
+      const rotulos = modelos.map((m) => m.division.trim().toLowerCase());
+      return new Set(rotulos).size === rotulos.length;
+    },
+    {
+      message: 'Cada divisão precisa de um rótulo diferente.',
+      path: ['modelos'],
+    }
+  );
+
+export type DivisaoModeloInput = z.infer<typeof divisaoModeloSchema>;
+export type CriarFichaMultiModeloInput = z.infer<
+  typeof criarFichaMultiModeloSchema
+>;
 
 // -----------------------------------------------------------------------------
 // Transição de status da ficha (plan_status)

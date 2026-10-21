@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  criarFichaMultiModeloSchema,
+  divisaoModeloSchema,
   fichaSchema,
   itemFichaSchema,
   itemModeloSchema,
@@ -91,6 +93,106 @@ describe('itemFichaSchema', () => {
   it('rejeita weekday fora de 0..6', () => {
     expect(itemFichaSchema.safeParse({ exercise_id: EX_ID, weekday: 7 }).success).toBe(false);
     expect(itemFichaSchema.safeParse({ exercise_id: EX_ID, weekday: -1 }).success).toBe(false);
+  });
+
+  it('aceita division e normaliza vazio para undefined', () => {
+    const comDivisao = itemFichaSchema.safeParse({ exercise_id: EX_ID, division: 'A' });
+    expect(comDivisao.success).toBe(true);
+    if (comDivisao.success) {
+      expect(comDivisao.data.division).toBe('A');
+    }
+    const vazio = itemFichaSchema.safeParse({ exercise_id: EX_ID, division: '' });
+    expect(vazio.success).toBe(true);
+    if (vazio.success) {
+      expect(vazio.data.division).toBeUndefined();
+    }
+  });
+});
+
+describe('divisaoModeloSchema', () => {
+  it('aceita um modelo com rótulo de divisão válido', () => {
+    const r = divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: 'A' });
+    expect(r.success).toBe(true);
+  });
+
+  it('faz trim do rótulo', () => {
+    const r = divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: '  B  ' });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.division).toBe('B');
+    }
+  });
+
+  it('rejeita division vazia (min 1)', () => {
+    expect(
+      divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: '' }).success
+    ).toBe(false);
+    expect(
+      divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: '   ' }).success
+    ).toBe(false);
+  });
+
+  it('rejeita division acima de 40 caracteres (max 40)', () => {
+    expect(
+      divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: 'x'.repeat(41) })
+        .success
+    ).toBe(false);
+    expect(
+      divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: 'x'.repeat(40) })
+        .success
+    ).toBe(true);
+  });
+
+  it('rejeita source_workout_id inválido', () => {
+    expect(
+      divisaoModeloSchema.safeParse({ source_workout_id: 'nope', division: 'A' }).success
+    ).toBe(false);
+  });
+});
+
+describe('criarFichaMultiModeloSchema', () => {
+  const MODELO_B = '44444444-4444-4444-4444-444444444444';
+
+  it('aceita uma ficha com múltiplos modelos e rótulos únicos', () => {
+    const r = criarFichaMultiModeloSchema.safeParse({
+      student_id: ALUNO_ID,
+      name: 'Ficha ABC',
+      modelos: [
+        { source_workout_id: MODELO_ID, division: 'A' },
+        { source_workout_id: MODELO_B, division: 'B' },
+      ],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('rejeita rótulos duplicados case-insensitive (A e a)', () => {
+    const r = criarFichaMultiModeloSchema.safeParse({
+      student_id: ALUNO_ID,
+      name: 'Ficha',
+      modelos: [
+        { source_workout_id: MODELO_ID, division: 'A' },
+        { source_workout_id: MODELO_B, division: 'a' },
+      ],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejeita lista de modelos vazia (min 1)', () => {
+    const r = criarFichaMultiModeloSchema.safeParse({
+      student_id: ALUNO_ID,
+      name: 'Ficha',
+      modelos: [],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejeita nome vazio', () => {
+    const r = criarFichaMultiModeloSchema.safeParse({
+      student_id: ALUNO_ID,
+      name: '   ',
+      modelos: [{ source_workout_id: MODELO_ID, division: 'A' }],
+    });
+    expect(r.success).toBe(false);
   });
 });
 
