@@ -34,6 +34,7 @@ import {
 import { StudentStatusActions } from '@/components/professor/alunos/student-status-actions';
 import { ResendInviteButton } from '@/components/professor/alunos/resend-invite-button';
 import { SecaoEvolucao } from '@/components/professor/alunos/secao-evolucao';
+import { AtalhosAluno } from '@/components/professor/alunos/atalhos-aluno';
 import type {
   ExperienceLevel,
   GoalType,
@@ -189,6 +190,9 @@ export default async function FichaAlunoPage({
         </CardContent>
       </Card>
 
+      {/* Hub de atalhos — navegação rápida para as funcionalidades do aluno */}
+      <AtalhosAluno alunoId={id} />
+
       {/* Última avaliação */}
       <Card>
         <CardHeader>
@@ -229,7 +233,7 @@ export default async function FichaAlunoPage({
       </Card>
 
       {/* Treinos */}
-      <Card>
+      <Card id="treinos" className="scroll-mt-20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Dumbbell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
@@ -271,7 +275,9 @@ export default async function FichaAlunoPage({
       </Card>
 
       {/* Evolução (progressão de carga, volume, frequência, alertas e composição) */}
-      <SecaoEvolucao studentId={id} />
+      <div id="evolucao" className="scroll-mt-20">
+        <SecaoEvolucao studentId={id} />
+      </div>
 
       {/* Dieta */}
       <Card>

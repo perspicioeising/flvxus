@@ -5,11 +5,22 @@ import { createClient } from '@/lib/supabase/server';
 import { FichaForm, type AlunoOpcao } from '@/components/professor/treinos/ficha-form';
 import type { ExercicioDisponivel } from '@/components/professor/treinos/exercise-picker';
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 /**
  * Criação de FICHA do zero. Carrega a lista de alunos (RLS: só os do professor)
  * e a biblioteca de exercícios para o editor de itens.
+ * Aceita `?aluno={id}` para pré-selecionar o aluno (ex.: criada a partir da
+ * ficha do aluno / hub de atalhos).
  */
-export default async function NovaFichaPage() {
+export default async function NovaFichaPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const sp = await searchParams;
+  const alunoFixo = Array.isArray(sp.aluno) ? sp.aluno[0] : sp.aluno;
+
   const supabase = await createClient();
 
   const [{ data: alunosData }, { data: exerciciosData }] = await Promise.all([
@@ -44,7 +55,14 @@ export default async function NovaFichaPage() {
         </p>
       </header>
 
-      <FichaForm modo="criar" exercicios={exercicios} alunos={alunos} />
+      <FichaForm
+        modo="criar"
+        exercicios={exercicios}
+        alunos={alunos}
+        alunoInicial={
+          alunoFixo && alunos.some((a) => a.user_id === alunoFixo) ? alunoFixo : undefined
+        }
+      />
     </section>
   );
 }

@@ -38,6 +38,8 @@ export interface FichaFormProps {
     source_workout_id: string | null;
     itens: ItemEditavel[];
   };
+  /** Aluno pré-selecionado no modo criar (ex.: via `?aluno=` da ficha do aluno). */
+  alunoInicial?: string;
 }
 
 /**
@@ -52,10 +54,11 @@ export function FichaForm({
   alunos,
   planId,
   valoresIniciais,
+  alunoInicial,
 }: FichaFormProps) {
   const router = useRouter();
   const [studentId, setStudentId] = React.useState(
-    valoresIniciais?.student_id ?? ''
+    valoresIniciais?.student_id ?? alunoInicial ?? ''
   );
   const [name, setName] = React.useState(valoresIniciais?.name ?? '');
   const [itens, setItens] = React.useState<ItemEditavel[]>(
