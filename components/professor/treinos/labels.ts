@@ -40,6 +40,28 @@ export function visivelAoAluno(status: PlanStatus): boolean {
   return status === 'released';
 }
 
+/**
+ * `true` quando a ficha está AGENDADA: ainda em rascunho (`draft`) e com uma
+ * data de liberação programada. "Agendada" não é um status de primeira classe
+ * (ver design §2) — é derivado de `status` + `scheduled_release_at`.
+ */
+export function estaAgendada(
+  status: PlanStatus,
+  scheduledReleaseAt: string | null
+): boolean {
+  return status === 'draft' && !!scheduledReleaseAt;
+}
+
+/**
+ * Formata um timestamp ISO como data pt-BR (DD/MM/AAAA). Helper puro que
+ * encapsula `Intl`/`toLocaleDateString` do runtime (zero dependência nova),
+ * consistente entre RSC e client. Nenhum componente deve chamar
+ * `toLocaleDateString` direto.
+ */
+export function formatarDataBr(iso: string): string {
+  return new Date(iso).toLocaleDateString('pt-BR');
+}
+
 /** Dias da semana (0 = domingo … 6 = sábado), como no banco (`weekday`). */
 export const DIAS_SEMANA = [
   { valor: 0, nome: 'Domingo', curto: 'Dom' },

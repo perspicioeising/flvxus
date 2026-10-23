@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Separator } from '@/components/ui/separator';
 import { FichaForm, type AlunoOpcao } from '@/components/professor/treinos/ficha-form';
 import { StatusControl } from '@/components/professor/treinos/status-control';
+import { AgendarLiberacao } from '@/components/professor/treinos/agendar-liberacao';
 import { FichaDeleteButton } from '@/components/professor/treinos/delete-buttons';
 import type { ExercicioDisponivel } from '@/components/professor/treinos/exercise-picker';
 import type { ItemEditavel } from '@/components/professor/treinos/item-editor';
@@ -31,7 +32,7 @@ export default async function FichaDetalhePage({
 
   const { data: ficha } = await supabase
     .from('workout_plans')
-    .select('id, name, status, student_id, source_workout_id')
+    .select('id, name, status, student_id, source_workout_id, scheduled_release_at')
     .eq('id', id)
     .single();
 
@@ -96,6 +97,11 @@ export default async function FichaDetalhePage({
       <div className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Status</h2>
         <StatusControl planId={ficha.id} statusAtual={ficha.status as PlanStatus} />
+        <AgendarLiberacao
+          planId={ficha.id}
+          statusAtual={ficha.status as PlanStatus}
+          scheduledReleaseAt={ficha.scheduled_release_at}
+        />
       </div>
 
       <Separator />

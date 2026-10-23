@@ -21,7 +21,9 @@ export default async function TreinosPage() {
     await Promise.all([
       supabase
         .from('workout_plans')
-        .select('id, name, status, profiles!workout_plans_student_id_fkey(full_name)')
+        .select(
+          'id, name, status, scheduled_release_at, profiles!workout_plans_student_id_fkey(full_name)'
+        )
         .order('created_at', { ascending: false }),
       supabase
         .from('workouts')
@@ -39,6 +41,7 @@ export default async function TreinosPage() {
     id: f.id,
     name: f.name,
     status: f.status as PlanStatus,
+    scheduledReleaseAt: f.scheduled_release_at,
     alunoNome:
       (f.profiles as unknown as { full_name: string | null } | null)?.full_name ?? null,
   }));

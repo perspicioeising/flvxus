@@ -5,16 +5,20 @@ import { revalidatePath } from 'next/cache';
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
+  agendamentoSchema,
   criarFichaMultiModeloSchema,
   fichaSchema,
   modeloSchema,
+  resolverPrazoParaData,
   transicaoPermitida,
+  type AgendamentoInput,
   type CriarFichaMultiModeloInput,
   type FichaInput,
   type ItemFichaInput,
   type ItemModeloInput,
   type ModeloInput,
 } from '@/schemas/treino';
+import { formatarDataBr } from '@/components/professor/treinos/labels';
 import type { PlanStatus } from '@/types/database.types';
 
 /**
@@ -693,4 +697,130 @@ export async function alterarStatusFicha(
   revalidatePath(`/professor/treinos/${planId}`);
 
   return { ok: true, message: 'Status atualizado.', id: planId };
+}
+
+// =============================================================================
+// Liberação programada da ficha
+// =============================================================================
+
+/**
+ * Agenda OU libera imediatamente uma ficha (só a partir de `draft`).
+ *
+ * - `agora`: UPDATE DIRETO `status='released'` + `released_at=now` +
+ *   `scheduled_release_at=null`. Atalho DELIBERADO `draft→released` FORA da
+ *   máquina de transições — NÃO passa por `alterarStatusFicha`/`transicaoPermitida`
+ *   (que recusariam `draft→released`). Ver design §2/§6.1.
+ * - `data`: grava `scheduled_release_at = data` mantendo `status='draft'`.
+ * - `dias`: grava `scheduled_release_at = now() do servidor + N dias`, `draft`.
+ *
+ * A RLS (`workout_plans_update`) garante tenant/posse — não filtramos
+ * `tenant_id` à mão (padrão do arquivo, `createClient()` com RLS ativo).
+ */
+export async function programarLiberacao(
+  planId: string,
+  entrada: AgendamentoInput
+): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode programar a liberação.' };
+  }
+
+  const parsed = agendamentoSchema.safeParse(entrada);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: 'Verifique os campos destacados.',
+      fieldErrors: erroDeCampo(parsed.error.flatten()),
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { data: plan, error: erroLeitura } = await supabase
+    .from('workout_plans')
+    .select('id, status')
+    .eq('id', planId)
+    .single();
+
+  if (erroLeitura || !plan) {
+    return { ok: false, message: 'Ficha não encontrada.' };
+  }
+
+  if ((plan.status as PlanStatus) !== 'draft') {
+    return {
+      ok: false,
+      message: 'Só é possível agendar ou liberar uma ficha em rascunho.',
+    };
+  }
+
+  let patch: {
+    status?: PlanStatus;
+    released_at?: string;
+    scheduled_release_at: string | null;
+  };
+  let mensagem: string;
+
+  switch (parsed.data.modo) {
+    case 'agora': {
+      patch = {
+        status: 'released',
+        released_at: new Date().toISOString(),
+        scheduled_release_at: null,
+      };
+      mensagem = 'Ficha liberada agora.';
+      break;
+    }
+    case 'data': {
+      const iso = parsed.data.data.toISOString();
+      patch = { status: 'draft', scheduled_release_at: iso };
+      mensagem = `Liberação agendada para ${formatarDataBr(iso)}.`;
+      break;
+    }
+    case 'dias': {
+      const iso = resolverPrazoParaData(new Date(), parsed.data.dias).toISOString();
+      patch = { status: 'draft', scheduled_release_at: iso };
+      mensagem = `Liberação agendada para ${formatarDataBr(iso)}.`;
+      break;
+    }
+  }
+
+  const { error } = await supabase.from('workout_plans').update(patch).eq('id', planId);
+
+  if (error) {
+    return { ok: false, message: `Não foi possível programar a liberação: ${error.message}` };
+  }
+
+  revalidatePath('/professor/treinos');
+  revalidatePath(`/professor/treinos/${planId}`);
+
+  return { ok: true, message: mensagem, id: planId };
+}
+
+/**
+ * Remove o agendamento de liberação: zera `scheduled_release_at` mantendo
+ * `status='draft'`. NÃO libera a ficha — apenas a devolve a rascunho sem
+ * liberação futura (operação distinta de `programarLiberacao(…,{modo:'agora'})`,
+ * que libera). Ver design §6.2.
+ */
+export async function desmarcarLiberacao(planId: string): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode remover o agendamento.' };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('workout_plans')
+    .update({ scheduled_release_at: null })
+    .eq('id', planId);
+
+  if (error) {
+    return { ok: false, message: `Não foi possível remover o agendamento: ${error.message}` };
+  }
+
+  revalidatePath('/professor/treinos');
+  revalidatePath(`/professor/treinos/${planId}`);
+
+  return { ok: true, message: 'Agendamento removido.', id: planId };
 }

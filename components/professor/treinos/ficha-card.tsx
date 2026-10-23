@@ -3,12 +3,14 @@ import { ChevronRight, User } from 'lucide-react';
 
 import type { PlanStatus } from '@/types/database.types';
 import { StatusBadge } from './status-badge';
+import { estaAgendada, formatarDataBr } from './labels';
 
 export interface FichaCardData {
   id: string;
   name: string;
   status: PlanStatus;
   alunoNome: string | null;
+  scheduledReleaseAt: string | null;
 }
 
 /** Cartão de FICHA na listagem. Link para o detalhe. Mostra aluno e status. */
@@ -30,7 +32,14 @@ export function FichaCard({ ficha }: { ficha: FichaCardData }) {
         <p className="truncate text-sm text-muted-foreground">
           {ficha.alunoNome ?? 'Aluno sem nome'}
         </p>
-        <StatusBadge status={ficha.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={ficha.status} />
+          {estaAgendada(ficha.status, ficha.scheduledReleaseAt) ? (
+            <span className="text-xs text-muted-foreground">
+              Agendada para {formatarDataBr(ficha.scheduledReleaseAt!)}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />

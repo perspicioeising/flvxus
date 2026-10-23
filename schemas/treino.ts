@@ -235,3 +235,53 @@ export type TransicaoStatusInput = z.infer<typeof transicaoStatusSchema>;
 export function transicaoPermitida(de: PlanStatus, para: PlanStatus): boolean {
   return TRANSICOES_STATUS[de]?.includes(para) ?? false;
 }
+
+// -----------------------------------------------------------------------------
+// Liberação programada de treinos (agendamento)
+// -----------------------------------------------------------------------------
+
+const MS_DIA = 86_400_000;
+
+/**
+ * Data-alvo de liberação para "prazo em N dias": data base + N dias (em ms UTC).
+ * A data base é o momento do agendamento (relógio do SERVIDOR), passado pela
+ * action. Função pura, sem dependência de lib de data e sem mutar `base`.
+ */
+export function resolverPrazoParaData(base: Date, dias: number): Date {
+  return new Date(base.getTime() + dias * MS_DIA);
+}
+
+/**
+ * Entrada do agendamento de liberação (discriminated union por `modo`):
+ *   - `agora`: libera imediatamente (a action faz UPDATE DIRETO draft→released,
+ *     fora da máquina de transições — ver actions/treinos.ts e o design §2/§6.1);
+ *   - `data`: data fixa FUTURA (> agora);
+ *   - `dias`: prazo em dias inteiros (> 0, teto 3650 ~ 10 anos).
+ *
+ * `<input type="date">` envia `YYYY-MM-DD`; `z.coerce.date` interpreta essa forma
+ * como meia-noite UTC daquele dia. Por isso o refine `> Date.now()` rejeita "hoje"
+ * e aceita a partir de "amanhã", concordando com `min = amanhã` imposto pela UI.
+ */
+export const agendamentoSchema = z.discriminatedUnion('modo', [
+  z.object({ modo: z.literal('agora') }),
+
+  z.object({
+    modo: z.literal('data'),
+    data: z.coerce
+      .date({ invalid_type_error: 'Informe uma data válida.' })
+      .refine((d) => d.getTime() > Date.now(), {
+        message: 'A data de liberação deve estar no futuro.',
+      }),
+  }),
+
+  z.object({
+    modo: z.literal('dias'),
+    dias: z.coerce
+      .number({ invalid_type_error: 'Informe o número de dias.' })
+      .int('Use dias inteiros.')
+      .positive('O prazo deve ser maior que zero.')
+      .max(3650, 'Prazo máximo de 10 anos.'),
+  }),
+]);
+
+export type AgendamentoInput = z.infer<typeof agendamentoSchema>;
