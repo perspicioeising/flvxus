@@ -242,12 +242,21 @@ export default async function FichaAlunoPage({
               {treinos.map((plano) => (
                 <li
                   key={plano.id}
-                  className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
                 >
                   <span className="truncate font-medium text-foreground">{plano.name}</span>
-                  <Badge variant="secondary">
-                    {PLAN_STATUS_LABEL[plano.status as PlanStatus]}
-                  </Badge>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <Badge variant="secondary">
+                      {PLAN_STATUS_LABEL[plano.status as PlanStatus]}
+                    </Badge>
+                    {plano.status === 'released' ? (
+                      <Button asChild variant="outline" size="sm" className="min-h-11">
+                        <Link href={`/professor/alunos/${id}/treinar/${plano.id}`}>
+                          Treinar com o aluno
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </span>
                 </li>
               ))}
             </ul>

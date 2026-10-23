@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 
 import { SessaoExecucao, type ItemExecucao } from './sessao-execucao';
 
@@ -24,8 +31,11 @@ vi.mock('@/hooks/use-toast', () => ({
   toast: (arg: unknown) => toast(arg),
 }));
 
+// `push` inspecionável para checar o destino de navegação (fluxo professor usa
+// `destinoAoFinalizar`). `vi.clearAllMocks()` no beforeEach zera entre casos.
+const push = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push, refresh: vi.fn() }),
 }));
 
 /** Item mínimo de 2 séries, sem descanso prescrito (evita o timer no DOM). */
@@ -262,5 +272,73 @@ describe('SessaoExecucao — eixo de agrupamento (divisão vs. dia)', () => {
 
     // UM único argumento — fichas legadas não carimbam divisão.
     expect(iniciarSessao).toHaveBeenCalledWith('plan-1');
+  });
+});
+
+describe('SessaoExecucao — executado pelo professor (treino presencial)', () => {
+  it('ficha por divisão carimba o aluno-alvo (3º arg) no iniciarSessao', async () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        studentId="aluno-99"
+        itens={[
+          itemFake({ id: 'a1', nome: 'Supino A', division: 'A', weekday: null }),
+          itemFake({ id: 'b1', nome: 'Agacho B', division: 'B', weekday: null }),
+        ]}
+      />
+    );
+
+    await concluirSerieAtual('10');
+
+    // 3º argumento = user_id do ALUNO em cujo nome o professor registra.
+    expect(iniciarSessao).toHaveBeenCalledWith('plan-1', 'A', 'aluno-99');
+  });
+
+  it('ficha legada por dia carimba o aluno-alvo com division undefined', async () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        studentId="aluno-99"
+        itens={[
+          itemFake({ id: 'd1', nome: 'Supino seg', weekday: 1 }),
+          itemFake({ id: 'd2', nome: 'Agacho ter', weekday: 2 }),
+        ]}
+      />
+    );
+
+    await concluirSerieAtual('10');
+
+    // Fichas legadas não carimbam divisão, mas ainda passam o aluno-alvo.
+    expect(iniciarSessao).toHaveBeenCalledWith('plan-1', undefined, 'aluno-99');
+  });
+
+  it('ao finalizar, navega para destinoAoFinalizar (ficha do aluno no professor)', async () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        studentId="aluno-99"
+        destinoAoFinalizar="/professor/alunos/aluno-99"
+        itens={[itemFake()]}
+      />
+    );
+
+    // Cria a sessão concluindo uma série (senão o finalizar é no-op sem id).
+    await concluirSerieAtual('10');
+
+    // Aguarda a transição de `registrarSerie` encerrar: enquanto `pendente`
+    // (useTransition) é true, o gatilho "Finalizar treino" fica disabled e o
+    // Radix não abre o diálogo.
+    const gatilho = screen.getByRole('button', { name: /finalizar treino/i });
+    await waitFor(() => expect(gatilho).not.toBeDisabled());
+
+    // Abre o diálogo de finalização e confirma.
+    fireEvent.click(gatilho);
+    fireEvent.click(await screen.findByRole('button', { name: /^finalizar$/i }));
+
+    // finalizarSessao resolve e navega para o destino do professor.
+    await waitFor(() => {
+      expect(finalizarSessao).toHaveBeenCalledTimes(1);
+      expect(push).toHaveBeenCalledWith('/professor/alunos/aluno-99');
+    });
   });
 });
