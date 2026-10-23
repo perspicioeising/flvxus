@@ -18,6 +18,18 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { GENEROS } from '@/schemas/aluno';
+import { GENERO_LABEL } from '@/components/professor/alunos/labels';
+
+/** Valor "nenhum" do select opcional (não é um valor do vocabulário). */
+const NENHUM = 'none';
 
 /** Valores do formulário em texto (inputs guardam string). */
 export interface PerfilFormValues {
@@ -151,9 +163,24 @@ export function PerfilForm({ valoresIniciais }: PerfilFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Gênero (opcional)</FormLabel>
-                <FormControl>
-                  <Input {...field} className="h-11" />
-                </FormControl>
+                <Select
+                  value={field.value || NENHUM}
+                  onValueChange={(v) => field.onChange(v === NENHUM ? '' : v)}
+                >
+                  <FormControl>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value={NENHUM}>Não informado</SelectItem>
+                    {GENEROS.map((genero) => (
+                      <SelectItem key={genero} value={genero}>
+                        {GENERO_LABEL[genero]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { GENEROS } from '@/schemas/aluno';
 import type { ConsentType, DataRequestType } from '@/types/database.types';
 
 /**
@@ -44,7 +45,9 @@ export const editarPerfilSchema = z.object({
     .min(1, 'Informe o nome completo.'),
   phone: opcionalVazio(z.string().trim().min(1)),
   birth_date: opcionalVazio(z.string().trim().min(1)),
-  gender: opcionalVazio(z.string().trim().min(1)),
+  gender: opcionalVazio(
+    z.enum(GENEROS, { errorMap: () => ({ message: 'Selecione um gênero válido.' }) })
+  ),
   height_cm: numeroPositivoOpcional,
 });
 
