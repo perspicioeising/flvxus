@@ -53,6 +53,52 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
 - Segredos removidos do .env.example (CRON_SECRET real; ANTHROPIC_API_KEY).
 
 ### Concluído
+
+#### Lote de 9 melhorias + 3 recursos novos (rodada de out/2026, via workflows) — tudo na `main`, aprovado em revisão
+
+> Cada item abaixo passou por implementação + revisão de código (e, nos mais arriscados, também
+> por design + revisão de design). Verificação `typecheck`/`lint`/`test`/`build` EXIT=0 em todos.
+> Trabalho direto na `main`, sem push automático. **Bloqueios de ambiente no fim desta seção.**
+
+- **Onda 1** — bug da avaliação que "fechava sozinha" na etapa de fotos (reuso de nó DOM + guarda
+  de submit + Enter); RPE 1..10 opcional ao finalizar treino; uma série por vez na execução;
+  descanso reiniciado a cada série concluída. (migration `...092000` perceived_intensity)
+- **Onda 2** — circunferências novas (braço contraído, antebraço, coxa medial/distal, esq/dir);
+  anamnese com roteiro-padrão na criação; filtro por grupo muscular no seletor de exercício.
+  (migration `...093000` circunferências)
+- **Onda 3** — pontuação InBody na avaliação física (coluna dedicada `inbody_score`).
+  (migration `...094000`)
+- **Item "fotos na criação da avaliação"** — já existia e funcionava; nada a fazer.
+- **Ondas 4 e 5 (Item 9)** — divisões A/B/C/D/E + ficha a partir de MÚLTIPLOS modelos. Parte A:
+  base (coluna `division` em itens/sessões, `lib/divisao.ts`, schemas, `criarFichaMultiModelo`,
+  `order_index` global contínuo, `source_workout_id=null` quando multi-origem) + UI do professor.
+  Parte B: execução e detalhe do aluno agrupam/selecionam por divisão com detecção por ficha e
+  fallback total ao eixo "dia" legado; a sessão carimba a divisão executada. Mecânica da execução
+  (navegação, descanso, série-por-vez, herança, RPE) preservada. (migration `...095000`)
+- **Recurso — Liberação programada de treinos** — o professor agenda a liberação por DATA FIXA ou
+  PRAZO EM DIAS; um cron diário (`/api/cron/liberar-treinos`, auth `CRON_SECRET` endurecida) vira
+  `draft→released` quando a data chega. Liberar agendado/imediato é um ATALHO DELIBERADO fora da
+  máquina de transições (`draft→pending_review→approved→released`), aceito por produto. Aluno vê só
+  o treino liberado. (migration `...098000` `scheduled_release_at` + `vercel.json` com cron 06:00 UTC)
+- **Recurso — Treino presencial (professor executa em nome do aluno)** — botão "Treinar com o
+  aluno" nas fichas liberadas abre a MESMA tela de execução, operada pelo professor; a sessão grava
+  `student_id` do aluno e `recorded_by` do autor logado. A RLS já autorizava o trainer do tenant a
+  escrever sessões/séries do aluno (nenhuma policy mudou). Aluno vê como execução dele.
+  (migration `...099000` `recorded_by`)
+- **Recurso — Hub de atalhos na ficha do aluno** — a página do professor `/professor/alunos/[id]`
+  ganhou um bloco de atalhos: criar treino (`?aluno=` pré-seleciona), nova avaliação (`?aluno=`),
+  dieta, e âncoras para treinos/evolução da própria página. Sem duplicar a seção de evolução nem o
+  botão de treino presencial. Só navegação; zero mudança de banco.
+
+**Bloqueios de ambiente desta rodada (fazer no deploy — não dá para fazer no ambiente sem Docker/Supabase):**
+- **Aplicar as 6 migrations novas** no Supabase (à mão / `db reset`): `...092000` (RPE),
+  `...093000` (circunferências), `...094000` (InBody), `...095000` (divisões),
+  `...098000` (liberação programada), `...099000` (recorded_by). Todas aditivas/nullable.
+- **Regenerar `types/database.types.ts`** via CLI (`supabase gen types ... --local`) — hoje os
+  tipos dessas colunas foram editados à mão.
+- **Cron da liberação programada:** garantir `CRON_SECRET` no ambiente de produção e o agendamento
+  do `vercel.json` ativo (ou agendador equivalente). Testar o endpoint com o header de autorização.
+
 - Setup do repositório: resolvido erro de clone no Windows (arquivos `:Zone.Identifier`),
   `.gitignore` atualizado para ignorar artefatos "mark of the web" e worktrees.
 - Fase 0 — Auditoria completa do código atual em `docs/audit.md`. Principais achados:
