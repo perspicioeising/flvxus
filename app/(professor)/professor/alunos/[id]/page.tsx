@@ -24,6 +24,12 @@ import {
   AvatarFallback,
   AvatarImage,
 } from '@/components/ui/avatar';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { EmptyState } from '@/components/patterns';
 import {
   EXPERIENCIA_LABEL,
@@ -161,29 +167,7 @@ export default async function FichaAlunoPage({
               não recebeu ou o link expirou.
             </p>
           ) : null}
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Dado rotulo="Telefone" valor={aluno.phone} />
-            <Dado rotulo="Nascimento" valor={formatarData(aluno.birth_date)} />
-            <Dado rotulo="Gênero" valor={aluno.gender} />
-            <Dado
-              rotulo="Altura"
-              valor={aluno.height_cm != null ? `${aluno.height_cm} cm` : null}
-            />
-            <Dado
-              rotulo="Experiência"
-              valor={
-                aluno.experience_level
-                  ? EXPERIENCIA_LABEL[aluno.experience_level as ExperienceLevel]
-                  : null
-              }
-            />
-            <Dado
-              rotulo="Objetivo"
-              valor={aluno.goal ? OBJETIVO_LABEL[aluno.goal as GoalType] : null}
-            />
-          </dl>
-
-          <div className="border-t border-border pt-4">
+          <div>
             <p className="mb-2 text-sm font-medium text-foreground">Alterar status</p>
             <StudentStatusActions userId={id} statusAtual={aluno.status} />
           </div>
@@ -191,46 +175,12 @@ export default async function FichaAlunoPage({
       </Card>
 
       {/* Hub de atalhos — navegação rápida para as funcionalidades do aluno */}
-      <AtalhosAluno alunoId={id} />
-
-      {/* Última avaliação */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <HeartPulse className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-            Última avaliação
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {avaliacao ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Realizada em {formatarData(avaliacao.assessed_at)}
-                {dias != null ? ` · há ${dias} dia(s)` : ''}
-              </p>
-              <dl className="grid grid-cols-3 gap-4">
-                <Dado
-                  rotulo="Peso"
-                  valor={avaliacao.weight_kg != null ? `${avaliacao.weight_kg} kg` : null}
-                />
-                <Dado rotulo="IMC" valor={avaliacao.bmi != null ? String(avaliacao.bmi) : null} />
-                <Dado
-                  rotulo="% Gordura"
-                  valor={
-                    avaliacao.body_fat_pct != null ? `${avaliacao.body_fat_pct}%` : null
-                  }
-                />
-              </dl>
-            </div>
-          ) : (
-            <EmptyState
-              icon={HeartPulse}
-              title="Sem avaliações ainda"
-              description="As avaliações físicas deste aluno aparecerão aqui."
-            />
-          )}
-        </CardContent>
-      </Card>
+      <AtalhosAluno
+        alunoId={id}
+        fichasLiberadas={treinos
+          .filter((t) => t.status === 'released')
+          .map((t) => ({ id: t.id, name: t.name }))}
+      />
 
       {/* Treinos */}
       <Card id="treinos" className="scroll-mt-20">
@@ -253,13 +203,11 @@ export default async function FichaAlunoPage({
                     <Badge variant="secondary">
                       {PLAN_STATUS_LABEL[plano.status as PlanStatus]}
                     </Badge>
-                    {plano.status === 'released' ? (
-                      <Button asChild variant="outline" size="sm" className="min-h-11">
-                        <Link href={`/professor/alunos/${id}/treinar/${plano.id}`}>
-                          Treinar com o aluno
-                        </Link>
-                      </Button>
-                    ) : null}
+                    <Button asChild variant="outline" size="sm" className="min-h-11">
+                      <Link href={`/professor/treinos/${plano.id}`}>
+                        Ver detalhes
+                      </Link>
+                    </Button>
                   </span>
                 </li>
               ))}
@@ -279,34 +227,130 @@ export default async function FichaAlunoPage({
         <SecaoEvolucao studentId={id} />
       </div>
 
-      {/* Dieta */}
+      {/* Demais informações do aluno — recolhíveis num acordeon */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Utensils className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-            Dieta
-          </CardTitle>
+          <CardTitle className="text-lg">Demais informações</CardTitle>
+          <CardDescription>
+            Dados cadastrais, última avaliação e dieta do aluno.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {dieta ? (
-            <dl className="grid grid-cols-3 gap-4">
-              <Dado rotulo="Status" valor={PLAN_STATUS_LABEL[dieta.status as PlanStatus]} />
-              <Dado
-                rotulo="Meta calórica"
-                valor={dieta.target_kcal != null ? `${dieta.target_kcal} kcal` : null}
-              />
-              <Dado
-                rotulo="Objetivo"
-                valor={dieta.goal ? OBJETIVO_LABEL[dieta.goal as GoalType] : null}
-              />
-            </dl>
-          ) : (
-            <EmptyState
-              icon={Utensils}
-              title="Sem dieta cadastrada"
-              description="O plano alimentar deste aluno aparecerá aqui."
-            />
-          )}
+          <Accordion type="multiple" className="w-full">
+            {/* Dados cadastrais */}
+            <AccordionItem value="cadastrais">
+              <AccordionTrigger>Dados cadastrais</AccordionTrigger>
+              <AccordionContent>
+                <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <Dado rotulo="Telefone" valor={aluno.phone} />
+                  <Dado rotulo="Nascimento" valor={formatarData(aluno.birth_date)} />
+                  <Dado rotulo="Gênero" valor={aluno.gender} />
+                  <Dado
+                    rotulo="Altura"
+                    valor={aluno.height_cm != null ? `${aluno.height_cm} cm` : null}
+                  />
+                  <Dado
+                    rotulo="Experiência"
+                    valor={
+                      aluno.experience_level
+                        ? EXPERIENCIA_LABEL[aluno.experience_level as ExperienceLevel]
+                        : null
+                    }
+                  />
+                  <Dado
+                    rotulo="Objetivo"
+                    valor={aluno.goal ? OBJETIVO_LABEL[aluno.goal as GoalType] : null}
+                  />
+                </dl>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Última avaliação */}
+            <AccordionItem value="avaliacao">
+              <AccordionTrigger>
+                <span className="flex items-center gap-2">
+                  <HeartPulse
+                    className="h-5 w-5 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  Última avaliação
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                {avaliacao ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Realizada em {formatarData(avaliacao.assessed_at)}
+                      {dias != null ? ` · há ${dias} dia(s)` : ''}
+                    </p>
+                    <dl className="grid grid-cols-3 gap-4">
+                      <Dado
+                        rotulo="Peso"
+                        valor={
+                          avaliacao.weight_kg != null ? `${avaliacao.weight_kg} kg` : null
+                        }
+                      />
+                      <Dado
+                        rotulo="IMC"
+                        valor={avaliacao.bmi != null ? String(avaliacao.bmi) : null}
+                      />
+                      <Dado
+                        rotulo="% Gordura"
+                        valor={
+                          avaliacao.body_fat_pct != null
+                            ? `${avaliacao.body_fat_pct}%`
+                            : null
+                        }
+                      />
+                    </dl>
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={HeartPulse}
+                    title="Sem avaliações ainda"
+                    description="As avaliações físicas deste aluno aparecerão aqui."
+                  />
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Dieta */}
+            <AccordionItem value="dieta">
+              <AccordionTrigger>
+                <span className="flex items-center gap-2">
+                  <Utensils
+                    className="h-5 w-5 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  Dieta
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                {dieta ? (
+                  <dl className="grid grid-cols-3 gap-4">
+                    <Dado
+                      rotulo="Status"
+                      valor={PLAN_STATUS_LABEL[dieta.status as PlanStatus]}
+                    />
+                    <Dado
+                      rotulo="Meta calórica"
+                      valor={dieta.target_kcal != null ? `${dieta.target_kcal} kcal` : null}
+                    />
+                    <Dado
+                      rotulo="Objetivo"
+                      valor={dieta.goal ? OBJETIVO_LABEL[dieta.goal as GoalType] : null}
+                    />
+                  </dl>
+                ) : (
+                  <EmptyState
+                    icon={Utensils}
+                    title="Sem dieta cadastrada"
+                    description="O plano alimentar deste aluno aparecerá aqui."
+                  />
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
     </section>
