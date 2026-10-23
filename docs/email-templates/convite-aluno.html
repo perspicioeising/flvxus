@@ -1,0 +1,119 @@
+<!--
+  Template de e-mail — CONVITE DE ALUNO (Supabase Auth → "Invite user")
+  ----------------------------------------------------------------------
+  COMO USAR (painel do Supabase):
+    Authentication → Emails → Templates → "Invite user"
+    Cole este HTML no corpo do template e salve.
+
+  POR QUE MONTAR A URL COM {{ .TokenHash }} (e NÃO usar {{ .ConfirmationURL }}):
+    Na prática, {{ .ConfirmationURL }} tem mandado o aluno para a tela de LOGIN
+    (Site URL raiz) em vez de /set-password — o aluno não tem senha e fica preso.
+    A forma robusta e recomendada é montar a URL de verificação À MÃO, apontando
+    para o /callback do app com token_hash + type=invite + next=/set-password:
+
+        {{ .SiteURL }}/callback?token_hash={{ .TokenHash }}&type=invite&next=/set-password
+
+    (Se preferir fixar o domínio em vez de {{ .SiteURL }}, use
+     https://flvxus.vercel.app/callback?token_hash={{ .TokenHash }}&type=invite&next=/set-password)
+
+    Ao clicar, o aluno cai em /callback (route handler server-side), que faz
+    `verifyOtp({ token_hash, type: 'invite' })` → cria a sessão (cookies) → e,
+    por ser type=invite, encaminha SEMPRE para /set-password, onde ele só define
+    a senha (ver app/(auth)/callback/route.ts, que já trata token_hash + invite).
+    => NÃO use {{ .ConfirmationURL }} aqui: é justamente o que leva o aluno ao
+       login em vez do set-password.
+    => A Redirect URL `https://flvxus.vercel.app/callback` (e o curinga /**) já
+       está liberada no painel, então este destino é aceito.
+
+  PRÉ-REQUISITOS NO PAINEL (Authentication → URL Configuration):
+    - Site URL: a URL base de produção (ex.: https://flvxus.vercel.app)
+    - Redirect URLs: incluir ${SITE_URL}/callback (e http://localhost:3000/callback
+      em dev). Pode usar curinga: https://SEU-DOMINIO/callback*
+    Sem a Redirect URL liberada, o Supabase IGNORA o redirectTo do convite.
+
+  VARIÁVEIS DISPONÍVEIS NESTE TEMPLATE:
+    {{ .ConfirmationURL }}  — link de aceite do convite (use SEMPRE este no botão)
+    {{ .Email }}            — e-mail do aluno convidado
+    {{ .SiteURL }}          — Site URL configurada (use só para textos, não para o botão)
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seu convite para o Flvxus</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#f4f5f7; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; color:#111827;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7; padding:24px 0;">
+      <tr>
+        <td align="center">
+          <!-- Cartão -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+            <!-- Cabeçalho -->
+            <tr>
+              <td style="background-color:#059669; padding:28px 32px; text-align:center;">
+                <span style="display:inline-block; font-size:22px; font-weight:700; letter-spacing:0.5px; color:#ffffff;">Flvxus</span>
+              </td>
+            </tr>
+
+            <!-- Corpo -->
+            <tr>
+              <td style="padding:32px;">
+                <h1 style="margin:0 0 16px; font-size:20px; font-weight:700; color:#111827;">
+                  Você foi convidado para treinar com seu personal
+                </h1>
+
+                <p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">
+                  Seu personal trainer criou um acesso para você no <strong>Flvxus</strong>,
+                  onde você acompanha seus treinos, dieta e evolução em um só lugar.
+                </p>
+
+                <p style="margin:0 0 24px; font-size:15px; line-height:1.6; color:#374151;">
+                  Para começar, clique no botão abaixo e <strong>defina a sua senha</strong>.
+                  É rapidinho.
+                </p>
+
+                <!-- Botão -->
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+                  <tr>
+                    <td align="center" style="border-radius:10px; background-color:#059669;">
+                      <a href="{{ .SiteURL }}/callback?token_hash={{ .TokenHash }}&type=invite&next=/set-password"
+                         style="display:inline-block; padding:14px 28px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:10px;">
+                        Definir minha senha
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:0 0 8px; font-size:13px; line-height:1.6; color:#6b7280;">
+                  Se o botão não funcionar, copie e cole este endereço no seu navegador:
+                </p>
+                <p style="margin:0 0 24px; font-size:13px; line-height:1.6; word-break:break-all;">
+                  <a href="{{ .SiteURL }}/callback?token_hash={{ .TokenHash }}&type=invite&next=/set-password" style="color:#059669; text-decoration:underline;">{{ .SiteURL }}/callback?token_hash={{ .TokenHash }}&type=invite&next=/set-password</a>
+                </p>
+
+                <hr style="border:none; border-top:1px solid #e5e7eb; margin:0 0 20px;" />
+
+                <p style="margin:0; font-size:12px; line-height:1.6; color:#9ca3af;">
+                  Este convite foi enviado para <strong>{{ .Email }}</strong>. Se você não
+                  esperava este e-mail, pode ignorá-lo com segurança — nenhuma conta é
+                  ativada sem você definir uma senha.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Rodapé -->
+            <tr>
+              <td style="background-color:#f9fafb; padding:20px 32px; text-align:center;">
+                <p style="margin:0; font-size:12px; color:#9ca3af;">
+                  © Flvxus — Plataforma de treino e acompanhamento
+                </p>
+              </td>
+            </tr>
+          </table>
+          <!-- /Cartão -->
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
