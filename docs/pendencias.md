@@ -702,3 +702,53 @@ Correção: a página agora passa **sempre todos os itens** da ficha e encaminha
 `diaInicial` (nova prop opcional de `SessaoExecucao`). O Client abre no dia do deep-link quando
 ele tem itens e, caso contrário, no primeiro dia com exercícios — mantendo a troca de dia livre
 pelo seletor. Sem mudança de comportamento para quem entra sem `?dia`.
+
+## Liberação programada de treinos (cron diário)
+
+O professor pode **programar a liberação** de uma ficha ao aluno por **data fixa** ou por
+**prazo em dias**, além de **liberar agora**. Uma ficha agendada é `status='draft'` +
+`scheduled_release_at` preenchida (invisível ao aluno pela RLS atual — nada mudou na RLS). Um
+**cron diário** (`/api/cron/liberar-treinos`, 06:00 UTC via `vercel.json`) lê as fichas vencidas
+(`scheduled_release_at <= now()` e `status='draft'`), cross-tenant via `service_role`, e as
+transiciona para `released` + `released_at`. A UI do professor vive em
+`components/professor/treinos/agendar-liberacao.tsx` (inputs nativos, zero dep nova) e o selo
+"Agendada para DD/MM" aparece nas listagens.
+
+### Atalho deliberado `draft → released` (fora da máquina de transições)
+
+Tanto "liberar agora" (`programarLiberacao(…,{modo:'agora'})`) quanto o cron escrevem
+`status='released'` **direto**, SEM passar por `alterarStatusFicha`/`transicaoPermitida`. Isso é
+intencional: `TRANSICOES_STATUS['draft']` **não** inclui `'released'` (o fluxo normal é
+`draft → pending_review → approved → released`), então validar a transição faria o cron nunca
+liberar nada. Agendar/liberar é a decisão antecipada do professor de dispensar a revisão para
+aquela ficha. `TRANSICOES_STATUS` **não** foi alterada (o bypass fica restrito ao caminho de
+agendamento). Idempotência: o filtro `status='draft'` garante que uma ficha já liberada nunca é
+reprocessada.
+
+### Bloqueio de ambiente (NÃO é falta de código)
+
+- **Migration** `supabase/migrations/20261021098000_liberacao_programada.sql` (aditiva/nullable:
+  coluna `workout_plans.scheduled_release_at` + índice parcial; não toca enums/RLS) precisa ser
+  **aplicada à mão** (ambiente sem Docker — ver a seção "Fase 2" acima).
+- **`types/database.types.ts`** foi editado à mão (coluna `scheduled_release_at` em
+  Row/Insert/Update de `workout_plans`) e deve ser **regenerado** quando o CLI puder rodar
+  (`supabase gen types`).
+- **Cron real** depende do deploy na **Vercel** + variável **`CRON_SECRET`** configurada no
+  ambiente; não roda no CI. A rota é **endurecida**: sem `CRON_SECRET` configurado, responde
+  **401** (nunca "abre" sem segredo).
+
+### Teste manual do endpoint (quando houver deploy + `CRON_SECRET`)
+
+```bash
+# Em produção (Vercel chama com este header derivado do CRON_SECRET do projeto):
+curl -i -H "Authorization: Bearer $CRON_SECRET" \
+  https://<deploy>/api/cron/liberar-treinos
+
+# Local (com a env setada e `next dev` rodando):
+curl -i -H "Authorization: Bearer $CRON_SECRET" \
+  http://localhost:3000/api/cron/liberar-treinos
+```
+
+A lógica decisória (elegibilidade, agrupamento por tenant, resolver prazo→data, validação Zod e
+`formatarDataBr`) é 100% coberta por testes puros em `tests/unit/liberacao.test.ts` — o que roda
+no CI. A aplicação da migration e a execução real do cron são bloqueio de ambiente.

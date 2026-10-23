@@ -433,8 +433,18 @@ Substituem `text + CHECK` espalhados:
   `notes`.
 - **`workout_plans`** (ficha por aluno) — `id`, `tenant_id`, `student_id → profiles`,
   `trainer_id`, `name`, `status plan_status`, `source_workout_id` (opcional),
-  `released_at`. → **`workout_plan_items`** — `id`, `plan_id`, `exercise_id`, `weekday`,
+  `released_at`, `scheduled_release_at` (liberação programada, nullable). →
+  **`workout_plan_items`** — `id`, `plan_id`, `exercise_id`, `weekday`,
   `order_index`, `sets`, `reps`, `rest_seconds`, `target_load`, `notes`.
+
+> **Liberação programada de treinos.** Uma ficha *agendada* é `status='draft'` +
+> `scheduled_release_at` preenchida — invisível ao aluno pela RLS atual (que só entrega
+> `released`), sem nenhuma mudança de policy. Um cron diário (`/api/cron/liberar-treinos`,
+> 06:00 UTC, `service_role`, autenticado por `CRON_SECRET`) transiciona as fichas vencidas
+> (`scheduled_release_at <= now()` e `status='draft'`) para `released`. Tanto o cron quanto o
+> "liberar agora" escrevem `draft → released` **diretamente**, fora de `TRANSICOES_STATUS` (a
+> máquina de transições não inclui esse par) — atalho deliberado que dispensa a revisão para a
+> ficha agendada. A RLS do aluno (só `released`) permanece inalterada.
 - **`workout_sessions`** (execução pelo aluno) — `id`, `tenant_id`, `plan_id`, `student_id`,
   `started_at`, `finished_at`, `notes`. → **`workout_set_logs`** — `id`, `session_id`,
   `plan_item_id`, `set_number`, `reps_done`, `load_done`, `completed bool`.
