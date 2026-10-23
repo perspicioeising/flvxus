@@ -8,6 +8,7 @@ import { FichaForm, type AlunoOpcao } from '@/components/professor/treinos/ficha
 import { StatusControl } from '@/components/professor/treinos/status-control';
 import { AgendarLiberacao } from '@/components/professor/treinos/agendar-liberacao';
 import { FichaDeleteButton } from '@/components/professor/treinos/delete-buttons';
+import { ClonarFicha } from '@/components/professor/treinos/clonar-ficha';
 import type { ExercicioDisponivel } from '@/components/professor/treinos/exercise-picker';
 import type { ItemEditavel } from '@/components/professor/treinos/item-editor';
 import type { PlanStatus } from '@/types/database.types';
@@ -84,7 +85,15 @@ export default async function FichaDetalhePage({
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           Voltar para treinos
         </Link>
-        <FichaDeleteButton planId={ficha.id} nome={ficha.name} />
+        <div className="flex items-center gap-2">
+          <ClonarFicha
+            sourcePlanId={ficha.id}
+            sourceName={ficha.name}
+            alunos={alunos}
+            variant="botao"
+          />
+          <FichaDeleteButton planId={ficha.id} nome={ficha.name} />
+        </div>
       </div>
 
       <header className="space-y-1">

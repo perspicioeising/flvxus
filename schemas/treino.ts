@@ -189,6 +189,28 @@ export type CriarFichaMultiModeloInput = z.infer<
 >;
 
 // -----------------------------------------------------------------------------
+// Clonagem de FICHA para outro aluno
+// -----------------------------------------------------------------------------
+
+/**
+ * Clonagem de uma FICHA existente para um NOVO aluno. A cópia nasce como
+ * rascunho (a action carimba `status='draft'`), preservando todos os itens da
+ * ficha de origem. O `name` é opcional: quando ausente/vazio, a action aplica o
+ * padrão `"<nome origem> (cópia)"`. O limite de 120 é um teto defensivo coerente
+ * com os demais nomes de ficha (que só exigem `min(1)`).
+ */
+export const clonarFichaSchema = z.object({
+  source_plan_id: z.string().uuid('Ficha de origem inválida.'),
+  student_id: z.string().uuid('Aluno inválido.'),
+  name: z.preprocess(
+    (valor) => (valor === '' || valor === null ? undefined : valor),
+    z.string().trim().min(1).max(120).optional()
+  ),
+});
+
+export type ClonarFichaInput = z.infer<typeof clonarFichaSchema>;
+
+// -----------------------------------------------------------------------------
 // Transição de status da ficha (plan_status)
 // -----------------------------------------------------------------------------
 

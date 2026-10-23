@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  clonarFichaSchema,
   criarFichaMultiModeloSchema,
   divisaoModeloSchema,
   fichaSchema,
@@ -14,6 +15,7 @@ import {
 const EX_ID = '11111111-1111-1111-1111-111111111111';
 const ALUNO_ID = '22222222-2222-2222-2222-222222222222';
 const MODELO_ID = '33333333-3333-3333-3333-333333333333';
+const FICHA_ID = '55555555-5555-5555-5555-555555555555';
 
 describe('itemModeloSchema', () => {
   it('aceita um item mínimo (só exercise_id)', () => {
@@ -262,6 +264,65 @@ describe('fichaSchema', () => {
       itens: [],
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe('clonarFichaSchema', () => {
+  it('aceita clonagem com ficha de origem e novo aluno, sem nome', () => {
+    const r = clonarFichaSchema.safeParse({
+      source_plan_id: FICHA_ID,
+      student_id: ALUNO_ID,
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.name).toBeUndefined();
+    }
+  });
+
+  it('aceita nome opcional e faz trim', () => {
+    const r = clonarFichaSchema.safeParse({
+      source_plan_id: FICHA_ID,
+      student_id: ALUNO_ID,
+      name: '  Treino ABC (cópia)  ',
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.name).toBe('Treino ABC (cópia)');
+    }
+  });
+
+  it('normaliza nome vazio para undefined (usa padrão na action)', () => {
+    const r = clonarFichaSchema.safeParse({
+      source_plan_id: FICHA_ID,
+      student_id: ALUNO_ID,
+      name: '',
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.name).toBeUndefined();
+    }
+  });
+
+  it('rejeita source_plan_id inválido', () => {
+    expect(
+      clonarFichaSchema.safeParse({ source_plan_id: 'nope', student_id: ALUNO_ID }).success
+    ).toBe(false);
+  });
+
+  it('rejeita student_id inválido', () => {
+    expect(
+      clonarFichaSchema.safeParse({ source_plan_id: FICHA_ID, student_id: 'x' }).success
+    ).toBe(false);
+  });
+
+  it('rejeita nome acima de 120 caracteres', () => {
+    expect(
+      clonarFichaSchema.safeParse({
+        source_plan_id: FICHA_ID,
+        student_id: ALUNO_ID,
+        name: 'x'.repeat(121),
+      }).success
+    ).toBe(false);
   });
 });
 

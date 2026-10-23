@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { EmptyState, ErrorState } from '@/components/patterns';
 import { Button } from '@/components/ui/button';
 import { FichaCard } from '@/components/professor/treinos/ficha-card';
+import { ClonarFicha } from '@/components/professor/treinos/clonar-ficha';
 import { CriarDeModelo } from '@/components/professor/treinos/criar-de-modelo';
 import { SugerirTreinoIa } from '@/components/professor/ia/sugerir-treino';
 import type { PlanStatus } from '@/types/database.types';
@@ -110,8 +111,16 @@ export default async function TreinosPage() {
       ) : (
         <ul className="space-y-3">
           {fichas.map((ficha) => (
-            <li key={ficha.id}>
-              <FichaCard ficha={ficha} />
+            <li key={ficha.id} className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <FichaCard ficha={ficha} />
+              </div>
+              <ClonarFicha
+                sourcePlanId={ficha.id}
+                sourceName={ficha.name}
+                alunos={alunos}
+                variant="item"
+              />
             </li>
           ))}
         </ul>

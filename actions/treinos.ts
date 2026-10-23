@@ -6,12 +6,14 @@ import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
   agendamentoSchema,
+  clonarFichaSchema,
   criarFichaMultiModeloSchema,
   fichaSchema,
   modeloSchema,
   resolverPrazoParaData,
   transicaoPermitida,
   type AgendamentoInput,
+  type ClonarFichaInput,
   type CriarFichaMultiModeloInput,
   type FichaInput,
   type ItemFichaInput,
@@ -567,6 +569,124 @@ export async function criarFichaMultiModelo(
   revalidatePath('/professor/treinos');
 
   return { ok: true, message: 'Ficha criada a partir dos modelos.', id: plan.id };
+}
+
+/**
+ * CLONA uma FICHA existente (`workout_plans` + `workout_plan_items`) para um
+ * NOVO aluno, gerando uma cópia COMPLETA como RASCUNHO. Copia todos os itens
+ * preservando `exercise_id, weekday, division, order_index, sets, reps,
+ * rest_seconds, target_load, notes`.
+ *
+ * A cópia nasce em `draft`: NUNCA herda `released`/`released_at` da origem
+ * (`released_at` fica null; `scheduled_release_at` também). O `source_workout_id`
+ * da cópia é o MESMO da origem (ou null) — preserva a procedência conceitual de
+ * qual modelo originou a prescrição; a FK `on delete set null` mantém a
+ * integridade.
+ *
+ * O RLS garante o isolamento por tenant: a leitura da ficha origem só retorna
+ * se for do tenant do professor, e o insert carimba `tenant_id`/`trainer_id`.
+ */
+export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode clonar fichas.' };
+  }
+
+  const parsed = clonarFichaSchema.safeParse(entrada);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: 'Verifique os campos destacados.',
+      fieldErrors: erroDeCampo(parsed.error.flatten()),
+    };
+  }
+
+  const supabase = await createClient();
+
+  // Ficha origem (RLS garante que só retorna se for do tenant do professor).
+  const { data: origem, error: erroOrigem } = await supabase
+    .from('workout_plans')
+    .select('id, name, source_workout_id')
+    .eq('id', parsed.data.source_plan_id)
+    .single();
+
+  if (erroOrigem || !origem) {
+    return { ok: false, message: 'Ficha de origem não encontrada.' };
+  }
+
+  // Checagem defensiva do novo aluno: o RLS de `profiles` já limita ao tenant,
+  // então um profile inexistente/fora do tenant/`role != 'student'` é rejeitado
+  // com mensagem clara antes do insert.
+  const { data: aluno, error: erroAluno } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('user_id', parsed.data.student_id)
+    .single();
+
+  if (erroAluno || !aluno || aluno.role !== 'student') {
+    return { ok: false, message: 'Selecione um aluno válido.' };
+  }
+
+  // Itens da ficha origem, na ordem. Lista vazia é permitida (ficha sem itens).
+  const { data: itensOrigem, error: erroItensOrigem } = await supabase
+    .from('workout_plan_items')
+    .select(
+      'exercise_id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes'
+    )
+    .eq('plan_id', parsed.data.source_plan_id)
+    .order('order_index', { ascending: true });
+
+  if (erroItensOrigem) {
+    return { ok: false, message: `Não foi possível ler a ficha de origem: ${erroItensOrigem.message}` };
+  }
+
+  // Nova ficha: sempre rascunho, nunca herda released/released_at da origem.
+  const { data: plan, error: erroPlan } = await supabase
+    .from('workout_plans')
+    .insert({
+      tenant_id: professor.tenantId,
+      trainer_id: professor.userId,
+      student_id: parsed.data.student_id,
+      name: parsed.data.name?.trim() || `${origem.name} (cópia)`,
+      status: 'draft',
+      source_workout_id: origem.source_workout_id ?? null,
+    })
+    .select('id')
+    .single();
+
+  if (erroPlan || !plan) {
+    return {
+      ok: false,
+      message: `Não foi possível clonar a ficha: ${erroPlan?.message ?? 'erro desconhecido'}`,
+    };
+  }
+
+  if (itensOrigem && itensOrigem.length > 0) {
+    const linhas = itensOrigem.map((item) => ({
+      plan_id: plan.id,
+      exercise_id: item.exercise_id,
+      weekday: item.weekday,
+      division: item.division,
+      order_index: item.order_index,
+      sets: item.sets,
+      reps: item.reps,
+      rest_seconds: item.rest_seconds,
+      target_load: item.target_load,
+      notes: item.notes,
+    }));
+
+    const { error: erroItens } = await supabase.from('workout_plan_items').insert(linhas);
+
+    if (erroItens) {
+      // Rollback: remove a ficha para não deixar cópia parcial.
+      await supabase.from('workout_plans').delete().eq('id', plan.id);
+      return { ok: false, message: `Não foi possível copiar os exercícios: ${erroItens.message}` };
+    }
+  }
+
+  revalidatePath('/professor/treinos');
+
+  return { ok: true, message: 'Ficha clonada.', id: plan.id };
 }
 
 // =============================================================================
