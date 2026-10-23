@@ -11,6 +11,7 @@ import {
   Settings,
   Activity,
   HeartPulse,
+  HelpCircle,
   type LucideIcon,
   Trophy,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ const trainerNav: NavItem[] = [
   { label: 'Dietas', href: '/professor/dietas', icon: Utensils },
   // { label: 'Agenda', href: '/professor/agenda', icon: Calendar },
   // { label: 'Configurações', href: '/professor/configuracoes', icon: Settings },
+  { label: 'Ajuda', href: '/professor/ajuda', icon: HelpCircle },
 ];
 
 const studentNav: NavItem[] = [
@@ -44,6 +46,7 @@ const studentNav: NavItem[] = [
   { label: 'Avaliações', href: '/aluno/avaliacoes', icon: HeartPulse },
     { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
   { label: 'Perfil', href: '/aluno/perfil', icon: Settings },
+  { label: 'Ajuda', href: '/aluno/ajuda', icon: HelpCircle },
 ];
 
 /** Itens de menu distintos por papel. */
