@@ -207,145 +207,155 @@ export function CriarDeModelo({
           Criar a partir de modelo
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Criar ficha a partir de modelos</DialogTitle>
-          <DialogDescription>
-            Marque um ou mais modelos. Cada modelo vira uma divisão (A, B, C…) da
-            ficha do aluno. Você poderá ajustar os exercícios depois.
-          </DialogDescription>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+        {/* Cabeçalho fixo: título, descrição e busca. Não rola com a lista. */}
+        <DialogHeader className="space-y-3 border-b border-border px-6 pb-4 pt-6">
+          <div className="space-y-1.5">
+            <DialogTitle>Criar ficha a partir de modelos</DialogTitle>
+            <DialogDescription>
+              Marque um ou mais modelos. Cada modelo vira uma divisão (A, B, C…)
+              da ficha do aluno. Você poderá ajustar os exercícios depois.
+            </DialogDescription>
+          </div>
+
+          <div>
+            <Label htmlFor="busca-modelo-dialogo" className="sr-only">
+              Buscar modelo por nome
+            </Label>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                id="busca-modelo-dialogo"
+                type="search"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar modelo pelo nome"
+                className="pl-9"
+              />
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <Label>Modelos (um por divisão)</Label>
-              {selecionados.length > 0 ? (
-                <span className="text-xs text-muted-foreground">
-                  {selecionados.length} selecionado
-                  {selecionados.length === 1 ? '' : 's'}
-                </span>
-              ) : null}
-            </div>
-
-            <div>
-              <Label htmlFor="busca-modelo-dialogo" className="sr-only">
-                Buscar modelo por nome
-              </Label>
-              <div className="relative">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="busca-modelo-dialogo"
-                  type="search"
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Buscar modelo pelo nome"
-                  className="pl-9"
-                />
-              </div>
-            </div>
-
-            {grupos.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                Nenhum modelo encontrado para “{busca.trim()}”.
-              </p>
-            ) : (
-              <Accordion
-                type="multiple"
-                className="rounded-lg border border-border px-3"
-              >
-                {grupos.map((grupo) => (
-                  <AccordionItem
-                    key={grupo.plano}
-                    value={grupo.plano}
-                    className="last:border-b-0"
-                  >
-                    <AccordionTrigger className="text-sm">
-                      {grupo.plano}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <ul className="space-y-2">
-                        {grupo.modelos.map((m) => {
-                          const marcado = selecionados.includes(m.id);
-                          const posicao = selecionados.indexOf(m.id);
-                          return (
-                            <li
-                              key={m.id}
-                              className="flex items-center gap-3 rounded-lg border border-border px-3 py-2"
+        {/* Corpo rolável: a lista de planos em acordeon. Altura controlada. */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+          {grupos.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum modelo encontrado para “{busca.trim()}”.
+            </p>
+          ) : (
+            <Accordion type="multiple" className="space-y-2">
+              {grupos.map((grupo) => (
+                <AccordionItem
+                  key={grupo.plano}
+                  value={grupo.plano}
+                  className="overflow-hidden rounded-lg border border-border last:border-b"
+                >
+                  <AccordionTrigger className="px-4 py-3 text-sm font-semibold hover:no-underline">
+                    {grupo.plano}
+                  </AccordionTrigger>
+                  <AccordionContent className="px-3 pb-3 pt-0">
+                    <ul className="space-y-2">
+                      {grupo.modelos.map((m) => {
+                        const marcado = selecionados.includes(m.id);
+                        const posicao = selecionados.indexOf(m.id);
+                        return (
+                          <li
+                            key={m.id}
+                            className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${
+                              marcado
+                                ? 'border-primary/40 bg-primary/5'
+                                : 'border-border'
+                            }`}
+                          >
+                            <Checkbox
+                              id={`modelo-${m.id}`}
+                              checked={marcado}
+                              onCheckedChange={(v) =>
+                                alternarModelo(m.id, v === true)
+                              }
+                            />
+                            <Label
+                              htmlFor={`modelo-${m.id}`}
+                              className="min-w-0 flex-1 cursor-pointer truncate font-normal"
                             >
-                              <Checkbox
-                                id={`modelo-${m.id}`}
-                                checked={marcado}
-                                onCheckedChange={(v) =>
-                                  alternarModelo(m.id, v === true)
+                              {itemDoModelo(m.name)}
+                            </Label>
+                            {marcado ? (
+                              <Input
+                                aria-label={`Rótulo da divisão para ${m.name}`}
+                                className="h-9 w-24 shrink-0"
+                                value={rotulos[m.id] ?? ''}
+                                onChange={(e) =>
+                                  setRotulos((atual) => ({
+                                    ...atual,
+                                    [m.id]: e.target.value,
+                                  }))
                                 }
+                                placeholder={ROTULOS_PADRAO[posicao] ?? 'Divisão'}
                               />
-                              <Label
-                                htmlFor={`modelo-${m.id}`}
-                                className="min-w-0 flex-1 cursor-pointer truncate font-normal"
-                              >
-                                {itemDoModelo(m.name)}
-                              </Label>
-                              {marcado ? (
-                                <Input
-                                  aria-label={`Rótulo da divisão para ${m.name}`}
-                                  className="h-9 w-24"
-                                  value={rotulos[m.id] ?? ''}
-                                  onChange={(e) =>
-                                    setRotulos((atual) => ({
-                                      ...atual,
-                                      [m.id]: e.target.value,
-                                    }))
-                                  }
-                                  placeholder={ROTULOS_PADRAO[posicao] ?? 'Divisão'}
-                                />
-                              ) : null}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="origem-aluno">Aluno</Label>
-            <Select value={studentId} onValueChange={setStudentId}>
-              <SelectTrigger id="origem-aluno">
-                <SelectValue placeholder="Selecione o aluno" />
-              </SelectTrigger>
-              <SelectContent>
-                {alunos.map((a) => (
-                  <SelectItem key={a.user_id} value={a.user_id}>
-                    {a.full_name ?? 'Aluno sem nome'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="origem-nome">Nome da ficha</Label>
-            <Input
-              id="origem-nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Ex.: Treino ABC - Hipertrofia"
-            />
-          </div>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
         </div>
 
-        <DialogFooter>
-          <Button type="button" className="min-h-11" disabled={desabilitado} onClick={criar}>
-            {salvando ? 'Criando…' : 'Criar ficha'}
-          </Button>
-        </DialogFooter>
+        {/* Rodapé fixo: aluno, nome da ficha e ação de criar. Sempre visível. */}
+        <div className="space-y-4 border-t border-border bg-muted/30 px-6 py-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="origem-aluno">Aluno</Label>
+              <Select value={studentId} onValueChange={setStudentId}>
+                <SelectTrigger id="origem-aluno">
+                  <SelectValue placeholder="Selecione o aluno" />
+                </SelectTrigger>
+                <SelectContent>
+                  {alunos.map((a) => (
+                    <SelectItem key={a.user_id} value={a.user_id}>
+                      {a.full_name ?? 'Aluno sem nome'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="origem-nome">Nome da ficha</Label>
+              <Input
+                id="origem-nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex.: Treino ABC - Hipertrofia"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="items-center gap-3 sm:justify-between">
+            <span className="text-xs text-muted-foreground" aria-live="polite">
+              {selecionados.length > 0
+                ? `${selecionados.length} modelo${
+                    selecionados.length === 1 ? '' : 's'
+                  } selecionado${selecionados.length === 1 ? '' : 's'}`
+                : 'Nenhum modelo selecionado'}
+            </span>
+            <Button
+              type="button"
+              className="min-h-11"
+              disabled={desabilitado}
+              onClick={criar}
+            >
+              {salvando ? 'Criando…' : 'Criar ficha'}
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
