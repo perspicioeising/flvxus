@@ -4,7 +4,7 @@ import { ClipboardList, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { EmptyState, ErrorState } from '@/components/patterns';
 import { Button } from '@/components/ui/button';
-import { ModeloCard } from '@/components/professor/treinos/modelo-card';
+import { ListaModelos } from '@/components/professor/modelos/lista-modelos';
 
 /**
  * Listagem de MODELOS de treino reutilizáveis (`workouts is_template=true`).
@@ -66,13 +66,7 @@ export default async function ModelosTreinoPage() {
           </Button>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {modelos.map((modelo) => (
-            <li key={modelo.id}>
-              <ModeloCard modelo={modelo} />
-            </li>
-          ))}
-        </ul>
+        <ListaModelos modelos={modelos} />
       )}
     </section>
   );
