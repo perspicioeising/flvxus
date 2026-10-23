@@ -2,13 +2,19 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Copy } from 'lucide-react';
+import { Copy, Search } from 'lucide-react';
 
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import {
   Select,
   SelectContent,
@@ -35,6 +41,32 @@ export interface ModeloOpcao {
 
 /** Rótulos posicionais padrão de divisão, na ordem de seleção dos modelos. */
 const ROTULOS_PADRAO = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+
+/** Nome do grupo para modelos sem o separador " — " no nome. */
+const GRUPO_OUTROS = 'Outros';
+
+/**
+ * Deriva o "plano" de um modelo pelo prefixo do nome antes do primeiro " — "
+ * (ex.: "Men's Physique — A (Costas)" → "Men's Physique"). Sem o separador,
+ * o modelo cai no grupo "Outros".
+ */
+function planoDoModelo(name: string): string {
+  const idx = name.indexOf(' — ');
+  if (idx === -1) return GRUPO_OUTROS;
+  const plano = name.slice(0, idx).trim();
+  return plano || GRUPO_OUTROS;
+}
+
+/**
+ * Rótulo exibido dentro do item (o que vem depois de " — ", ex.: "A (Costas)").
+ * Sem o separador, usa o nome inteiro — assim o item nunca fica vazio.
+ */
+function itemDoModelo(name: string): string {
+  const idx = name.indexOf(' — ');
+  if (idx === -1) return name;
+  const resto = name.slice(idx + 3).trim();
+  return resto || name;
+}
 
 /**
  * Rótulo efetivo de um modelo selecionado: o valor digitado pelo professor
@@ -73,7 +105,33 @@ export function CriarDeModelo({
   const [rotulos, setRotulos] = React.useState<Record<string, string>>({});
   const [studentId, setStudentId] = React.useState('');
   const [nome, setNome] = React.useState('');
+  const [busca, setBusca] = React.useState('');
   const [salvando, setSalvando] = React.useState(false);
+
+  // Modelos agrupados por plano, filtrados pela busca por nome. Planos sem
+  // nenhum modelo correspondente são ocultados.
+  const grupos = React.useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    const filtrados = q
+      ? modelos.filter((m) => m.name.toLowerCase().includes(q))
+      : modelos;
+
+    const porPlano = new Map<string, ModeloOpcao[]>();
+    for (const m of filtrados) {
+      const plano = planoDoModelo(m.name);
+      const lista = porPlano.get(plano);
+      if (lista) lista.push(m);
+      else porPlano.set(plano, [m]);
+    }
+
+    return Array.from(porPlano.entries())
+      .sort(([a], [b]) => {
+        if (a === GRUPO_OUTROS) return 1;
+        if (b === GRUPO_OUTROS) return -1;
+        return a.localeCompare(b, 'pt-BR');
+      })
+      .map(([plano, lista]) => ({ plano, modelos: lista }));
+  }, [busca, modelos]);
 
   const desabilitado = selecionados.length === 0 || !studentId || !nome.trim() || salvando;
 
@@ -125,7 +183,13 @@ export function CriarDeModelo({
   }
 
   return (
-    <Dialog open={aberto} onOpenChange={setAberto}>
+    <Dialog
+      open={aberto}
+      onOpenChange={(v) => {
+        setAberto(v);
+        if (!v) setBusca('');
+      }}
+    >
       <DialogTrigger asChild>
         <Button
           type="button"
@@ -154,42 +218,100 @@ export function CriarDeModelo({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Modelos (um por divisão)</Label>
-            <ul className="space-y-2">
-              {modelos.map((m) => {
-                const marcado = selecionados.includes(m.id);
-                const posicao = selecionados.indexOf(m.id);
-                return (
-                  <li
-                    key={m.id}
-                    className="flex items-center gap-3 rounded-lg border border-border px-3 py-2"
+            <div className="flex items-center justify-between gap-2">
+              <Label>Modelos (um por divisão)</Label>
+              {selecionados.length > 0 ? (
+                <span className="text-xs text-muted-foreground">
+                  {selecionados.length} selecionado
+                  {selecionados.length === 1 ? '' : 's'}
+                </span>
+              ) : null}
+            </div>
+
+            <div>
+              <Label htmlFor="busca-modelo-dialogo" className="sr-only">
+                Buscar modelo por nome
+              </Label>
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="busca-modelo-dialogo"
+                  type="search"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar modelo pelo nome"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {grupos.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                Nenhum modelo encontrado para “{busca.trim()}”.
+              </p>
+            ) : (
+              <Accordion
+                type="multiple"
+                className="rounded-lg border border-border px-3"
+              >
+                {grupos.map((grupo) => (
+                  <AccordionItem
+                    key={grupo.plano}
+                    value={grupo.plano}
+                    className="last:border-b-0"
                   >
-                    <Checkbox
-                      id={`modelo-${m.id}`}
-                      checked={marcado}
-                      onCheckedChange={(v) => alternarModelo(m.id, v === true)}
-                    />
-                    <Label
-                      htmlFor={`modelo-${m.id}`}
-                      className="min-w-0 flex-1 cursor-pointer truncate font-normal"
-                    >
-                      {m.name}
-                    </Label>
-                    {marcado ? (
-                      <Input
-                        aria-label={`Rótulo da divisão para ${m.name}`}
-                        className="h-9 w-24"
-                        value={rotulos[m.id] ?? ''}
-                        onChange={(e) =>
-                          setRotulos((atual) => ({ ...atual, [m.id]: e.target.value }))
-                        }
-                        placeholder={ROTULOS_PADRAO[posicao] ?? 'Divisão'}
-                      />
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
+                    <AccordionTrigger className="text-sm">
+                      {grupo.plano}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <ul className="space-y-2">
+                        {grupo.modelos.map((m) => {
+                          const marcado = selecionados.includes(m.id);
+                          const posicao = selecionados.indexOf(m.id);
+                          return (
+                            <li
+                              key={m.id}
+                              className="flex items-center gap-3 rounded-lg border border-border px-3 py-2"
+                            >
+                              <Checkbox
+                                id={`modelo-${m.id}`}
+                                checked={marcado}
+                                onCheckedChange={(v) =>
+                                  alternarModelo(m.id, v === true)
+                                }
+                              />
+                              <Label
+                                htmlFor={`modelo-${m.id}`}
+                                className="min-w-0 flex-1 cursor-pointer truncate font-normal"
+                              >
+                                {itemDoModelo(m.name)}
+                              </Label>
+                              {marcado ? (
+                                <Input
+                                  aria-label={`Rótulo da divisão para ${m.name}`}
+                                  className="h-9 w-24"
+                                  value={rotulos[m.id] ?? ''}
+                                  onChange={(e) =>
+                                    setRotulos((atual) => ({
+                                      ...atual,
+                                      [m.id]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder={ROTULOS_PADRAO[posicao] ?? 'Divisão'}
+                                />
+                              ) : null}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
           </div>
 
           <div className="space-y-1.5">
