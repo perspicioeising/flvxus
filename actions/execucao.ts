@@ -55,14 +55,19 @@ function erroDeCampo(flatten: {
  */
 export async function iniciarSessao(
   planId: string,
-  division?: string
+  division?: string,
+  targetStudentId?: string
 ): Promise<EstadoAcao> {
-  const aluno = await getSessionUser();
-  if (!aluno || aluno.role !== 'student') {
-    return { ok: false, message: 'Apenas o aluno pode iniciar um treino.' };
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
   }
 
-  const parsed = iniciarSessaoSchema.safeParse({ plan_id: planId, division });
+  const parsed = iniciarSessaoSchema.safeParse({
+    plan_id: planId,
+    division,
+    target_student_id: targetStudentId,
+  });
   if (!parsed.success) {
     return {
       ok: false,
@@ -71,14 +76,40 @@ export async function iniciarSessao(
     };
   }
 
+  // Resolve o aluno-alvo e autoriza o fluxo. Sem `target_student_id` = fluxo do
+  // próprio aluno (exige role 'student', grava para si). Com `target_student_id`
+  // = fluxo do professor (exige role 'trainer'; grava em nome do aluno). A posse
+  // real é garantida pela RLS (trainer do tenant OU aluno dono).
+  let studentIdAlvo: string;
+  if (parsed.data.target_student_id === undefined) {
+    if (usuario.role !== 'student') {
+      return { ok: false, message: 'Apenas o aluno pode iniciar um treino.' };
+    }
+    studentIdAlvo = usuario.userId;
+  } else {
+    if (usuario.role !== 'trainer') {
+      return {
+        ok: false,
+        message: 'Apenas o professor pode registrar treino em nome do aluno.',
+      };
+    }
+    studentIdAlvo = parsed.data.target_student_id;
+  }
+
   const supabase = await createClient();
 
-  // RLS já limita a fichas do próprio aluno; aqui garantimos que está liberada.
-  const { data: plano, error: erroPlano } = await supabase
+  // RLS já limita a fichas que o chamador pode ver; aqui garantimos que está
+  // liberada. No fluxo do professor, reconfirmamos que a ficha é DAQUELE aluno.
+  let fichaQuery = supabase
     .from('workout_plans')
     .select('id, status')
-    .eq('id', parsed.data.plan_id)
-    .maybeSingle();
+    .eq('id', parsed.data.plan_id);
+
+  if (parsed.data.target_student_id !== undefined) {
+    fichaQuery = fichaQuery.eq('student_id', studentIdAlvo);
+  }
+
+  const { data: plano, error: erroPlano } = await fichaQuery.maybeSingle();
 
   if (erroPlano) {
     return { ok: false, message: `Não foi possível abrir a ficha: ${erroPlano.message}` };
@@ -91,11 +122,13 @@ export async function iniciarSessao(
   const { data: sessao, error: erroSessao } = await supabase
     .from('workout_sessions')
     .insert({
-      tenant_id: aluno.tenantId,
-      student_id: aluno.userId,
+      tenant_id: usuario.tenantId,
+      student_id: studentIdAlvo,
       plan_id: plano.id,
       division: parsed.data.division ?? null,
       started_at: new Date().toISOString(),
+      // SEMPRE quem está logado (aluno no fluxo normal; professor no presencial).
+      recorded_by: usuario.userId,
     })
     .select('id')
     .single();
@@ -122,9 +155,13 @@ export async function iniciarSessao(
  * aberta e tornando o toque idempotente (marcar/desmarcar não duplica linhas).
  */
 export async function registrarSerie(input: RegistrarSerieEntrada): Promise<EstadoAcao> {
-  const aluno = await getSessionUser();
-  if (!aluno || aluno.role !== 'student') {
-    return { ok: false, message: 'Apenas o aluno pode registrar séries.' };
+  // Qualquer usuário logado pode chamar; a posse (aluno dono OU trainer do
+  // tenant) é imposta pela RLS de workout_set_logs/workout_sessions via
+  // session_id. Isso habilita o professor a registrar em nome do aluno sem
+  // afrouxar a segurança.
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
   }
 
   const parsed = registrarSerieSchema.safeParse(input);
@@ -171,9 +208,11 @@ export async function registrarSerie(input: RegistrarSerieEntrada): Promise<Esta
  * finaliza a própria sessão.
  */
 export async function finalizarSessao(input: FinalizarSessaoInput): Promise<EstadoAcao> {
-  const aluno = await getSessionUser();
-  if (!aluno || aluno.role !== 'student') {
-    return { ok: false, message: 'Apenas o aluno pode finalizar o treino.' };
+  // Qualquer usuário logado pode chamar; a RLS garante que só finaliza a sessão
+  // cujo dono é (aluno dono OU trainer do tenant). Habilita o fluxo presencial.
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
   }
 
   const parsed = finalizarSessaoSchema.safeParse(input);

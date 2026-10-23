@@ -102,12 +102,21 @@ function chaveSerie(itemId: string, setNumber: number): string {
  *
  * Pensado para a mão suada durante o treino: botões largos (≥ 44px), estados
  * claros, sem depender de hover.
+ *
+ * Apesar de viver sob `components/aluno/`, este componente agora serve DOIS
+ * fluxos: o do próprio aluno (padrão) e o do professor-em-nome-do-aluno (treino
+ * presencial). O que muda é só a origem dos dados: quando `studentId` vem
+ * preenchido, a rota do professor o repassa às actions (que gravam a sessão em
+ * nome daquele aluno) e `destinoAoFinalizar` aponta de volta à ficha do aluno
+ * no professor. A autorização real é no servidor (action + RLS).
  */
 export function SessaoExecucao({
   planId,
   itens,
   diaInicial = null,
   divisaoInicial = null,
+  studentId = null,
+  destinoAoFinalizar = '/aluno/treinos',
 }: {
   planId: string;
   itens: ItemExecucao[];
@@ -124,6 +133,19 @@ export function SessaoExecucao({
    * eixo DIVISÃO.
    */
   divisaoInicial?: string | null;
+  /**
+   * `user_id` do ALUNO em cujo nome a sessão é gravada. `null`/ausente = fluxo
+   * do próprio aluno (a action usa `auth.uid()`). Preenchido só pela rota do
+   * professor. A autorização real (papel/tenant/posse) é no servidor
+   * (action + RLS); esta prop é só o parâmetro que a UI repassa.
+   */
+  studentId?: string | null;
+  /**
+   * Rota para onde navegar ao finalizar (ou ao concluir sem sessão). Default
+   * `'/aluno/treinos'` (fluxo do aluno). A rota do professor passa
+   * `/professor/alunos/[id]` para voltar à ficha do aluno.
+   */
+  destinoAoFinalizar?: string;
 }) {
   const router = useRouter();
   const [sessionId, setSessionId] = React.useState<string | null>(null);
@@ -360,9 +382,20 @@ export function SessaoExecucao({
     if (sessionId) return sessionId;
     setIniciando(true);
     try {
-      const r = porDivisao
-        ? await iniciarSessao(planId, divisaoSelecionada ?? undefined)
-        : await iniciarSessao(planId);
+      // Repasse CONDICIONAL do 3º arg (`studentId`): só anexa quando há
+      // aluno-alvo (fluxo professor). No fluxo do aluno a aridade é a de sempre
+      // (`iniciarSessao(planId, divisao)` ou `iniciarSessao(planId)`), o que
+      // preserva os asserts `toHaveBeenCalledWith` exatos dos testes.
+      let r;
+      if (studentId != null) {
+        r = porDivisao
+          ? await iniciarSessao(planId, divisaoSelecionada ?? undefined, studentId)
+          : await iniciarSessao(planId, undefined, studentId);
+      } else {
+        r = porDivisao
+          ? await iniciarSessao(planId, divisaoSelecionada ?? undefined)
+          : await iniciarSessao(planId);
+      }
       if (r.ok && r.id) {
         setSessionId(r.id);
         return r.id;
@@ -522,7 +555,7 @@ export function SessaoExecucao({
   async function concluir() {
     if (!sessionId) {
       // Sessão nunca foi criada (nenhuma série marcada) — nada a finalizar.
-      router.push('/aluno/treinos');
+      router.push(destinoAoFinalizar);
       return;
     }
     setFinalizando(true);
@@ -535,7 +568,7 @@ export function SessaoExecucao({
 
     if (r.ok) {
       toast({ title: 'Treino finalizado. Bom trabalho!' });
-      router.push('/aluno/treinos');
+      router.push(destinoAoFinalizar);
       router.refresh();
     } else {
       toast({

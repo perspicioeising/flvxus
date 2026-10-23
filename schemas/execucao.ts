@@ -41,6 +41,10 @@ export const iniciarSessaoSchema = z.object({
   // Divisão (A/B/C/… ou nome do modelo) que o aluno está executando. Opcional:
   // fichas legadas por weekday não têm divisão. String vazia é rejeitada.
   division: z.string().trim().min(1).optional(),
+  // user_id do aluno-alvo quando a execução é operada pelo PROFESSOR (treino
+  // presencial). Opcional: ausente = fluxo do próprio aluno (a action usa
+  // auth.uid()). A autorização real (papel/tenant/posse) é feita na action + RLS.
+  target_student_id: z.string().uuid('Aluno inválido.').optional(),
 });
 
 /** Registro de uma série executada (`workout_set_logs`). */
