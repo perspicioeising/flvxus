@@ -352,6 +352,7 @@ export interface Database {
           notes: string | null;
           division: string | null;
           perceived_intensity: number | null;
+          recorded_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -365,6 +366,7 @@ export interface Database {
           notes?: string | null;
           division?: string | null;
           perceived_intensity?: number | null;
+          recorded_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -378,6 +380,7 @@ export interface Database {
           notes?: string | null;
           division?: string | null;
           perceived_intensity?: number | null;
+          recorded_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
