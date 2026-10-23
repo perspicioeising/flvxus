@@ -111,16 +111,19 @@ export default async function TreinosPage() {
       ) : (
         <ul className="space-y-3">
           {fichas.map((ficha) => (
-            <li key={ficha.id} className="flex items-center gap-2">
-              <div className="min-w-0 flex-1">
-                <FichaCard ficha={ficha} />
+            <li key={ficha.id} className="relative">
+              <FichaCard ficha={ficha} />
+              {/* Ação discreta no canto do card; irmã do Link (não aninhada),
+                  então clicar aqui abre o diálogo sem navegar e clicar no
+                  restante do card abre o detalhe. */}
+              <div className="absolute right-1 top-1">
+                <ClonarFicha
+                  sourcePlanId={ficha.id}
+                  sourceName={ficha.name}
+                  alunos={alunos}
+                  variant="item"
+                />
               </div>
-              <ClonarFicha
-                sourcePlanId={ficha.id}
-                sourceName={ficha.name}
-                alunos={alunos}
-                variant="item"
-              />
             </li>
           ))}
         </ul>

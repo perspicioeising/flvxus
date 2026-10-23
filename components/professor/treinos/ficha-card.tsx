@@ -18,7 +18,7 @@ export function FichaCard({ ficha }: { ficha: FichaCardData }) {
   return (
     <Link
       href={`/professor/treinos/${ficha.id}`}
-      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 pr-12 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground"

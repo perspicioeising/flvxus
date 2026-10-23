@@ -24,6 +24,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { clonarFicha } from '@/actions/treinos';
 import type { AlunoOpcao } from './ficha-form';
 
@@ -35,7 +40,8 @@ export interface ClonarFichaProps {
   alunos: AlunoOpcao[];
   /**
    * Aparência do gatilho: `'botao'` (outline, para o detalhe) ou `'item'`
-   * (ghost compacto, para cada card da listagem). Default `'botao'`.
+   * (ícone ghost discreto, para o canto de cada card da listagem). Default
+   * `'botao'`.
    */
   variant?: 'botao' | 'item';
 }
@@ -105,22 +111,26 @@ export function ClonarFicha({
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogTrigger asChild>
         {variant === 'item' ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="shrink-0"
-            disabled={Boolean(motivoIndisponivel)}
-            title={motivoIndisponivel}
-            aria-label={
-              motivoIndisponivel
-                ? `Clonar ficha — indisponível: ${motivoIndisponivel}`
-                : `Clonar a ficha ${sourceName}`
-            }
-          >
-            <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-            Clonar
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
+                disabled={Boolean(motivoIndisponivel)}
+                title={motivoIndisponivel ?? 'Clonar'}
+                aria-label={
+                  motivoIndisponivel
+                    ? `Clonar ficha — indisponível: ${motivoIndisponivel}`
+                    : `Clonar a ficha ${sourceName}`
+                }
+              >
+                <Copy className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{motivoIndisponivel ?? 'Clonar'}</TooltipContent>
+          </Tooltip>
         ) : (
           <Button
             type="button"
