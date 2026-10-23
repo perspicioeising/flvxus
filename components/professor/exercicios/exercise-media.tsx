@@ -3,9 +3,10 @@ import { Film } from 'lucide-react';
 import { ExerciseVideoPlayer } from '@/components/shared/exercise-video-player';
 
 /**
- * Preview de mídia do exercício. As URLs são SEMPRE assinadas (TTL curto) e
- * geradas no servidor via `lib/storage.signExerciseMedia` — este componente
- * apenas recebe as URLs já prontas, nunca monta URL pública.
+ * Preview de mídia do exercício. As URLs são resolvidas no servidor via
+ * `lib/storage.signExerciseMedia` (PATH privado → URL assinada de TTL curto;
+ * URL http(s) pública → repassada direto) — este componente apenas recebe as
+ * URLs já prontas, nunca monta URL pública por conta própria.
  */
 export function ExerciseMedia({
   videoUrl,

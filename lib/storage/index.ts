@@ -3,12 +3,19 @@ import { createClient } from '@/lib/supabase/server';
 /**
  * Upload + URLs assinadas para buckets PRIVADOS (architecture.md §7 · ADR 0005).
  *
- * Toda mídia é privada: o acesso se dá SEMPRE por URL assinada de TTL curto
- * gerada no servidor. NUNCA usar `getPublicUrl`. O upload usa o client de
- * servidor (`lib/supabase/server.ts`), portanto passa pelo RLS do bucket
+ * A mídia armazenada em bucket privado é acessada SEMPRE por URL assinada de
+ * TTL curto gerada no servidor. NUNCA usar `getPublicUrl` para esses paths. O
+ * upload usa o client de servidor (`lib/supabase/server.ts`), portanto passa
+ * pelo RLS do bucket
  * (as policies em supabase/migrations/20261020090900_storage.sql exigem que o
  * 1º segmento do path seja o `tenant_id` e, para fotos, restringem a escrita ao
  * trainer do tenant).
+ *
+ * Exceção para exibição: a mídia de exercício (`video_url`/`thumbnail_url`) pode
+ * já estar gravada como URL http(s) ABSOLUTA pública (bucket público
+ * `exercise-gifs`, CDN externa, YouTube etc.). Nesse caso `signExerciseMedia`
+ * repassa o valor adiante sem assinar; a invariante "PATH privado → assinado"
+ * permanece para qualquer valor que não seja uma URL http(s).
  *
  * Convenção de path (§7, 1º segmento sempre `tenant_id`):
  *   assessment-photos : {tenant_id}/{student_id}/{assessment_id}/{arquivo}
@@ -126,13 +133,25 @@ export async function uploadExerciseMedia({
 }
 
 /**
- * Gera uma URL assinada de TTL curto para mídia de exercício. NUNCA usa
- * `getPublicUrl` (bucket privado). Retorna `null` se não for possível assinar.
+ * Resolve a URL de exibição de uma mídia de exercício.
+ *
+ * - Se o valor JÁ for uma URL absoluta http(s) (mídia pública: bucket
+ *   `exercise-gifs`, CDN, YouTube etc.), retorna o próprio valor SEM assinar.
+ * - Caso contrário, trata o valor como PATH do bucket privado `exercise-videos`
+ *   e gera uma URL assinada de TTL curto (NUNCA usa `getPublicUrl`). Retorna
+ *   `null` se não for possível assinar.
+ *
+ * Como o valor pode vir de dados do tenant, apenas `http://`/`https://` são
+ * considerados URL pública; qualquer outro valor segue o caminho privado.
  */
 export async function signExerciseMedia(
   path: string,
   ttlSegundos: number = TTL_EXERCISE_MEDIA
 ): Promise<string | null> {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.storage
     .from(BUCKET_EXERCISE_VIDEOS)
