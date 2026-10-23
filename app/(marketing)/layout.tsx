@@ -31,6 +31,9 @@ export default function MarketingLayout({
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" asChild className="min-h-11">
+              <Link href="/documentacao">Documentação</Link>
+            </Button>
+            <Button variant="ghost" asChild className="min-h-11">
               <Link href="/login">Entrar</Link>
             </Button>
             <Button asChild className="min-h-11">
@@ -45,6 +48,14 @@ export default function MarketingLayout({
       <footer className="border-t border-border">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 text-sm text-muted-foreground">
           <p>Flvxus — plataforma para personal trainers gerenciarem seus alunos.</p>
+          <p className="mt-2">
+            <Link
+              href="/documentacao"
+              className="rounded underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Documentação
+            </Link>
+          </p>
         </div>
       </footer>
     </div>
