@@ -12,6 +12,7 @@ import {
   Activity,
   HeartPulse,
   type LucideIcon,
+  Trophy,
 } from 'lucide-react';
 
 import type { UserRole } from '@/types/database.types';
@@ -31,9 +32,8 @@ const trainerNav: NavItem[] = [
   { label: 'Modelos de treino', href: '/professor/modelos-treino', icon: LayoutList },
   { label: 'Treinos', href: '/professor/treinos', icon: ClipboardList },
   { label: 'Dietas', href: '/professor/dietas', icon: Utensils },
-  { label: 'Agenda', href: '/professor/agenda', icon: Calendar },
-  { label: 'UI Kit', href: '/professor/ui-kit', icon: Palette },
-  { label: 'Configurações', href: '/professor/configuracoes', icon: Settings },
+  // { label: 'Agenda', href: '/professor/agenda', icon: Calendar },
+  // { label: 'Configurações', href: '/professor/configuracoes', icon: Settings },
 ];
 
 const studentNav: NavItem[] = [
@@ -43,6 +43,7 @@ const studentNav: NavItem[] = [
   { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
   { label: 'Avaliações', href: '/aluno/avaliacoes', icon: HeartPulse },
   { label: 'Perfil', href: '/aluno/perfil', icon: Settings },
+  { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
 ];
 
 /** Itens de menu distintos por papel. */
