@@ -266,6 +266,7 @@ export interface Database {
           status: PlanStatus;
           source_workout_id: string | null;
           released_at: string | null;
+          scheduled_release_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -278,6 +279,7 @@ export interface Database {
           status?: PlanStatus;
           source_workout_id?: string | null;
           released_at?: string | null;
+          scheduled_release_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -290,6 +292,7 @@ export interface Database {
           status?: PlanStatus;
           source_workout_id?: string | null;
           released_at?: string | null;
+          scheduled_release_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
