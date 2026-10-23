@@ -34,7 +34,7 @@ const trainerNav: NavItem[] = [
   { label: 'Treinos', href: '/professor/treinos', icon: ClipboardList },
   { label: 'Dietas', href: '/professor/dietas', icon: Utensils },
   // { label: 'Agenda', href: '/professor/agenda', icon: Calendar },
-  // { label: 'Configurações', href: '/professor/configuracoes', icon: Settings },
+  { label: 'Configurações', href: '/professor/configuracoes', icon: Settings },
   { label: 'Ajuda', href: '/professor/ajuda', icon: HelpCircle },
 ];
 

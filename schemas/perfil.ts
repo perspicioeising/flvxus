@@ -51,6 +51,20 @@ export const editarPerfilSchema = z.object({
   height_cm: numeroPositivoOpcional,
 });
 
+/**
+ * Edição do perfil do professor (`/professor/configuracoes`). `full_name`
+ * obrigatório; `phone` (em `profiles`) e `business_name` (→ `tenants.name`,
+ * editável apenas pelo owner) opcionais. O e-mail NÃO é editável aqui.
+ */
+export const editarPerfilProfessorSchema = z.object({
+  full_name: z
+    .string({ required_error: 'Informe o nome completo.' })
+    .trim()
+    .min(1, 'Informe o nome completo.'),
+  phone: opcionalVazio(z.string().trim().min(1)),
+  business_name: opcionalVazio(z.string().trim().min(1)),
+});
+
 /** Tipos de consentimento LGPD (enum `consent_type`). */
 export const TIPOS_CONSENTIMENTO = [
   'data_processing',
@@ -78,5 +92,6 @@ export const solicitarDadosSchema = z.object({
 });
 
 export type EditarPerfilInput = z.infer<typeof editarPerfilSchema>;
+export type EditarPerfilProfessorInput = z.infer<typeof editarPerfilProfessorSchema>;
 export type RegistrarConsentimentoInput = z.infer<typeof registrarConsentimentoSchema>;
 export type SolicitarDadosInput = z.infer<typeof solicitarDadosSchema>;

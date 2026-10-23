@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { editarPerfilSchema } from '@/schemas/perfil';
+import { editarPerfilProfessorSchema, editarPerfilSchema } from '@/schemas/perfil';
 
 /**
  * Server Actions do PERFIL do aluno (architecture.md §6.2).
@@ -82,6 +82,66 @@ export async function atualizarPerfil(formData: FormData): Promise<EstadoAcao> {
   }
 
   revalidatePath('/aluno/perfil');
+
+  return { ok: true, message: 'Dados atualizados.' };
+}
+
+/**
+ * Atualiza o perfil do próprio professor. Grava `full_name`/`phone` em
+ * `profiles` (policy `profiles_update` libera o dono) e `tenants.name` quando
+ * `business_name` é informado — mas só o owner do tenant altera `tenants`: o
+ * filtro `.eq('id', tenantId).eq('owner_id', userId)` espelha a policy
+ * `tenants_update`, então um não-owner afeta 0 linhas sem gerar erro.
+ *
+ * Sem service_role: o professor opera sempre no próprio contexto sob RLS.
+ */
+export async function atualizarPerfilProfessor(
+  formData: FormData,
+): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode editar o perfil.' };
+  }
+
+  const parsed = editarPerfilProfessorSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: 'Verifique os campos destacados.',
+      fieldErrors: erroDeCampo(parsed.error.flatten()),
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { error: erroPerfil } = await supabase
+    .from('profiles')
+    .update({
+      full_name: parsed.data.full_name,
+      phone: parsed.data.phone ?? null,
+    })
+    .eq('user_id', professor.userId);
+
+  if (erroPerfil) {
+    return { ok: false, message: `Não foi possível salvar: ${erroPerfil.message}` };
+  }
+
+  if (parsed.data.business_name) {
+    const { error: erroTenant } = await supabase
+      .from('tenants')
+      .update({ name: parsed.data.business_name })
+      .eq('id', professor.tenantId)
+      .eq('owner_id', professor.userId);
+
+    if (erroTenant) {
+      return {
+        ok: false,
+        message: `Não foi possível salvar o nome do negócio: ${erroTenant.message}`,
+      };
+    }
+  }
+
+  revalidatePath('/professor/configuracoes');
 
   return { ok: true, message: 'Dados atualizados.' };
 }
