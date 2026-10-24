@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Logo } from '@/components/navigation/logo';
 import { LogoIcon } from '@/components/navigation/logo-icon';
 import type { UserRole } from '@/types/database.types';
@@ -14,9 +13,11 @@ interface AppHeaderProps {
 }
 
 /**
- * Cabeçalho do app: alternância de tema sempre visível + identidade FLVXUS
- * (logo com X verde) apenas no mobile, onde a sidebar fica oculta. No desktop
- * a marca vive na sidebar, então o header não repete a logo (sem duplicação).
+ * Cabeçalho do app: identidade FLVXUS (logo com X verde) apenas no mobile,
+ * onde a sidebar fica oculta. No desktop a marca vive na sidebar, então o
+ * header não repete a logo (sem duplicação). A alternância de tema não vive
+ * mais aqui — no desktop fica no rodapé da sidebar e no mobile dentro do
+ * Sheet do menu da bottom-nav.
  */
 export function AppHeader({ role, rootHref }: AppHeaderProps) {
   return (
@@ -34,10 +35,6 @@ export function AppHeader({ role, rootHref }: AppHeaderProps) {
           <span className="text-xs text-muted-foreground">{roleLabel(role)}</span>
         </span>
       </Link>
-
-      <div className="flex items-center gap-2">
-        <ThemeToggle />
-      </div>
     </header>
   );
 }

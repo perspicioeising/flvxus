@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Logo } from '@/components/navigation/logo';
 import { LogoIcon } from '@/components/navigation/logo-icon';
 import { useSupabase } from '@/app/providers';
@@ -108,8 +109,12 @@ export function AppSidebar({ role, rootHref }: AppSidebarProps) {
         </ul>
       </nav>
 
-      {/* Sair */}
-      <div className="border-t border-border p-3">
+      {/* Rodapé: alternância de tema + sair */}
+      <div className="space-y-1 border-t border-border p-3">
+        {/* Tema vive aqui no desktop (removido do header); centraliza quando colapsada. */}
+        <div className={cn('flex', collapsed ? 'justify-center' : 'justify-start')}>
+          <ThemeToggle />
+        </div>
         <Button
           variant="ghost"
           onClick={handleSignOut}

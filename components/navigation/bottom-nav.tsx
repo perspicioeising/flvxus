@@ -14,6 +14,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useSupabase } from '@/app/providers';
 import type { UserRole } from '@/types/database.types';
 import {
@@ -119,7 +120,11 @@ export function BottomNav({ role, rootHref }: BottomNavProps) {
                   );
                 })}
               </ul>
-              <div className="mt-4 border-t border-border pt-4">
+              <div className="mt-4 space-y-1 border-t border-border pt-4">
+                {/* Tema vive aqui no mobile (removido do header). */}
+                <div className="flex justify-start">
+                  <ThemeToggle />
+                </div>
                 <Button
                   variant="ghost"
                   onClick={handleSignOut}
