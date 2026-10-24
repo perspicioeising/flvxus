@@ -6,7 +6,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Flag,
   Loader2,
   Minus,
   Pencil,
@@ -29,26 +28,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -62,6 +48,7 @@ import { TimerDescanso } from './timer-descanso';
 import { ExercicioInfo } from './exercicio-info';
 import { SeletorDia, type OpcaoDia } from './seletor-dia';
 import { SeletorDivisao, type OpcaoDivisao } from './seletor-divisao';
+import { DialogAvaliacaoTreino } from './dialog-avaliacao-treino';
 
 /** Item prescrito, com tudo que a UI de execução precisa exibir. */
 export interface ItemExecucao {
@@ -155,6 +142,7 @@ export function SessaoExecucao({
   divisaoInicial = null,
   studentId = null,
   destinoAoFinalizar = '/aluno/treinos',
+  permitirTrocaDeGrupo = true,
 }: {
   planId: string;
   itens: ItemExecucao[];
@@ -184,6 +172,15 @@ export function SessaoExecucao({
    * `/professor/alunos/[id]` para voltar à ficha do aluno.
    */
   destinoAoFinalizar?: string;
+  /**
+   * Controla se o seletor de troca de grupo (divisão/dia) é renderizado.
+   * **Default `true`** para preservar o fluxo do PROFESSOR (treino presencial),
+   * que depende do seletor para navegar entre divisões/dias sem editar a rota.
+   * A rota do ALUNO passa `false` explicitamente: ela já entrega SÓ os itens da
+   * divisão-alvo (filtrada no servidor), então o seletor é ocultado para focar
+   * no treino em andamento. A prop NÃO muda a gravação — só esconde os seletores.
+   */
+  permitirTrocaDeGrupo?: boolean;
 }) {
   const router = useRouter();
   const [sessionId, setSessionId] = React.useState<string | null>(null);
@@ -634,7 +631,14 @@ export function SessaoExecucao({
 
     if (r.ok) {
       toast({ title: 'Treino finalizado. Bom trabalho!' });
-      router.push(destinoAoFinalizar);
+      // Fluxo do ALUNO (`studentId == null`): vai para o resumo pós-treino da
+      // sessão. Fluxo do PROFESSOR: mantém `destinoAoFinalizar` (resumo é uma
+      // experiência do aluno).
+      if (studentId == null) {
+        router.push(`/aluno/execucao/${planId}/resumo/${sessionId}`);
+      } else {
+        router.push(destinoAoFinalizar);
+      }
       router.refresh();
     } else {
       toast({
@@ -647,20 +651,24 @@ export function SessaoExecucao({
   return (
     <div className="space-y-6">
       {/* Seletor do eixo da ficha: divisão (A/B/C/…) ou dia (legado). Cada um
-          se auto-esconde quando há ≤ 1 opção. */}
-      {porDivisao ? (
-        <SeletorDivisao
-          opcoes={opcoesDivisao}
-          selecionado={divisaoSelecionada}
-          onSelecionar={setDivisaoSelecionada}
-        />
-      ) : (
-        <SeletorDia
-          opcoes={opcoesDia}
-          selecionado={diaSelecionado}
-          onSelecionar={setDiaSelecionado}
-        />
-      )}
+          se auto-esconde quando há ≤ 1 opção. No fluxo do ALUNO
+          (`permitirTrocaDeGrupo={false}`) o seletor NÃO é renderizado — a rota
+          já entrega só a divisão-alvo, mantendo o foco no treino em andamento. */}
+      {permitirTrocaDeGrupo ? (
+        porDivisao ? (
+          <SeletorDivisao
+            opcoes={opcoesDivisao}
+            selecionado={divisaoSelecionada}
+            onSelecionar={setDivisaoSelecionada}
+          />
+        ) : (
+          <SeletorDia
+            opcoes={opcoesDia}
+            selecionado={diaSelecionado}
+            onSelecionar={setDiaSelecionado}
+          />
+        )
+      ) : null}
 
       {/* Barra de progresso fixa no topo do conteúdo. */}
       <div className="space-y-2">
@@ -1020,13 +1028,24 @@ export function SessaoExecucao({
                     </div>
                   </div>
 
+                  {/* Botão principal da série. Concluída → MARCA D'ÁGUA:
+                      `ghost` + opacity-50 + pointer-events-none + disabled, com
+                      o estado comunicado por texto/ícone (não só por cor) e
+                      `aria-pressed`/`aria-disabled` para acessibilidade. A
+                      correção de série já registrada passa a ser só pelo lápis
+                      no resumo. Não-concluída → ação primária (`default`). */}
                   <Button
                     type="button"
                     size="xl"
-                    variant={estado.completed ? 'default' : 'default'}
-                    className="w-full"
+                    variant={estado.completed ? 'ghost' : 'default'}
+                    className={cn(
+                      'w-full',
+                      estado.completed &&
+                        'pointer-events-none border border-primary/40 bg-primary/5 text-primary opacity-50'
+                    )}
                     aria-pressed={estado.completed}
-                    disabled={estado.salvando || iniciando}
+                    aria-disabled={estado.completed || undefined}
+                    disabled={estado.completed || estado.salvando || iniciando}
                     onClick={() => alternarSerie(itemAtual.id, setNumber)}
                   >
                     {estado.salvando ? (
@@ -1081,94 +1100,20 @@ export function SessaoExecucao({
         </div>
       ) : null}
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            type="button"
-            size="xl"
-            className="w-full"
-            disabled={finalizando || pendente}
-          >
-            <Flag className="h-5 w-5" aria-hidden="true" />
-            Finalizar treino
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Finalizar o treino?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {tudoFeito
-                ? 'Você concluiu todas as séries. Deseja finalizar a sessão?'
-                : `Você marcou ${progresso.feitas} de ${progresso.total} séries. Finalizar mesmo assim?`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {/* Intensidade percebida (RPE 1..10), opcional: não bloqueia
-              finalizar. Toque para marcar/desmarcar (toggle). */}
-          <div className="space-y-2">
-            <span id="rpe-label" className="text-sm font-medium text-foreground">
-              Intensidade do treino (opcional)
-            </span>
-            <div
-              role="group"
-              aria-labelledby="rpe-label"
-              className="flex flex-wrap gap-2"
-            >
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((valor) => {
-                const ativo = intensidade === valor;
-                return (
-                  <button
-                    key={valor}
-                    type="button"
-                    aria-pressed={ativo}
-                    aria-label={`Intensidade ${valor}`}
-                    onClick={() =>
-                      setIntensidade((atual) =>
-                        atual === valor ? null : valor
-                      )
-                    }
-                    className={cn(
-                      'min-h-11 min-w-11 flex-1 rounded-full border text-sm font-medium transition-colors',
-                      ativo
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-border bg-background text-foreground hover:bg-muted'
-                    )}
-                  >
-                    {valor}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>1 · Muito leve</span>
-              <span>10 · Máximo</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="nota-sessao" className="text-sm">
-              Observações (opcional)
-            </Label>
-            <Textarea
-              id="nota-sessao"
-              value={nota}
-              onChange={(e) => setNota(e.target.value)}
-              rows={3}
-              placeholder="Como foi o treino?"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="min-h-11">Voltar</AlertDialogCancel>
-            <AlertDialogAction
-              className="min-h-11"
-              onClick={(e) => {
-                e.preventDefault();
-                concluir();
-              }}
-            >
-              {finalizando ? 'Finalizando…' : 'Finalizar'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Avaliação do treino (RPE + notas) no padrão do app. Mesma persistência
+          via `finalizarSessao` — o dialog só chama `concluir()`. */}
+      <DialogAvaliacaoTreino
+        seriesFeitas={progresso.feitas}
+        seriesTotal={progresso.total}
+        tudoFeito={tudoFeito}
+        intensidade={intensidade}
+        onIntensidadeChange={setIntensidade}
+        nota={nota}
+        onNotaChange={setNota}
+        onConfirmar={concluir}
+        finalizando={finalizando}
+        disabledTrigger={pendente}
+      />
 
       {/* Descanso entre séries em MODAL: abre automaticamente ao concluir uma
           série (quando há descanso e não é a última série do último exercício).

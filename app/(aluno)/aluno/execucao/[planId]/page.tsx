@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { signExerciseMedia } from '@/lib/storage';
-import { WEEKDAY_LABEL } from '@/lib/semana';
+import { WEEKDAY_LABEL, parseDia } from '@/lib/semana';
+import { parseDivisao } from '@/lib/divisao';
 import { EmptyState } from '@/components/patterns';
 import {
   SessaoExecucao,
@@ -29,36 +30,23 @@ function exercicioDoJoin(exercises: unknown): ExercicioJoin | null {
   return (e as ExercicioJoin | null) ?? null;
 }
 
-/** Converte o searchParam `?dia` num weekday válido (0..6) ou `null`. */
-function parseDia(valor: string | string[] | undefined): number | null {
-  const bruto = Array.isArray(valor) ? valor[0] : valor;
-  if (bruto === undefined) return null;
-  const n = Number(bruto);
-  return Number.isInteger(n) && n >= 0 && n <= 6 ? n : null;
-}
-
 /**
- * Converte o searchParam `?divisao` num rótulo de divisão ou `null`. O Next já
- * entrega o valor URL-decodificado, então só fazemos `trim`; vazio vira `null`.
- */
-function parseDivisao(valor: string | string[] | undefined): string | null {
-  const bruto = Array.isArray(valor) ? valor[0] : valor;
-  if (bruto === undefined) return null;
-  const limpo = bruto.trim();
-  return limpo === '' ? null : limpo;
-}
-
-/**
- * Execução de uma ficha liberada. Carrega SEMPRE todos os itens da ficha e
- * entrega ao Client Component, que mostra um seletor dos dias/divisões com
- * exercícios (incluindo o balde "Sem dia definido") e filtra os itens do dia
- * escolhido — sem forçar o dia de hoje. Quando `?dia` vem na URL (atalho a
- * partir da ficha), já começa naquele dia, mas o aluno ainda pode trocar.
+ * Execução de UMA divisão (ou dia, no legado) por vez. A rota filtra os itens
+ * pelo eixo escolhido NO SERVIDOR (`?divisao=`/`?dia=`, parsers de 3 estados) e
+ * entrega ao `SessaoExecucao` apenas os itens do grupo-alvo, passando
+ * `permitirTrocaDeGrupo={false}` — sem pílulas das outras divisões no header,
+ * foco só no treino em andamento (itens 4).
  *
- * A sessão NÃO é criada aqui — só ao confirmar o início (primeiro toque), para
- * não gravar sessão vazia ao abrir a tela. RLS limita a fichas `released` do
- * próprio aluno (vazio → 404). A mídia de cada exercício é assinada AQUI (no
- * servidor, bucket privado) e entregue já pronta; o Client nunca assina URL.
+ * Regra render-vs-redirect (única):
+ * - ficha inexistente/não-released → `notFound()`;
+ * - eixo ausente (`{tipo:'ausente'}`) ou rótulo/dia inexistente → `redirect()`
+ *   ao detalhe da ficha (lista as divisões para escolher);
+ * - eixo presente e válido (incluindo o balde via sentinela `__sem__`/`none`)
+ *   → renderiza só aquele grupo.
+ *
+ * A sessão NÃO é criada aqui — só ao confirmar o início (primeiro toque). RLS
+ * limita a fichas `released` do próprio aluno (vazio → 404). A mídia de cada
+ * exercício é assinada AQUI (servidor, bucket privado) e entregue já pronta.
  */
 export default async function AlunoExecucaoFichaPage({
   params,
@@ -69,8 +57,8 @@ export default async function AlunoExecucaoFichaPage({
 }) {
   const { planId } = await params;
   const { dia, divisao } = await searchParams;
-  const weekday = parseDia(dia);
   const divisaoPedida = parseDivisao(divisao);
+  const diaPedido = parseDia(dia);
 
   const supabase = await createClient();
 
@@ -82,6 +70,7 @@ export default async function AlunoExecucaoFichaPage({
     .maybeSingle();
 
   if (!ficha) {
+    // Ficha inexistente/não-released → 404 (não é caso de redirect).
     notFound();
   }
 
@@ -94,7 +83,7 @@ export default async function AlunoExecucaoFichaPage({
     .order('order_index', { ascending: true });
 
   // Assina a mídia de cada item no servidor (bucket privado, nunca URL pública).
-  const itens: ItemExecucao[] = await Promise.all(
+  const todosItens: ItemExecucao[] = await Promise.all(
     (itensData ?? []).map(async (item) => {
       const ex = exercicioDoJoin(item.exercises);
       const [videoUrl, thumbnailUrl] = await Promise.all([
@@ -124,29 +113,54 @@ export default async function AlunoExecucaoFichaPage({
     })
   );
 
-  // O Client recebe SEMPRE todos os itens e monta o seletor do eixo da ficha; o
-  // deep-link (`?dia`/`?divisao`) só define o grupo inicial, sem travar a troca.
   // Eixo detectado pelos itens: se algum tem divisão, a ficha é por divisão.
-  const porDivisao = itens.some((item) => (item.division ?? null) !== null);
+  const porDivisao = todosItens.some((item) => (item.division ?? null) !== null);
 
-  // Divisão pedida válida só se existir entre as divisões carregadas.
-  const temDivisaoPedida =
-    porDivisao &&
-    divisaoPedida !== null &&
-    itens.some((item) => (item.division ?? null) === divisaoPedida);
+  // Resolve o grupo-alvo (render) OU dispara o redirect ao detalhe (eixo
+  // ausente/inválido). O balde sem eixo chega com o sentinela (`{tipo:'sem'}`) e
+  // RENDERIZA; só `ausente` ou rótulo/dia inexistente redirecionam.
+  let itens: ItemExecucao[];
+  let subtitulo: string;
+  let divisaoInicial: string | null = null;
+  let diaInicial: number | null = null;
 
-  const temDiaPedido =
-    !porDivisao &&
-    weekday !== null &&
-    itens.some((item) => item.weekday === weekday);
-
-  const subtitulo = porDivisao
-    ? temDivisaoPedida
-      ? (divisaoPedida as string)
-      : 'Escolha a divisão e comece o treino'
-    : temDiaPedido
-      ? WEEKDAY_LABEL[weekday as number]
-      : 'Escolha o dia e comece o treino';
+  if (porDivisao) {
+    if (divisaoPedida.tipo === 'rotulo') {
+      const alvo = todosItens.filter(
+        (item) => (item.division ?? null) === divisaoPedida.valor
+      );
+      if (alvo.length === 0) redirect(`/aluno/treinos/${ficha.id}`);
+      itens = alvo;
+      divisaoInicial = divisaoPedida.valor;
+      subtitulo = divisaoPedida.valor;
+    } else if (divisaoPedida.tipo === 'sem') {
+      const alvo = todosItens.filter((item) => (item.division ?? null) === null);
+      if (alvo.length === 0) redirect(`/aluno/treinos/${ficha.id}`);
+      itens = alvo;
+      divisaoInicial = null;
+      subtitulo = 'Divisão única';
+    } else {
+      // Eixo ausente numa ficha por divisão → escolher no detalhe.
+      redirect(`/aluno/treinos/${ficha.id}`);
+    }
+  } else {
+    if (diaPedido.tipo === 'dia') {
+      const alvo = todosItens.filter((item) => item.weekday === diaPedido.valor);
+      if (alvo.length === 0) redirect(`/aluno/treinos/${ficha.id}`);
+      itens = alvo;
+      diaInicial = diaPedido.valor;
+      subtitulo = WEEKDAY_LABEL[diaPedido.valor];
+    } else if (diaPedido.tipo === 'sem') {
+      const alvo = todosItens.filter((item) => item.weekday === null);
+      if (alvo.length === 0) redirect(`/aluno/treinos/${ficha.id}`);
+      itens = alvo;
+      diaInicial = null;
+      subtitulo = 'Sem dia definido';
+    } else {
+      // Eixo ausente numa ficha legada → escolher no detalhe.
+      redirect(`/aluno/treinos/${ficha.id}`);
+    }
+  }
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -172,8 +186,9 @@ export default async function AlunoExecucaoFichaPage({
         <SessaoExecucao
           planId={ficha.id}
           itens={itens}
-          diaInicial={porDivisao ? null : weekday}
-          divisaoInicial={porDivisao ? divisaoPedida : null}
+          diaInicial={diaInicial}
+          divisaoInicial={divisaoInicial}
+          permitirTrocaDeGrupo={false}
         />
       )}
     </section>

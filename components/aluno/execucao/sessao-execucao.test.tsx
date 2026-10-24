@@ -313,6 +313,100 @@ describe('SessaoExecucao — eixo de agrupamento (divisão vs. dia)', () => {
   });
 });
 
+describe('SessaoExecucao — permitirTrocaDeGrupo (foco no treino em andamento)', () => {
+  it('com permitirTrocaDeGrupo=false NÃO renderiza o seletor de divisão', () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        permitirTrocaDeGrupo={false}
+        divisaoInicial="A"
+        itens={[
+          itemFake({ id: 'a1', nome: 'Supino A', division: 'A', weekday: null }),
+          itemFake({ id: 'a2', nome: 'Crucifixo A', division: 'A', weekday: null }),
+        ]}
+      />
+    );
+
+    expect(
+      screen.queryByRole('group', { name: 'Escolha a divisão do treino' })
+    ).not.toBeInTheDocument();
+    // Os itens entregues (só a divisão A, já filtrada pela rota) seguem visíveis.
+    expect(screen.getByText('Supino A')).toBeInTheDocument();
+  });
+
+  it('com permitirTrocaDeGrupo=false NÃO renderiza o seletor de dia (legado)', () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        permitirTrocaDeGrupo={false}
+        diaInicial={1}
+        itens={[
+          itemFake({ id: 'd1', nome: 'Supino seg', weekday: 1 }),
+          itemFake({ id: 'd2', nome: 'Remada seg', weekday: 1 }),
+        ]}
+      />
+    );
+
+    expect(
+      screen.queryByRole('group', { name: 'Escolha o dia do treino' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('por padrão (default true) o seletor de divisão continua renderizado (professor)', () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[
+          itemFake({ id: 'a1', nome: 'Supino A', division: 'A', weekday: null }),
+          itemFake({ id: 'b1', nome: 'Agacho B', division: 'B', weekday: null }),
+        ]}
+      />
+    );
+
+    expect(
+      screen.getByRole('group', { name: 'Escolha a divisão do treino' })
+    ).toBeInTheDocument();
+  });
+});
+
+describe('SessaoExecucao — botão "Concluir série" em marca d\'água', () => {
+  it('após concluir, o botão fica disabled, aria-pressed=true, opacity-50 e texto "Série concluída"', async () => {
+    // 1 série: ao concluir, a "série atual" permanece na série 1 concluída,
+    // então o botão principal é o estado marca d'água (não avança p/ série 2).
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake({ sets: 1 })]} />);
+
+    await concluirSerieAtual('10');
+
+    const botao = screen.getByRole('button', { name: /série concluída/i });
+    expect(botao).toBeDisabled();
+    expect(botao).toHaveAttribute('aria-pressed', 'true');
+    expect(botao.className).toContain('opacity-50');
+    expect(botao.className).toContain('pointer-events-none');
+  });
+});
+
+describe('SessaoExecucao — resumo pós-treino (fluxo do aluno)', () => {
+  it('ao finalizar no fluxo do aluno, navega para a rota de resumo da sessão', async () => {
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake()]} />);
+
+    await concluirSerieAtual('10');
+
+    const gatilho = screen.getByRole('button', { name: /finalizar treino/i });
+    await waitFor(() => expect(gatilho).not.toBeDisabled());
+
+    fireEvent.click(gatilho);
+    fireEvent.click(await screen.findByRole('button', { name: /^finalizar$/i }));
+
+    await waitFor(() => {
+      expect(finalizarSessao).toHaveBeenCalledTimes(1);
+      // sess-1 é o id devolvido pelo mock de iniciarSessao.
+      expect(push).toHaveBeenCalledWith(
+        '/aluno/execucao/plan-1/resumo/sess-1'
+      );
+    });
+  });
+});
+
 describe('SessaoExecucao — executado pelo professor (treino presencial)', () => {
   it('ficha por divisão carimba o aluno-alvo (3º arg) no iniciarSessao', async () => {
     render(
