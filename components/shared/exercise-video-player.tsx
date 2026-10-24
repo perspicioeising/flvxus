@@ -37,10 +37,16 @@ export function ExerciseVideoPlayer({
   }
 
   // Miniatura compacta reutilizada nos dois ramos (com e sem vídeo).
+  // Imagem/GIF (sem vídeo): os GIFs importados têm fundo BRANCO, então o quadro
+  // fica branco para "fundir" com o GIF e não deixar tarjas pretas laterais com
+  // o object-contain. No ramo de vídeo, a miniatura é o poster do vídeo, então
+  // mantém o preto (letterbox) coerente com o <video>.
   const miniatura = (
     <AspectRatio
       ratio={16 / 9}
-      className="mx-auto max-h-[40vh] w-auto overflow-hidden rounded-xl border border-border bg-black"
+      className={`mx-auto max-h-[40vh] w-auto overflow-hidden rounded-xl border border-border ${
+        videoUrl ? 'bg-black' : 'bg-white'
+      }`}
     >
       {thumbnailUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- URL assinada de TTL curto do Storage privado; não é otimizável pelo next/image.
