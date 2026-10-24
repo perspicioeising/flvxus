@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { TreinarAlunoSelector } from '@/components/professor/alunos/treinar-aluno-selector';
 
 /** Um atalho do hub: rota de destino + rótulo + ícone + descrição curta. */
 interface Atalho {
@@ -29,12 +30,12 @@ interface FichaLiberada {
   name: string;
 }
 
-/** Classes compartilhadas pelo cartão de atalho (link, âncora ou botão). */
-const CARTAO_CLASSES =
+/** Classes compartilhadas pelo cartão de atalho (link, botão ou trigger do seletor). */
+export const CARTAO_CLASSES =
   'flex min-h-16 items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 /** Conteúdo interno do cartão de atalho (ícone + título + descrição). */
-function ConteudoAtalho({
+export function ConteudoAtalho({
   Icone,
   titulo,
   descricao,
@@ -70,7 +71,8 @@ function ConteudoAtalho({
  * recebidas da página (sem query nova), tratando três casos:
  * - 0 fichas liberadas: botão desabilitado com `title` explicando o porquê;
  * - 1 ficha liberada: link direto para o treino presencial daquela ficha;
- * - 2+ fichas liberadas: âncora `#treinos`, para o professor escolher a ficha.
+ * - 2+ fichas liberadas: seletor (`TreinarAlunoSelector`) com um link direto para
+ *   a rota presencial de cada ficha liberada, para o professor escolher qual usar.
  */
 export function AtalhosAluno({
   alunoId,
@@ -109,15 +111,12 @@ export function AtalhosAluno({
   const descricaoTreinar =
     'Registrar a execução presencial a partir de uma ficha liberada.';
 
-  // Destino do "Treinar com o aluno" conforme a quantidade de fichas liberadas.
-  let hrefTreinar: string | null;
-  if (fichasLiberadas.length === 0) {
-    hrefTreinar = null; // sem ficha liberada → botão desabilitado
-  } else if (fichasLiberadas.length === 1) {
-    hrefTreinar = `/professor/alunos/${alunoId}/treinar/${fichasLiberadas[0].id}`;
-  } else {
-    hrefTreinar = '#treinos'; // várias fichas → leva o professor a escolher
-  }
+  // Link direto do "Treinar com o aluno" quando há exatamente 1 ficha liberada.
+  // 0 → botão desabilitado; 2+ → seletor (ver JSX abaixo).
+  const hrefTreinar =
+    fichasLiberadas.length === 1
+      ? `/professor/alunos/${alunoId}/treinar/${fichasLiberadas[0].id}`
+      : null;
 
   return (
     <Card>
@@ -131,7 +130,12 @@ export function AtalhosAluno({
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {/* Treinar com o aluno — atalho especial (0 / 1 / 2+ fichas liberadas) */}
           <li>
-            {hrefTreinar ? (
+            {fichasLiberadas.length >= 2 ? (
+              <TreinarAlunoSelector
+                alunoId={alunoId}
+                fichasLiberadas={fichasLiberadas}
+              />
+            ) : hrefTreinar ? (
               <Link href={hrefTreinar} className={CARTAO_CLASSES}>
                 <ConteudoAtalho
                   Icone={PlayCircle}
