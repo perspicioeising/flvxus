@@ -1,0 +1,12 @@
+-- =============================================================================
+-- Flvxus v2 — ROLLBACK de 20261022090300_created_by_backfill.sql
+--
+-- O backfill de autoria é INTRINSECAMENTE LOSSY: não há como saber quais linhas
+-- tinham created_by NULL antes (só sabíamos que eram de tenant). Portanto NÃO
+-- há reversão de dados segura — deixar created_by preenchido com o owner do
+-- tenant é inofensivo (autoria coerente: o master é o autor histórico). Este
+-- arquivo existe para completar a convenção de rollback por migration; a
+-- estrutura/policies são revertidas pelos rollbacks das outras migrations.
+--
+-- (Intencionalmente sem comandos.)
+-- =============================================================================
