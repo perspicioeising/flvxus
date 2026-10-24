@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { DIA_SEM } from '@/lib/semana';
 
 /** Item de exercício prescrito, já normalizado para exibição. */
 export interface ItemDia {
@@ -26,9 +27,9 @@ function seriesReps(sets: number | null, reps: string | null): string | null {
 /**
  * Lista NUMERADA (01, 02…) dos exercícios de um dia da semana, com o cabeçalho
  * do dia, a prescrição em verde à direita e o botão pílula "Iniciar treino".
- * Para dias com weekday definido o link filtra por aquele dia (`?dia=`); no
- * balde "Sem dia definido" (`weekday = null`) o link vai sem `?dia`.
- * Mobile-first: alvo ≥ 44px no botão.
+ * Para dias com weekday definido o link filtra por aquele dia (`?dia=N`); no
+ * balde "Sem dia definido" (`weekday = null`) o link usa o sentinela
+ * (`?dia=none`). Mobile-first: alvo ≥ 44px no botão.
  */
 export function DiaLista({
   rotulo,
@@ -41,10 +42,13 @@ export function DiaLista({
   planId: string;
   itens: ItemDia[];
 }) {
+  // Todo CTA carrega um eixo explícito: dia definido → ?dia=N; balde "Sem dia
+  // definido" (weekday=null) → sentinela `none` (nunca "sem query"), para a
+  // execução renderizar o balde em vez de redirecionar (sem loop).
   const href =
     weekday !== null
       ? `/aluno/execucao/${planId}?dia=${weekday}`
-      : `/aluno/execucao/${planId}`;
+      : `/aluno/execucao/${planId}?dia=${DIA_SEM}`;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">

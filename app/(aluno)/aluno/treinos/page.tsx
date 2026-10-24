@@ -1,37 +1,35 @@
 import { Dumbbell } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
-import { formatarData } from '@/lib/datas';
-import { agruparPorDivisao } from '@/lib/divisao';
 import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
-import { DivisaoResumoCard } from '@/components/aluno/treinos/divisao-resumo-card';
-
-/** Extrai os grupos musculares de um join `exercises` (array ou objeto). */
-function dadosExercicio(exercises: unknown): { grupos: string[] } {
-  const e = Array.isArray(exercises) ? exercises[0] : exercises;
-  const registro = e as { muscle_groups: string[] | null } | null;
-  return { grupos: registro?.muscle_groups ?? [] };
-}
+import {
+  FichaSecao,
+  type FichaSecaoDados,
+} from '@/components/aluno/treinos/ficha-secao';
 
 /**
- * Lista de treinos do aluno: mostra as DIVISÕES da ficha ativa (liberada mais
- * recente), uma por divisão (letra + nome derivado dos grupos + grupos
- * musculares + selo "Próximo" na primeira). Leitura via RSC sob RLS (que já
- * garante a invariante "só released do próprio aluno"); ainda assim filtramos
- * `status='released'` explicitamente. O gate de papel é do layout da área.
+ * Lista de treinos do aluno: mostra TODAS as fichas liberadas (o aluno Bruno
+ * tem duas), cada uma como uma SEÇÃO com seu nome e suas divisões em cards
+ * (letra + nome derivado dos grupos + grupos musculares). O selo "Próximo"
+ * aparece só na primeira divisão da ficha mais recente. Desempate determinístico
+ * (released_at desc, id desc) garante ordem estável e que nenhuma ficha suma.
+ * Com 1 ficha, o layout é equivalente ao anterior (uma seção).
+ *
+ * Leitura via RSC sob RLS (que já garante "só released do próprio aluno");
+ * ainda assim filtramos `status='released'` explicitamente. O gate de papel é
+ * do layout da área.
  */
 export default async function AlunoTreinosPage() {
   const supabase = await createClient();
 
-  const { data: ficha, error } = await supabase
+  const { data, error } = await supabase
     .from('workout_plans')
     .select(
       'id, name, released_at, workout_plan_items(id, division, order_index, sets, reps, exercises(name, muscle_groups))'
     )
     .eq('status', 'released')
     .order('released_at', { ascending: false, nullsFirst: false })
-    .limit(1)
-    .maybeSingle();
+    .order('id', { ascending: false });
 
   if (error) {
     return (
@@ -49,8 +47,7 @@ export default async function AlunoTreinosPage() {
     );
   }
 
-  const itens = ficha?.workout_plan_items ?? [];
-  const divisoes = agruparPorDivisao(itens, (item) => item.division ?? null);
+  const fichas = (data ?? []) as FichaSecaoDados[];
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -60,7 +57,7 @@ export default async function AlunoTreinosPage() {
         subtitle="Suas fichas liberadas pelo professor. Toque para ver os exercícios ou começar o treino."
       />
 
-      {!ficha ? (
+      {fichas.length === 0 ? (
         <EmptyState
           icon={Dumbbell}
           title="Nenhum treino liberado ainda"
@@ -68,44 +65,12 @@ export default async function AlunoTreinosPage() {
           className="rounded-3xl"
         />
       ) : (
-        <>
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-primary">
-              Ficha ativa
-            </p>
-            <p className="mt-1 text-lg font-bold text-foreground">
-              {ficha.name}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Liberada em {formatarData(ficha.released_at)} ·{' '}
-              {itens.length === 1
-                ? '1 exercício'
-                : `${itens.length} exercícios`}
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {divisoes.map((grupo, index) => {
-              const grupos = Array.from(
-                new Set(
-                  grupo.itens.flatMap(
-                    (item) => dadosExercicio(item.exercises).grupos
-                  )
-                )
-              );
-              return (
-                <DivisaoResumoCard
-                  key={grupo.division ?? 'sem-divisao'}
-                  letra={grupo.division}
-                  nome={grupos.length > 0 ? grupos.join(', ') : ''}
-                  grupos={grupos}
-                  proximo={index === 0}
-                  href={`/aluno/treinos/${ficha.id}`}
-                />
-              );
-            })}
-          </div>
-        </>
+        <div className="space-y-8">
+          {fichas.map((ficha, index) => (
+            // Selo "Próximo" só na 1ª divisão da ficha mais recente (index 0).
+            <FichaSecao key={ficha.id} ficha={ficha} marcarProximo={index === 0} />
+          ))}
+        </div>
       )}
     </section>
   );

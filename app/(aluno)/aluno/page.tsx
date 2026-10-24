@@ -6,32 +6,21 @@ import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { diasDesde } from '@/lib/datas';
 import { weekdayAtual, WEEKDAY_LABEL } from '@/lib/semana';
-import { agruparPorDivisao } from '@/lib/divisao';
-import { EmptyState, ErrorState } from '@/components/patterns';
 import {
-  CardTreinoHoje,
-  type ExercicioHoje,
-} from '@/components/aluno/inicio/card-treino-hoje';
-
-/** Extrai o nome do exercício de um join `exercises` (array ou objeto). */
-function infoExercicio(exercises: unknown): {
-  nome: string;
-  grupos: string[];
-} {
-  const e = Array.isArray(exercises) ? exercises[0] : exercises;
-  const nome = (e as { name: string | null } | null)?.name;
-  const grupos = (e as { muscle_groups: string[] | null } | null)?.muscle_groups;
-  return {
-    nome: nome?.trim() || 'Exercício',
-    grupos: Array.isArray(grupos) ? grupos : [],
-  };
-}
+  proximoTreinoDaFicha,
+  type FichaInicio,
+} from '@/lib/treino/inicio';
+import { EmptyState, ErrorState } from '@/components/patterns';
+import { CardTreinoHoje } from '@/components/aluno/inicio/card-treino-hoje';
+import { CardFichaSemTreino } from '@/components/aluno/inicio/card-ficha-sem-treino';
 
 /**
- * Tela de início do aluno. Mostra o próximo treino (cartão verde com a letra da
- * divisão ou o treino do dia legado), dois atalhos (Evolução/Conquistas) e o
- * resumo da última avaliação. Leitura via RSC sob RLS; o gate de papel já é
- * feito no layout da área.
+ * Tela de início do aluno. Lê TODAS as fichas liberadas (o aluno Bruno tem
+ * duas) com desempate determinístico (released_at desc, id desc) e mostra o
+ * "próximo treino" de cada uma — um cartão por ficha. Com 1 ficha, o resultado
+ * é equivalente em conteúdo e layout ao cartão único anterior. Fichas legadas
+ * sem treino para hoje aparecem como cartão "sem treino para hoje" (nunca
+ * ocultadas). Leitura via RSC sob RLS; o gate de papel é do layout da área.
  */
 export default async function AlunoHomePage() {
   const sessionUser = await getSessionUser();
@@ -42,8 +31,9 @@ export default async function AlunoHomePage() {
   const supabase = await createClient();
   const weekday = weekdayAtual();
 
-  const [fichaRes, avaliacaoRes] = await Promise.all([
-    // Ficha liberada mais recente do aluno + itens (RLS garante posse e released).
+  const [fichasRes, avaliacaoRes] = await Promise.all([
+    // TODAS as fichas liberadas do aluno + itens (RLS garante posse e released).
+    // Desempate determinístico: released_at desc, id desc (nunca some ficha).
     supabase
       .from('workout_plans')
       .select(
@@ -51,9 +41,8 @@ export default async function AlunoHomePage() {
       )
       .eq('status', 'released')
       .order('released_at', { ascending: false, nullsFirst: false })
-      .limit(1)
-      .maybeSingle(),
-    // Última avaliação física (para o resumo "há N dias").
+      .order('id', { ascending: false }),
+    // Última avaliação física (para o resumo "há N dias"). Mantida no Promise.all.
     supabase
       .from('physical_assessments')
       .select('assessed_at')
@@ -62,7 +51,7 @@ export default async function AlunoHomePage() {
       .maybeSingle(),
   ]);
 
-  if (fichaRes.error || avaliacaoRes.error) {
+  if (fichasRes.error || avaliacaoRes.error) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
         <Saudacao nome={sessionUser.fullName} weekday={weekday} />
@@ -74,70 +63,47 @@ export default async function AlunoHomePage() {
     );
   }
 
-  const ficha = fichaRes.data;
-  const itens = ficha?.workout_plan_items ?? [];
-  const porDivisao = itens.some((item) => (item.division ?? null) !== null);
-
-  // Regra do "próximo treino": primeira divisão (pt-BR) quando a ficha é por
-  // divisão; senão, os itens do weekday atual (legado por dia).
-  let itensTreino: typeof itens = [];
-  let divisionLabel: string | null = null;
-  if (porDivisao) {
-    const grupos = agruparPorDivisao(itens, (item) => item.division ?? null);
-    const primeiro = grupos[0];
-    if (primeiro) {
-      itensTreino = primeiro.itens;
-      divisionLabel = primeiro.division;
-    }
-  } else {
-    itensTreino = itens.filter((item) => item.weekday === weekday);
-  }
-
-  const itensOrdenados = [...itensTreino].sort(
-    (a, b) => a.order_index - b.order_index
-  );
-
-  const exerciciosTreino: ExercicioHoje[] = itensOrdenados.map((item) => ({
-    id: item.id,
-    nome: infoExercicio(item.exercises).nome,
-    sets: item.sets,
-    reps: item.reps,
-  }));
-
-  const gruposTreino = Array.from(
-    new Set(itensOrdenados.flatMap((item) => infoExercicio(item.exercises).grupos))
-  );
-
-  // Destino do CTA: ?divisao (por divisão), ?dia (legado), /aluno/treinos (vazio).
-  let href = '/aluno/treinos';
-  if (ficha && exerciciosTreino.length > 0) {
-    href = porDivisao && divisionLabel
-      ? `/aluno/execucao/${ficha.id}?divisao=${encodeURIComponent(divisionLabel)}`
-      : `/aluno/execucao/${ficha.id}?dia=${weekday}`;
-  }
-
+  const fichas = (fichasRes.data ?? []) as FichaInicio[];
   const diasUltimaAvaliacao = diasDesde(avaliacaoRes.data?.assessed_at ?? null);
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
       <Saudacao nome={sessionUser.fullName} weekday={weekday} />
 
-      {ficha && exerciciosTreino.length > 0 ? (
-        <CardTreinoHoje
-          fichaNome={ficha.name}
-          planId={ficha.id}
-          divisionLabel={divisionLabel}
-          grupos={gruposTreino}
-          exercicios={exerciciosTreino}
-          href={href}
-        />
-      ) : (
+      {fichas.length === 0 ? (
         <EmptyState
           icon={Dumbbell}
           title="Nenhum treino liberado ainda"
           description="Quando seu professor liberar uma ficha, ela aparece aqui com o próximo treino."
           className="rounded-3xl"
         />
+      ) : (
+        <div className="space-y-4">
+          {fichas.map((ficha) => {
+            const proximo = proximoTreinoDaFicha(ficha);
+            if (proximo === null) {
+              // Ficha legada sem treino para hoje: mostra o cartão dedicado.
+              return (
+                <CardFichaSemTreino
+                  key={ficha.id}
+                  fichaNome={ficha.name}
+                  href={`/aluno/treinos/${ficha.id}`}
+                />
+              );
+            }
+            return (
+              <CardTreinoHoje
+                key={ficha.id}
+                fichaNome={ficha.name}
+                planId={ficha.id}
+                divisionLabel={proximo.divisionLabel}
+                grupos={proximo.grupos}
+                exercicios={proximo.exercicios}
+                href={proximo.href}
+              />
+            );
+          })}
+        </div>
       )}
 
       <nav aria-label="Atalhos" className="grid grid-cols-2 gap-3">

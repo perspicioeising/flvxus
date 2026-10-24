@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
-import { agruparPorDia } from '@/lib/semana';
-import { agruparPorDivisao } from '@/lib/divisao';
+import { agruparPorDia, parseDia } from '@/lib/semana';
+import { agruparPorDivisao, parseDivisao } from '@/lib/divisao';
 import { formatarData } from '@/lib/datas';
 import { DiaLista, type ItemDia } from '@/components/aluno/treinos/dia-lista';
 import { DivisaoLista } from '@/components/aluno/treinos/divisao-lista';
@@ -46,17 +46,28 @@ function mapearItemDia(item: ItemFicha): ItemDia {
 }
 
 /**
- * Detalhe de uma ficha liberada: os exercícios agrupados por dia da semana
- * (pt-BR), com séries×reps, carga alvo, descanso e observações. O RLS limita a
- * fichas `released` do próprio aluno — vazio vira 404. Cada dia oferece um
- * botão "Iniciar sessão" que leva à execução daquele dia.
+ * Detalhe de uma ficha liberada. Ao clicar numa divisão em `/aluno/treinos`, o
+ * link traz o eixo escolhido (`?divisao=`/`?dia=`) e aqui exibimos APENAS aquele
+ * grupo (ex.: só o treino A), com o botão "Iniciar treino {letra}". Sem eixo na
+ * URL (acesso direto à ficha), lista todas as divisões/dias (retrocompatível).
+ *
+ * Regra de 404 (única): só ficha inexistente/não-released cai em `notFound()`.
+ * Um eixo ausente ou com rótulo/dia inexistente NÃO dá 404 aqui — degrada
+ * listando todas as divisões/dias (o 404 de "eixo inválido" é só na execução,
+ * que redireciona ao detalhe). O RLS limita a fichas `released` do próprio
+ * aluno — vazio vira 404.
  */
 export default async function AlunoFichaDetalhePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ dia?: string | string[]; divisao?: string | string[] }>;
 }) {
   const { id } = await params;
+  const { dia, divisao } = await searchParams;
+  const divisaoPedida = parseDivisao(divisao);
+  const diaPedido = parseDia(dia);
   const supabase = await createClient();
 
   const { data: ficha } = await supabase
@@ -81,15 +92,46 @@ export default async function AlunoFichaDetalhePage({
   const itens = itensData ?? [];
 
   // Eixo detectado pelos itens: se algum tem divisão, agrupa por divisão
-  // (A/B/C/…); senão, mantém o agrupamento legado por dia da semana. A ordem
-  // dos grupos vem dos agrupadores (que já ordenam internamente); a ordem
-  // intra-grupo vem de `order_index`.
+  // (A/B/C/…); senão, mantém o agrupamento legado por dia da semana.
   const porDivisao = itens.some((item) => (item.division ?? null) !== null);
 
-  const gruposDia = porDivisao ? [] : agruparPorDia(itens, (item) => item.weekday);
-  const gruposDivisao = porDivisao
+  const gruposDiaTodos = porDivisao
+    ? []
+    : agruparPorDia(itens, (item) => item.weekday);
+  const gruposDivisaoTodos = porDivisao
     ? agruparPorDivisao(itens, (item) => item.division ?? null)
     : [];
+
+  // Filtro por eixo: `rotulo`/`dia` existente ou `sem` com balde existente →
+  // isola só aquele grupo; `ausente` → lista todos; rótulo/dia inexistente →
+  // degrada listando todos (sem 404). Simétrico entre divisão e dia.
+  const gruposDivisao = (() => {
+    if (!porDivisao) return [];
+    if (divisaoPedida.tipo === 'rotulo') {
+      const alvo = gruposDivisaoTodos.filter(
+        (g) => g.division === divisaoPedida.valor
+      );
+      return alvo.length > 0 ? alvo : gruposDivisaoTodos;
+    }
+    if (divisaoPedida.tipo === 'sem') {
+      const alvo = gruposDivisaoTodos.filter((g) => g.division === null);
+      return alvo.length > 0 ? alvo : gruposDivisaoTodos;
+    }
+    return gruposDivisaoTodos;
+  })();
+
+  const gruposDia = (() => {
+    if (porDivisao) return [];
+    if (diaPedido.tipo === 'dia') {
+      const alvo = gruposDiaTodos.filter((g) => g.weekday === diaPedido.valor);
+      return alvo.length > 0 ? alvo : gruposDiaTodos;
+    }
+    if (diaPedido.tipo === 'sem') {
+      const alvo = gruposDiaTodos.filter((g) => g.weekday === null);
+      return alvo.length > 0 ? alvo : gruposDiaTodos;
+    }
+    return gruposDiaTodos;
+  })();
 
   const vazio = porDivisao ? gruposDivisao.length === 0 : gruposDia.length === 0;
 

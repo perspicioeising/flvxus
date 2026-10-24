@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { DIVISAO_SEM } from '@/lib/divisao';
 import { type ItemDia } from '@/components/aluno/treinos/dia-lista';
 
 /** Monta o texto "séries × reps" quando os dados existem. */
@@ -15,9 +16,9 @@ function seriesReps(sets: number | null, reps: string | null): string | null {
 /**
  * Lista NUMERADA dos exercícios de uma DIVISÃO (A/B/C/…), com a letra em chip
  * de destaque, prescrição em verde à direita e o botão pílula "Iniciar treino".
- * Para divisões nomeadas o link aponta aquela divisão (`?divisao=`); no balde
- * "Divisão única" (`division = null`) o link vai sem query. Reaproveita o tipo
- * `ItemDia` (shape idêntico). Mobile-first: alvo ≥ 44px no botão.
+ * Para divisões nomeadas o link aponta aquela divisão (`?divisao=A`); no balde
+ * "Divisão única" (`division = null`) o link usa o sentinela (`?divisao=__sem__`).
+ * Reaproveita o tipo `ItemDia` (shape idêntico). Mobile-first: alvo ≥ 44px.
  */
 export function DivisaoLista({
   rotulo,
@@ -30,10 +31,12 @@ export function DivisaoLista({
   planId: string;
   itens: ItemDia[];
 }) {
-  const href =
-    division !== null
-      ? `/aluno/execucao/${planId}?divisao=${encodeURIComponent(division)}`
-      : `/aluno/execucao/${planId}`;
+  // Todo CTA carrega um eixo explícito: divisão nomeada → ?divisao=A; balde
+  // "Divisão única" (division=null) → sentinela __sem__ (nunca "sem query"),
+  // para a execução renderizar o balde em vez de redirecionar (sem loop).
+  const href = `/aluno/execucao/${planId}?divisao=${encodeURIComponent(
+    division ?? DIVISAO_SEM
+  )}`;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
