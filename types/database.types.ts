@@ -44,6 +44,7 @@ export type AppointmentStatus = 'scheduled' | 'done' | 'canceled' | 'no_show';
 export type ConsentType = 'data_processing' | 'health_data' | 'ai_processing' | 'terms';
 export type DataRequestType = 'export' | 'delete';
 export type DataRequestStatus = 'requested' | 'processing' | 'completed' | 'rejected';
+export type LegalDocumentType = 'terms' | 'privacy';
 
 export interface Database {
   public: {
@@ -1054,6 +1055,45 @@ export interface Database {
           updated_at?: string;
         };
       };
+      // terms_acceptances — prova imutável de aceite dos documentos legais.
+      // Bloco escrito à mão (ver cabeçalho do arquivo): deve casar com o que
+      // `supabase gen types` produziria para a migration
+      // 20261021120000_terms_acceptances.sql (NIT 6 do design-review). `ip_address`
+      // é inet no banco e serializa como string no TS. O `Update` reflete a forma
+      // do gerador mesmo com o trigger terms_acceptances_no_update bloqueando
+      // UPDATE em runtime.
+      terms_acceptances: {
+        Row: {
+          id: string;
+          user_id: string;
+          tenant_id: string | null;
+          document_type: LegalDocumentType;
+          document_version: string;
+          accepted_at: string;
+          ip_address: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id?: string | null;
+          document_type: LegalDocumentType;
+          document_version: string;
+          accepted_at?: string;
+          ip_address?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tenant_id?: string | null;
+          document_type?: LegalDocumentType;
+          document_version?: string;
+          accepted_at?: string;
+          ip_address?: string | null;
+          user_agent?: string | null;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1095,6 +1135,7 @@ export interface Database {
       consent_type: ConsentType;
       data_request_type: DataRequestType;
       data_request_status: DataRequestStatus;
+      legal_document_type: LegalDocumentType;
     };
     CompositeTypes: Record<string, never>;
   };
