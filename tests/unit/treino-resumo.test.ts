@@ -4,6 +4,7 @@ import {
   compararSessoes,
   formatarDuracao,
   formatarVolumeKg,
+  selecionarSessaoComparavel,
   type MetricasSessao,
 } from '@/lib/treino/resumo';
 
@@ -127,5 +128,37 @@ describe('compararSessoes', () => {
     expect(c.volumePercentual).toBeNull();
     // deltas absolutos seguem definidos
     expect(c.volumeKg).toBe(1200);
+  });
+});
+
+describe('selecionarSessaoComparavel', () => {
+  it('"primeira" quando não há nenhuma sessão anterior', () => {
+    expect(selecionarSessaoComparavel([])).toEqual({ tipo: 'primeira' });
+  });
+
+  it('escolhe a mais recente com >= 1 série concluída', () => {
+    const r = selecionarSessaoComparavel([
+      { id: 's1', seriesConcluidas: 0 },
+      { id: 's2', seriesConcluidas: 5 },
+      { id: 's3', seriesConcluidas: 8 },
+    ]);
+    // s1 é a mais recente, mas tem 0 séries; s2 é a próxima qualificável.
+    expect(r).toEqual({ tipo: 'comparavel', id: 's2' });
+  });
+
+  it('"sem-comparavel" quando há anteriores mas nenhuma com série concluída', () => {
+    const r = selecionarSessaoComparavel([
+      { id: 's1', seriesConcluidas: 0 },
+      { id: 's2', seriesConcluidas: 0 },
+    ]);
+    expect(r).toEqual({ tipo: 'sem-comparavel' });
+  });
+
+  it('escolhe a primeira quando ela já qualifica', () => {
+    const r = selecionarSessaoComparavel([
+      { id: 's1', seriesConcluidas: 3 },
+      { id: 's2', seriesConcluidas: 9 },
+    ]);
+    expect(r).toEqual({ tipo: 'comparavel', id: 's1' });
   });
 });

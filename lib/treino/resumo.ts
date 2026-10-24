@@ -74,6 +74,40 @@ export function formatarVolumeKg(valor: number): string {
   return `${formatado} kg`;
 }
 
+/** Uma sessão anterior candidata à comparação, já com séries concluídas contadas. */
+export interface CandidataComparacao {
+  id: string;
+  seriesConcluidas: number;
+}
+
+/**
+ * Resultado da seleção da última sessão comparável (MEDIUM #6):
+ * - `primeira`       → não há NENHUMA sessão anterior deste treino/divisão;
+ * - `sem-comparavel` → há anteriores, mas nenhuma com ≥ 1 série concluída;
+ * - `comparavel`     → encontrou a base; `id` é a sessão escolhida.
+ */
+export type SelecaoComparacao =
+  | { tipo: 'primeira' }
+  | { tipo: 'sem-comparavel' }
+  | { tipo: 'comparavel'; id: string };
+
+/**
+ * Escolhe a última sessão comparável a partir das candidatas JÁ ordenadas por
+ * `finished_at desc` (mais recente primeiro). Comparável = ≥ 1 série concluída.
+ * A primeira (mais recente) que qualificar é a base. Se a lista está vazia, não
+ * há sessão anterior → `primeira`. Se há candidatas mas nenhuma qualifica →
+ * `sem-comparavel` (evita o falso "primeira sessão"). Decidir a mensagem só com
+ * a contagem de séries torna a regra testável sem I/O.
+ */
+export function selecionarSessaoComparavel(
+  candidatas: CandidataComparacao[]
+): SelecaoComparacao {
+  if (candidatas.length === 0) return { tipo: 'primeira' };
+  const comparavel = candidatas.find((c) => c.seriesConcluidas >= 1);
+  if (comparavel) return { tipo: 'comparavel', id: comparavel.id };
+  return { tipo: 'sem-comparavel' };
+}
+
 /**
  * Calcula os deltas (atual − anterior) de duração, volume e séries concluídas.
  * O percentual de volume só é definido quando a base anterior é > 0; caso
