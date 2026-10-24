@@ -51,11 +51,15 @@ export function BottomNav({ role, rootHref }: BottomNavProps) {
   }
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
-      aria-label="Navegação principal"
-    >
-      <ul className="flex items-stretch justify-around">
+    // Wrapper fixo que ocupa a largura inteira e respeita a safe-area; não
+    // captura toques (pointer-events-none) para não bloquear o conteúdo nas
+    // margens laterais da pilula flutuante.
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav
+        className="pointer-events-auto mx-4 mb-4 overflow-hidden rounded-3xl border border-border bg-background/95 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80"
+        aria-label="Navegação principal"
+      >
+        <ul className="flex items-stretch justify-around">
         {primary.map((item) => {
           const active = isNavItemActive(item, pathname, [rootHref]);
           const Icon = item.icon;
@@ -128,7 +132,8 @@ export function BottomNav({ role, rootHref }: BottomNavProps) {
             </SheetContent>
           </Sheet>
         </li>
-      </ul>
-    </nav>
+        </ul>
+      </nav>
+    </div>
   );
 }

@@ -27,7 +27,7 @@ export function AppShell({ role, rootHref, children }: AppShellProps) {
         <AppHeader role={role} rootHref={rootHref} />
         {/* O <main> é a área rolável. pb extra no mobile para o conteúdo não
             ficar sob a bottom-nav fixa. */}
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-24 md:p-6 md:pb-6">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 md:p-6 md:pb-6">
           {children}
         </main>
       </div>
