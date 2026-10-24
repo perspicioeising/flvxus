@@ -14,6 +14,13 @@ import {
   type CriarAlunoInput,
   type EditarAlunoInput,
 } from '@/schemas/aluno';
+import { erroDeCampo } from '@/actions/_estado';
+
+import type { EstadoAcao } from '@/actions/_estado';
+
+// Reexport do shape comum (extraído para actions/_estado.ts) — mantém os imports
+// existentes `import { type EstadoAcao } from '@/actions/alunos'` funcionando.
+export type { EstadoAcao } from '@/actions/_estado';
 
 /**
  * Server Actions do domínio de alunos (architecture.md §4 / §4.4).
@@ -23,30 +30,6 @@ import {
  * que cria `auth.users` + `profiles` via `createAdminClient(tenantId)` carimbando
  * `tenant_id`/`trainer_id` do professor autenticado.
  */
-
-/** Estado tipado retornado pelas actions para as Server Actions/forms. */
-export interface EstadoAcao {
-  ok: boolean;
-  /** Mensagem geral (erro ou sucesso) em pt-BR. */
-  message?: string;
-  /** Erros por campo (para exibir junto ao input). */
-  fieldErrors?: Record<string, string>;
-  /** Id do recurso afetado (ex.: aluno criado). */
-  id?: string;
-}
-
-/** Converte os erros do Zod num mapa `campo -> primeira mensagem`. */
-function erroDeCampo(flatten: {
-  fieldErrors: Record<string, string[] | undefined>;
-}): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [campo, mensagens] of Object.entries(flatten.fieldErrors)) {
-    if (mensagens && mensagens.length > 0) {
-      out[campo] = mensagens[0];
-    }
-  }
-  return out;
-}
 
 /** Monta o payload de `profiles` a partir dos dados validados. */
 function perfilDeAluno(dados: CriarAlunoInput | EditarAlunoInput) {
