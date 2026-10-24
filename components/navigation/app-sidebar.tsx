@@ -21,6 +21,8 @@ import {
 interface AppSidebarProps {
   role: UserRole;
   rootHref: string;
+  /** Fase 3: master vê o item "Plano" (default false, aditivo). */
+  isMaster?: boolean;
 }
 
 /**
@@ -28,12 +30,12 @@ interface AppSidebarProps {
  * 0006), foco visível e alvos de toque confortáveis. O papel vem do layout
  * server-side (sem fetch client).
  */
-export function AppSidebar({ role, rootHref }: AppSidebarProps) {
+export function AppSidebar({ role, rootHref, isMaster = false }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { supabase } = useSupabase();
   const [collapsed, setCollapsed] = useState(false);
-  const items = getNavItems(role);
+  const items = getNavItems(role, isMaster);
 
   async function handleSignOut() {
     await supabase.auth.signOut();

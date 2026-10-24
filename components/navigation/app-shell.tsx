@@ -8,6 +8,8 @@ import { BottomNav } from '@/components/navigation/bottom-nav';
 interface AppShellProps {
   role: UserRole;
   rootHref: string;
+  /** Fase 3: master vê o item "Plano" no menu. Default false (aditivo). */
+  isMaster?: boolean;
   children: ReactNode;
 }
 
@@ -16,7 +18,7 @@ interface AppShellProps {
  * troca de tema e bottom-nav no mobile. O papel/root vem do layout server-side
  * que já fez o gate — nenhum fetch de perfil no cliente.
  */
-export function AppShell({ role, rootHref, children }: AppShellProps) {
+export function AppShell({ role, rootHref, isMaster = false, children }: AppShellProps) {
   return (
     // h-dvh fixa o shell DIRETO na viewport (altura dinâmica), sem depender da
     // cadeia height:100% de html>body>layouts — que quebrava no desktop e deixava
@@ -26,7 +28,7 @@ export function AppShell({ role, rootHref, children }: AppShellProps) {
     // vive SÓ no <main>. O lock é do SHELL (não do <body> global), então as rotas
     // sem AppShell (auth/marketing) continuam rolando o documento.
     <div className="flex h-dvh overflow-hidden bg-background text-foreground">
-      <AppSidebar role={role} rootHref={rootHref} />
+      <AppSidebar role={role} rootHref={rootHref} isMaster={isMaster} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AppHeader role={role} rootHref={rootHref} />
         {/* O <main> é a área rolável. pb extra no mobile para o conteúdo não
@@ -35,7 +37,7 @@ export function AppShell({ role, rootHref, children }: AppShellProps) {
           {children}
         </main>
       </div>
-      <BottomNav role={role} rootHref={rootHref} />
+      <BottomNav role={role} rootHref={rootHref} isMaster={isMaster} />
     </div>
   );
 }

@@ -26,6 +26,8 @@ import {
 interface BottomNavProps {
   role: UserRole;
   rootHref: string;
+  /** Fase 3: master vê o item "Plano" (default false, aditivo). */
+  isMaster?: boolean;
 }
 
 /** Quantos itens aparecem na barra inferior antes do botão "Menu". */
@@ -35,13 +37,13 @@ const PRIMARY_COUNT = 3;
  * Navegação inferior (mobile, <md). Mostra os primeiros itens do papel como
  * atalhos e agrupa o restante em um Sheet acessível. Alvos de toque >=44px.
  */
-export function BottomNav({ role, rootHref }: BottomNavProps) {
+export function BottomNav({ role, rootHref, isMaster = false }: BottomNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { supabase } = useSupabase();
   const [open, setOpen] = useState(false);
 
-  const items = getNavItems(role);
+  const items = getNavItems(role, isMaster);
   const primary = items.slice(0, PRIMARY_COUNT);
   const overflow = items.slice(PRIMARY_COUNT);
 

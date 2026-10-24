@@ -23,7 +23,7 @@ export default async function ProfessorLayout({
   await materializarAceiteProfessor(user.userId);
 
   return (
-    <AppShell role={user.role} rootHref="/professor">
+    <AppShell role={user.role} rootHref="/professor" isMaster={user.isMaster}>
       {children}
     </AppShell>
   );

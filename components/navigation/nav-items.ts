@@ -12,6 +12,7 @@ import {
   Activity,
   HeartPulse,
   HelpCircle,
+  CreditCard,
   type LucideIcon,
   Trophy,
 } from 'lucide-react';
@@ -38,6 +39,13 @@ const trainerNav: NavItem[] = [
   { label: 'Ajuda', href: '/professor/ajuda', icon: HelpCircle },
 ];
 
+/** Item exclusivo do MASTER (billing/assinatura). Nunca mostrado a filiados. */
+const masterNavItem: NavItem = {
+  label: 'Plano',
+  href: '/professor/plano',
+  icon: CreditCard,
+};
+
 const studentNav: NavItem[] = [
   { label: 'Início', href: '/aluno', icon: LayoutDashboard },
   { label: 'Treinos', href: '/aluno/treinos', icon: Activity },
@@ -49,9 +57,24 @@ const studentNav: NavItem[] = [
   { label: 'Ajuda', href: '/aluno/ajuda', icon: HelpCircle },
 ];
 
-/** Itens de menu distintos por papel. */
-export function getNavItems(role: UserRole): NavItem[] {
-  return role === 'trainer' ? trainerNav : studentNav;
+/**
+ * Itens de menu distintos por papel. `isMaster` (default false) acrescenta o
+ * item "Plano" APENAS para o personal master — o filiado nunca o vê. É aditivo:
+ * chamadores antigos (sem o 2º argumento) seguem recebendo o menu padrão.
+ */
+export function getNavItems(role: UserRole, isMaster = false): NavItem[] {
+  if (role !== 'trainer') {
+    return studentNav;
+  }
+  if (!isMaster) {
+    return trainerNav;
+  }
+  // Insere "Plano" antes do último item ("Ajuda") para o master.
+  const items = [...trainerNav];
+  const ajudaIndex = items.findIndex((item) => item.href === '/professor/ajuda');
+  const insertAt = ajudaIndex === -1 ? items.length : ajudaIndex;
+  items.splice(insertAt, 0, masterNavItem);
+  return items;
 }
 
 /** Rótulo humano do papel, em pt-BR. */
