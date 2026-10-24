@@ -5,18 +5,45 @@ import { totaisDieta, totaisRefeicao } from '@/lib/dieta/totais';
 import { GOAL_LABEL } from '@/components/aluno/labels';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Accordion } from '@/components/ui/accordion';
+import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { EmptyState, ErrorState } from '@/components/patterns';
-import {
-  RefeicaoCard,
+  RefeicaoLinha,
   type RefeicaoResumo,
 } from '@/components/aluno/dieta/refeicao-card';
 import type { GoalType } from '@/types/database.types';
+
+/** Formata um número com no máximo 1 casa decimal. */
+function arred(valor: number): string {
+  return Number.isInteger(valor) ? String(valor) : valor.toFixed(1);
+}
+
+/** Barra de progresso de um macro (consumo frente à meta). */
+function BarraMacro({
+  rotulo,
+  atual,
+  meta,
+}: {
+  rotulo: string;
+  atual: number;
+  meta: number | null;
+}) {
+  const pct =
+    meta && meta > 0 ? Math.min(100, Math.round((atual / meta) * 100)) : 0;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium text-foreground">{rotulo}</span>
+        <span className="tabular-nums text-muted-foreground">
+          {arred(atual)}
+          {meta != null ? ` / ${meta} g` : ' g'}
+        </span>
+      </div>
+      <Progress value={pct} aria-label={`Progresso de ${rotulo}`} />
+    </div>
+  );
+}
 
 /**
  * Dieta liberada do aluno — somente leitura. Leitura via RSC sob RLS (que já
@@ -50,7 +77,7 @@ export default async function AlunoDietaPage() {
   if (error) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
-        <PageHeader />
+        <PageHeader emphasis="caps" title="Dieta" />
         <ErrorState
           title="Não foi possível carregar sua dieta"
           description="Ocorreu um erro ao buscar sua dieta liberada. Atualize a página para tentar novamente."
@@ -62,12 +89,13 @@ export default async function AlunoDietaPage() {
   if (!dieta) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
-        <PageHeader />
+        <PageHeader emphasis="caps" title="Dieta" />
         <AvisoMedico />
         <EmptyState
           icon={Utensils}
           title="Nenhuma dieta liberada ainda"
           description="Quando seu professor liberar uma dieta, ela aparece aqui com refeições e metas."
+          className="rounded-3xl"
         />
       </section>
     );
@@ -87,82 +115,85 @@ export default async function AlunoDietaPage() {
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
-      <PageHeader />
+      <PageHeader
+        emphasis="caps"
+        title="Dieta"
+        subtitle="Sua dieta liberada pelo professor, com refeições e metas diárias."
+      />
       <AvisoMedico />
 
-      {/* Metas e objetivo */}
-      <Card>
-        <CardHeader className="p-4 pb-0">
-          <div className="flex items-center justify-between gap-2">
-            <CardTitle className="text-lg">Metas diárias</CardTitle>
-            {dieta.goal ? (
-              <Badge variant="secondary">{GOAL_LABEL[dieta.goal as GoalType]}</Badge>
-            ) : null}
+      {/* Card META DIÁRIA: kcal gigante + macros com barras */}
+      <div className="rounded-3xl bg-card p-6 shadow-app-medium">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Meta diária
+          </p>
+          {dieta.goal ? (
+            <Badge variant="secondary">{GOAL_LABEL[dieta.goal as GoalType]}</Badge>
+          ) : null}
+        </div>
+        <p className="mt-2 text-5xl font-black tabular-nums text-primary">
+          {dieta.target_kcal != null ? dieta.target_kcal : '—'}
+          <span className="ml-1 text-lg font-bold text-muted-foreground">
+            kcal
+          </span>
+        </p>
+
+        <div className="mt-6 space-y-4">
+          <BarraMacro rotulo="Proteínas" atual={totalDieta.protein_g} meta={dieta.protein_g} />
+          <BarraMacro rotulo="Carboidratos" atual={totalDieta.carbs_g} meta={dieta.carbs_g} />
+          <BarraMacro rotulo="Gorduras" atual={totalDieta.fat_g} meta={dieta.fat_g} />
+        </div>
+
+        {restricoes.length > 0 ? (
+          <div className="mt-6">
+            <h3 className="mb-2 text-sm font-bold text-foreground">Restrições</h3>
+            <ul className="flex flex-wrap gap-2">
+              {restricoes.map((restricao: string) => (
+                <li key={restricao}>
+                  <Badge variant="outline">{restricao}</Badge>
+                </li>
+              ))}
+            </ul>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4 p-4">
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Meta rotulo="Calorias" valor={dieta.target_kcal != null ? `${dieta.target_kcal} kcal` : null} />
-            <Meta rotulo="Proteínas" valor={dieta.protein_g != null ? `${dieta.protein_g} g` : null} />
-            <Meta rotulo="Carboidratos" valor={dieta.carbs_g != null ? `${dieta.carbs_g} g` : null} />
-            <Meta rotulo="Gorduras" valor={dieta.fat_g != null ? `${dieta.fat_g} g` : null} />
-          </dl>
+        ) : null}
 
-          {restricoes.length > 0 ? (
-            <div>
-              <h3 className="mb-2 text-sm font-medium text-foreground">Restrições</h3>
-              <ul className="flex flex-wrap gap-2">
-                {restricoes.map((restricao: string) => (
-                  <li key={restricao}>
-                    <Badge variant="outline">{restricao}</Badge>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+        {dieta.notes ? (
+          <div className="mt-6">
+            <h3 className="mb-1 text-sm font-bold text-foreground">Observações</h3>
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+              {dieta.notes}
+            </p>
+          </div>
+        ) : null}
+      </div>
 
-          {dieta.notes ? (
-            <div>
-              <h3 className="mb-1 text-sm font-medium text-foreground">Observações</h3>
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{dieta.notes}</p>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {/* Refeições */}
+      {/* Refeições expansíveis por horário */}
       {refeicoes.length === 0 ? (
         <EmptyState
           icon={Utensils}
           title="Dieta sem refeições"
           description="Sua dieta liberada ainda não tem refeições cadastradas."
+          className="rounded-3xl"
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Refeições</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
+              Refeições
+            </h2>
             <span className="text-sm text-muted-foreground">
-              Total: {Number.isInteger(totalDieta.kcal) ? totalDieta.kcal : totalDieta.kcal.toFixed(1)} kcal
+              Total: {arred(totalDieta.kcal)} kcal
             </span>
           </div>
-          {refeicoes.map((refeicao) => (
-            <RefeicaoCard key={refeicao.id} refeicao={refeicao} />
-          ))}
+          <Accordion type="multiple" className="space-y-3">
+            {refeicoes.map((refeicao) => (
+              <RefeicaoLinha key={refeicao.id} refeicao={refeicao} />
+            ))}
+          </Accordion>
         </div>
       )}
     </section>
-  );
-}
-
-/** Cabeçalho da tela de dieta (reusado nos caminhos de erro/vazio). */
-function PageHeader() {
-  return (
-    <header className="space-y-1">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Dieta</h1>
-      <p className="text-sm text-muted-foreground">
-        Sua dieta liberada pelo professor, com refeições e metas diárias.
-      </p>
-    </header>
   );
 }
 

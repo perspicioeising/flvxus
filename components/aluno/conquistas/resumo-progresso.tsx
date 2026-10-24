@@ -1,11 +1,4 @@
-import { Flame, Star, Trophy } from 'lucide-react';
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { StatCard } from '@/components/patterns';
 
 export interface ResumoProgressoProps {
   /** Pontos acumulados (`profiles.total_points`). */
@@ -19,8 +12,8 @@ export interface ResumoProgressoProps {
 }
 
 /**
- * Resumo de progresso do aluno (pontos, sequência e conquistas obtidas vs
- * disponíveis). Puramente apresentacional (RSC-safe). Mobile-first.
+ * Faixa de 3 métricas grandes em verde (pontos, sequência, conquistas).
+ * Puramente apresentacional (RSC-safe). Mobile-first.
  */
 export function ResumoProgresso({
   pontos,
@@ -29,47 +22,25 @@ export function ResumoProgresso({
   total,
 }: ResumoProgressoProps) {
   return (
-    <Card>
-      <CardHeader className="p-4 pb-0">
-        <CardTitle className="text-lg">Seu progresso</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4">
-        <dl className="grid grid-cols-3 gap-4">
-          <Metrica
-            icon={Star}
-            rotulo="Pontos"
-            valor={String(pontos)}
-          />
-          <Metrica
-            icon={Flame}
-            rotulo="Sequência"
-            valor={streak === 1 ? '1 dia' : `${streak} dias`}
-          />
-          <Metrica
-            icon={Trophy}
-            rotulo="Conquistas"
-            valor={`${obtidas}/${total}`}
-          />
-        </dl>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Metrica({
-  icon: Icon,
-  rotulo,
-  valor,
-}: {
-  icon: typeof Star;
-  rotulo: string;
-  valor: string;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-1 text-center">
-      <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-      <dt className="text-xs text-muted-foreground">{rotulo}</dt>
-      <dd className="text-xl font-bold text-foreground">{valor}</dd>
+    <div className="grid grid-cols-3 gap-3">
+      <StatCard
+        label="Pontos"
+        value={pontos}
+        tone="emphasis"
+        radius="2xl"
+      />
+      <StatCard
+        label="Sequência"
+        value={streak === 1 ? '1 dia' : `${streak} dias`}
+        tone="emphasis"
+        radius="2xl"
+      />
+      <StatCard
+        label="Conquistas"
+        value={`${obtidas}/${total}`}
+        tone="emphasis"
+        radius="2xl"
+      />
     </div>
   );
 }

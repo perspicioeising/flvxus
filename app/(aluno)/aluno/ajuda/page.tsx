@@ -1,4 +1,5 @@
 import { ConteudoAjuda } from '@/components/ajuda/conteudo-ajuda';
+import { PageHeader } from '@/components/patterns';
 
 /**
  * Página de Ajuda do aluno. Server Component simples: monta o cabeçalho e
@@ -8,13 +9,11 @@ import { ConteudoAjuda } from '@/components/ajuda/conteudo-ajuda';
 export default function AlunoAjudaPage() {
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Ajuda</h1>
-        <p className="text-sm text-muted-foreground">
-          Como usar o Flvxus: ativar sua conta, ver e executar treinos, acompanhar a
-          dieta, a evolução e as conquistas.
-        </p>
-      </header>
+      <PageHeader
+        emphasis="caps"
+        title="Ajuda"
+        subtitle="Como usar o Flvxus: ativar sua conta, ver e executar treinos, acompanhar a dieta, a evolução e as conquistas."
+      />
 
       <ConteudoAjuda role="student" />
     </section>

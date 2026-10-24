@@ -1,33 +1,29 @@
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { ErrorState } from '@/components/patterns';
+import { ErrorState, PageHeader } from '@/components/patterns';
 import { PerfilForm } from '@/components/aluno/perfil/perfil-form';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+
+/** Iniciais do nome para o avatar. */
+function iniciais(nome: string | null | undefined): string {
+  const partes = (nome ?? '').trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return '–';
+  if (partes.length === 1) return partes[0][0]?.toUpperCase() ?? '–';
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
+}
 
 /**
  * Perfil do aluno. Leitura via RSC sob RLS: o aluno vê apenas o próprio
- * `profiles` (a policy garante o isolamento — não refiltramos posse). O gate
- * de papel é do layout da área.
+ * `profiles` (a policy garante o isolamento). O gate de papel é do layout.
  *
- * Mostra apenas o formulário de dados pessoais (`atualizarPerfil`). O logout
- * vive no AppShell (sidebar/bottom-nav) do layout do aluno.
- *
- * LGPD adiado por decisão de escopo (FEAT-003): o perfil não pede mais
- * consentimentos nem solicitações de export/exclusão. Para reativar, ver
- * docs/pendencias.md.
+ * Mostra o formulário de dados pessoais (`atualizarPerfil`). O logout vive no
+ * AppShell (sidebar/bottom-nav) do layout do aluno.
  */
 export default async function AlunoPerfilPage() {
   const aluno = await getSessionUser();
   if (!aluno) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
-        <PageHeader />
+        <PageHeader emphasis="caps" title="Perfil" />
         <ErrorState
           title="Sessão expirada"
           description="Entre novamente para acessar seu perfil."
@@ -47,7 +43,7 @@ export default async function AlunoPerfilPage() {
   if (erroPerfil || !perfil) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
-        <PageHeader />
+        <PageHeader emphasis="caps" title="Perfil" />
         <ErrorState
           title="Não foi possível carregar seu perfil"
           description="Ocorreu um erro ao buscar seus dados. Atualize a página para tentar novamente."
@@ -58,39 +54,33 @@ export default async function AlunoPerfilPage() {
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
-      <PageHeader />
+      <PageHeader emphasis="caps" title="Perfil" />
 
-      <Card>
-        <CardHeader className="p-4 pb-0">
-          <CardTitle className="text-base">Dados pessoais</CardTitle>
-          <CardDescription>
-            {perfil.email ? `Conta: ${perfil.email}` : 'Mantenha seus dados atualizados.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4">
-          <PerfilForm
-            valoresIniciais={{
-              full_name: perfil.full_name ?? '',
-              phone: perfil.phone ?? '',
-              birth_date: perfil.birth_date ?? '',
-              gender: perfil.gender ?? '',
-              height_cm: perfil.height_cm !== null ? String(perfil.height_cm) : '',
-            }}
-          />
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-soft text-2xl font-black text-primary-soft-foreground">
+          {iniciais(perfil.full_name)}
+        </span>
+        <div>
+          <p className="text-lg font-bold text-foreground">
+            {perfil.full_name ?? 'Aluno'}
+          </p>
+          {perfil.email ? (
+            <p className="text-sm text-muted-foreground">{perfil.email}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <PerfilForm
+          valoresIniciais={{
+            full_name: perfil.full_name ?? '',
+            phone: perfil.phone ?? '',
+            birth_date: perfil.birth_date ?? '',
+            gender: perfil.gender ?? '',
+            height_cm: perfil.height_cm !== null ? String(perfil.height_cm) : '',
+          }}
+        />
+      </div>
     </section>
-  );
-}
-
-/** Cabeçalho da tela de perfil (reusado nos caminhos de erro). */
-function PageHeader() {
-  return (
-    <header className="space-y-1">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Perfil</h1>
-      <p className="text-sm text-muted-foreground">
-        Seus dados pessoais. Atualize o que precisar.
-      </p>
-    </header>
   );
 }

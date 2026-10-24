@@ -1,9 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Pause, Play, RotateCcw, SkipForward } from 'lucide-react';
+import { Minus, Plus, SkipForward } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { AnelProgresso } from './anel-progresso';
 
 /** Formata segundos restantes como `m:ss`. */
 function formatar(segundos: number): string {
@@ -13,10 +14,11 @@ function formatar(segundos: number): string {
 }
 
 /**
- * Timer de descanso entre séries. Conta de forma regressiva a partir de
- * `segundos` (o `rest_seconds` prescrito do exercício), com iniciar/pausar,
- * reiniciar e pular. Alvos ≥ 44px; sem depender de hover. `haptics` é
- * best-effort via `navigator.vibrate` ao concluir, quando disponível.
+ * Timer de descanso entre séries, agora com anel SVG verde. Conta de forma
+ * regressiva a partir de `segundos` (o `rest_seconds` prescrito), com
+ * auto-início opcional, ajustes −15s/+15s e pular. Alvos ≥ 44px; sem depender
+ * de hover. `haptics` é best-effort via `navigator.vibrate` ao concluir.
+ * `prefers-reduced-motion` é tratado pelo próprio `AnelProgresso`.
  */
 export function TimerDescanso({
   segundos,
@@ -27,6 +29,10 @@ export function TimerDescanso({
 }) {
   const [restante, setRestante] = React.useState(segundos);
   const [rodando, setRodando] = React.useState(autoIniciar);
+
+  // Teto do anel: nunca menor que o prescrito nem que o restante atual (quando
+  // o aluno adiciona tempo além do prescrito), para a fração nunca passar de 1.
+  const teto = Math.max(segundos, restante);
 
   // Reinicia o alvo quando a prescrição muda (ex.: outro exercício). Com
   // `autoIniciar`, já começa rodando; senão, fica parado aguardando o toque.
@@ -55,60 +61,57 @@ export function TimerDescanso({
     return () => window.clearInterval(intervalo);
   }, [rodando]);
 
-  const concluido = restante === 0;
+  function ajustar(delta: number) {
+    setRestante((atual) => Math.max(0, atual + delta));
+  }
 
   return (
-    <div className="flex items-center gap-3">
-      <span
-        className="min-w-16 text-center text-xl font-semibold tabular-nums text-foreground"
-        aria-live="polite"
-      >
-        {formatar(restante)}
-      </span>
+    <div className="flex flex-col items-center gap-5 rounded-3xl border border-border p-6">
+      <AnelProgresso segundos={teto} restante={restante} size={180}>
+        <span
+          className="text-4xl font-black tabular-nums text-foreground"
+          aria-live="polite"
+        >
+          {formatar(restante)}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          de {formatar(teto)}
+        </span>
+      </AnelProgresso>
 
-      {concluido ? (
+      <div className="flex items-center gap-3">
         <Button
           type="button"
           variant="outline"
-          className="min-h-11"
-          onClick={() => {
-            setRestante(segundos);
-            setRodando(true);
-          }}
+          className="min-h-11 rounded-full"
+          onClick={() => ajustar(-15)}
         >
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          Reiniciar descanso
+          <Minus className="h-4 w-4" aria-hidden="true" />
+          15s
         </Button>
-      ) : (
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11 min-w-11"
-            aria-label={rodando ? 'Pausar descanso' : 'Iniciar descanso'}
-            onClick={() => setRodando((v) => !v)}
-          >
-            {rodando ? (
-              <Pause className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <Play className="h-4 w-4" aria-hidden="true" />
-            )}
-            {rodando ? 'Pausar' : 'Descanso'}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11"
-            onClick={() => {
-              setRodando(false);
-              setRestante(0);
-            }}
-          >
-            <SkipForward className="h-4 w-4" aria-hidden="true" />
-            Pular
-          </Button>
-        </>
-      )}
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11 rounded-full"
+          onClick={() => ajustar(15)}
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          15s
+        </Button>
+      </div>
+
+      <Button
+        type="button"
+        variant="ghost"
+        className="min-h-11"
+        onClick={() => {
+          setRodando(false);
+          setRestante(0);
+        }}
+      >
+        <SkipForward className="h-4 w-4" aria-hidden="true" />
+        Pular descanso
+      </Button>
     </div>
   );
 }

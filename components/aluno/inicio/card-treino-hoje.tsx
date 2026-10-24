@@ -1,13 +1,6 @@
 import Link from 'next/link';
-import { Dumbbell } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 /** Um exercício do treino de hoje (resumo para exibição). */
@@ -21,64 +14,61 @@ export interface ExercicioHoje {
 export interface CardTreinoHojeProps {
   /** Nome da ficha liberada. */
   fichaNome: string;
-  /** Rótulo pt-BR do dia da semana atual. */
-  diaLabel: string;
-  /** Exercícios prescritos para hoje. */
+  /** ID da ficha (para o deep-link de execução). */
+  planId: string;
+  /** Letra da divisão (ex.: "A") ou null no legado por dia. */
+  divisionLabel: string | null;
+  /** Grupos musculares do treino escolhido. */
+  grupos: string[];
+  /** Exercícios prescritos para o treino escolhido. */
   exercicios: ExercicioHoje[];
+  /** Destino do CTA, já montado pela page (deep-link ?divisao/?dia). */
+  href: string;
 }
 
 /**
- * Card "Treino de hoje" na tela de início do aluno. Mostra a ficha liberada e
- * os exercícios do dia da semana atual, com atalho para a tela de treinos.
+ * Cartão verde de "próximo treino" na tela de início do aluno. Letra da divisão
+ * gigante, grupos musculares em destaque e botão pílula escuro para iniciar.
  * Puramente apresentacional (RSC-safe): navegação via `Link`.
  */
 export function CardTreinoHoje({
   fichaNome,
-  diaLabel,
+  divisionLabel,
+  grupos,
   exercicios,
+  href,
 }: CardTreinoHojeProps) {
+  const gruposLabel =
+    grupos.length > 0 ? grupos.join(' E ').toUpperCase() : fichaNome;
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Dumbbell className="h-5 w-5 text-primary" aria-hidden="true" />
-          <CardTitle className="text-xl">Treino de hoje</CardTitle>
-        </div>
-        <CardDescription>
-          {diaLabel} • {fichaNome}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {exercicios.length > 0 ? (
-          <ul className="space-y-2">
-            {exercicios.map((ex) => (
-              <li
-                key={ex.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
-              >
-                <span className="text-sm font-medium text-foreground">
-                  {ex.nome}
-                </span>
-                {ex.sets || ex.reps ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {[ex.sets ? `${ex.sets}x` : null, ex.reps]
-                      .filter(Boolean)
-                      .join(' ')}
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Sua ficha liberada não tem exercícios marcados para hoje. Veja o
-            treino completo e escolha o que fazer.
-          </p>
-        )}
-        <Button asChild className="min-h-11 w-full">
-          <Link href="/aluno/treinos">Ver treino completo</Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <div className="rounded-3xl bg-primary p-6 text-primary-foreground shadow-app-glow">
+      <p className="text-xs font-bold uppercase tracking-widest opacity-80">
+        Próximo treino
+      </p>
+      {divisionLabel ? (
+        <p className="text-6xl font-black leading-none md:text-7xl">
+          {divisionLabel}
+        </p>
+      ) : null}
+      <p className="mt-2 text-lg font-bold leading-tight">{gruposLabel}</p>
+      <p className="mt-1 text-sm opacity-80">
+        {fichaNome}
+        {exercicios.length > 0
+          ? ` · ${exercicios.length} ${exercicios.length === 1 ? 'exercício' : 'exercícios'}`
+          : ''}
+      </p>
+
+      <Button
+        asChild
+        size="xl"
+        className="mt-6 w-full bg-background text-foreground hover:bg-background/90"
+      >
+        <Link href={href}>
+          Iniciar treino
+          <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+        </Link>
+      </Button>
+    </div>
   );
 }

@@ -2,7 +2,8 @@ import { Dumbbell } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { weekdayAtual } from '@/lib/semana';
-import { EmptyState, ErrorState } from '@/components/patterns';
+import { formatarData } from '@/lib/datas';
+import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
 import { FichaCard, type FichaResumo } from '@/components/aluno/treinos/ficha-card';
 
 /**
@@ -10,9 +11,6 @@ import { FichaCard, type FichaResumo } from '@/components/aluno/treinos/ficha-ca
  * (que já garante a invariante "só released do próprio aluno"); ainda assim
  * filtramos `status='released'` explicitamente. O gate de papel é do layout da
  * área — não repetimos aqui.
- *
- * Para cada ficha mostramos nome, data de liberação, total de exercícios e,
- * quando há item no dia da semana atual, o CTA "Treinar hoje".
  */
 export default async function AlunoTreinosPage() {
   const supabase = await createClient();
@@ -27,7 +25,11 @@ export default async function AlunoTreinosPage() {
   if (error) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
-        <PageHeader />
+        <PageHeader
+          emphasis="caps"
+          title="Treinos"
+          subtitle="Suas fichas liberadas pelo professor."
+        />
         <ErrorState
           title="Não foi possível carregar seus treinos"
           description="Ocorreu um erro ao buscar suas fichas. Atualize a página para tentar novamente."
@@ -36,7 +38,7 @@ export default async function AlunoTreinosPage() {
     );
   }
 
-  const fichas: FichaResumo[] = (planos ?? []).map((plano) => {
+  const fichas: FichaResumo[] = (planos ?? []).map((plano, index) => {
     const itens = plano.workout_plan_items ?? [];
     return {
       id: plano.id,
@@ -45,38 +47,53 @@ export default async function AlunoTreinosPage() {
       totalExercicios: itens.length,
       temTreinoHoje: itens.some((item) => item.weekday === weekday),
       weekdayAtual: weekday,
+      letra: String.fromCharCode(65 + index),
     };
   });
 
+  const fichaAtiva = fichas[0];
+
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
-      <PageHeader />
+      <PageHeader
+        emphasis="caps"
+        title="Treinos"
+        subtitle="Suas fichas liberadas pelo professor. Toque para ver os exercícios ou começar o treino."
+      />
 
       {fichas.length === 0 ? (
         <EmptyState
           icon={Dumbbell}
           title="Nenhum treino liberado ainda"
           description="Quando seu professor liberar uma ficha, ela aparece aqui para você treinar."
+          className="rounded-3xl"
         />
       ) : (
-        <div className="space-y-4">
-          {fichas.map((ficha) => (
-            <FichaCard key={ficha.id} ficha={ficha} />
-          ))}
-        </div>
+        <>
+          {fichaAtiva ? (
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-primary">
+                Ficha ativa
+              </p>
+              <p className="mt-1 text-lg font-bold text-foreground">
+                {fichaAtiva.name}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Liberada em {formatarData(fichaAtiva.releasedAt)} ·{' '}
+                {fichaAtiva.totalExercicios === 1
+                  ? '1 exercício'
+                  : `${fichaAtiva.totalExercicios} exercícios`}
+              </p>
+            </div>
+          ) : null}
+
+          <div className="space-y-3">
+            {fichas.map((ficha) => (
+              <FichaCard key={ficha.id} ficha={ficha} />
+            ))}
+          </div>
+        </>
       )}
     </section>
-  );
-}
-
-/** Cabeçalho da tela de treinos (reusado no caminho de erro). */
-function PageHeader() {
-  return (
-    <header className="space-y-1">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Treinos</h1>
-      <p className="text-sm text-muted-foreground">
-        Suas fichas liberadas pelo professor. Toque para ver os exercícios ou começar o treino.
-      </p>
-    </header>
   );
 }

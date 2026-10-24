@@ -207,11 +207,9 @@ export function PerfilForm({ valoresIniciais }: PerfilFormProps) {
           />
         </div>
 
-        <div className="flex justify-end">
-          <Button type="submit" className="min-h-11" disabled={enviando}>
-            {enviando ? 'Salvando…' : 'Salvar alterações'}
-          </Button>
-        </div>
+        <Button type="submit" size="xl" className="w-full" disabled={enviando}>
+          {enviando ? 'Salvando…' : 'Salvar alterações'}
+        </Button>
       </form>
     </Form>
   );

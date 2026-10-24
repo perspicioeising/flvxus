@@ -45,18 +45,18 @@ export function ListaConquistas({ conquistas }: ListaConquistasProps) {
         return (
           <li
             key={c.id}
-            className={`flex items-start gap-3 rounded-lg border p-3 ${
+            className={
               c.obtida
-                ? 'border-primary/40 bg-primary/5'
-                : 'border-border opacity-80'
-            }`}
+                ? 'flex items-start gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-app-glow'
+                : 'flex items-start gap-3 rounded-2xl border border-border bg-card p-4'
+            }
           >
             <span
-              className={`mt-0.5 shrink-0 rounded-full p-2 ${
+              className={
                 c.obtida
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-muted text-muted-foreground'
-              }`}
+                  ? 'mt-0.5 shrink-0 rounded-full bg-background/20 p-2'
+                  : 'mt-0.5 shrink-0 rounded-full bg-muted p-2 text-muted-foreground'
+              }
             >
               {c.obtida ? (
                 <Icon className="h-5 w-5" aria-hidden="true" />
@@ -66,22 +66,32 @@ export function ListaConquistas({ conquistas }: ListaConquistasProps) {
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-foreground">
-                  {c.name}
-                </span>
+                <span className="text-base font-bold">{c.name}</span>
                 {c.points > 0 ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    +{c.points} pts
+                  <span
+                    className={
+                      c.obtida
+                        ? 'shrink-0 text-sm font-bold'
+                        : 'shrink-0 text-sm font-bold text-primary'
+                    }
+                  >
+                    +{c.points}
                   </span>
                 ) : null}
               </div>
               {c.description ? (
-                <p className="mt-0.5 text-xs text-muted-foreground">
+                <p
+                  className={
+                    c.obtida
+                      ? 'mt-0.5 text-xs opacity-90'
+                      : 'mt-0.5 text-xs text-muted-foreground'
+                  }
+                >
                   {c.description}
                 </p>
               ) : null}
               {c.obtida ? (
-                <p className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                <p className="mt-1 flex items-center gap-1 text-xs font-semibold">
                   <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Conquistada em {formatarData(c.earnedAt)}
                 </p>

@@ -8,7 +8,10 @@ import {
   ChevronRight,
   Flag,
   Loader2,
+  Minus,
   Pencil,
+  Plus,
+  X,
 } from 'lucide-react';
 
 import {
@@ -92,6 +95,34 @@ interface EstadoSerie {
 /** Chave única de uma série no mapa de estado: `itemId:setNumber`. */
 function chaveSerie(itemId: string, setNumber: number): string {
   return `${itemId}:${setNumber}`;
+}
+
+/**
+ * Calcula a próxima string de CARGA ao tocar −/+. Passo ±2,5, clamp ≥ 0, no
+ * máximo 1 casa decimal e ponto como separador. Aceita vírgula na entrada.
+ * Campo vazio/NaN parte de 0. Nunca muda a faixa prescrita (placeholder).
+ */
+function passoCarga(valor: string, delta: number): string {
+  const atual = Number((valor || '').replace(',', '.'));
+  const base = Number.isNaN(atual) ? 0 : atual;
+  const proximo = Math.max(0, base + delta);
+  // Arredonda para 1 casa decimal e remove o ".0" quando for inteiro.
+  const arredondado = Math.round(proximo * 10) / 10;
+  return Number.isInteger(arredondado)
+    ? String(arredondado)
+    : arredondado.toFixed(1);
+}
+
+/**
+ * Calcula a próxima string de REPS ao tocar −/+. Passo ±1 inteiro, clamp ≥ 0.
+ * Campo vazio/não-numérico parte de 0 (o + leva a 1, o − fica em 0). Nunca
+ * incrementa a faixa prescrita (que é só placeholder).
+ */
+function passoReps(valor: string, delta: number): string {
+  const atual = parseInt(valor, 10);
+  const base = Number.isNaN(atual) ? 0 : atual;
+  const proximo = Math.max(0, base + delta);
+  return String(proximo);
 }
 
 /**
@@ -608,33 +639,70 @@ export function SessaoExecucao({
       </div>
 
       {itemAtual ? (
-        <Card key={itemAtual.id}>
+        <Card key={itemAtual.id} className="rounded-3xl">
           <CardHeader className="space-y-3 p-4 pb-0">
-            <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-              <span aria-live="polite">
+            {/* Topo: "Exercício i de n" centralizado + X de fechar à direita. */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="w-11" aria-hidden="true" />
+              <span
+                className="text-sm font-semibold text-muted-foreground"
+                aria-live="polite"
+              >
                 Exercício {indiceAtual + 1} de {itensVisiveis.length}
               </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="min-h-11 min-w-11"
+                aria-label="Sair da execução"
+                onClick={() => router.push(destinoAoFinalizar)}
+              >
+                <X className="h-5 w-5" aria-hidden="true" />
+              </Button>
             </div>
-            <CardTitle className="text-xl font-bold text-foreground">
+            <CardTitle className="text-2xl font-black text-foreground">
               {itemAtual.nome}
             </CardTitle>
-            {/* Prescrição como linha de badges — fonte única da verdade. */}
-            <div className="flex flex-wrap gap-2">
-              {itemAtual.reps ? (
-                <Badge variant="secondary">
-                  {itemAtual.sets} × {itemAtual.reps}
-                </Badge>
-              ) : (
-                <Badge variant="secondary">{itemAtual.sets} séries</Badge>
-              )}
-              {itemAtual.cargaAlvo !== null ? (
-                <Badge variant="outline">Carga alvo: {itemAtual.cargaAlvo} kg</Badge>
-              ) : null}
-              {itemAtual.descansoSegundos !== null ? (
-                <Badge variant="outline">
-                  Descanso: {itemAtual.descansoSegundos}s
-                </Badge>
-              ) : null}
+            {/* Prescrição em uma linha discreta. */}
+            <p className="text-sm text-muted-foreground">
+              {itemAtual.reps
+                ? `${itemAtual.sets}×${itemAtual.reps}`
+                : `${itemAtual.sets} séries`}
+              {itemAtual.descansoSegundos !== null
+                ? ` · Descanso ${itemAtual.descansoSegundos}s`
+                : ''}
+              {itemAtual.gruposMusculares.length > 0
+                ? ` · ${itemAtual.gruposMusculares.join(', ')}`
+                : ''}
+            </p>
+            {/* "Série k de sets" + dots de progresso do exercício atual. */}
+            <div className="space-y-1.5">
+              <span className="text-sm font-semibold text-foreground">
+                Série {serieAtual} de {itemAtual.sets}
+              </span>
+              <div className="flex items-center gap-1.5" aria-hidden="true">
+                {Array.from({ length: itemAtual.sets }, (_, i) => i + 1).map(
+                  (n) => {
+                    const concluida =
+                      series[chaveSerie(itemAtual.id, n)]?.completed;
+                    const atual = n === serieAtual;
+                    return (
+                      <span
+                        key={n}
+                        className={cn(
+                          'h-2.5 w-2.5 rounded-full',
+                          concluida
+                            ? 'bg-primary'
+                            : atual
+                              ? 'border-2 border-primary'
+                              : 'bg-muted'
+                        )}
+                      />
+                    );
+                  }
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4 p-4">
@@ -797,7 +865,9 @@ export function SessaoExecucao({
               );
             })()}
 
-            {/* Exatamente UMA série por vez (a série atual) com inputs. */}
+            {/* Exatamente UMA série por vez (a série atual): dois cards grandes
+                (Reps/Carga) com número gigante e steppers −/+. Os inputs mantêm
+                os mesmos ids/labels e chamam o mesmo `atualizarCampo`. */}
             {(() => {
               const setNumber = serieAtual;
               const chave = chaveSerie(itemAtual.id, setNumber);
@@ -805,75 +875,136 @@ export function SessaoExecucao({
               if (!estado) return null;
 
               return (
-                <ul className="space-y-3">
-                  <li
-                    key={chave}
-                    className={cn(
-                      'space-y-3 rounded-lg border p-3',
-                      estado.completed
-                        ? 'border-primary/40 bg-primary/5'
-                        : 'border-border'
-                    )}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Card REPS */}
+                    <div className="space-y-3 rounded-3xl border border-border p-4">
+                      <Label
+                        htmlFor={`${chave}-reps`}
+                        className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+                      >
+                        Reps
+                      </Label>
+                      <Input
+                        id={`${chave}-reps`}
+                        inputMode="numeric"
+                        value={estado.reps}
+                        placeholder={itemAtual.reps ?? undefined}
+                        onChange={(e) =>
+                          atualizarCampo(chave, 'reps', e.target.value)
+                        }
+                        className="h-auto border-0 bg-transparent p-0 text-center text-4xl font-black tabular-nums focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                      <div className="flex items-center justify-between gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="min-h-11 min-w-11 rounded-full"
+                          aria-label="Diminuir reps"
+                          onClick={() =>
+                            atualizarCampo(
+                              chave,
+                              'reps',
+                              passoReps(estado.reps, -1)
+                            )
+                          }
+                        >
+                          <Minus className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="min-h-11 min-w-11 rounded-full"
+                          aria-label="Aumentar reps"
+                          onClick={() =>
+                            atualizarCampo(
+                              chave,
+                              'reps',
+                              passoReps(estado.reps, 1)
+                            )
+                          }
+                        >
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Card CARGA */}
+                    <div className="space-y-3 rounded-3xl border border-border p-4">
+                      <Label
+                        htmlFor={`${chave}-carga`}
+                        className="text-xs font-bold uppercase tracking-wide text-muted-foreground"
+                      >
+                        Carga (kg)
+                      </Label>
+                      <Input
+                        id={`${chave}-carga`}
+                        inputMode="decimal"
+                        value={estado.carga}
+                        onChange={(e) =>
+                          atualizarCampo(chave, 'carga', e.target.value)
+                        }
+                        className="h-auto border-0 bg-transparent p-0 text-center text-4xl font-black tabular-nums focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                      <div className="flex items-center justify-between gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="min-h-11 min-w-11 rounded-full"
+                          aria-label="Diminuir carga"
+                          onClick={() =>
+                            atualizarCampo(
+                              chave,
+                              'carga',
+                              passoCarga(estado.carga, -2.5)
+                            )
+                          }
+                        >
+                          <Minus className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="min-h-11 min-w-11 rounded-full"
+                          aria-label="Aumentar carga"
+                          onClick={() =>
+                            atualizarCampo(
+                              chave,
+                              'carga',
+                              passoCarga(estado.carga, 2.5)
+                            )
+                          }
+                        >
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="xl"
+                    variant={estado.completed ? 'default' : 'default'}
+                    className="w-full"
+                    aria-pressed={estado.completed}
+                    disabled={estado.salvando || iniciando}
+                    onClick={() => alternarSerie(itemAtual.id, setNumber)}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Série {setNumber} de {itemAtual.sets}
-                      </span>
-                    </div>
-
-                    <div className="flex items-end gap-3">
-                      <div className="flex-1 space-y-1">
-                        <Label htmlFor={`${chave}-reps`} className="text-xs">
-                          Reps
-                        </Label>
-                        <Input
-                          id={`${chave}-reps`}
-                          inputMode="numeric"
-                          value={estado.reps}
-                          placeholder={itemAtual.reps ?? undefined}
-                          onChange={(e) =>
-                            atualizarCampo(chave, 'reps', e.target.value)
-                          }
-                          className="h-11"
-                        />
-                      </div>
-
-                      <div className="flex-1 space-y-1">
-                        <Label htmlFor={`${chave}-carga`} className="text-xs">
-                          Carga (kg)
-                        </Label>
-                        <Input
-                          id={`${chave}-carga`}
-                          inputMode="decimal"
-                          value={estado.carga}
-                          onChange={(e) =>
-                            atualizarCampo(chave, 'carga', e.target.value)
-                          }
-                          className="h-11"
-                        />
-                      </div>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant={estado.completed ? 'default' : 'outline'}
-                      className="min-h-11 w-full"
-                      aria-pressed={estado.completed}
-                      disabled={estado.salvando || iniciando}
-                      onClick={() => alternarSerie(itemAtual.id, setNumber)}
-                    >
-                      {estado.salvando ? (
-                        <Loader2
-                          className="h-5 w-5 animate-spin"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <Check className="h-5 w-5" aria-hidden="true" />
-                      )}
-                      {estado.completed ? 'Série concluída' : 'Concluir série'}
-                    </Button>
-                  </li>
-                </ul>
+                    {estado.salvando ? (
+                      <Loader2
+                        className="h-5 w-5 animate-spin"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Check className="h-5 w-5" aria-hidden="true" />
+                    )}
+                    {estado.completed ? 'Série concluída' : 'Concluir série'}
+                  </Button>
+                </div>
               );
             })()}
 
@@ -929,8 +1060,8 @@ export function SessaoExecucao({
         <AlertDialogTrigger asChild>
           <Button
             type="button"
-            size="lg"
-            className="min-h-14 w-full text-base"
+            size="xl"
+            className="w-full"
             disabled={finalizando || pendente}
           >
             <Flag className="h-5 w-5" aria-hidden="true" />

@@ -9,13 +9,7 @@ import {
   type ConquistaDisponivel,
   type ConquistaObtida,
 } from '@/lib/gamificacao/conquistas';
-import { EmptyState, ErrorState } from '@/components/patterns';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
 import { ResumoProgresso } from '@/components/aluno/conquistas/resumo-progresso';
 import { ListaConquistas } from '@/components/aluno/conquistas/lista-conquistas';
 
@@ -63,7 +57,7 @@ export default async function AlunoConquistasPage() {
   ) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
-        <PageHeader />
+        <PageHeader emphasis="caps" title="Conquistas" />
         <ErrorState
           title="Não foi possível carregar suas conquistas"
           description="Ocorreu um erro ao buscar seus dados. Atualize a página para tentar novamente."
@@ -82,7 +76,11 @@ export default async function AlunoConquistasPage() {
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
-      <PageHeader />
+      <PageHeader
+        emphasis="caps"
+        title="Conquistas"
+        subtitle="Seus pontos, sua sequência de treinos e o que você já desbloqueou."
+      />
 
       <ResumoProgresso
         pontos={pontos}
@@ -91,37 +89,16 @@ export default async function AlunoConquistasPage() {
         total={agregado.total}
       />
 
-      <Card>
-        <CardHeader className="p-4 pb-0">
-          <CardTitle className="text-lg">Conquistas</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          {agregado.total === 0 ? (
-            <EmptyState
-              icon={Trophy}
-              title="Nenhuma conquista disponível"
-              description="Quando seu professor configurar as conquistas, elas aparecem aqui conforme você treina."
-            />
-          ) : (
-            <ListaConquistas conquistas={agregado.conquistas} />
-          )}
-        </CardContent>
-      </Card>
+      {agregado.total === 0 ? (
+        <EmptyState
+          icon={Trophy}
+          title="Nenhuma conquista disponível"
+          description="Quando seu professor configurar as conquistas, elas aparecem aqui conforme você treina."
+          className="rounded-3xl"
+        />
+      ) : (
+        <ListaConquistas conquistas={agregado.conquistas} />
+      )}
     </section>
-  );
-}
-
-/** Cabeçalho da tela de conquistas (reusado no caminho de erro). */
-function PageHeader() {
-  return (
-    <header className="space-y-1">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        Conquistas
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Seus pontos, sua sequência de treinos e as conquistas que você já
-        desbloqueou.
-      </p>
-    </header>
   );
 }

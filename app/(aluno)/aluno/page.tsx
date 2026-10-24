@@ -1,51 +1,37 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Activity, BarChart3, Dumbbell, Trophy, Utensils } from 'lucide-react';
+import { ArrowUpRight, BarChart3, Dumbbell, Trophy } from 'lucide-react';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { diasDesde } from '@/lib/datas';
 import { weekdayAtual, WEEKDAY_LABEL } from '@/lib/semana';
+import { agruparPorDivisao } from '@/lib/divisao';
 import { EmptyState, ErrorState } from '@/components/patterns';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   CardTreinoHoje,
   type ExercicioHoje,
 } from '@/components/aluno/inicio/card-treino-hoje';
 
-/** Atalho de navegação exibido na tela de início. */
-interface Atalho {
-  href: string;
-  label: string;
-  icon: typeof Dumbbell;
-}
-
-const ATALHOS: Atalho[] = [
-  { href: '/aluno/treinos', label: 'Treinos', icon: Activity },
-  { href: '/aluno/dieta', label: 'Dieta', icon: Utensils },
-  { href: '/aluno/evolucao', label: 'Evolução', icon: BarChart3 },
-  { href: '/aluno/conquistas', label: 'Conquistas', icon: Trophy },
-];
-
 /** Extrai o nome do exercício de um join `exercises` (array ou objeto). */
-function nomeExercicio(exercises: unknown): string {
+function infoExercicio(exercises: unknown): {
+  nome: string;
+  grupos: string[];
+} {
   const e = Array.isArray(exercises) ? exercises[0] : exercises;
   const nome = (e as { name: string | null } | null)?.name;
-  return nome?.trim() || 'Exercício';
+  const grupos = (e as { muscle_groups: string[] | null } | null)?.muscle_groups;
+  return {
+    nome: nome?.trim() || 'Exercício',
+    grupos: Array.isArray(grupos) ? grupos : [],
+  };
 }
 
 /**
- * Tela de início do aluno. Mostra o treino do dia (ficha liberada + itens do
- * weekday atual), atalhos para treinos/dieta/evolução e um resumo rápido da
- * última avaliação. Leitura via RSC sob RLS; o gate de papel já é feito no
- * layout da área (não repetir aqui).
+ * Tela de início do aluno. Mostra o próximo treino (cartão verde com a letra da
+ * divisão ou o treino do dia legado), dois atalhos (Evolução/Conquistas) e o
+ * resumo da última avaliação. Leitura via RSC sob RLS; o gate de papel já é
+ * feito no layout da área.
  */
 export default async function AlunoHomePage() {
   const sessionUser = await getSessionUser();
@@ -61,7 +47,7 @@ export default async function AlunoHomePage() {
     supabase
       .from('workout_plans')
       .select(
-        'id, name, status, workout_plan_items(id, weekday, order_index, sets, reps, exercises(name))'
+        'id, name, status, workout_plan_items(id, weekday, division, order_index, sets, reps, exercises(name, muscle_groups))'
       )
       .eq('status', 'released')
       .order('released_at', { ascending: false, nullsFirst: false })
@@ -79,7 +65,7 @@ export default async function AlunoHomePage() {
   if (fichaRes.error || avaliacaoRes.error) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
-        <PageHeader nome={sessionUser.fullName} />
+        <Saudacao nome={sessionUser.fullName} weekday={weekday} />
         <ErrorState
           title="Não foi possível carregar seu início"
           description="Ocorreu um erro ao buscar seus dados. Atualize a página para tentar novamente."
@@ -90,87 +76,124 @@ export default async function AlunoHomePage() {
 
   const ficha = fichaRes.data;
   const itens = ficha?.workout_plan_items ?? [];
-  const exerciciosHoje: ExercicioHoje[] = itens
-    .filter((item) => item.weekday === weekday)
-    .sort((a, b) => a.order_index - b.order_index)
-    .map((item) => ({
-      id: item.id,
-      nome: nomeExercicio(item.exercises),
-      sets: item.sets,
-      reps: item.reps,
-    }));
+  const porDivisao = itens.some((item) => (item.division ?? null) !== null);
+
+  // Regra do "próximo treino": primeira divisão (pt-BR) quando a ficha é por
+  // divisão; senão, os itens do weekday atual (legado por dia).
+  let itensTreino: typeof itens = [];
+  let divisionLabel: string | null = null;
+  if (porDivisao) {
+    const grupos = agruparPorDivisao(itens, (item) => item.division ?? null);
+    const primeiro = grupos[0];
+    if (primeiro) {
+      itensTreino = primeiro.itens;
+      divisionLabel = primeiro.division;
+    }
+  } else {
+    itensTreino = itens.filter((item) => item.weekday === weekday);
+  }
+
+  const itensOrdenados = [...itensTreino].sort(
+    (a, b) => a.order_index - b.order_index
+  );
+
+  const exerciciosTreino: ExercicioHoje[] = itensOrdenados.map((item) => ({
+    id: item.id,
+    nome: infoExercicio(item.exercises).nome,
+    sets: item.sets,
+    reps: item.reps,
+  }));
+
+  const gruposTreino = Array.from(
+    new Set(itensOrdenados.flatMap((item) => infoExercicio(item.exercises).grupos))
+  );
+
+  // Destino do CTA: ?divisao (por divisão), ?dia (legado), /aluno/treinos (vazio).
+  let href = '/aluno/treinos';
+  if (ficha && exerciciosTreino.length > 0) {
+    href = porDivisao && divisionLabel
+      ? `/aluno/execucao/${ficha.id}?divisao=${encodeURIComponent(divisionLabel)}`
+      : `/aluno/execucao/${ficha.id}?dia=${weekday}`;
+  }
 
   const diasUltimaAvaliacao = diasDesde(avaliacaoRes.data?.assessed_at ?? null);
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
-      <PageHeader nome={sessionUser.fullName} />
+      <Saudacao nome={sessionUser.fullName} weekday={weekday} />
 
-      {ficha ? (
+      {ficha && exerciciosTreino.length > 0 ? (
         <CardTreinoHoje
           fichaNome={ficha.name}
-          diaLabel={WEEKDAY_LABEL[weekday]}
-          exercicios={exerciciosHoje}
+          planId={ficha.id}
+          divisionLabel={divisionLabel}
+          grupos={gruposTreino}
+          exercicios={exerciciosTreino}
+          href={href}
         />
       ) : (
         <EmptyState
           icon={Dumbbell}
           title="Nenhum treino liberado ainda"
-          description="Quando seu professor liberar uma ficha, ela aparece aqui com o treino do dia."
+          description="Quando seu professor liberar uma ficha, ela aparece aqui com o próximo treino."
+          className="rounded-3xl"
         />
       )}
 
       <nav aria-label="Atalhos" className="grid grid-cols-2 gap-3">
-        {ATALHOS.map(({ href, label, icon: Icon }) => (
-          <Button
-            key={href}
-            asChild
-            variant="outline"
-            className="min-h-11 h-auto flex-col gap-2 py-4"
-          >
-            <Link href={href}>
-              <Icon className="h-5 w-5" aria-hidden="true" />
-              <span className="text-sm">{label}</span>
-            </Link>
-          </Button>
-        ))}
+        <Link
+          href="/aluno/evolucao"
+          className="flex min-h-11 flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div className="flex items-center justify-between">
+            <BarChart3 className="h-5 w-5 text-primary" aria-hidden="true" />
+            <ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          </div>
+          <span className="mt-6 text-sm font-bold uppercase tracking-wide">
+            Evolução
+          </span>
+        </Link>
+        <Link
+          href="/aluno/conquistas"
+          className="flex min-h-11 flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div className="flex items-center justify-between">
+            <Trophy className="h-5 w-5 text-primary" aria-hidden="true" />
+            <ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          </div>
+          <span className="mt-6 text-sm font-bold uppercase tracking-wide">
+            Conquistas
+          </span>
+        </Link>
       </nav>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Resumo rápido</CardTitle>
-          <CardDescription>Sua avaliação física mais recente.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {diasUltimaAvaliacao === null
-              ? 'Você ainda não tem avaliações registradas.'
-              : diasUltimaAvaliacao === 0
-                ? 'Última avaliação registrada hoje.'
-                : `Última avaliação há ${diasUltimaAvaliacao} ${
-                    diasUltimaAvaliacao === 1 ? 'dia' : 'dias'
-                  }.`}
-          </p>
-          <Button asChild variant="outline" className="min-h-11 w-full">
-            <Link href="/aluno/avaliacoes">Ver avaliações</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <Link
+        href="/aluno/avaliacoes"
+        className="flex min-h-11 items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="text-sm text-muted-foreground">
+          {diasUltimaAvaliacao === null
+            ? 'Você ainda não tem avaliações registradas.'
+            : diasUltimaAvaliacao === 0
+              ? 'Última avaliação registrada hoje.'
+              : `Última avaliação há ${diasUltimaAvaliacao} ${
+                  diasUltimaAvaliacao === 1 ? 'dia' : 'dias'
+                }.`}
+        </span>
+        <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      </Link>
     </section>
   );
 }
 
-/** Cabeçalho da tela de início (reusado no caminho de erro). */
-function PageHeader({ nome }: { nome: string | null }) {
-  const primeiroNome = nome?.trim().split(/\s+/)[0];
+/** Saudação do topo (reusada no caminho de erro). */
+function Saudacao({ nome, weekday }: { nome: string | null; weekday: number }) {
+  const primeiroNome = nome?.trim().split(/\s+/)[0]?.toUpperCase();
+  const dia = WEEKDAY_LABEL[weekday].toUpperCase();
   return (
-    <header className="space-y-1">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        {primeiroNome ? `Olá, ${primeiroNome}` : 'Olá'}
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Seu treino de hoje, atalhos e o resumo da sua evolução.
-      </p>
-    </header>
+    <h1 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      {dia}
+      {primeiroNome ? ` · OLÁ, ${primeiroNome}` : ''}
+    </h1>
   );
 }

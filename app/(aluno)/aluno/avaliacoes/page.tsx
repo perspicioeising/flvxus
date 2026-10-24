@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { EmptyState, ErrorState } from '@/components/patterns';
+import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
 import {
   AvaliacaoCard,
   type AvaliacaoResumo,
@@ -43,7 +43,7 @@ export default async function AlunoAvaliacoesPage() {
   if (fisicasRes.error || posturaisRes.error) {
     return (
       <section className="mx-auto w-full max-w-4xl space-y-6">
-        <PageHeader />
+        <PageHeader emphasis="caps" title="Avaliações" />
         <ErrorState
           title="Não foi possível carregar suas avaliações"
           description="Ocorreu um erro ao buscar seus dados. Atualize a página para tentar novamente."
@@ -143,7 +143,7 @@ export default async function AlunoAvaliacoesPage() {
   if (!temConteudo) {
     return (
       <section className="mx-auto w-full max-w-4xl space-y-6">
-        <PageHeader />
+        <PageHeader emphasis="caps" title="Avaliações" />
         <EmptyState
           icon={HeartPulse}
           title="Nenhuma avaliação ainda"
@@ -155,7 +155,11 @@ export default async function AlunoAvaliacoesPage() {
 
   return (
     <section className="mx-auto w-full max-w-4xl space-y-6">
-      <PageHeader />
+      <PageHeader
+        emphasis="caps"
+        title="Avaliações"
+        subtitle="Suas avaliações físicas e posturais registradas pelo professor."
+      />
 
       {avaliacoes.length > 0 ? (
         <div className="space-y-4">
@@ -251,14 +255,4 @@ async function PosturalCard({
   );
 }
 
-/** Cabeçalho da tela de avaliações (reusado nos caminhos de erro/vazio). */
-function PageHeader() {
-  return (
-    <header className="space-y-1">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Avaliações</h1>
-      <p className="text-sm text-muted-foreground">
-        Suas avaliações físicas e posturais registradas pelo professor.
-      </p>
-    </header>
-  );
-}
+
