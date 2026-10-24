@@ -8,11 +8,26 @@ const cadastroValido = {
   email: 'bruno@exemplo.com',
   password: 'senha1234',
   confirmPassword: 'senha1234',
+  aceiteLegal: true as const,
 };
 
 describe('cadastroProfessorSchema', () => {
   it('aceita um cadastro válido', () => {
     expect(cadastroProfessorSchema.safeParse(cadastroValido).success).toBe(true);
+  });
+
+  it('rejeita quando o aceite legal é false', () => {
+    const r = cadastroProfessorSchema.safeParse({
+      ...cadastroValido,
+      aceiteLegal: false,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejeita quando o aceite legal está ausente', () => {
+    const { aceiteLegal: _aceiteLegal, ...semAceite } = cadastroValido;
+    const r = cadastroProfessorSchema.safeParse(semAceite);
+    expect(r.success).toBe(false);
   });
 
   it('rejeita e-mail inválido', () => {

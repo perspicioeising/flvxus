@@ -223,4 +223,118 @@ describe.skip('RLS — invariantes críticas (requer Supabase local)', () => {
     expect(hidden ?? []).toHaveLength(0);
     expect(visible ?? []).toHaveLength(1);
   });
+
+  // ---------------------------------------------------------------------------
+  // terms_acceptances — imutabilidade + RLS (Fase 2.3, design.md §2.15-B)
+  // ---------------------------------------------------------------------------
+
+  it('aceite: usuário grava o próprio e não lê o de outro', async () => {
+    await studentA1.client.from('terms_acceptances').insert({
+      user_id: studentA1.userId,
+      tenant_id: trainerA.tenantId,
+      document_type: 'terms',
+      document_version: '1.0',
+    });
+
+    // O próprio aluno lê o seu aceite.
+    const { data: proprios } = await studentA1.client
+      .from('terms_acceptances')
+      .select('id')
+      .eq('user_id', studentA1.userId);
+    expect((proprios ?? []).length).toBeGreaterThanOrEqual(1);
+
+    // O aluno A2 (mesmo tenant, não trainer) não lê o aceite de A1.
+    const { data: alheios } = await studentA2.client
+      .from('terms_acceptances')
+      .select('id')
+      .eq('user_id', studentA1.userId);
+    expect(alheios ?? []).toHaveLength(0);
+  });
+
+  it('aceite: trainer lê os aceites dos alunos do próprio tenant', async () => {
+    const { data } = await trainerA.client
+      .from('terms_acceptances')
+      .select('id')
+      .eq('user_id', studentA1.userId);
+    expect((data ?? []).length).toBeGreaterThanOrEqual(1);
+
+    // Trainer B (outro tenant) não enxerga.
+    const { data: outro } = await trainerB.client
+      .from('terms_acceptances')
+      .select('id')
+      .eq('user_id', studentA1.userId);
+    expect(outro ?? []).toHaveLength(0);
+  });
+
+  it('aceite: INSERT com user_id ≠ auth.uid() é negado', async () => {
+    const { error } = await studentA2.client.from('terms_acceptances').insert({
+      user_id: studentA1.userId, // forjando outro usuário
+      tenant_id: trainerA.tenantId,
+      document_type: 'privacy',
+      document_version: '1.0',
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it('aceite: UPDATE é bloqueado pelo trigger (append-only), inclusive service_role', async () => {
+    const { data: linha } = await admin
+      .from('terms_acceptances')
+      .select('id')
+      .eq('user_id', studentA1.userId)
+      .limit(1)
+      .single();
+
+    const { error } = await admin
+      .from('terms_acceptances')
+      .update({ document_version: '9.9' })
+      .eq('id', linha!.id);
+    expect(error).not.toBeNull();
+  });
+
+  it('aceite: reenvio da mesma versão vira no-op pelo índice único', async () => {
+    const { error } = await studentA1.client
+      .from('terms_acceptances')
+      .upsert(
+        {
+          user_id: studentA1.userId,
+          tenant_id: trainerA.tenantId,
+          document_type: 'terms',
+          document_version: '1.0',
+        },
+        { onConflict: 'user_id,document_type,document_version', ignoreDuplicates: true },
+      );
+    expect(error).toBeNull();
+
+    const { data } = await studentA1.client
+      .from('terms_acceptances')
+      .select('id')
+      .eq('user_id', studentA1.userId)
+      .eq('document_type', 'terms')
+      .eq('document_version', '1.0');
+    expect(data ?? []).toHaveLength(1);
+  });
+
+  it('aceite: DELETE do titular via service_role/cascade funciona', async () => {
+    // Cria um usuário descartável com um aceite e o remove por cascade.
+    const { data: criado } = await admin.auth.admin.createUser({
+      email: `aceite-del-${suffix}@flvxus.test`,
+      password: 'senha-descartavel',
+      email_confirm: true,
+    });
+    const descartavelId = criado.user!.id;
+    await admin.from('terms_acceptances').insert({
+      user_id: descartavelId,
+      document_type: 'terms',
+      document_version: '1.0',
+    });
+
+    const { error } = await admin.auth.admin.deleteUser(descartavelId);
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('terms_acceptances')
+      .select('id')
+      .eq('user_id', descartavelId);
+    expect(data ?? []).toHaveLength(0);
+  });
 });
