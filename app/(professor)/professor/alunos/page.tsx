@@ -8,7 +8,7 @@ import {
   normalizarTamanho,
   totalPaginas,
 } from '@/lib/paginacao';
-import { EmptyState, ErrorState } from '@/components/patterns';
+import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
 import { Button } from '@/components/ui/button';
 import type { StudentStatus } from '@/types/database.types';
 import { StudentCard } from '@/components/professor/alunos/student-card';
@@ -69,20 +69,19 @@ export default async function AlunosPage({
 
   return (
     <section className="mx-auto w-full max-w-4xl space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Alunos</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie seus alunos, convide novos e acompanhe o status de cada um.
-          </p>
-        </div>
-        <Button asChild className="min-h-11">
-          <Link href="/professor/alunos/novo">
-            <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Convidar aluno
-          </Link>
-        </Button>
-      </header>
+      <PageHeader
+        emphasis="caps"
+        title="Alunos"
+        subtitle="Gerencie seus alunos, convide novos e acompanhe o status de cada um."
+        actions={
+          <Button asChild size="xl">
+            <Link href="/professor/alunos/novo">
+              <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Convidar aluno
+            </Link>
+          </Button>
+        }
+      />
 
       <StudentsFilters initialQuery={q} initialStatus={status ?? ''} />
 

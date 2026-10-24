@@ -185,7 +185,7 @@ export default async function ProfessorTreinarAlunoPage({
         <p className="text-sm font-medium text-muted-foreground">
           Treinar com {nomeAluno}
         </p>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{ficha.name}</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">{ficha.name}</h1>
         <p className="text-sm text-muted-foreground">{subtitulo}</p>
       </header>
 

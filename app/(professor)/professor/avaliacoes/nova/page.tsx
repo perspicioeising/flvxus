@@ -52,7 +52,7 @@ export default async function NovaAvaliacaoPage({
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Nova avaliação</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Nova avaliação</h1>
         <p className="text-sm text-muted-foreground">
           Os cálculos de IMC, %gordura e massas são feitos no servidor conforme o protocolo.
         </p>

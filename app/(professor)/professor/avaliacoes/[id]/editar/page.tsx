@@ -119,7 +119,7 @@ export default async function EditarAvaliacaoPage({
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Editar avaliação</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Editar avaliação</h1>
         <p className="text-sm text-muted-foreground">
           Alterações recalculam os valores derivados no servidor.
         </p>

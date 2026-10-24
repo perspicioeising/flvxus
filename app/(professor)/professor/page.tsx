@@ -7,9 +7,8 @@ import {
 
 import { createClient } from '@/lib/supabase/server';
 import { diasDesde, dataVencida, formatarData } from '@/lib/datas';
-import { ErrorState } from '@/components/patterns';
+import { ErrorState, PageHeader, StatCard } from '@/components/patterns';
 import {
-  MetricCard,
   PendenciasCard,
   AtividadeRecenteCard,
   DIAS_AVALIACAO_VENCIDA,
@@ -83,7 +82,7 @@ export default async function ProfessorHomePage() {
   if (erro) {
     return (
       <section className="mx-auto w-full max-w-5xl space-y-6">
-        <PageHeader />
+        <PageHeader emphasis="caps" title="Visão geral" />
         <ErrorState
           title="Não foi possível carregar o painel"
           description="Ocorreu um erro ao buscar seus dados. Atualize a página para tentar novamente."
@@ -188,22 +187,28 @@ export default async function ProfessorHomePage() {
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6">
-      <PageHeader />
+      <PageHeader
+        emphasis="caps"
+        title="Visão geral"
+        subtitle="Acompanhe seus alunos, avaliações vencidas e fichas aguardando liberação."
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <MetricCard label="Total de alunos" value={totalAlunos} icon={Users} />
-        <MetricCard label="Alunos ativos" value={ativos} icon={UserCheck} />
-        <MetricCard
+        <StatCard label="Total de alunos" value={totalAlunos} icon={Users} tone="emphasis" radius="2xl" />
+        <StatCard label="Alunos ativos" value={ativos} icon={UserCheck} tone="emphasis" radius="2xl" />
+        <StatCard
           label="Alunos inativos"
           value={inativos}
           icon={Users}
           hint="Inativos e arquivados"
+          radius="2xl"
         />
-        <MetricCard
+        <StatCard
           label="Avaliações vencidas"
           value={totalVencidas}
           icon={CalendarClock}
           hint={`Sem avaliação há mais de ${DIAS_AVALIACAO_VENCIDA} dias`}
+          radius="2xl"
         />
       </div>
 
@@ -231,19 +236,5 @@ export default async function ProfessorHomePage() {
 
       <AtividadeRecenteCard itens={atividades} />
     </section>
-  );
-}
-
-/** Cabeçalho do painel (reusado no caminho de erro). */
-function PageHeader() {
-  return (
-    <header className="space-y-1">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">
-        Visão geral
-      </h1>
-      <p className="text-sm text-muted-foreground">
-        Acompanhe seus alunos, avaliações vencidas e fichas aguardando liberação.
-      </p>
-    </header>
   );
 }

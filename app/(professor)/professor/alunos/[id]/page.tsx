@@ -137,7 +137,9 @@ export default async function FichaAlunoPage({
             </Avatar>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-xl">{nome}</CardTitle>
+                <h1 className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
+                  {nome}
+                </h1>
                 <Badge variant={statusBadgeVariant(aluno.status)}>
                   {statusLabel(aluno.status)}
                 </Badge>

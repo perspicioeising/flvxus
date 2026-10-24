@@ -8,7 +8,7 @@ import {
   normalizarTamanho,
   totalPaginas,
 } from '@/lib/paginacao';
-import { EmptyState, ErrorState } from '@/components/patterns';
+import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
 import { Button } from '@/components/ui/button';
 import type { AssessmentProtocol } from '@/types/database.types';
 import { PROTOCOLOS } from '@/schemas/avaliacao';
@@ -164,20 +164,19 @@ function PaginaAvaliacoes({
 }) {
   return (
     <section className="mx-auto w-full max-w-4xl space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Avaliações físicas</h1>
-          <p className="text-sm text-muted-foreground">
-            Registre avaliações, acompanhe o histórico e a evolução de cada aluno.
-          </p>
-        </div>
-        <Button asChild className="min-h-11">
-          <Link href="/professor/avaliacoes/nova">
-            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Nova avaliação
-          </Link>
-        </Button>
-      </header>
+      <PageHeader
+        emphasis="caps"
+        title="Avaliações físicas"
+        subtitle="Registre avaliações, acompanhe o histórico e a evolução de cada aluno."
+        actions={
+          <Button asChild size="xl">
+            <Link href="/professor/avaliacoes/nova">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Nova avaliação
+            </Link>
+          </Button>
+        }
+      />
 
       <AvaliacoesFilters initialQuery={q} initialProtocol={protocol} />
 
