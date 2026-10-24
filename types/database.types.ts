@@ -465,7 +465,6 @@ export interface Database {
           skf_suprailiac: number | null;
           skf_abdominal: number | null;
           skf_thigh: number | null;
-          inbody_score: number | null;
           measurements: Json;
           anamnesis: Json | null;
           goal: GoalType | null;
@@ -518,7 +517,6 @@ export interface Database {
           skf_suprailiac?: number | null;
           skf_abdominal?: number | null;
           skf_thigh?: number | null;
-          inbody_score?: number | null;
           measurements?: Json;
           anamnesis?: Json | null;
           goal?: GoalType | null;
@@ -571,7 +569,6 @@ export interface Database {
           skf_suprailiac?: number | null;
           skf_abdominal?: number | null;
           skf_thigh?: number | null;
-          inbody_score?: number | null;
           measurements?: Json;
           anamnesis?: Json | null;
           goal?: GoalType | null;

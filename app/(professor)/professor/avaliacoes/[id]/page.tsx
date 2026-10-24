@@ -126,7 +126,6 @@ export default async function DetalheAvaliacaoPage({
     { label: '% Gordura', valor: avaliacao.body_fat_pct != null ? `${avaliacao.body_fat_pct}%` : null },
     { label: 'Massa gorda', valor: avaliacao.fat_mass_kg != null ? `${avaliacao.fat_mass_kg} kg` : null },
     { label: 'Massa magra', valor: avaliacao.lean_mass_kg != null ? `${avaliacao.lean_mass_kg} kg` : null },
-    { label: 'Pontuação InBody', valor: avaliacao.inbody_score != null ? String(avaliacao.inbody_score) : null },
   ];
 
   return (

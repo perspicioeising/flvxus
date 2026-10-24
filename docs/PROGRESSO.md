@@ -89,6 +89,24 @@ Capacitor (Android/iOS) + IA via Google Gemini (a migrar para Anthropic).
   ganhou um bloco de atalhos: criar treino (`?aluno=` pré-seleciona), nova avaliação (`?aluno=`),
   dieta, e âncoras para treinos/evolução da própria página. Sem duplicar a seção de evolução nem o
   botão de treino presencial. Só navegação; zero mudança de banco.
+- **Ajuste — Remoção da "Pontuação InBody" da avaliação física** — o campo saiu do fluxo:
+  removido do formulário de criação/edição, da validação Zod, da escrita na Server Action, da
+  apresentação (detalhe do professor + card do aluno), dos tipos à mão em `database.types.ts`,
+  das cópias de ajuda/marketing e das referências na Edge Function de IA (fonte inline
+  `analyze-assessment.txt`). A COLUNA `inbody_score` foi MANTIDA no banco (nullable, ignorada):
+  um `drop` quebraria o `SELECT` da Edge Function `analyze-assessment` (deploy manual) até um
+  redeploy, acoplamento arriscado e fora do fluxo forward-only; por isso nenhuma migration nova
+  foi criada. Follow-ups manuais quando/se o usuário quiser dropar a coluna: (1) RE-DEPLOYAR a
+  Edge Function `analyze-assessment` para a limpeza do `.txt` valer em produção — a função antiga
+  ainda funciona até lá, pois a coluna continua existindo; (2) só então criar o par de migrations
+  `..._avaliacao_inbody_score_drop.sql` (`alter table public.physical_assessments drop column if
+  exists inbody_score;`) + rollback pareado que re-adiciona (`add column inbody_score
+  numeric(5,2);`), seguindo o padrão `...110200/110300_exercises_source_link(_rollback)`.
+- **Ajuste — Tooltip dos gráficos de avaliação legível no tema escuro** — o `<Tooltip>` do
+  recharts no donut "Massa gorda × massa magra" (`composicao-grafico.tsx`) e no wrapper de linha
+  de evolução (`charts/evolucao-line-chart.tsx`) agora define também `itemStyle`/`labelStyle`
+  (texto = `--popover-foreground`) e `wrapperStyle` além do `contentStyle` existente, para o
+  texto acompanhar o tema (claro/escuro) em vez do padrão branco ilegível.
 
 **Bloqueios de ambiente desta rodada (fazer no deploy — não dá para fazer no ambiente sem Docker/Supabase):**
 - **Aplicar as 6 migrations novas** no Supabase (à mão / `db reset`): `...092000` (RPE),

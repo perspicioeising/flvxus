@@ -79,7 +79,6 @@ function linhaAvaliacao(
     weight_kg: dados.weight_kg ?? null,
     height_cm: dados.height_cm ?? null,
     goal: dados.goal ?? null,
-    inbody_score: dados.inbody_score ?? null,
     photos_consent: dados.photos_consent,
     bmi: arredonda(composicao.bmi, 2),
     body_fat_pct: arredonda(composicao.bodyFatPct, 2),

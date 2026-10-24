@@ -78,7 +78,6 @@ export default async function AlunoAvaliacoesPage() {
         body_fat_pct: a.body_fat_pct,
         fat_mass_kg: a.fat_mass_kg,
         lean_mass_kg: a.lean_mass_kg,
-        inbody_score: a.inbody_score,
         photos_consent: a.photos_consent,
         neck_cm: a.neck_cm,
         shoulder_cm: a.shoulder_cm,

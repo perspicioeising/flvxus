@@ -38,7 +38,6 @@ import { OBJETIVO_LABEL } from '@/components/professor/alunos/labels';
 import type { GoalType } from '@/types/database.types';
 import type { EstadoAcao } from '@/actions/avaliacoes';
 import {
-  CAMPO_LABEL,
   CIRCUNFERENCIA_LABEL,
   DOBRA_LABEL,
   GENERO_LABEL,
@@ -96,7 +95,6 @@ function valoresPadrao(
     weight_kg: iniciais?.weight_kg ?? '',
     height_cm: iniciais?.height_cm ?? '',
     body_fat_pct: iniciais?.body_fat_pct ?? '',
-    inbody_score: iniciais?.inbody_score ?? '',
     goal: iniciais?.goal ?? '',
     // No modo criar a anamnese vem pré-preenchida com o roteiro padrão; no modo
     // editar carrega o valor salvo (sem sobrescrever o que o professor digitou).
@@ -449,29 +447,8 @@ export function AvaliacaoForm({
           ) : null}
         </div>
 
-        {/* Etapa 3 — Medidas (InBody + dobras + circunferências) */}
+        {/* Etapa 3 — Medidas (dobras + circunferências) */}
         <div hidden={etapa !== 2} className="space-y-6">
-          <fieldset className="space-y-4">
-            <legend className="text-sm font-medium text-foreground">
-              Composição corporal (opcional)
-            </legend>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="inbody_score"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{CAMPO_LABEL.inbody_score}</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" inputMode="decimal" step="0.1" min={0} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </fieldset>
-
           {dobrasExigidas.length > 0 ? (
             <fieldset className="space-y-4">
               <legend className="text-sm font-medium text-foreground">
@@ -585,7 +562,7 @@ function camposDaEtapa(
     return protocolo === 'manual' ? ['protocol', 'body_fat_pct'] : ['protocol'];
   }
   if (etapa === 2) {
-    return ['inbody_score', ...dobrasExigidas];
+    return [...dobrasExigidas];
   }
   return [];
 }

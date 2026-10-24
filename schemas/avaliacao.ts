@@ -194,9 +194,6 @@ const camposBase = {
   ),
   anamnesis: stringOpcional(),
   photos_consent: z.preprocess((v) => v === true || v === 'true' || v === 'on', z.boolean()),
-  // Pontuação InBody (coluna dedicada `inbody_score`). Número opcional positivo,
-  // seguindo o mesmo padrão permissivo dos demais numéricos (sem teto rígido).
-  inbody_score: numeroOpcional('A pontuação InBody deve ser um número positivo.'),
   ...circunferenciasShape,
   ...dobrasShape,
 };

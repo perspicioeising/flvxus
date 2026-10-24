@@ -44,7 +44,7 @@ const recursos = [
     icon: HeartPulse,
     titulo: 'Avaliação física',
     descricao:
-      'Dobras cutâneas, circunferências, InBody e anamnese. A composição corporal é calculada no servidor; anexe fotos e acompanhe por gráficos de evolução.',
+      'Dobras cutâneas, circunferências e anamnese. A composição corporal é calculada no servidor; anexe fotos e acompanhe por gráficos de evolução.',
   },
   {
     icon: Dumbbell,

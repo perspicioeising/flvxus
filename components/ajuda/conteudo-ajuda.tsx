@@ -267,7 +267,6 @@ const SECOES: Secao[] = [
             itens: [
               'Dobras cutâneas: campos por protocolo para o cálculo do percentual de gordura.',
               'Circunferências: medidas corporais (cintura, quadril, braços etc.).',
-              'InBody: pontuação e dados da bioimpedância, quando usada.',
               'Anamnese: histórico e informações de saúde relevantes.',
             ],
           },
