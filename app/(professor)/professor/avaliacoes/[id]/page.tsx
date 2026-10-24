@@ -13,9 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/patterns';
+import { EmptyState, PageContainer, StatCard, StatusBadge } from '@/components/patterns';
 import { AnalisarAvaliacaoIa } from '@/components/professor/ia/analisar-avaliacao';
 import { ComposicaoGrafico } from '@/components/professor/avaliacoes/composicao-grafico';
 import { MedidasVisual } from '@/components/professor/avaliacoes/medidas-visual';
@@ -119,12 +118,23 @@ export default async function DetalheAvaliacaoPage({
     valor: (avaliacao as Record<string, unknown>)[k] as number | null,
   })).filter((c): c is { rotulo: string; valor: number } => c.valor != null);
 
+  // Métricas de composição em destaque (número verde quando presentes).
+  const metricas: Array<{ label: string; valor: string | null }> = [
+    { label: 'Peso', valor: avaliacao.weight_kg != null ? `${avaliacao.weight_kg} kg` : null },
+    { label: 'Altura', valor: avaliacao.height_cm != null ? `${avaliacao.height_cm} cm` : null },
+    { label: 'IMC', valor: avaliacao.bmi != null ? String(avaliacao.bmi) : null },
+    { label: '% Gordura', valor: avaliacao.body_fat_pct != null ? `${avaliacao.body_fat_pct}%` : null },
+    { label: 'Massa gorda', valor: avaliacao.fat_mass_kg != null ? `${avaliacao.fat_mass_kg} kg` : null },
+    { label: 'Massa magra', valor: avaliacao.lean_mass_kg != null ? `${avaliacao.lean_mass_kg} kg` : null },
+    { label: 'Pontuação InBody', valor: avaliacao.inbody_score != null ? String(avaliacao.inbody_score) : null },
+  ];
+
   return (
-    <section className="mx-auto w-full max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
+    <PageContainer width="wide">
+      <div className="flex items-center justify-between gap-3">
         <Link
           href="/professor/avaliacoes"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           Voltar para avaliações
@@ -137,43 +147,40 @@ export default async function DetalheAvaliacaoPage({
         </Button>
       </div>
 
-      {/* Resumo */}
-      <Card>
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-xl">{nomeAluno}</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {formatarData(avaliacao.assessed_at)}
-              {avaliacao.age != null ? ` · ${avaliacao.age} anos` : ''}
-              {avaliacao.gender ? ` · ${GENERO_LABEL[avaliacao.gender as 'male' | 'female'] ?? avaliacao.gender}` : ''}
-            </p>
-          </div>
-          <Badge variant="secondary">{protocoloLabel(avaliacao.protocol)}</Badge>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Dado rotulo="Peso" valor={avaliacao.weight_kg != null ? `${avaliacao.weight_kg} kg` : null} />
-            <Dado rotulo="Altura" valor={avaliacao.height_cm != null ? `${avaliacao.height_cm} cm` : null} />
-            <Dado rotulo="IMC" valor={avaliacao.bmi != null ? String(avaliacao.bmi) : null} />
-            <Dado
-              rotulo="% Gordura"
-              valor={avaliacao.body_fat_pct != null ? `${avaliacao.body_fat_pct}%` : null}
-            />
-            <Dado
-              rotulo="Massa gorda"
-              valor={avaliacao.fat_mass_kg != null ? `${avaliacao.fat_mass_kg} kg` : null}
-            />
-            <Dado
-              rotulo="Massa magra"
-              valor={avaliacao.lean_mass_kg != null ? `${avaliacao.lean_mass_kg} kg` : null}
-            />
-            <Dado
-              rotulo="Pontuação InBody"
-              valor={avaliacao.inbody_score != null ? String(avaliacao.inbody_score) : null}
-            />
-          </dl>
+      {/* Cabeçalho da avaliação */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <h1 className="text-3xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-4xl">
+            {nomeAluno}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {formatarData(avaliacao.assessed_at)}
+            {avaliacao.age != null ? ` · ${avaliacao.age} anos` : ''}
+            {avaliacao.gender ? ` · ${GENERO_LABEL[avaliacao.gender as 'male' | 'female'] ?? avaliacao.gender}` : ''}
+          </p>
+        </div>
+        <StatusBadge tone="brand">{protocoloLabel(avaliacao.protocol)}</StatusBadge>
+      </div>
 
-          <div className="mt-6">
+      {/* Composição corporal */}
+      <section className="space-y-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {metricas.map((m) => (
+            <StatCard
+              key={m.label}
+              label={m.label}
+              value={m.valor ?? '—'}
+              tone={m.valor ? 'emphasis' : 'default'}
+              radius="2xl"
+            />
+          ))}
+        </div>
+
+        <Card className="rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-lg font-extrabold">Composição corporal</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
             <ComposicaoGrafico
               bmi={avaliacao.bmi}
               bodyFatPct={avaliacao.body_fat_pct}
@@ -182,19 +189,19 @@ export default async function DetalheAvaliacaoPage({
               weightKg={avaliacao.weight_kg}
               gender={avaliacao.gender as 'male' | 'female' | null}
             />
-          </div>
 
-          <div className="mt-4 border-t border-border pt-4">
-            <AnalisarAvaliacaoIa assessmentId={id} />
-          </div>
-        </CardContent>
-      </Card>
+            <div className="border-t border-border pt-4">
+              <AnalisarAvaliacaoIa assessmentId={id} />
+            </div>
+          </CardContent>
+        </Card>
+      </section>
 
       {/* Análise de IA aprovada */}
       {analiseTexto ? (
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Análise com IA</CardTitle>
+            <CardTitle className="text-lg font-extrabold">Análise com IA</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="whitespace-pre-wrap text-sm text-foreground">{analiseTexto}</p>
@@ -214,9 +221,9 @@ export default async function DetalheAvaliacaoPage({
 
       {/* Dobras e circunferências */}
       {dobras.length > 0 || circunferencias.length > 0 ? (
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Medidas</CardTitle>
+            <CardTitle className="text-lg font-extrabold">Medidas</CardTitle>
           </CardHeader>
           <CardContent>
             <MedidasVisual dobras={dobras} circunferencias={circunferencias} />
@@ -226,9 +233,9 @@ export default async function DetalheAvaliacaoPage({
 
       {/* Anamnese */}
       {typeof anamneseTexto === 'string' && anamneseTexto.length > 0 ? (
-        <Card>
+        <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Anamnese</CardTitle>
+            <CardTitle className="text-lg font-extrabold">Anamnese</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="whitespace-pre-wrap text-sm text-foreground">{anamneseTexto}</p>
@@ -237,9 +244,9 @@ export default async function DetalheAvaliacaoPage({
       ) : null}
 
       {/* Fotos (URLs assinadas) */}
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-lg">Fotos</CardTitle>
+          <CardTitle className="text-lg font-extrabold">Fotos</CardTitle>
         </CardHeader>
         <CardContent>
           {fotos.length === 0 ? (
@@ -247,7 +254,7 @@ export default async function DetalheAvaliacaoPage({
           ) : (
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {fotos.map((f) => (
-                <li key={f.path} className="overflow-hidden rounded-lg border border-border">
+                <li key={f.path} className="overflow-hidden rounded-2xl border border-border">
                   <Image
                     src={f.url}
                     alt="Foto da avaliação física"
@@ -267,10 +274,10 @@ export default async function DetalheAvaliacaoPage({
       </Card>
 
       {/* Evolução */}
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <LineChart className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+          <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
+            <LineChart className="h-5 w-5 text-primary" aria-hidden="true" />
             Evolução do aluno
           </CardTitle>
         </CardHeader>
@@ -286,15 +293,6 @@ export default async function DetalheAvaliacaoPage({
           )}
         </CardContent>
       </Card>
-    </section>
-  );
-}
-
-function Dado({ rotulo, valor }: { rotulo: string; valor: string | null | undefined }) {
-  return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{rotulo}</dt>
-      <dd className="text-sm font-medium text-foreground">{valor ? valor : '—'}</dd>
-    </div>
+    </PageContainer>
   );
 }

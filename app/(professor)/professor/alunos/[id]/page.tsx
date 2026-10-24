@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
   ChevronLeft,
+  ChevronRight,
   Dumbbell,
   HeartPulse,
   Pencil,
@@ -17,7 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Avatar,
@@ -30,11 +30,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { EmptyState } from '@/components/patterns';
+import { EmptyState, PageContainer, StatusBadge } from '@/components/patterns';
+import type { StatusTone } from '@/components/patterns';
 import {
   EXPERIENCIA_LABEL,
   OBJETIVO_LABEL,
-  statusBadgeVariant,
   statusLabel,
 } from '@/components/professor/alunos/labels';
 import { StudentStatusActions } from '@/components/professor/alunos/student-status-actions';
@@ -45,6 +45,7 @@ import type {
   ExperienceLevel,
   GoalType,
   PlanStatus,
+  StudentStatus,
 } from '@/types/database.types';
 
 /** Rótulos pt-BR do status de plano (treino/dieta). */
@@ -55,6 +56,26 @@ const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
   released: 'Liberado',
   archived: 'Arquivado',
 };
+
+/** Tom do selo de status do aluno no novo padrão visual. */
+function statusTone(status: StudentStatus | null): StatusTone {
+  switch (status) {
+    case 'active':
+      return 'brand';
+    case 'pending':
+      return 'warning';
+    case 'inactive':
+    case 'archived':
+      return 'neutral';
+    default:
+      return 'neutral';
+  }
+}
+
+/** Tom do selo de status de plano (treino/dieta). */
+function planTone(status: PlanStatus): StatusTone {
+  return status === 'released' ? 'brand' : 'neutral';
+}
 
 function iniciais(nome: string | null, email: string | null): string {
   const base = (nome ?? email ?? '?').trim();
@@ -116,11 +137,11 @@ export default async function FichaAlunoPage({
   const dias = diasDesde(avaliacao?.assessed_at);
 
   return (
-    <section className="mx-auto w-full max-w-4xl space-y-6">
+    <PageContainer width="wide">
       <div>
         <Link
           href="/professor/alunos"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           Voltar para alunos
@@ -128,29 +149,31 @@ export default async function FichaAlunoPage({
       </div>
 
       {/* Cabeçalho com dados do aluno */}
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
-            <Avatar className="h-14 w-14">
+            <Avatar className="h-16 w-16 ring-2 ring-primary/20">
               {aluno.avatar_url ? <AvatarImage src={aluno.avatar_url} alt="" /> : null}
-              <AvatarFallback>{iniciais(aluno.full_name, aluno.email)}</AvatarFallback>
+              <AvatarFallback className="text-lg font-bold">
+                {iniciais(aluno.full_name, aluno.email)}
+              </AvatarFallback>
             </Avatar>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black tracking-tight text-foreground md:text-3xl">
-                  {nome}
-                </h1>
-                <Badge variant={statusBadgeVariant(aluno.status)}>
+            <div className="min-w-0 space-y-2">
+              <h1 className="text-3xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-4xl">
+                {nome}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge tone={statusTone(aluno.status)}>
                   {statusLabel(aluno.status)}
-                </Badge>
+                </StatusBadge>
+                {aluno.email ? (
+                  <span className="truncate text-sm text-muted-foreground">{aluno.email}</span>
+                ) : null}
               </div>
-              {aluno.email ? (
-                <CardDescription>{aluno.email}</CardDescription>
-              ) : null}
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
             {aluno.status === 'pending' ? <ResendInviteButton userId={id} /> : null}
             <Button asChild variant="outline" className="min-h-11">
               <Link href={`/professor/alunos/${id}/editar`}>
@@ -170,7 +193,7 @@ export default async function FichaAlunoPage({
             </p>
           ) : null}
           <div>
-            <p className="mb-2 text-sm font-medium text-foreground">Alterar status</p>
+            <p className="mb-2 text-sm font-semibold text-foreground">Alterar status</p>
             <StudentStatusActions userId={id} statusAtual={aluno.status} />
           </div>
         </CardContent>
@@ -185,10 +208,10 @@ export default async function FichaAlunoPage({
       />
 
       {/* Treinos */}
-      <Card id="treinos" className="scroll-mt-20">
+      <Card id="treinos" className="scroll-mt-20 rounded-2xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Dumbbell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+          <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
+            <Dumbbell className="h-5 w-5 text-primary" aria-hidden="true" />
             Treinos
           </CardTitle>
         </CardHeader>
@@ -196,21 +219,22 @@ export default async function FichaAlunoPage({
           {treinos.length > 0 ? (
             <ul className="space-y-2">
               {treinos.map((plano) => (
-                <li
-                  key={plano.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
-                >
-                  <span className="truncate font-medium text-foreground">{plano.name}</span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <Badge variant="secondary">
+                <li key={plano.id}>
+                  <Link
+                    href={`/professor/treinos/${plano.id}`}
+                    className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
+                      {plano.name}
+                    </span>
+                    <StatusBadge tone={planTone(plano.status as PlanStatus)}>
                       {PLAN_STATUS_LABEL[plano.status as PlanStatus]}
-                    </Badge>
-                    <Button asChild variant="outline" size="sm" className="min-h-11">
-                      <Link href={`/professor/treinos/${plano.id}`}>
-                        Ver detalhes
-                      </Link>
-                    </Button>
-                  </span>
+                    </StatusBadge>
+                    <ChevronRight
+                      className="h-5 w-5 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -230,9 +254,9 @@ export default async function FichaAlunoPage({
       </div>
 
       {/* Demais informações do aluno — recolhíveis num acordeon */}
-      <Card>
+      <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-lg">Demais informações</CardTitle>
+          <CardTitle className="text-lg font-extrabold">Demais informações</CardTitle>
           <CardDescription>
             Dados cadastrais, última avaliação e dieta do aluno.
           </CardDescription>
@@ -355,7 +379,7 @@ export default async function FichaAlunoPage({
           </Accordion>
         </CardContent>
       </Card>
-    </section>
+    </PageContainer>
   );
 }
 
@@ -364,7 +388,7 @@ function Dado({ rotulo, valor }: { rotulo: string; valor: string | null | undefi
   return (
     <div>
       <dt className="text-xs text-muted-foreground">{rotulo}</dt>
-      <dd className="text-sm font-medium text-foreground">{valor ? valor : '—'}</dd>
+      <dd className="text-sm font-semibold text-foreground">{valor ? valor : '—'}</dd>
     </div>
   );
 }
