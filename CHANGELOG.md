@@ -2,6 +2,23 @@
 
 ## Não lançado
 
+### Fase 2.2 — Biblioteca global de exercícios (professor)
+
+- **Importação em lote do catálogo global** na tela de Exercícios
+  (`/professor/exercicios`): botão "Importar da biblioteca" no header abre um
+  drawer (shadcn Sheet) para buscar, filtrar (grupo muscular/equipamento),
+  selecionar exercícios do catálogo global (`tenant_id IS NULL`) e copiá-los ao
+  acervo do tenant. A seleção persiste entre páginas e filtros; "selecionar
+  todos (respeitando filtros)" marca até 200 por vez em ordem alfabética.
+- **Route Handler `GET /professor/exercicios/biblioteca`** (sob RLS via
+  `createClient`): modo lista paginado por 50 (`{ itens, total, page, pageSize }`,
+  ordenado por `name`, filtros `q`/`muscle_group`/`equipment`, só `tenant_id`
+  nulo) e modo `?idsOnly=1` (`{ ids, truncado }`, teto de 500) para o
+  "selecionar todos".
+- **Importação idempotente** via Server Action `importarExercicios` (RPC
+  `importar_exercicios_globais`), com toast de resultado em pt-BR e
+  `router.refresh()` da listagem do tenant no sucesso.
+
 ### Fase 2.1 — Busca de treinos (professor)
 
 - **Busca server-side na tela de Treinos** (`/professor/treinos`): campo de busca
