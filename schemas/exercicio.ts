@@ -100,3 +100,16 @@ export const editarExercicioSchema = z.object(camposBaseExercicio);
 
 export type CriarExercicioInput = z.infer<typeof criarExercicioSchema>;
 export type EditarExercicioInput = z.infer<typeof editarExercicioSchema>;
+
+/**
+ * Importação em lote de exercícios do catálogo global. Recebe os IDs dos
+ * globais selecionados, exige ao menos um e no máximo 200 por vez, e deduplica
+ * repetidos preservando a ordem.
+ */
+export const importarExerciciosSchema = z
+  .array(z.string().uuid({ message: 'Identificador inválido.' }))
+  .min(1, 'Selecione ao menos um exercício.')
+  .max(200, 'Importe no máximo 200 exercícios por vez.')
+  .transform((ids) => Array.from(new Set(ids)));
+
+export type ImportarExerciciosInput = z.infer<typeof importarExerciciosSchema>;

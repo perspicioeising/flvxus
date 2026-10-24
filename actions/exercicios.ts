@@ -11,6 +11,7 @@ import {
 import {
   criarExercicioSchema,
   editarExercicioSchema,
+  importarExerciciosSchema,
   type CriarExercicioInput,
   type EditarExercicioInput,
 } from '@/schemas/exercicio';
@@ -237,6 +238,78 @@ export async function duplicarExercicioParaTenant(
     ok: true,
     message: 'Exercício duplicado para o seu acervo. Agora você pode editá-lo.',
     id: data.id,
+  };
+}
+
+export interface ImportarExerciciosResultado extends EstadoAcao {
+  importados?: number;
+  jaExistiam?: number;
+  invalidos?: number;
+}
+
+/**
+ * Importa em lote exercícios do catálogo global (`tenant_id IS NULL`) para o
+ * acervo do professor. A RPC `importar_exercicios_globais` faz a cópia atômica
+ * sob RLS (SECURITY INVOKER) e é idempotente — reimportar um global já copiado
+ * não cria duplicata (índice único parcial em `source_exercise_id`). Calculamos:
+ *   - `importados`: linhas efetivamente inseridas (retorno da RPC);
+ *   - `invalidos`: IDs que não são globais legíveis (não existem / já são do
+ *     tenant);
+ *   - `jaExistiam`: globais legíveis que já haviam sido importados antes.
+ */
+export async function importarExercicios(
+  sourceIds: string[]
+): Promise<ImportarExerciciosResultado> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode importar exercícios.' };
+  }
+
+  const entrada = Array.isArray(sourceIds) ? sourceIds : [];
+  const parsed = importarExerciciosSchema.safeParse(entrada);
+  if (!parsed.success) {
+    return { ok: false, message: 'Seleção inválida.' };
+  }
+  const ids = parsed.data;
+
+  const supabase = await createClient();
+
+  // Conta quantos dos IDs são globais legíveis (origem válida para importação).
+  const { count: origensGlobais } = await supabase
+    .from('exercises')
+    .select('id', { count: 'exact', head: true })
+    .in('id', ids)
+    .is('tenant_id', null);
+
+  const { data: importadosRaw, error } = await supabase.rpc(
+    'importar_exercicios_globais',
+    { p_source_ids: ids }
+  );
+
+  if (error) {
+    return { ok: false, message: `Não foi possível importar: ${error.message}` };
+  }
+
+  const importados = importadosRaw ?? 0;
+  const invalidos = ids.length - (origensGlobais ?? 0);
+  const jaExistiam = (origensGlobais ?? 0) - importados;
+
+  revalidatePath('/professor/exercicios');
+
+  const partes: string[] = [`${importados} importados`];
+  if (jaExistiam > 0) {
+    partes.push(`${jaExistiam} já existiam`);
+  }
+  if (invalidos > 0) {
+    partes.push(`${invalidos} inválidos`);
+  }
+
+  return {
+    ok: true,
+    importados,
+    jaExistiam,
+    invalidos,
+    message: `${partes.join(', ')}.`,
   };
 }
 
