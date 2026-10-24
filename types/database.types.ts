@@ -143,6 +143,7 @@ export interface Database {
         Row: {
           id: string;
           tenant_id: string | null;
+          source_exercise_id: string | null;
           name: string;
           muscle_groups: string[];
           equipment: string[];
@@ -158,6 +159,7 @@ export interface Database {
         Insert: {
           id?: string;
           tenant_id?: string | null;
+          source_exercise_id?: string | null;
           name: string;
           muscle_groups?: string[];
           equipment?: string[];
@@ -173,6 +175,7 @@ export interface Database {
         Update: {
           id?: string;
           tenant_id?: string | null;
+          source_exercise_id?: string | null;
           name?: string;
           muscle_groups?: string[];
           equipment?: string[];
@@ -1073,6 +1076,10 @@ export interface Database {
           // total_count vem de count(*) over ()::int (bigint->int no SQL); ler com Number() no TS.
           total_count: number;
         }[];
+      };
+      importar_exercicios_globais: {
+        Args: { p_source_ids: string[] };
+        Returns: number;
       };
     };
     Enums: {
