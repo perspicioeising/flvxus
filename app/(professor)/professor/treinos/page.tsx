@@ -159,14 +159,7 @@ export default async function TreinosPage({
                 {/* Ação discreta no canto do card; irmã do Link (não aninhada),
                     então clicar aqui abre o diálogo sem navegar e clicar no
                     restante do card abre o detalhe. */}
-                <div className="absolute right-1 top-1">
-                  <ClonarFicha
-                    sourcePlanId={ficha.id}
-                    sourceName={ficha.name}
-                    alunos={alunos}
-                    variant="item"
-                  />
-                </div>
+               
               </li>
             ))}
           </ul>
