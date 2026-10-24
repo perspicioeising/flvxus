@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Dumbbell } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Logo } from '@/components/navigation/logo';
+import { LogoIcon } from '@/components/navigation/logo-icon';
 
 /**
  * Layout público (marketing). Não exige login. Header sóbrio com identidade,
@@ -23,10 +24,8 @@ export default function MarketingLayout({
             className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Flvxus — início"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Dumbbell className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <span className="text-lg font-bold tracking-tight">Flvxus</span>
+            <LogoIcon size="md" className="h-9 w-9 rounded-lg" />
+            <Logo size="md" />
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -36,7 +35,7 @@ export default function MarketingLayout({
             <Button variant="ghost" asChild className="min-h-11">
               <Link href="/login">Entrar</Link>
             </Button>
-            <Button asChild className="min-h-11">
+            <Button asChild size="xl">
               <Link href="/register">Cadastrar</Link>
             </Button>
           </div>
@@ -47,6 +46,7 @@ export default function MarketingLayout({
 
       <footer className="border-t border-border">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 text-sm text-muted-foreground">
+          <Logo size="sm" className="mb-3" />
           <p>Flvxus — plataforma para personal trainers gerenciarem seus alunos.</p>
           <p className="mt-2">
             <Link

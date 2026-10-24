@@ -18,7 +18,7 @@ export default function DocumentacaoPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12">
       <header className="space-y-3">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-5xl">
           Documentação do Flvxus
         </h1>
         <p className="max-w-2xl text-base text-muted-foreground">

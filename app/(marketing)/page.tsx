@@ -149,8 +149,9 @@ export default function MarketingHomePage() {
       <section className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div className="max-w-2xl space-y-6">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+            <h1 className="text-5xl font-black leading-[0.95] tracking-tight text-foreground md:text-6xl">
               Acompanhe seus alunos de ponta a ponta
+              <span className="text-primary">.</span>
             </h1>
             <p className="text-lg text-muted-foreground">
               O Flvxus reúne cadastro, avaliação física, montagem de treinos,
@@ -159,13 +160,13 @@ export default function MarketingHomePage() {
               computador ou no celular.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="min-h-11">
+              <Button asChild size="xl">
                 <Link href="/register" className="gap-2">
                   Começar agora
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="min-h-11">
+              <Button asChild variant="outline" size="xl">
                 <Link href="/login">Já tenho conta</Link>
               </Button>
             </div>
@@ -188,7 +189,7 @@ export default function MarketingHomePage() {
       {/* ===================== RECURSOS ===================== */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-16 md:pb-24">
         <div className="mb-8 max-w-2xl">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
             Tudo que o seu trabalho precisa
           </h2>
           <p className="mt-2 text-muted-foreground">
@@ -221,7 +222,7 @@ export default function MarketingHomePage() {
       <section className="border-t border-border bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
           <div className="mb-8 max-w-2xl">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
               Como funciona
             </h2>
             <p className="mt-2 text-muted-foreground">
@@ -260,7 +261,7 @@ export default function MarketingHomePage() {
 
       {/* ===================== PROFESSOR / ALUNO ===================== */}
       <section className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
-        <h2 className="mb-8 text-2xl font-bold tracking-tight text-foreground">
+        <h2 className="mb-8 text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
           Para cada lado do acompanhamento
         </h2>
         <div className="grid gap-6 lg:grid-cols-2">
@@ -328,7 +329,7 @@ export default function MarketingHomePage() {
       {/* PLACEHOLDER depoimentos — sem depoimentos reais ainda */}
       <section className="border-t border-border bg-muted/30">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
-          <h2 className="mb-8 text-2xl font-bold tracking-tight text-foreground">
+          <h2 className="mb-8 text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
             O que dizem por aí
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -358,14 +359,14 @@ export default function MarketingHomePage() {
       <section className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
               Planos em breve
             </h2>
             <p className="max-w-xl text-muted-foreground">
               Os planos e valores ainda serão divulgados. Enquanto isso, você já
               pode criar sua conta e conhecer o Flvxus.
             </p>
-            <Button asChild size="lg" className="mt-2 min-h-11">
+            <Button asChild size="xl" className="mt-2">
               <Link href="/register" className="gap-2">
                 Começar agora
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -379,7 +380,7 @@ export default function MarketingHomePage() {
       <section className="border-t border-border bg-muted/30">
         <div className="mx-auto w-full max-w-3xl px-4 py-16 md:py-24">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
               Dúvidas comuns
             </h2>
             <p className="mt-2 text-muted-foreground">
@@ -401,20 +402,20 @@ export default function MarketingHomePage() {
       {/* ===================== CTA FINAL ===================== */}
       <section className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-primary/5 px-6 py-12 text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
             Pronto para começar?
           </h2>
           <p className="max-w-xl text-muted-foreground">
             Crie sua conta de professor e comece a acompanhar seus alunos hoje.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg" className="min-h-11">
+            <Button asChild size="xl">
               <Link href="/register" className="gap-2">
                 Começar agora
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="min-h-11">
+            <Button asChild variant="outline" size="xl">
               <Link href="/documentacao">Ver documentação</Link>
             </Button>
           </div>
