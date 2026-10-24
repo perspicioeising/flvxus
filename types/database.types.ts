@@ -46,6 +46,24 @@ export type DataRequestType = 'export' | 'delete';
 export type DataRequestStatus = 'requested' | 'processing' | 'completed' | 'rejected';
 export type LegalDocumentType = 'terms' | 'privacy';
 
+// -----------------------------------------------------------------------------
+// Fase 3 — multi-trainer (visibilidade por módulo) + billing (Stripe).
+// IMPORTANTE: estes tipos foram adicionados À MÃO. NÃO regenerar via
+// `npm run db:types` ANTES de aplicar as migrations 20261022090100..090500 no
+// projeto hospedado — a regeneração contra um banco sem essas migrations APAGA
+// silenciosamente estes tipos (design-review MED #9).
+// -----------------------------------------------------------------------------
+export type VisibilityModule = 'students' | 'workouts' | 'assessments' | 'diets' | 'exercises';
+export type PlanTier = 'solo' | 'team' | 'gym';
+export type SubscriptionStatus =
+  | 'trialing'
+  | 'active'
+  | 'past_due'
+  | 'canceled'
+  | 'incomplete'
+  | 'incomplete_expired'
+  | 'unpaid';
+
 export interface Database {
   public: {
     Tables: {
@@ -96,6 +114,8 @@ export interface Database {
           goal: GoalType | null;
           total_points: number;
           last_workout_date: string | null;
+          is_tenant_master: boolean;
+          deactivated_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -116,6 +136,8 @@ export interface Database {
           goal?: GoalType | null;
           total_points?: number;
           last_workout_date?: string | null;
+          is_tenant_master?: boolean;
+          deactivated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -136,6 +158,8 @@ export interface Database {
           goal?: GoalType | null;
           total_points?: number;
           last_workout_date?: string | null;
+          is_tenant_master?: boolean;
+          deactivated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1091,6 +1115,96 @@ export interface Database {
           user_agent?: string | null;
         };
       };
+      tenant_module_visibility: {
+        Row: {
+          tenant_id: string;
+          module: VisibilityModule;
+          is_open: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          tenant_id: string;
+          module: VisibilityModule;
+          is_open?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          tenant_id?: string;
+          module?: VisibilityModule;
+          is_open?: boolean;
+          updated_at?: string;
+        };
+      };
+      plans: {
+        Row: {
+          id: string;
+          tier: PlanTier;
+          name: string;
+          max_affiliates: number | null;
+          stripe_price_id: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tier: PlanTier;
+          name: string;
+          max_affiliates?: number | null;
+          stripe_price_id?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tier?: PlanTier;
+          name?: string;
+          max_affiliates?: number | null;
+          stripe_price_id?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      subscriptions: {
+        Row: {
+          tenant_id: string;
+          plan_id: string | null;
+          status: SubscriptionStatus;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          current_period_start: string | null;
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          tenant_id: string;
+          plan_id?: string | null;
+          status?: SubscriptionStatus;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          tenant_id?: string;
+          plan_id?: string | null;
+          status?: SubscriptionStatus;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1118,6 +1232,18 @@ export interface Database {
         Args: { p_source_ids: string[] };
         Returns: number;
       };
+      app_is_master: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      app_module_is_open: {
+        Args: { p_module: VisibilityModule };
+        Returns: boolean;
+      };
+      can_add_affiliate: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
     };
     Enums: {
       user_role: UserRole;
@@ -1133,6 +1259,9 @@ export interface Database {
       data_request_type: DataRequestType;
       data_request_status: DataRequestStatus;
       legal_document_type: LegalDocumentType;
+      visibility_module: VisibilityModule;
+      plan_tier: PlanTier;
+      subscription_status: SubscriptionStatus;
     };
     CompositeTypes: Record<string, never>;
   };
