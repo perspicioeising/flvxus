@@ -48,12 +48,24 @@ export default function MarketingLayout({
         <div className="mx-auto w-full max-w-6xl px-4 py-8 text-sm text-muted-foreground">
           <Logo size="sm" className="mb-3" />
           <p>Flvxus — plataforma para personal trainers gerenciarem seus alunos.</p>
-          <p className="mt-2">
+          <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
             <Link
               href="/documentacao"
               className="rounded underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Documentação
+            </Link>
+            <Link
+              href="/termos"
+              className="rounded underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Termos de Uso
+            </Link>
+            <Link
+              href="/privacidade"
+              className="rounded underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Política de Privacidade
             </Link>
           </p>
         </div>
