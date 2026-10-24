@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ExerciseCard } from '@/components/professor/exercicios/exercise-card';
 import { ExerciseFilters } from '@/components/professor/exercicios/exercise-filters';
 import { ExercisesPagination } from '@/components/professor/exercicios/exercises-pagination';
+import { ImportBibliotecaSheet } from '@/components/professor/exercicios/import-biblioteca-sheet';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -78,12 +79,15 @@ export default async function ExerciciosPage({
             Os exercícios da sua biblioteca.
           </p>
         </div>
-        <Button asChild className="min-h-11">
-          <Link href="/professor/exercicios/novo">
-            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Novo exercício
-          </Link>
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <ImportBibliotecaSheet />
+          <Button asChild className="min-h-11">
+            <Link href="/professor/exercicios/novo">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Novo exercício
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <ExerciseFilters
