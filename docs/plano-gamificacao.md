@@ -1,8 +1,14 @@
 # Plano — Gamificação & Torneio entre Alunos (futuro)
 
-> Status: **planejamento** (não iniciado). Implementar **somente após** concluídas as fases em andamento:
-> fluxo de treino do aluno, Fase 3 (billing + multi-trainer), fix de scroll das telas de detalhe e interação com fotos da avaliação.
-> Posicionado como **Fase 5**, após a Fase 4 (performance/segurança) do roadmap original.
+> Status: **ANTECIPADO** — vira a **próxima fase a implementar** (à frente da Fase 4 de performance/segurança), por decisão do usuário.
+> Gatilho de início: assim que o **fluxo de treino do aluno** mergear na `main` (a gamificação depende das sessões de
+> execução/resumo), a **Onda 1** é disparada a partir de `main` limpa.
+>
+> Decisões da Onda 1 (confirmadas pelo usuário — recomendações do orquestrador, a calibrar):
+> - **Métrica do ranking = % de aderência ao plano** (justo entre AB e ABCDE), não pontos absolutos.
+> - **Pesos de pontuação**: proposta inicial (treino prescrito cumprido = base; bônus por completar todas as séries;
+>   descanso programado mantém streak com 0 pts) — ajustáveis na tabela de configuração depois.
+> - **Antifraude**: "cumpriu o treino" só conta quando o aluno **registra as séries** na execução (não só abre a tela).
 
 ## Visão
 Transformar o engajamento do aluno num sistema estilo Duolingo: pontos (XP), ranking mensal por tenant,
