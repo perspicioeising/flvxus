@@ -21,6 +21,9 @@ import Link from "next/link";
 import { useSupabase } from "@/app/providers";
 import { cadastroProfessorSchema } from "@/schemas/auth";
 import { AuthScreen } from "@/components/auth/auth-screen";
+import { AceiteLegalCheckbox } from "@/components/legal/aceite-legal-checkbox";
+import { registrarAceiteLegal } from "@/actions/legal";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal/versions";
 
 type FormValues = z.infer<typeof cadastroProfessorSchema>;
 
@@ -41,8 +44,13 @@ function RegisterContent() {
       email: "",
       password: "",
       confirmPassword: "",
+      // Começa desmarcado; o schema (z.literal(true)) bloqueia o submit até ser
+      // marcado. O cast reflete que o valor inicial não satisfaz o literal ainda.
+      aceiteLegal: false as true,
     },
   });
+
+  const aceiteLegal = form.watch("aceiteLegal");
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
@@ -97,7 +105,28 @@ function RegisterContent() {
         return;
       }
 
-      // Sem confirmação de e-mail: já há sessão → vai direto para a área do professor.
+      // Sem confirmação de e-mail: já há sessão → materializa o aceite legal
+      // (IP/UA capturados no servidor) ANTES de redirecionar. Quando o signUp
+      // retorna SEM sessão (ramo acima), o aceite é materializado no /callback
+      // na primeira entrada autenticada. A falha aqui NÃO bloqueia o cadastro
+      // (já feito): apenas avisa, e o gancho do /callback tentará de novo.
+      const aceite = await registrarAceiteLegal({
+        documents: [
+          { type: "terms", version: TERMS_VERSION },
+          { type: "privacy", version: PRIVACY_VERSION },
+        ],
+      });
+
+      if (!aceite.ok) {
+        toast({
+          variant: "destructive",
+          title: "Aviso",
+          description:
+            aceite.message ??
+            "Não foi possível registrar o aceite agora; tentaremos novamente no próximo acesso.",
+        });
+      }
+
       toast({
         title: "Conta criada com sucesso! 🎉",
         description: "Redirecionando para o seu painel...",
@@ -164,7 +193,7 @@ function RegisterContent() {
             type="submit"
             size="xl"
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || !aceiteLegal}
           >
             {isLoading ? (
               <>
@@ -327,6 +356,24 @@ function RegisterContent() {
                 </div>
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="aceiteLegal"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <AceiteLegalCheckbox
+                  checked={field.value === true}
+                  onCheckedChange={field.onChange}
+                  disabled={isLoading}
+                  errorId="aceite-legal-error"
+                />
+              </FormControl>
+              <FormMessage id="aceite-legal-error" />
             </FormItem>
           )}
         />

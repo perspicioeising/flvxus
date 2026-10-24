@@ -10,6 +10,9 @@ import { Eye, EyeOff, Mail, User, CheckCircle, AlertCircle, Loader2 } from 'luci
 import { useToast } from '@/hooks/use-toast';
 import { senhaSchema } from '@/schemas/auth';
 import { AuthScreen } from '@/components/auth/auth-screen';
+import { AceiteLegalCheckbox } from '@/components/legal/aceite-legal-checkbox';
+import { registrarAceiteLegal } from '@/actions/legal';
+import { PRIVACY_VERSION, TERMS_VERSION } from '@/lib/legal/versions';
 
 /**
  * Tela de definição de senha do aluno convidado.
@@ -38,6 +41,7 @@ export default function SetPasswordPage() {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [aceiteLegal, setAceiteLegal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -96,6 +100,11 @@ export default function SetPasswordPage() {
       return;
     }
 
+    if (!aceiteLegal) {
+      setError('É necessário aceitar os Termos e a Política de Privacidade.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
@@ -118,6 +127,23 @@ export default function SetPasswordPage() {
           .from('profiles')
           .update({ status: 'active' })
           .eq('user_id', data.user.id);
+      }
+
+      // Aceite legal faz parte INDIVISÍVEL do primeiro acesso: a sessão já
+      // existe aqui, então gravamos (IP/UA no servidor) ANTES do redirect. Se
+      // falhar, bloqueamos o redirect e permitimos retry (não seguimos sem a
+      // prova do aceite).
+      const aceite = await registrarAceiteLegal({
+        documents: [
+          { type: 'terms', version: TERMS_VERSION },
+          { type: 'privacy', version: PRIVACY_VERSION },
+        ],
+      });
+
+      if (!aceite.ok) {
+        throw new Error(
+          aceite.message ?? 'Não foi possível registrar o aceite. Tente novamente.',
+        );
       }
 
       toast({
@@ -191,7 +217,7 @@ export default function SetPasswordPage() {
           type="submit"
           size="xl"
           className="w-full"
-          disabled={!senhaValida || !senhasConferem || isLoading}
+          disabled={!senhaValida || !senhasConferem || !aceiteLegal || isLoading}
         >
           {isLoading ? (
             <>
@@ -292,6 +318,12 @@ export default function SetPasswordPage() {
           </p>
         )}
       </div>
+
+      <AceiteLegalCheckbox
+        checked={aceiteLegal}
+        onCheckedChange={setAceiteLegal}
+        disabled={isLoading}
+      />
 
       {error && (
         <Alert variant="destructive">

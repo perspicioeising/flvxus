@@ -49,6 +49,13 @@ export const cadastroProfessorSchema = z
     confirmPassword: z
       .string({ required_error: 'Confirme a senha.' })
       .min(1, 'Confirme a senha.'),
+    // Aceite BLOQUEANTE dos Termos e da Política (LGPD). `z.literal(true)` tipa o
+    // campo como `true`, deixando no contrato que só o valor marcado é válido.
+    aceiteLegal: z.literal(true, {
+      errorMap: () => ({
+        message: 'É necessário aceitar os Termos e a Política de Privacidade.',
+      }),
+    }),
   })
   .refine((dados) => dados.password === dados.confirmPassword, {
     message: 'As senhas não coincidem.',
