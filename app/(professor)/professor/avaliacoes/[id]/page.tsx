@@ -1,11 +1,15 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, LineChart, Pencil } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { signAssessmentPhoto } from '@/lib/storage';
-import { uploadFotoAvaliacao, type EstadoAcao } from '@/actions/avaliacoes';
+import {
+  uploadFotoAvaliacao,
+  excluirFotoAvaliacao,
+  type EstadoAcao,
+} from '@/actions/avaliacoes';
+import { GaleriaFotosAvaliacao } from '@/components/professor/avaliacoes/galeria-fotos-avaliacao';
 import { formatarData } from '@/lib/datas';
 import {
   Card,
@@ -52,6 +56,12 @@ export default async function DetalheAvaliacaoPage({
   async function uploadFoto(formData: FormData): Promise<EstadoAcao> {
     'use server';
     return uploadFotoAvaliacao(id, undefined, formData);
+  }
+
+  // Adaptador de exclusão: injeta o id da rota e reusa a action existente.
+  async function excluirFoto(path: string): Promise<EstadoAcao> {
+    'use server';
+    return excluirFotoAvaliacao(id, path);
   }
 
   const { data: avaliacao, error } = await supabase
@@ -251,20 +261,7 @@ export default async function DetalheAvaliacaoPage({
           {fotos.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma foto enviada.</p>
           ) : (
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {fotos.map((f) => (
-                <li key={f.path} className="overflow-hidden rounded-2xl border border-border">
-                  <Image
-                    src={f.url}
-                    alt="Foto da avaliação física"
-                    width={400}
-                    height={400}
-                    className="h-40 w-full object-cover"
-                    unoptimized
-                  />
-                </li>
-              ))}
-            </ul>
+            <GaleriaFotosAvaliacao fotos={fotos} onExcluir={excluirFoto} />
           )}
           <div className="mt-4">
             <UploadFotos onUploadFoto={uploadFoto} />

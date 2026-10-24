@@ -1,5 +1,3 @@
-import Image from 'next/image';
-
 import { formatarData } from '@/lib/datas';
 import {
   CIRCUNFERENCIA_LABEL,
@@ -9,6 +7,7 @@ import {
 } from '@/components/professor/avaliacoes/labels';
 import { ComposicaoGrafico } from '@/components/professor/avaliacoes/composicao-grafico';
 import { MedidasVisual } from '@/components/professor/avaliacoes/medidas-visual';
+import { GaleriaFotosAvaliacao } from '@/components/professor/avaliacoes/galeria-fotos-avaliacao';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -174,20 +173,7 @@ export function AvaliacaoCard({ avaliacao }: { avaliacao: AvaliacaoResumo }) {
           {avaliacao.fotos.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma foto nesta avaliação.</p>
           ) : (
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {avaliacao.fotos.map((f) => (
-                <li key={f.path} className="overflow-hidden rounded-lg border border-border">
-                  <Image
-                    src={f.url}
-                    alt="Foto da avaliação física"
-                    width={400}
-                    height={400}
-                    className="h-40 w-full object-cover"
-                    unoptimized
-                  />
-                </li>
-              ))}
-            </ul>
+            <GaleriaFotosAvaliacao fotos={avaliacao.fotos} />
           )}
         </div>
       </CardContent>

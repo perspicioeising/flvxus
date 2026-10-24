@@ -78,6 +78,25 @@ export async function uploadAssessmentPhoto({
 }
 
 /**
+ * Remove uma foto de avaliação do bucket privado `assessment-photos`. Usa o
+ * client de servidor (RLS ativo): a policy de DELETE exige que o 1º segmento do
+ * path seja o `tenant_id` e que o papel seja trainer — path de outro tenant é
+ * barrado aqui. Lança `Error` com mensagem em pt-BR em caso de falha, espelhando
+ * `uploadAssessmentPhoto`.
+ */
+export async function removeAssessmentPhoto(path: string): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.storage
+    .from(BUCKET_ASSESSMENT_PHOTOS)
+    .remove([path]);
+
+  if (error) {
+    throw new Error(`Falha ao excluir foto de avaliação: ${error.message}`);
+  }
+}
+
+/**
  * Gera uma URL assinada de TTL curto para uma foto de avaliação. NUNCA usa
  * `getPublicUrl` (bucket privado). Retorna `null` se não for possível assinar.
  */

@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { uploadAssessmentPhoto } from '@/lib/storage';
+import { uploadAssessmentPhoto, removeAssessmentPhoto } from '@/lib/storage';
 import { calcularComposicao, type ProtocoloCalculo } from '@/lib/assessment';
 import {
   criarAvaliacaoSchema,
@@ -299,4 +299,73 @@ export async function uploadFotoAvaliacao(
   revalidatePath(`/professor/avaliacoes/${assessmentId}`);
 
   return { ok: true, message: 'Foto enviada.', id: path };
+}
+
+/**
+ * Exclui uma foto de avaliação: remove o arquivo do bucket privado E tira o
+ * path de `measurements.photos`. Isolamento de tenant garantido pela RLS (tanto
+ * no storage quanto em `physical_assessments`) — nunca filtramos `tenant_id` na
+ * mão. Só o trainer do tenant dono da avaliação consegue excluir.
+ */
+export async function excluirFotoAvaliacao(
+  assessmentId: string,
+  path: string
+): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode excluir fotos.' };
+  }
+
+  const supabase = await createClient();
+
+  // RLS já barra avaliação de outro tenant (linha simplesmente não é retornada).
+  const { data: avaliacao, error: erroLeitura } = await supabase
+    .from('physical_assessments')
+    .select('id, measurements')
+    .eq('id', assessmentId)
+    .single();
+
+  if (erroLeitura || !avaliacao) {
+    return { ok: false, message: 'Avaliação não encontrada.' };
+  }
+
+  const measurements =
+    (avaliacao.measurements as Record<string, unknown> | null) ?? {};
+  const fotosAtuais = Array.isArray(measurements.photos)
+    ? (measurements.photos as string[])
+    : [];
+
+  // Evita remoção arbitrária: o path precisa pertencer a esta avaliação.
+  if (!fotosAtuais.includes(path)) {
+    return { ok: false, message: 'Foto não encontrada nesta avaliação.' };
+  }
+
+  // Remove o arquivo primeiro; a RLS de storage barra path de outro tenant.
+  try {
+    await removeAssessmentPhoto(path);
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : 'Falha ao excluir a foto.',
+    };
+  }
+
+  // Reescreve `measurements.photos` sem o path, preservando o resto do objeto.
+  const novasFotos = fotosAtuais.filter((p) => p !== path);
+  const { error: erroUpdate } = await supabase
+    .from('physical_assessments')
+    .update({ measurements: { ...measurements, photos: novasFotos } })
+    .eq('id', assessmentId);
+
+  if (erroUpdate) {
+    return {
+      ok: false,
+      message: `Foto removida do arquivo, mas falhou ao atualizar o registro: ${erroUpdate.message}`,
+    };
+  }
+
+  revalidatePath('/professor/avaliacoes');
+  revalidatePath(`/professor/avaliacoes/${assessmentId}`);
+
+  return { ok: true, message: 'Foto excluída.', id: path };
 }
