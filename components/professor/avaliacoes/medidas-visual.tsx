@@ -196,6 +196,12 @@ function ComparativoPar({ par }: ComparativoParProps) {
                 color: 'hsl(var(--popover-foreground))',
                 fontSize: 12,
               }}
+              // O recharts pinta item/rótulo com cores próprias (série/escuro),
+              // ignorando o contentStyle — daí o texto ilegível no tema escuro.
+              // Forçamos os tokens do tema também aqui.
+              itemStyle={{ color: 'hsl(var(--popover-foreground))' }}
+              labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+              wrapperStyle={{ outline: 'none' }}
             />
             <Bar dataKey="valor" radius={[0, 4, 4, 0]} isAnimationActive={false}>
               {dados.map((d) => (
