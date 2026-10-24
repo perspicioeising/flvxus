@@ -18,10 +18,12 @@ interface AppShellProps {
  */
 export function AppShell({ role, rootHref, children }: AppShellProps) {
   return (
-    // h-full herda a altura 100% de html/body (travados na viewport no CSS
-    // global), evitando o descasamento dvh/vh que gerava um segundo scroll no
-    // desktop. `overflow-hidden` impede o scroll no container raiz — assim o
-    // scroll vive SÓ no <main>, que tem um teto de altura para rolar contra.
+    // h-full herda a altura 100% de html/body, fixando o shell exatamente na
+    // viewport e evitando o descasamento dvh/vh que gerava um segundo scroll no
+    // desktop. `overflow-hidden` trava o scroll no container raiz: como o shell
+    // ocupa 100% do body sem transbordar, o <body> não rola e o scroll vive SÓ
+    // no <main>. O lock de scroll é do SHELL (não do <body> global), então as
+    // rotas sem AppShell (auth/marketing) continuam rolando o documento.
     <div className="flex h-full overflow-hidden bg-background text-foreground">
       <AppSidebar role={role} rootHref={rootHref} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

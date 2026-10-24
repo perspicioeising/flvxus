@@ -253,9 +253,12 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    /* Altura travada na viewport: o scroll vive só no <main> do AppShell. */
+    /* height: 100% dá ao AppShell (h-full overflow-hidden) uma referência de
+       altura exata = viewport, de modo que o scroll das rotas logadas vive só no
+       <main>. NÃO travamos o overflow do <body> aqui: as rotas sem AppShell
+       (auth/marketing) rolam o documento normalmente. O shell não transborda o
+       body, então ele também não gera scrollbar do documento. */
     height: 100%;
-    overflow: hidden;
   }
 
   ::selection {
@@ -651,7 +654,9 @@
 @media (max-width: 768px) {
   html,
   body {
-    /* height/overflow já travados no @layer base; aqui só o comportamento mobile. */
+    /* No mobile o documento fica travado na viewport (comportamento pré-existente):
+       o scroll vive no container interno. height já vem do @layer base. */
+    overflow: hidden;
     overscroll-behavior: none;
   }
 
