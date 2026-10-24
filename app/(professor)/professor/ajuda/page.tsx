@@ -9,7 +9,7 @@ export default function ProfessorAjudaPage() {
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Ajuda</h1>
+        <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-5xl">Ajuda</h1>
         <p className="text-sm text-muted-foreground">
           Como usar o Flvxus: cadastro de alunos, avaliações, exercícios, modelos,
           montagem e liberação de treinos, dietas e evolução.

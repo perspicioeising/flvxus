@@ -84,7 +84,7 @@ export default async function ProfessorDietaDetalhePage({
 
       <header className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{alunoNome}</h1>
+          <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">{alunoNome}</h1>
           <p className="text-sm text-muted-foreground">
             Conteúdo completo da dieta: metas, restrições e refeições.
           </p>

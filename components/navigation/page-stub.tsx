@@ -24,10 +24,12 @@ export function PageStub({
   return (
     <section className="mx-auto w-full max-w-3xl space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+        <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-5xl">
+          {title}
+        </h1>
         <p className="text-sm text-muted-foreground">Em construção</p>
       </header>
-      <EmptyState icon={icon} title={title} description={description} />
+      <EmptyState icon={icon} title={title} description={description} className="rounded-3xl" />
     </section>
   );
 }

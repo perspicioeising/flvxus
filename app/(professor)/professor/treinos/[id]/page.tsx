@@ -97,7 +97,7 @@ export default async function FichaDetalhePage({
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{ficha.name}</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">{ficha.name}</h1>
         <p className="text-sm text-muted-foreground">
           Controle o status e os exercícios desta ficha.
         </p>

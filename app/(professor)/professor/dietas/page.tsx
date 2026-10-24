@@ -44,7 +44,7 @@ export default async function ProfessorDietasPage() {
   return (
     <section className="mx-auto w-full max-w-4xl space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Dietas</h1>
+        <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-5xl">Dietas</h1>
         <p className="text-sm text-muted-foreground">
           Gere dietas com IA. Todo rascunho passa pela sua revisão e aprovação antes de
           virar uma dieta do aluno.

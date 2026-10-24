@@ -27,7 +27,7 @@ export default function NovoExercicioPage() {
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Novo exercício</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Novo exercício</h1>
         <p className="text-sm text-muted-foreground">
           Cadastre um exercício da sua biblioteca. Vídeo e thumbnail são enviados depois.
         </p>

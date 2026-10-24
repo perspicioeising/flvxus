@@ -77,7 +77,7 @@ export default async function EditarModeloPage({
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Editar modelo</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Editar modelo</h1>
         <p className="text-sm text-muted-foreground">
           Ajuste os exercícios e a ordem. Salvar substitui a lista atual.
         </p>

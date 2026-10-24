@@ -54,7 +54,7 @@ export default async function TreinosPage() {
     <section className="mx-auto w-full max-w-4xl space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Treinos</h1>
+          <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-5xl">Treinos</h1>
           <p className="text-sm text-muted-foreground">
             Fichas de treino por aluno. Só fichas liberadas ficam visíveis ao aluno.
           </p>

@@ -94,7 +94,7 @@ export default async function ProfessorConfiguracoesPage() {
 function PageHeader() {
   return (
     <header className="space-y-1">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
+      <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-5xl">Configurações</h1>
       <p className="text-sm text-muted-foreground">
         Seus dados e os do seu negócio. Atualize o que precisar.
       </p>

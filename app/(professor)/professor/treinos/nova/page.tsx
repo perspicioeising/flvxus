@@ -48,7 +48,7 @@ export default async function NovaFichaPage({
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Nova ficha</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Nova ficha</h1>
         <p className="text-sm text-muted-foreground">
           Monte uma ficha de treino para um aluno. Ela nasce como rascunho e só fica
           visível ao aluno quando você a libera.

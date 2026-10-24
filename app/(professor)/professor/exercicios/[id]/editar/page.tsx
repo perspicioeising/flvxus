@@ -53,7 +53,7 @@ export default async function EditarExercicioPage({
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Editar exercício</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Editar exercício</h1>
         <p className="text-sm text-muted-foreground">Atualize os dados do exercício.</p>
       </header>
 

@@ -32,7 +32,7 @@ export default async function NovoModeloPage() {
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Novo modelo</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Novo modelo</h1>
         <p className="text-sm text-muted-foreground">
           Monte uma rotina reutilizável adicionando exercícios da sua biblioteca.
         </p>
