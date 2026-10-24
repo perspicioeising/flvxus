@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ExerciseCard } from '@/components/professor/exercicios/exercise-card';
 import { ExerciseFilters } from '@/components/professor/exercicios/exercise-filters';
 import { ExercisesPagination } from '@/components/professor/exercicios/exercises-pagination';
+import { ImportBibliotecaSheet } from '@/components/professor/exercicios/import-biblioteca-sheet';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -37,10 +38,14 @@ export default async function ExerciciosPage({
 
   const supabase = await createClient();
 
-  // RLS já entrega catálogo global (tenant_id null) + exercícios do tenant.
+  // A RLS libera o catálogo global (tenant_id null) + os exercícios do tenant,
+  // mas a lista principal deve mostrar SÓ os do tenant. Os globais ficam
+  // reservados para o futuro modal "Importar da biblioteca". Como a RLS já
+  // restringe ao tenant atual, basta descartar as linhas globais (tenant_id null).
   let query = supabase
     .from('exercises')
-    .select('id, name, muscle_groups, equipment, tenant_id', { count: 'exact' });
+    .select('id, name, muscle_groups, equipment, tenant_id', { count: 'exact' })
+    .not('tenant_id', 'is', null);
 
   if (q) {
     query = query.ilike('name', `%${q}%`);
@@ -71,15 +76,18 @@ export default async function ExerciciosPage({
         <div className="space-y-1">
           <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-5xl">Exercícios</h1>
           <p className="text-sm text-muted-foreground">
-            Biblioteca de exercícios do catálogo e os criados por você.
+            Os exercícios da sua biblioteca.
           </p>
         </div>
-        <Button asChild className="min-h-11">
-          <Link href="/professor/exercicios/novo">
-            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Novo exercício
-          </Link>
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <ImportBibliotecaSheet />
+          <Button asChild className="min-h-11">
+            <Link href="/professor/exercicios/novo">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Novo exercício
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <ExerciseFilters
