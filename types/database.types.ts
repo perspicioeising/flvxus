@@ -1062,6 +1062,18 @@ export interface Database {
         Args: Record<string, never>;
         Returns: UserRole;
       };
+      search_workout_plans: {
+        Args: { p_query?: string; p_limit?: number; p_offset?: number };
+        Returns: {
+          id: string;
+          name: string;
+          status: PlanStatus;
+          scheduled_release_at: string | null;
+          student_name: string | null;
+          // total_count vem de count(*) over ()::int (bigint->int no SQL); ler com Number() no TS.
+          total_count: number;
+        }[];
+      };
     };
     Enums: {
       user_role: UserRole;
