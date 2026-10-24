@@ -18,10 +18,11 @@ interface AppShellProps {
  */
 export function AppShell({ role, rootHref, children }: AppShellProps) {
   return (
-    // h-[100dvh] fixa a altura à viewport (dvh acompanha as barras do navegador
-    // mobile) e `overflow-hidden` impede o scroll no container raiz — assim o
+    // h-full herda a altura 100% de html/body (travados na viewport no CSS
+    // global), evitando o descasamento dvh/vh que gerava um segundo scroll no
+    // desktop. `overflow-hidden` impede o scroll no container raiz — assim o
     // scroll vive SÓ no <main>, que tem um teto de altura para rolar contra.
-    <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground">
+    <div className="flex h-full overflow-hidden bg-background text-foreground">
       <AppSidebar role={role} rootHref={rootHref} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AppHeader role={role} rootHref={rootHref} />

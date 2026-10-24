@@ -243,6 +243,8 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    /* Altura travada na viewport: o scroll vive só no <main> do AppShell. */
+    height: 100%;
   }
 
   body {
@@ -251,6 +253,9 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* Altura travada na viewport: o scroll vive só no <main> do AppShell. */
+    height: 100%;
+    overflow: hidden;
   }
 
   ::selection {
@@ -646,8 +651,7 @@
 @media (max-width: 768px) {
   html,
   body {
-    height: 100%;
-    overflow: hidden;
+    /* height/overflow já travados no @layer base; aqui só o comportamento mobile. */
     overscroll-behavior: none;
   }
 
