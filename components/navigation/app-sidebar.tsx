@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Dumbbell, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/navigation/logo';
+import { LogoIcon } from '@/components/navigation/logo-icon';
 import { useSupabase } from '@/app/providers';
 import type { UserRole } from '@/types/database.types';
 import {
@@ -51,12 +53,10 @@ export function AppSidebar({ role, rootHref }: AppSidebarProps) {
           className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Flvxus — página inicial"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Dumbbell className="h-5 w-5" aria-hidden="true" />
-          </span>
+          <LogoIcon size="md" className="h-10 w-10 rounded-xl" />
           {!collapsed && (
             <span className="flex flex-col leading-tight">
-              <span className="text-base font-bold tracking-tight">Flvxus</span>
+              <Logo size="md" />
               <span className="text-xs text-muted-foreground">{roleLabel(role)}</span>
             </span>
           )}
