@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { SEM_DIVISAO_LABEL, agruparPorDivisao } from '@/lib/divisao';
+import {
+  DIVISAO_SEM,
+  SEM_DIVISAO_LABEL,
+  agruparPorDivisao,
+  parseDivisao,
+} from '@/lib/divisao';
 
 interface ItemFake {
   id: string;
@@ -61,5 +66,31 @@ describe('agruparPorDivisao', () => {
 
     expect(grupos.map((g) => g.division)).toEqual(['A', 'B', null]);
     expect(grupos[2].itens.map((i) => i.id)).toEqual(['b', 'd']);
+  });
+});
+
+describe('parseDivisao', () => {
+  it('ausente quando undefined ou string vazia/espacos', () => {
+    expect(parseDivisao(undefined)).toEqual({ tipo: 'ausente' });
+    expect(parseDivisao('')).toEqual({ tipo: 'ausente' });
+    expect(parseDivisao('   ')).toEqual({ tipo: 'ausente' });
+  });
+
+  it('sem quando o valor é o sentinela __sem__', () => {
+    expect(parseDivisao(DIVISAO_SEM)).toEqual({ tipo: 'sem' });
+    expect(parseDivisao('__sem__')).toEqual({ tipo: 'sem' });
+  });
+
+  it('rotulo (com trim) para qualquer outra divisão nomeada', () => {
+    expect(parseDivisao('A')).toEqual({ tipo: 'rotulo', valor: 'A' });
+    expect(parseDivisao('  B  ')).toEqual({ tipo: 'rotulo', valor: 'B' });
+    expect(parseDivisao('Peito e tríceps')).toEqual({
+      tipo: 'rotulo',
+      valor: 'Peito e tríceps',
+    });
+  });
+
+  it('usa o primeiro valor quando o searchParam vem como array', () => {
+    expect(parseDivisao(['A', 'B'])).toEqual({ tipo: 'rotulo', valor: 'A' });
   });
 });

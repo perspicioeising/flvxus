@@ -71,3 +71,19 @@ export function volumeSessao(logs: SerieLog[]): number {
     0
   );
 }
+
+/**
+ * Volume total das séries CONCLUÍDAS (`completed === true`): Σ reps×carga.
+ *
+ * Diferente de `volumeSessao` (que soma todas as séries registradas), este é o
+ * volume "efetivamente levantado" exibido no resumo pós-treino. `reps_done` e
+ * `load_done` são `numeric(6,2)` no Postgres e podem chegar como STRING em
+ * runtime (apesar do tipo `number`), então coagimos cada fator com
+ * `Number(x ?? 0)` — ponto único de coerção numérica do volume.
+ */
+export function volumeConcluido(logs: SerieLog[]): number {
+  return logs.reduce((acc, log) => {
+    if (!log.completed) return acc;
+    return acc + Number(log.reps_done ?? 0) * Number(log.load_done ?? 0);
+  }, 0);
+}

@@ -13,6 +13,41 @@
 /** Rótulo do balde dos itens sem divisão definida (`division = null`). */
 export const SEM_DIVISAO_LABEL = 'Divisão única';
 
+/**
+ * Valor sentinela na URL (`?divisao=__sem__`) que representa o balde sem eixo
+ * (itens com `division = null`). Usado para distinguir "quero o balde sem
+ * divisão" de "não informei divisão nenhuma" — o que elimina o loop
+ * detalhe→execução→detalhe (o balde renderiza em vez de redirecionar).
+ */
+export const DIVISAO_SEM = '__sem__';
+
+/**
+ * Resultado de 3 estados do parse do searchParam `?divisao=`:
+ * - `rotulo`  → uma divisão nomeada (ex.: 'A');
+ * - `sem`     → o balde sem eixo (`division = null`), via sentinela `__sem__`;
+ * - `ausente` → nenhum `?divisao=` na URL (ou valor vazio).
+ */
+export type DivisaoPedida =
+  | { tipo: 'rotulo'; valor: string }
+  | { tipo: 'sem' }
+  | { tipo: 'ausente' };
+
+/**
+ * Converte o searchParam `?divisao=` num `DivisaoPedida` de 3 estados. O Next
+ * já entrega o valor URL-decodificado; só fazemos `trim`. Vazio/ausente →
+ * `ausente`; o sentinela `DIVISAO_SEM` → `sem`; qualquer outro → `rotulo`.
+ */
+export function parseDivisao(
+  valor: string | string[] | undefined
+): DivisaoPedida {
+  const bruto = Array.isArray(valor) ? valor[0] : valor;
+  if (bruto === undefined) return { tipo: 'ausente' };
+  const limpo = bruto.trim();
+  if (limpo === '') return { tipo: 'ausente' };
+  if (limpo === DIVISAO_SEM) return { tipo: 'sem' };
+  return { tipo: 'rotulo', valor: limpo };
+}
+
 /** Um grupo de itens pertencentes a uma mesma divisão. */
 export interface GrupoDivisao<T> {
   /** Rótulo da divisão (ex.: 'A') ou `null` para o balde "Divisão única". */

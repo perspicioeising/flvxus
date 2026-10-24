@@ -20,6 +20,41 @@ export const WEEKDAY_LABEL: Record<number, string> = {
 /** Rótulo do balde dos itens sem dia da semana definido. */
 export const SEM_DIA_LABEL = 'Sem dia definido';
 
+/**
+ * Valor sentinela na URL (`?dia=none`) que representa o balde sem eixo (itens
+ * com `weekday = null`). Espelha `DIVISAO_SEM`: distingue "quero o balde sem
+ * dia" de "não informei dia nenhum", eliminando o loop detalhe→execução.
+ */
+export const DIA_SEM = 'none';
+
+/**
+ * Resultado de 3 estados do parse do searchParam `?dia=`:
+ * - `dia`     → um weekday válido (0..6);
+ * - `sem`     → o balde sem eixo (`weekday = null`), via sentinela `none`;
+ * - `ausente` → nenhum `?dia=` na URL, vazio ou valor inválido.
+ */
+export type DiaPedido =
+  | { tipo: 'dia'; valor: number }
+  | { tipo: 'sem' }
+  | { tipo: 'ausente' };
+
+/**
+ * Converte o searchParam `?dia=` num `DiaPedido` de 3 estados. Vazio/ausente →
+ * `ausente`; o sentinela `DIA_SEM` → `sem`; inteiro 0..6 → `dia`; qualquer
+ * outro (fora da faixa, não-inteiro) → `ausente` (degrada para "todos").
+ */
+export function parseDia(valor: string | string[] | undefined): DiaPedido {
+  const bruto = Array.isArray(valor) ? valor[0] : valor;
+  if (bruto === undefined) return { tipo: 'ausente' };
+  const limpo = bruto.trim();
+  if (limpo === '') return { tipo: 'ausente' };
+  if (limpo === DIA_SEM) return { tipo: 'sem' };
+  const n = Number(limpo);
+  return Number.isInteger(n) && n >= 0 && n <= 6
+    ? { tipo: 'dia', valor: n }
+    : { tipo: 'ausente' };
+}
+
 /** Dia da semana atual (0=Domingo..6=Sábado), a partir de `new Date()`. */
 export function weekdayAtual(referencia: Date = new Date()): number {
   return referencia.getDay();

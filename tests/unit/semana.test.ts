@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { SEM_DIA_LABEL, WEEKDAY_LABEL, agruparPorDia } from '@/lib/semana';
+import {
+  DIA_SEM,
+  SEM_DIA_LABEL,
+  WEEKDAY_LABEL,
+  agruparPorDia,
+  parseDia,
+} from '@/lib/semana';
 
 interface ItemFake {
   id: string;
@@ -39,5 +45,31 @@ describe('agruparPorDia', () => {
 
   it('retorna lista vazia quando não há itens', () => {
     expect(agruparPorDia([] as ItemFake[], (i) => i.weekday)).toEqual([]);
+  });
+});
+
+describe('parseDia', () => {
+  it('ausente quando undefined, vazio ou fora da faixa 0..6', () => {
+    expect(parseDia(undefined)).toEqual({ tipo: 'ausente' });
+    expect(parseDia('')).toEqual({ tipo: 'ausente' });
+    expect(parseDia('7')).toEqual({ tipo: 'ausente' });
+    expect(parseDia('-1')).toEqual({ tipo: 'ausente' });
+    expect(parseDia('abc')).toEqual({ tipo: 'ausente' });
+    expect(parseDia('1.5')).toEqual({ tipo: 'ausente' });
+  });
+
+  it('sem quando o valor é o sentinela none', () => {
+    expect(parseDia(DIA_SEM)).toEqual({ tipo: 'sem' });
+    expect(parseDia('none')).toEqual({ tipo: 'sem' });
+  });
+
+  it('dia para inteiros válidos 0..6', () => {
+    expect(parseDia('0')).toEqual({ tipo: 'dia', valor: 0 });
+    expect(parseDia('3')).toEqual({ tipo: 'dia', valor: 3 });
+    expect(parseDia('6')).toEqual({ tipo: 'dia', valor: 6 });
+  });
+
+  it('usa o primeiro valor quando o searchParam vem como array', () => {
+    expect(parseDia(['2', '5'])).toEqual({ tipo: 'dia', valor: 2 });
   });
 });

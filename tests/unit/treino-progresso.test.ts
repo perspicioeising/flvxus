@@ -4,6 +4,7 @@ import {
   exercicioConcluido,
   progressoSessao,
   seriesPorItem,
+  volumeConcluido,
   volumeSessao,
   type SerieLog,
 } from '@/lib/treino/progresso';
@@ -75,6 +76,51 @@ describe('volumeSessao', () => {
 
   it('é 0 para lista vazia', () => {
     expect(volumeSessao([])).toBe(0);
+  });
+});
+
+describe('volumeConcluido', () => {
+  it('soma reps × carga apenas das séries concluídas', () => {
+    const logs = [
+      serie({ set_number: 1, completed: true, reps_done: 10, load_done: 20 }),
+      serie({ set_number: 2, completed: false, reps_done: 8, load_done: 25 }),
+      serie({ set_number: 3, completed: true, reps_done: 8, load_done: 25 }),
+    ];
+    // Só as concluídas: 10*20 + 8*25 = 200 + 200
+    expect(volumeConcluido(logs)).toBe(400);
+  });
+
+  it('trata reps/carga nulos como zero via Number(x ?? 0)', () => {
+    const logs = [
+      serie({ set_number: 1, completed: true, reps_done: null, load_done: 30 }),
+      serie({ set_number: 2, completed: true, reps_done: 12, load_done: null }),
+      serie({ set_number: 3, completed: true, reps_done: 10, load_done: 15 }),
+    ];
+    expect(volumeConcluido(logs)).toBe(150);
+  });
+
+  it('coage reps/carga vindos como STRING (numeric do Postgres)', () => {
+    const logs = [
+      serie({
+        set_number: 1,
+        completed: true,
+        reps_done: '12' as unknown as number,
+        load_done: '2.5' as unknown as number,
+      }),
+    ];
+    // Number('12') * Number('2.5') = 30
+    expect(volumeConcluido(logs)).toBe(30);
+  });
+
+  it('é 0 quando nenhuma série foi concluída', () => {
+    const logs = [
+      serie({ set_number: 1, completed: false, reps_done: 10, load_done: 20 }),
+    ];
+    expect(volumeConcluido(logs)).toBe(0);
+  });
+
+  it('é 0 para lista vazia', () => {
+    expect(volumeConcluido([])).toBe(0);
   });
 });
 
