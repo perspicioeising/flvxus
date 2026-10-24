@@ -548,10 +548,6 @@
     box-shadow: var(--shadow-xl);
   }
 
-  .shadow-app-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
   /* Conquistas: gradientes dirigidos por token (claro e escuro ajustam sozinhos) */
   .achievement-workout {
     background-image: linear-gradient(

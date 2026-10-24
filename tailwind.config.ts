@@ -44,6 +44,10 @@ const config: Config = {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
         },
+        'primary-soft': {
+          DEFAULT: 'hsl(var(--primary-soft))',
+          foreground: 'hsl(var(--primary-soft-foreground))',
+        },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',
@@ -67,6 +71,10 @@ const config: Config = {
         warning: {
           DEFAULT: 'hsl(var(--warning))',
           foreground: 'hsl(var(--warning-foreground))',
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -112,6 +120,7 @@ const config: Config = {
         'app-medium': 'var(--shadow-medium)',
         'app-large': 'var(--shadow-large)',
         'app-xl': 'var(--shadow-xl)',
+        'app-glow': 'var(--shadow-glow)',
       },
       keyframes: {
         'accordion-down': {

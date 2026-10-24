@@ -39,7 +39,21 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { LoadingState, EmptyState, ErrorState } from '@/components/patterns';
+import {
+  LoadingState,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+  StatCard,
+  StatusBadge,
+  ConfirmDialog,
+  DataList,
+} from '@/components/patterns';
+import { Logo } from '@/components/navigation/logo';
+import { LogoIcon } from '@/components/navigation/logo-icon';
+import { AnelProgresso } from '@/components/aluno/execucao/anel-progresso';
+import { ArrowRight } from 'lucide-react';
+import * as React from 'react';
 
 /** Amostra de cor dos tokens (classe utilitária do token + rótulo). */
 function Swatch({ className, label }: { className: string; label: string }) {
@@ -74,6 +88,8 @@ function Section({
 }
 
 export default function UiKitPage() {
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+
   return (
     <div className="mx-auto w-full max-w-5xl space-y-10">
       <SonnerToaster position="top-center" />
@@ -103,6 +119,8 @@ export default function UiKitPage() {
           <Swatch className="bg-accent" label="accent" />
           <Swatch className="bg-success" label="success" />
           <Swatch className="bg-warning" label="warning" />
+          <Swatch className="bg-info" label="info" />
+          <Swatch className="bg-primary-soft" label="primary-soft" />
           <Swatch className="bg-destructive" label="destructive" />
           <Swatch className="bg-border" label="border" />
         </div>
@@ -161,7 +179,109 @@ export default function UiKitPage() {
           <Button size="sm">Pequeno</Button>
           <Button size="default">Padrão</Button>
           <Button size="lg">Grande</Button>
+          <Button size="xl">Pílula (xl)</Button>
           <Button disabled>Desabilitado</Button>
+        </div>
+      </Section>
+
+      {/* Marca */}
+      <Section
+        title="Marca"
+        description="Ícone quadrado verde (glow opt-in) e wordmark FLVXUS."
+      >
+        <div className="flex flex-wrap items-center gap-6">
+          <LogoIcon size="md" />
+          <LogoIcon size="lg" />
+          <LogoIcon size="xl" glow />
+          <Logo size="lg" />
+        </div>
+      </Section>
+
+      {/* Cabeçalho de página */}
+      <Section title="PageHeader (escala v2)">
+        <div className="space-y-6">
+          <PageHeader title="Título padrão" subtitle="Subtítulo de apoio" />
+          <PageHeader
+            title="Treinos"
+            emphasis="caps"
+            subtitle="Caixa-alta gigante do aluno"
+            actions={<Button size="xl">Nova ação</Button>}
+          />
+        </div>
+      </Section>
+
+      {/* StatCard */}
+      <Section title="StatCard" description="Métricas neutras e de destaque.">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatCard label="Treinos" value={12} />
+          <StatCard label="Pontos" value={320} tone="emphasis" />
+          <StatCard label="Sequência" value="7 dias" tone="emphasis" radius="2xl" />
+        </div>
+      </Section>
+
+      {/* StatusBadge */}
+      <Section title="StatusBadge" description="Mapa de tons.">
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge tone="brand">Próximo</StatusBadge>
+          <StatusBadge tone="success">Liberada</StatusBadge>
+          <StatusBadge tone="warning">Pendente</StatusBadge>
+          <StatusBadge tone="danger">Bloqueado</StatusBadge>
+          <StatusBadge tone="neutral">Rascunho</StatusBadge>
+          <StatusBadge tone="info">Info</StatusBadge>
+        </div>
+      </Section>
+
+      {/* ConfirmDialog e DataList */}
+      <Section title="ConfirmDialog e DataList">
+        <div className="space-y-4">
+          <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
+            Abrir confirmação
+          </Button>
+          <ConfirmDialog
+            open={confirmOpen}
+            onOpenChange={setConfirmOpen}
+            title="Excluir item?"
+            description="Esta ação não pode ser desfeita."
+            destructive
+            confirmLabel="Excluir"
+            onConfirm={() => {
+              toast.success('Item excluído.');
+              setConfirmOpen(false);
+            }}
+          />
+          <DataList
+            items={['Aluno A', 'Aluno B', 'Aluno C']}
+            getKey={(i) => i}
+            renderItem={(i) => (
+              <Card className="rounded-2xl">
+                <CardContent className="p-4 text-sm">{i}</CardContent>
+              </Card>
+            )}
+          />
+        </div>
+      </Section>
+
+      {/* Anel de descanso e cartão verde */}
+      <Section title="Anel de descanso e cartão de treino">
+        <div className="flex flex-wrap items-center gap-8">
+          <AnelProgresso segundos={90} restante={53}>
+            <span className="text-3xl font-black tabular-nums">0:53</span>
+            <span className="text-xs text-muted-foreground">de 1:30</span>
+          </AnelProgresso>
+          <div className="w-full max-w-xs rounded-3xl bg-primary p-6 text-primary-foreground shadow-app-glow">
+            <p className="text-xs font-bold uppercase tracking-widest opacity-80">
+              Próximo treino
+            </p>
+            <p className="text-6xl font-black leading-none">A</p>
+            <p className="mt-2 text-lg font-bold">COSTAS E BRAÇOS</p>
+            <Button
+              size="xl"
+              className="mt-4 w-full bg-background text-foreground hover:bg-background/90"
+            >
+              Iniciar treino
+              <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+            </Button>
+          </div>
         </div>
       </Section>
 
