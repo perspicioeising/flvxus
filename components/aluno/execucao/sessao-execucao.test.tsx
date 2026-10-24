@@ -147,10 +147,11 @@ describe('SessaoExecucao — editar série já concluída', () => {
     expect(within(resumo).getByText(/12 reps/)).toBeInTheDocument();
   });
 
-  it('não reinicia o timer de descanso ao apenas editar uma série antiga', async () => {
-    // Item COM descanso prescrito: concluir a série dispara o timer (60s). Ao
-    // editar uma série JÁ concluída, o timer não deve remontar/reiniciar — isso
-    // é reservado à conclusão de uma série nova.
+  it('não reabre o modal de descanso ao apenas editar uma série antiga', async () => {
+    // Item COM descanso prescrito e 2 séries: concluir a série 1 (que NÃO é a
+    // última) abre o modal de descanso auto-iniciado (60s). Fechar o modal e
+    // depois editar uma série JÁ concluída não deve reabrir o modal — isso é
+    // reservado à conclusão de uma série nova.
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       const view = render(
@@ -160,23 +161,37 @@ describe('SessaoExecucao — editar série já concluída', () => {
         />
       );
 
-      await concluirSerieAtual('10');
+      // Conclui a série 1 (o resumo somente-leitura aparece atrás do modal).
+      const inputReps = screen.getByLabelText('Reps') as HTMLInputElement;
+      fireEvent.change(inputReps, { target: { value: '10' } });
+      fireEvent.click(screen.getByRole('button', { name: /concluir série/i }));
 
-      // O timer de descanso aparece e conta a partir de 1:00.
-      expect(screen.getByText('1:00')).toBeInTheDocument();
+      // O modal de descanso abre com o anel/timer a partir de 1:00.
+      const modal = await screen.findByRole('dialog', { name: /descanso/i });
+      expect(within(modal).getByText('1:00')).toBeInTheDocument();
 
-      // Deixa o timer contar 3 segundos → 0:57.
+      // Deixa o timer contar 3 segundos → 0:57 (reset por série preservado).
       await vi.advanceTimersByTimeAsync(3000);
-      expect(screen.getByText('0:57')).toBeInTheDocument();
+      expect(within(modal).getByText('0:57')).toBeInTheDocument();
 
-      // Edita a série 1 (já concluída) e salva: o timer NÃO deve voltar a 1:00.
+      // Pular descanso fecha o modal e volta o fluxo para a próxima série.
+      fireEvent.click(
+        within(modal).getByRole('button', { name: /pular descanso/i })
+      );
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('dialog', { name: /descanso/i })
+        ).not.toBeInTheDocument()
+      );
+
+      // Edita a série 1 (já concluída) e salva: o modal NÃO deve reabrir.
       fireEvent.click(screen.getByRole('button', { name: 'Editar série 1' }));
       fireEvent.click(screen.getByRole('button', { name: 'Salvar série 1' }));
       await screen.findByRole('button', { name: 'Editar série 1' });
 
-      expect(screen.queryByText('1:00')).not.toBeInTheDocument();
-      // Segue contando do ponto anterior (≈0:57 ou menos), nunca reiniciado.
-      expect(screen.getByText(/0:5[0-9]/)).toBeInTheDocument();
+      expect(
+        screen.queryByRole('dialog', { name: /descanso/i })
+      ).not.toBeInTheDocument();
 
       // Desmonta antes de restaurar os timers reais: evita que o intervalo do
       // TimerDescanso dispare fora de act() após o fim do teste.
@@ -184,6 +199,29 @@ describe('SessaoExecucao — editar série já concluída', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('não abre o modal de descanso na última série do único exercício', async () => {
+    // Exercício único com descanso prescrito: concluir a ÚLTIMA série (sem
+    // próxima série nem próximo exercício) NÃO deve abrir o modal — segue o
+    // fluxo de finalizar. Usamos 1 série para isolar essa borda.
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[itemFake({ sets: 1, descansoSegundos: 60 })]}
+      />
+    );
+
+    const inputReps = screen.getByLabelText('Reps') as HTMLInputElement;
+    fireEvent.change(inputReps, { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: /concluir série/i }));
+
+    // A série entra no resumo (confirma que a conclusão ocorreu)…
+    await screen.findByRole('button', { name: 'Editar série 1' });
+    // …e o modal de descanso NÃO abre (é a última série do último exercício).
+    expect(
+      screen.queryByRole('dialog', { name: /descanso/i })
+    ).not.toBeInTheDocument();
   });
 });
 

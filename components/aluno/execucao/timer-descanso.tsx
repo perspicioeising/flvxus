@@ -23,9 +23,15 @@ function formatar(segundos: number): string {
 export function TimerDescanso({
   segundos,
   autoIniciar = false,
+  onConcluir,
+  onPular,
 }: {
   segundos: number;
   autoIniciar?: boolean;
+  /** Chamado quando o tempo chega a 0 (descanso terminou naturalmente). */
+  onConcluir?: () => void;
+  /** Chamado quando o aluno toca "Pular descanso". */
+  onPular?: () => void;
 }) {
   const [restante, setRestante] = React.useState(segundos);
   const [rodando, setRodando] = React.useState(autoIniciar);
@@ -41,6 +47,14 @@ export function TimerDescanso({
     setRodando(autoIniciar);
   }, [segundos, autoIniciar]);
 
+  // Guarda `onConcluir` numa ref para o efeito do intervalo não reiniciar a
+  // cada render (a prop pode ser inline) e para nunca ler uma versão obsoleta.
+  // `onPular` é chamado direto no handler do botão, então não precisa de ref.
+  const onConcluirRef = React.useRef(onConcluir);
+  React.useEffect(() => {
+    onConcluirRef.current = onConcluir;
+  }, [onConcluir]);
+
   React.useEffect(() => {
     if (!rodando) return;
 
@@ -52,6 +66,9 @@ export function TimerDescanso({
           if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
             navigator.vibrate?.(200);
           }
+          // Avisa o pai que o descanso terminou (ex.: fechar o modal). Fora do
+          // caminho de atualização de estado do próprio contador.
+          onConcluirRef.current?.();
           return 0;
         }
         return atual - 1;
@@ -107,6 +124,7 @@ export function TimerDescanso({
         onClick={() => {
           setRodando(false);
           setRestante(0);
+          onPular?.();
         }}
       >
         <SkipForward className="h-4 w-4" aria-hidden="true" />

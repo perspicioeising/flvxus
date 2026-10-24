@@ -49,6 +49,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { agruparPorDia } from '@/lib/semana';
 import { agruparPorDivisao } from '@/lib/divisao';
 import { TimerDescanso } from './timer-descanso';
@@ -292,22 +299,30 @@ export function SessaoExecucao({
       ? itensVisiveis[Math.min(indiceAtual, itensVisiveis.length - 1)]
       : undefined;
 
-  // Mostra o descanso acoplado (auto-iniciado) somente após concluir uma série
-  // do exercício atual. Guardamos o id do item para resetar ao navegar/trocar.
-  const [descansoAtivoItemId, setDescansoAtivoItemId] = React.useState<
-    string | null
-  >(null);
+  // Descanso em MODAL: abre automaticamente ao concluir uma série (quando há
+  // descanso prescrito e não é a última série do último exercício). Guardamos
+  // os segundos capturados no momento da conclusão (não o do item navegado) e
+  // um rótulo opcional "a seguir". `null` = modal fechado.
+  const [descansoAberto, setDescansoAberto] = React.useState<{
+    itemId: string;
+    segundos: number;
+    proximoRotulo: string | null;
+  } | null>(null);
+
+  // Fecha o modal de descanso (ao esgotar o tempo, pular, Esc ou overlay).
+  function fecharDescanso() {
+    setDescansoAberto(null);
+  }
 
   // Reinicia o timer de descanso a cada série concluída: a key do
   // <TimerDescanso> combina este contador, forçando a remontagem (que zera e
   // auto-inicia) mesmo entre séries do MESMO exercício.
   const [descansoResetKey, setDescansoResetKey] = React.useState(0);
 
-  // Ao navegar entre exercícios ou trocar de grupo (dia/divisão), esconde o
-  // descanso acoplado (ele volta a aparecer quando o aluno concluir uma série
-  // do novo item).
+  // Ao navegar entre exercícios ou trocar de grupo (dia/divisão), fecha o
+  // modal de descanso (ele reabre quando o aluno concluir uma série).
   React.useEffect(() => {
-    setDescansoAtivoItemId(null);
+    setDescansoAberto(null);
   }, [indiceAtual, grupoAtivo]);
 
   // Série atual mostrada (com inputs) por exercício. A UI exibe UMA série por
@@ -512,13 +527,33 @@ export function SessaoExecucao({
       });
 
       if (r.ok && novoCompleted) {
-        // Descanso acoplado: dispara o timer auto-iniciado deste exercício.
-        setDescansoAtivoItemId(itemId);
-        // Reinicia o descanso a cada série concluída (remonta o TimerDescanso).
-        setDescansoResetKey((k) => k + 1);
+        const item = itens.find((it) => it.id === itemId);
+
+        // Decide se abre o modal de descanso. Abre quando há descanso prescrito
+        // E NÃO é a última série do último exercício visível (nesse caso não há
+        // descanso — segue para o fluxo de finalizar/RPE já existente).
+        const ehUltimaSerie = item ? setNumber === item.sets : false;
+        const ehUltimoExercicio = indiceAtual >= itensVisiveis.length - 1;
+        const temDescanso = (item?.descansoSegundos ?? 0) > 0;
+
+        if (item && temDescanso && !(ehUltimaSerie && ehUltimoExercicio)) {
+          // Rótulo opcional "a seguir": próxima série do mesmo exercício, ou o
+          // nome do próximo exercício quando esta foi a última série dele.
+          const proximoRotulo = ehUltimaSerie
+            ? (itensVisiveis[indiceAtual + 1]?.nome ?? null)
+            : `Série ${Math.min(setNumber + 1, item.sets)}`;
+          // Reinicia o descanso a cada série concluída (remonta o TimerDescanso
+          // via `key`) e abre o modal auto-iniciado.
+          setDescansoResetKey((k) => k + 1);
+          setDescansoAberto({
+            itemId,
+            segundos: item.descansoSegundos as number,
+            proximoRotulo,
+          });
+        }
+
         // Avança para a próxima série (uma por vez); na última, permanece nela
         // — o botão "Próximo exercício" passa a realçar via exercicioConcluido.
-        const item = itens.find((it) => it.id === itemId);
         if (item) {
           setSerieAtualPorItem((m) => ({
             ...m,
@@ -1008,16 +1043,6 @@ export function SessaoExecucao({
               );
             })()}
 
-            {/* Descanso acoplado: só aparece após concluir uma série deste
-                exercício e quando há descanso prescrito; auto-inicia. */}
-            {itemAtual.descansoSegundos &&
-            descansoAtivoItemId === itemAtual.id ? (
-              <TimerDescanso
-                key={`${itemAtual.id}:${descansoResetKey}`}
-                segundos={itemAtual.descansoSegundos}
-                autoIniciar
-              />
-            ) : null}
           </CardContent>
         </Card>
       ) : null}
@@ -1144,6 +1169,42 @@ export function SessaoExecucao({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Descanso entre séries em MODAL: abre automaticamente ao concluir uma
+          série (quando há descanso e não é a última série do último exercício).
+          Fecha ao esgotar o tempo, ao pular, por Esc ou clique no overlay — e
+          volta o fluxo para a próxima série/exercício exatamente como antes. O
+          foco preso/retorno e `aria-modal` vêm do Radix Dialog. */}
+      <Dialog
+        open={descansoAberto !== null}
+        onOpenChange={(aberto) => {
+          if (!aberto) fecharDescanso();
+        }}
+      >
+        <DialogContent className="max-w-sm gap-6 rounded-3xl text-center">
+          <DialogHeader className="items-center">
+            <DialogTitle>Descanso</DialogTitle>
+            {descansoAberto?.proximoRotulo ? (
+              <DialogDescription>
+                A seguir · {descansoAberto.proximoRotulo}
+              </DialogDescription>
+            ) : (
+              <DialogDescription className="sr-only">
+                Timer de descanso entre séries
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          {descansoAberto ? (
+            <TimerDescanso
+              key={`${descansoAberto.itemId}:${descansoResetKey}`}
+              segundos={descansoAberto.segundos}
+              autoIniciar
+              onConcluir={fecharDescanso}
+              onPular={fecharDescanso}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
