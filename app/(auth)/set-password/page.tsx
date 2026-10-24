@@ -5,17 +5,11 @@ import { createClient } from '@/lib/supabase/browser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Lock, Mail, User, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { senhaSchema } from '@/schemas/auth';
+import { AuthScreen } from '@/components/auth/auth-screen';
 
 /**
  * Tela de definição de senha do aluno convidado.
@@ -141,193 +135,170 @@ export default function SetPasswordPage() {
     }
   };
 
+  // Estado de sistema: validando o convite. Layout centrado mínimo (sem LogoIcon).
   if (isValidating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Loader2 className="mb-6 h-10 w-10 animate-spin text-primary" aria-hidden="true" />
-            <h3 className="mb-2 text-lg font-semibold text-foreground">
-              Processando seu acesso...
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Validando o seu convite
-            </p>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden="true" />
+        <div className="space-y-1">
+          <h1 className="text-lg font-semibold text-foreground">
+            Processando seu acesso...
+          </h1>
+          <p className="text-sm text-muted-foreground">Validando o seu convite</p>
+        </div>
       </div>
     );
   }
 
+  // Estado de sistema: link inválido. Layout centrado mínimo (sem LogoIcon).
   if (error && !userInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-3 text-center">
-            <div
-              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive"
-              aria-hidden="true"
-            >
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <CardTitle>Link inválido</CardTitle>
-            <CardDescription>{error}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => {
-                window.location.href = '/login';
-              }}
-              className="w-full min-h-11"
-            >
-              Ir para Login
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertCircle className="h-6 w-6" aria-hidden="true" />
+        </div>
+        <div className="space-y-1">
+          <h1 className="text-lg font-semibold text-foreground">Link inválido</h1>
+          <p className="max-w-sm text-sm text-muted-foreground">{error}</p>
+        </div>
+        <Button
+          size="xl"
+          className="w-full max-w-sm"
+          onClick={() => {
+            window.location.href = '/login';
+          }}
+        >
+          Ir para Login
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3 text-center">
-          <div
-            className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
-            aria-hidden="true"
-          >
-            <Lock className="h-6 w-6" />
-          </div>
-          <CardTitle>Bem-vindo!</CardTitle>
-          <CardDescription>
-            Defina sua senha para acessar a plataforma
-          </CardDescription>
-
-          {userInfo && (
-            <div className="mt-2 space-y-2 rounded-lg border bg-muted/50 p-4 text-left">
-              <div className="flex items-center justify-center gap-2 text-foreground">
-                <User className="h-4 w-4" aria-hidden="true" />
-                <span className="font-semibold">{userInfo.name}</span>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" aria-hidden="true" />
-                <span>{userInfo.email}</span>
-              </div>
-              {userInfo.role === 'student' && (
-                <p className="text-center text-xs text-muted-foreground">
-                  Convite de: {userInfo.trainerName}
-                </p>
-              )}
-            </div>
+    <AuthScreen
+      onSubmit={handleSetPassword}
+      glowIcon
+      title={
+        <>
+          DEFINA SUA
+          <br />
+          SENHA
+        </>
+      }
+      subtitle="Para acessar a plataforma"
+      primaryAction={
+        <Button
+          type="submit"
+          size="xl"
+          className="w-full"
+          disabled={!senhaValida || !senhasConferem || isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              Definindo senha...
+            </>
+          ) : (
+            "Definir senha e entrar"
           )}
-        </CardHeader>
+        </Button>
+      }
+    >
+      {userInfo && (
+        <div className="space-y-2 rounded-2xl bg-muted/60 p-4">
+          <div className="flex items-center gap-2 text-foreground">
+            <User className="h-4 w-4" aria-hidden="true" />
+            <span className="font-semibold">{userInfo.name}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Mail className="h-4 w-4" aria-hidden="true" />
+            <span className="break-all">{userInfo.email}</span>
+          </div>
+          {userInfo.role === 'student' && (
+            <p className="text-xs text-muted-foreground">
+              Convite de: {userInfo.trainerName}
+            </p>
+          )}
+        </div>
+      )}
 
-        <CardContent>
-          <form onSubmit={handleSetPassword} className="space-y-5">
-            {/* Nova Senha */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Nova senha</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="min-h-11 pr-10"
-                  placeholder="Mínimo 8 caracteres"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Critério de senha (coerente com o cadastro de professor) */}
-            {password && (
-              <div
-                className={`flex items-center gap-2 text-xs transition-colors ${
-                  senhaValida ? 'text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                <CheckCircle className="h-3 w-3" aria-hidden="true" />
-                <span>Mínimo 8 caracteres</span>
-              </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Nova senha</Label>
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="min-h-11 pr-11 text-base md:text-sm"
+            placeholder="Mínimo 8 caracteres"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
             )}
+          </button>
+        </div>
+      </div>
 
-            {/* Confirmar Senha */}
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="min-h-11 pr-10"
-                  placeholder="Confirme sua senha"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
-                  )}
-                </button>
-              </div>
+      {password && (
+        <div
+          className={`flex items-center gap-2 text-xs transition-colors ${
+            senhaValida ? 'text-primary' : 'text-muted-foreground'
+          }`}
+        >
+          <CheckCircle className="h-3 w-3" aria-hidden="true" />
+          <span>Mínimo 8 caracteres</span>
+        </div>
+      )}
 
-              {confirmPassword && !senhasConferem && (
-                <p className="flex items-center gap-1 text-xs text-destructive">
-                  <AlertCircle className="h-3 w-3" aria-hidden="true" />
-                  As senhas não coincidem
-                </p>
-              )}
-            </div>
-
-            {/* Erro */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" aria-hidden="true" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirmar senha</Label>
+        <div className="relative">
+          <Input
+            id="confirmPassword"
+            type={showConfirmPassword ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="min-h-11 pr-11 text-base md:text-sm"
+            placeholder="Confirme sua senha"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {showConfirmPassword ? (
+              <EyeOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
             )}
+          </button>
+        </div>
+        {confirmPassword && !senhasConferem && (
+          <p className="flex items-center gap-1 text-xs text-destructive">
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
+            As senhas não coincidem
+          </p>
+        )}
+      </div>
 
-            {/* Botão de Confirmar */}
-            <Button
-              type="submit"
-              disabled={!senhaValida || !senhasConferem || isLoading}
-              className="w-full min-h-11"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  Definindo senha...
-                </>
-              ) : (
-                <>
-                  <Lock className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Definir senha e entrar
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" aria-hidden="true" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+    </AuthScreen>
   );
 }

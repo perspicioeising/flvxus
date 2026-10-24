@@ -7,21 +7,23 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { AuthScreen } from '@/components/auth/auth-screen';
 
- function ResetPasswordContent() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { supabase } = useSupabase();
   const { toast } = useToast();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       toast({
         variant: "destructive",
@@ -45,7 +47,7 @@ import { Dumbbell, Loader2 } from 'lucide-react';
     try {
       // Get the access_token from the URL
       const accessToken = searchParams.get('access_token');
-      
+
       if (!accessToken) {
         throw new Error('Token de acesso não encontrado.');
       }
@@ -80,62 +82,81 @@ import { Dumbbell, Loader2 } from 'lucide-react';
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-3 text-center">
-          <div
-            className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"
-            aria-hidden="true"
+    <AuthScreen
+      onSubmit={handleSubmit}
+      glowIcon
+      title={
+        <>
+          DEFINA SUA
+          <br />
+          NOVA SENHA
+        </>
+      }
+      subtitle="Crie uma senha segura para a sua conta"
+      primaryAction={
+        <Button type="submit" size="xl" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              Definindo senha...
+            </>
+          ) : (
+            "Definir senha"
+          )}
+        </Button>
+      }
+    >
+      <div className="space-y-2">
+        <Label htmlFor="password">Nova senha</Label>
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Digite sua nova senha"
+            className="min-h-11 pr-11 text-base md:text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
           >
-            <Dumbbell className="h-6 w-6" />
-          </div>
-          <CardTitle>Defina sua senha</CardTitle>
-          <CardDescription>
-            Crie uma senha segura para a sua conta
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Nova senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Digite sua nova senha"
-                className="min-h-11"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirme sua nova senha"
-                className="min-h-11"
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full min-h-11" 
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  Definindo senha...
-                </>
-              ) : (
-                "Definir senha"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirmar senha</Label>
+        <div className="relative">
+          <Input
+            id="confirmPassword"
+            type={showConfirmPassword ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirme sua nova senha"
+            className="min-h-11 pr-11 text-base md:text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {showConfirmPassword ? (
+              <EyeOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      </div>
+    </AuthScreen>
   );
 }
 
@@ -143,7 +164,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="flex min-h-dvh items-center justify-center bg-background p-4">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">Carregando...</p>
