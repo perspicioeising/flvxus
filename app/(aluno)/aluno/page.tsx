@@ -31,7 +31,7 @@ export default async function AlunoHomePage() {
   const supabase = await createClient();
   const weekday = weekdayAtual();
 
-  const [fichasRes, avaliacaoRes] = await Promise.all([
+  const [fichasRes, avaliacaoRes, sessoesRes] = await Promise.all([
     // TODAS as fichas liberadas do aluno + itens (RLS garante posse e released).
     // Desempate determinístico: released_at desc, id desc (nunca some ficha).
     supabase
@@ -49,9 +49,19 @@ export default async function AlunoHomePage() {
       .order('assessed_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // Sessões CONCLUÍDAS do aluno (RLS: só as próprias), mais recente primeiro.
+    // Usa o índice (plan_id, division, finished_at desc). Desempate por id desc
+    // espelha o desempate de fichas. A primeira linha de cada plan_id é a última
+    // divisão concluída daquela ficha (mapa montado abaixo).
+    supabase
+      .from('workout_sessions')
+      .select('plan_id, division, finished_at')
+      .not('finished_at', 'is', null)
+      .order('finished_at', { ascending: false })
+      .order('id', { ascending: false }),
   ]);
 
-  if (fichasRes.error || avaliacaoRes.error) {
+  if (fichasRes.error || avaliacaoRes.error || sessoesRes.error) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
         <Saudacao nome={sessionUser.fullName} weekday={weekday} />
@@ -65,6 +75,19 @@ export default async function AlunoHomePage() {
 
   const fichas = (fichasRes.data ?? []) as FichaInicio[];
   const diasUltimaAvaliacao = diasDesde(avaliacaoRes.data?.assessed_at ?? null);
+
+  // Mapa plan_id → última divisão CONCLUÍDA (ordenado por finished_at desc, id
+  // desc). Como as sessões já vêm da mais recente para a mais antiga, a PRIMEIRA
+  // ocorrência de cada plan_id é a última divisão concluída daquela ficha.
+  // `has(planId)` distingue "sem histórico" (ausente) de "última foi o balde sem
+  // divisão" (presente com valor `null`). Alimenta a rotação do próximo treino.
+  const ultimaDivisaoPorPlano = new Map<string, string | null>();
+  for (const sessao of sessoesRes.data ?? []) {
+    if (sessao.plan_id === null) continue;
+    if (!ultimaDivisaoPorPlano.has(sessao.plan_id)) {
+      ultimaDivisaoPorPlano.set(sessao.plan_id, sessao.division ?? null);
+    }
+  }
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -80,7 +103,16 @@ export default async function AlunoHomePage() {
       ) : (
         <div className="space-y-4">
           {fichas.map((ficha) => {
-            const proximo = proximoTreinoDaFicha(ficha);
+            // `undefined` quando a ficha não tem histórico (nunca concluída) →
+            // a rotação começa na primeira divisão. Fichas por dia ignoram isto.
+            const ultimaConcluida = ultimaDivisaoPorPlano.has(ficha.id)
+              ? ultimaDivisaoPorPlano.get(ficha.id)
+              : undefined;
+            const proximo = proximoTreinoDaFicha(
+              ficha,
+              undefined,
+              ultimaConcluida
+            );
             if (proximo === null) {
               // Ficha legada sem treino para hoje: mostra o cartão dedicado.
               return (

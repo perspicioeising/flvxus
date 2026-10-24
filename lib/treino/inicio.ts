@@ -47,6 +47,36 @@ export interface ProximoTreino {
   href: string;
 }
 
+/**
+ * Decide a PRÓXIMA divisão na rotação a partir dos rótulos da ficha (na ordem
+ * em que `agruparPorDivisao` já os entrega: pt-BR) e do rótulo da ÚLTIMA divisão
+ * CONCLUÍDA (`division` da última `workout_sessions` finalizada, ou `null` se não
+ * houver histórico). Função PURA (sem I/O) para ser testável.
+ *
+ * Regra:
+ * - lista vazia → `null` (sem divisões para rodar);
+ * - sem histórico (`ultimaConcluida === null`) → a primeira divisão (preserva o
+ *   comportamento de aluno novo: começa no A);
+ * - com histórico → a divisão SEGUINTE à última concluída, com wrap-around
+ *   (`(idx + 1) % n`), caindo na primeira depois da última (ciclo A→B→C→A);
+ * - se a última concluída NÃO existe mais na ficha (ficha reeditada) → fallback
+ *   na primeira divisão.
+ *
+ * Observação: com uma única divisão, `(0 + 1) % 1 === 0` → sempre ela mesma.
+ * A ordem usada é a REAL dos rótulos da ficha; não assume alfabeto fixo A/B/C.
+ */
+export function proximaDivisaoNaRotacao(
+  divisoes: string[],
+  ultimaConcluida: string | null
+): string | null {
+  if (divisoes.length === 0) return null;
+  if (ultimaConcluida === null) return divisoes[0];
+  const idx = divisoes.indexOf(ultimaConcluida);
+  // Última divisão não existe mais na ficha → fallback na primeira.
+  if (idx === -1) return divisoes[0];
+  return divisoes[(idx + 1) % divisoes.length];
+}
+
 /** Extrai nome e grupos musculares de um join `exercises` (array ou objeto). */
 function infoExercicio(exercises: unknown): { nome: string; grupos: string[] } {
   const e = Array.isArray(exercises) ? exercises[0] : exercises;
@@ -59,17 +89,31 @@ function infoExercicio(exercises: unknown): { nome: string; grupos: string[] } {
 }
 
 /**
- * Resolve o "próximo treino" de UMA ficha. Ficha por divisão → primeira divisão
- * (pt-BR), com `?divisao=` (sentinela `__sem__` no balde sem divisão). Ficha
- * legada por dia → itens do weekday atual, com `?dia=N`. Retorna `null` quando
- * a ficha é legada e NÃO tem treino para hoje — a UI então mostra o cartão
- * "sem treino para hoje", nunca ocultando a ficha (MEDIUM #2).
+ * Resolve o "próximo treino" de UMA ficha. Dois ramos distintos:
+ *
+ * - Ficha POR DIVISÃO (qualquer item com `division` não-nula) → avança pela
+ *   ROTAÇÃO: a divisão SEGUINTE à última concluída (`ultimaConcluida`), com
+ *   wrap-around (A→B→C→A). Sem histórico → primeira divisão. Monta `?divisao=`
+ *   (sentinela `__sem__` no balde sem divisão). Nunca retorna `null`.
+ *
+ * - Ficha LEGADA POR DIA (nenhuma divisão) → itens do weekday atual, com
+ *   `?dia=N`. `ultimaConcluida` é IGNORADA neste ramo (comportamento por dia
+ *   preservado byte-a-byte). Retorna `null` quando NÃO há treino para hoje — a
+ *   UI então mostra o cartão "sem treino para hoje", nunca ocultando a ficha
+ *   (MEDIUM #2).
+ *
+ * `ultimaConcluida` identifica a última `workout_sessions` finalizada desta
+ * ficha (a page faz a leitura sob RLS e repassa):
+ * - `undefined` → NÃO há histórico (ou ficha por dia) → começa na primeira;
+ * - `null`      → a última sessão concluída foi o balde SEM divisão;
+ * - `'A'`…      → a última divisão concluída foi esse rótulo.
  *
  * `referencia` permite testar o dia de hoje de forma determinística.
  */
 export function proximoTreinoDaFicha(
   ficha: FichaInicio,
-  referencia: Date = new Date()
+  referencia: Date = new Date(),
+  ultimaConcluida: string | null | undefined = undefined
 ): ProximoTreino | null {
   const itens = ficha.workout_plan_items ?? [];
   const porDivisao = itens.some((item) => (item.division ?? null) !== null);
@@ -78,8 +122,24 @@ export function proximoTreinoDaFicha(
   let divisionLabel: string | null = null;
 
   if (porDivisao) {
+    // Ramo POR DIVISÃO: rotaciona a partir da última divisão concluída.
     const grupos = agruparPorDivisao(itens, (item) => item.division ?? null);
-    const primeiro = grupos[0];
+    // Rótulos na ordem real da ficha (pt-BR + balde sem divisão por último).
+    const rotulos = grupos.map((g) => g.division ?? DIVISAO_SEM);
+    // Normaliza o histórico para o espaço de rótulos: sem histórico → null
+    // (primeira divisão); sessão sem divisão (`null`) → sentinela do balde.
+    const referenciaRotacao =
+      ultimaConcluida === undefined
+        ? null
+        : ultimaConcluida === null
+          ? DIVISAO_SEM
+          : ultimaConcluida;
+    const proximoRotulo = proximaDivisaoNaRotacao(rotulos, referenciaRotacao);
+    const escolhido =
+      proximoRotulo !== null
+        ? grupos.find((g) => (g.division ?? DIVISAO_SEM) === proximoRotulo)
+        : undefined;
+    const primeiro = escolhido ?? grupos[0];
     if (primeiro) {
       itensTreino = primeiro.itens;
       divisionLabel = primeiro.division;
