@@ -38,7 +38,10 @@ export function AuthScreen({
 }: AuthScreenProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-background px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
-      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col">
+      {/* Mobile: ocupa a altura toda (CTA fixo no rodapé, bom para o polegar).
+          Desktop (md+): bloco compacto centralizado vertical e horizontalmente
+          — não estica mais o conteúdo pela tela. */}
+      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col md:flex-none md:my-auto">
         <div className="space-y-5">
           <LogoIcon size="xl" glow={glowIcon} />
           <div className="space-y-2">
@@ -57,10 +60,12 @@ export function AuthScreen({
         <form
           onSubmit={onSubmit}
           noValidate
-          className="mt-8 flex flex-1 flex-col"
+          className="mt-8 flex flex-1 flex-col md:flex-none"
         >
           <div className="space-y-5">{children}</div>
-          <div className="mt-auto space-y-4 pt-8">
+          {/* Mobile: mt-auto empurra o CTA para o rodapé. Desktop: fica logo
+              abaixo dos campos (bloco compacto). */}
+          <div className="mt-auto space-y-4 pt-8 md:mt-0">
             {primaryAction}
             {footer ? (
               <div className="text-center text-sm text-muted-foreground">
