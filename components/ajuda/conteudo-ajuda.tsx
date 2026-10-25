@@ -91,12 +91,45 @@ const SECOES: Secao[] = [
       },
       {
         id: 'app-instalavel',
-        titulo: 'Usar como aplicativo no celular',
+        titulo: 'Instalar como aplicativo no celular',
         blocos: [
           {
             tipo: 'paragrafo',
             texto:
-              'Além de rodar no navegador, o Flvxus pode ser usado como aplicativo em Android e iOS. A experiência é pensada para o celular primeiro (mobile-first), com menu inferior nas telas pequenas e menu lateral nas telas maiores.',
+              'Além de rodar no navegador, o Flvxus pode ser instalado como aplicativo no celular, com ícone próprio e abertura em tela cheia (sem a barra do navegador). Não precisa baixar de nenhuma loja — a instalação é feita pelo próprio navegador. A experiência é pensada para o celular primeiro (mobile-first), com menu inferior nas telas pequenas e menu lateral nas telas maiores.',
+          },
+          {
+            tipo: 'paragrafo',
+            texto:
+              'No Android, usando o Google Chrome:',
+          },
+          {
+            tipo: 'lista',
+            itens: [
+              'Abra o Flvxus no Google Chrome.',
+              'Toque no menu do navegador (ícone de três pontos no canto superior direito).',
+              'Toque em "Instalar aplicativo" (ou "Adicionar à tela inicial", conforme a versão).',
+              'Confirme em "Instalar". O ícone do Flvxus aparece na tela inicial.',
+            ],
+          },
+          {
+            tipo: 'paragrafo',
+            texto:
+              'No iPhone ou iPad, a instalação só funciona pelo Safari (limitação da Apple):',
+          },
+          {
+            tipo: 'lista',
+            itens: [
+              'Abra o Flvxus no Safari.',
+              'Toque no botão Compartilhar (o quadrado com uma seta para cima, na barra inferior).',
+              'Role a lista e toque em "Adicionar à Tela de Início".',
+              'Toque em "Adicionar" no canto superior direito. O ícone aparece na tela inicial.',
+            ],
+          },
+          {
+            tipo: 'nota',
+            texto:
+              'Depois de instalado, abra o app pelo ícone na tela inicial: ele ocupa a tela toda, como um aplicativo normal. Como o conteúdo vem da web, as atualizações são automáticas — você sempre usa a versão mais recente, sem atualizar por loja.',
           },
         ],
       },
