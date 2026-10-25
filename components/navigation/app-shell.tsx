@@ -18,13 +18,14 @@ interface AppShellProps {
  */
 export function AppShell({ role, rootHref, children }: AppShellProps) {
   return (
-    // h-full herda a altura 100% de html/body, fixando o shell exatamente na
-    // viewport e evitando o descasamento dvh/vh que gerava um segundo scroll no
-    // desktop. `overflow-hidden` trava o scroll no container raiz: como o shell
-    // ocupa 100% do body sem transbordar, o <body> não rola e o scroll vive SÓ
-    // no <main>. O lock de scroll é do SHELL (não do <body> global), então as
-    // rotas sem AppShell (auth/marketing) continuam rolando o documento.
-    <div className="flex h-full overflow-hidden bg-background text-foreground">
+    // h-dvh fixa o shell DIRETO na viewport (altura dinâmica), sem depender da
+    // cadeia height:100% de html>body>layouts — que quebrava no desktop e deixava
+    // o DOCUMENTO rolar (segundo scroll + área morta sob o conteúdo nas telas de
+    // detalhe). `overflow-hidden` trava o scroll no container raiz: o shell ocupa
+    // exatamente a viewport e não transborda, então o <body> não rola e o scroll
+    // vive SÓ no <main>. O lock é do SHELL (não do <body> global), então as rotas
+    // sem AppShell (auth/marketing) continuam rolando o documento.
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
       <AppSidebar role={role} rootHref={rootHref} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <AppHeader role={role} rootHref={rootHref} />
