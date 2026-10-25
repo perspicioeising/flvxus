@@ -32,6 +32,29 @@ export SUPABASE_SERVICE_ROLE_KEY="<service_role key local>"
 npm run test:rls
 ```
 
+## Fase 3 — visibilidade por módulo (master/filiado) + billing
+
+O arquivo `tests/rls/fase3.visibility.test.ts` acrescenta (também em `describe.skip`) as
+invariantes da Fase 3, que SÓ podem ser verificadas contra um banco real:
+
+1. **Módulo LIBERADO** (`tenant_module_visibility.is_open = true`) → um filiado enxerga os
+   registros criados por outro filiado do mesmo tenant.
+2. **Módulo BLOQUEADO** (`is_open = false`) → cada filiado enxerga apenas os registros cuja
+   autoria é ele mesmo (`created_by`/`trainer_id` = `auth.uid()`).
+3. **Master irrestrito** → sempre enxerga tudo, em qualquer estado.
+4. **UPDATE/DELETE por autoria** (opção b): no BLOQUEADO, o filiado também não consegue
+   `update`/`delete` de registros de outros.
+5. **Aluno preservado** → o aluno do tenant continua lendo exercícios do tenant mesmo com o
+   módulo `exercises` BLOQUEADO (não regredir o aluno).
+6. **Billing invisível ao filiado** → `tenant_module_visibility` e `subscriptions` não são
+   legíveis pelo filiado.
+7. **Isolamento entre tenants** preservado.
+8. **`can_add_affiliate()`** → Solo (0) sempre bloqueia; Equipe ativo libera enquanto
+   `usados < max`; sem assinatura ativa bloqueia.
+
+Para rodar: siga os passos acima (supabase start + db reset + exports) e troque `describe.skip`
+por `describe` em `fase3.visibility.test.ts`.
+
 ## Estado atual (bloqueio de ambiente)
 
 O ambiente de desenvolvimento **não tem Docker**, então o Supabase local não sobe aqui e os
@@ -39,3 +62,9 @@ casos ficam marcados com `describe.skip` + `it.todo`/`it` sem execução real do
 dos testes já está escrito**; ao habilitar o Docker e seguir os passos acima, troque o
 `describe.skip` por `describe` (ou remova a guarda de ambiente) para executá-los de verdade.
 Ver `docs/pendencias.md`.
+
+A cobertura **automatizada que ESTE ambiente produz** (sem Docker) vive em `tests/unit/`:
+`billing-entitlement.test.ts` (helpers puros de limite/visibilidade), `actions-filiados.test.ts`
+e `actions-billing.test.ts` (gate master-only, enforcement de limite, Stripe mockado) e
+`stripe-webhook.test.ts` (mapa evento→status e rejeição de assinatura inválida). A RLS real
+permanece verificação **manual**.
