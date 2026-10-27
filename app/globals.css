@@ -650,16 +650,14 @@
   }
 }
 
-/* Mobile: evita scrollbar duplicada quando o app usa um container interno com rolagem */
+/* Mobile: esconde a scrollbar sem travar o scroll.
+   NÃO travamos overflow do html/body aqui: as rotas sem AppShell
+   (marketing/auth/termos/privacidade/documentação) precisam rolar o DOCUMENTO
+   normalmente no mobile. O lock de scroll do app logado vive no AppShell
+   (components/navigation/app-shell.tsx: `h-dvh overflow-hidden` com o `<main>`
+   rolável), então o scroll único no `<main>` continua garantido sem depender
+   de uma regra global que também afetaria as rotas públicas. */
 @media (max-width: 768px) {
-  html,
-  body {
-    /* No mobile o documento fica travado na viewport (comportamento pré-existente):
-       o scroll vive no container interno. height já vem do @layer base. */
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
   ::-webkit-scrollbar {
     width: 0;
     background: transparent;
