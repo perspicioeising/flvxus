@@ -27,15 +27,25 @@ export default function MarketingLayout({
             <LogoIcon size="md" className="h-9 w-9 rounded-lg" />
             <Logo size="md" />
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle />
-            <Button variant="ghost" asChild className="min-h-11">
+            {/* No mobile os ghosts "Documentação" e "Entrar" são colapsados para
+               não espremer o header em telas estreitas: ambos os destinos já
+               aparecem no corpo da landing ("Ver documentação" e "Já tenho
+               conta"), então nada se perde. Reaparecem em sm:+. */}
+            <Button variant="ghost" asChild className="hidden min-h-11 sm:inline-flex">
               <Link href="/documentacao">Documentação</Link>
             </Button>
-            <Button variant="ghost" asChild className="min-h-11">
+            <Button variant="ghost" asChild className="hidden min-h-11 sm:inline-flex">
               <Link href="/login">Entrar</Link>
             </Button>
-            <Button asChild size="xl">
+            {/* CTA principal sempre visível; compacto no mobile (alvo >=44px via
+               min-h-11) e volta ao tamanho xl do desktop em sm:+. */}
+            <Button
+              asChild
+              size="xl"
+              className="h-11 min-h-11 px-4 text-sm sm:h-12 sm:px-8 sm:text-base"
+            >
               <Link href="/register">Cadastrar</Link>
             </Button>
           </div>

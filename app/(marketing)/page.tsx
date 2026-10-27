@@ -146,10 +146,10 @@ export default function MarketingHomePage() {
   return (
     <>
       {/* ===================== HERO ===================== */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
+      <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div className="max-w-2xl space-y-6">
-            <h1 className="text-5xl font-black leading-[0.95] tracking-tight text-foreground md:text-6xl">
+            <h1 className="text-4xl font-black leading-[0.95] tracking-tight text-foreground sm:text-5xl md:text-6xl">
               Acompanhe seus alunos de ponta a ponta
               <span className="text-primary">.</span>
             </h1>
@@ -187,9 +187,9 @@ export default function MarketingHomePage() {
       </section>
 
       {/* ===================== RECURSOS ===================== */}
-      <section className="mx-auto w-full max-w-6xl px-4 pb-16 md:pb-24">
+      <section className="mx-auto w-full max-w-6xl px-4 pb-12 md:pb-24">
         <div className="mb-8 max-w-2xl">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+          <h2 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
             Tudo que o seu trabalho precisa
           </h2>
           <p className="mt-2 text-muted-foreground">
@@ -220,9 +220,9 @@ export default function MarketingHomePage() {
 
       {/* ===================== COMO FUNCIONA ===================== */}
       <section className="border-t border-border bg-muted/30">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
+        <div className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
           <div className="mb-8 max-w-2xl">
-            <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+            <h2 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
               Como funciona
             </h2>
             <p className="mt-2 text-muted-foreground">
@@ -260,8 +260,8 @@ export default function MarketingHomePage() {
       </section>
 
       {/* ===================== PROFESSOR / ALUNO ===================== */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
-        <h2 className="mb-8 text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+      <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
+        <h2 className="mb-8 text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
           Para cada lado do acompanhamento
         </h2>
         <div className="grid gap-6 lg:grid-cols-2">
@@ -328,8 +328,8 @@ export default function MarketingHomePage() {
       {/* ===================== PROVA SOCIAL ===================== */}
       {/* PLACEHOLDER depoimentos — sem depoimentos reais ainda */}
       <section className="border-t border-border bg-muted/30">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
-          <h2 className="mb-8 text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+        <div className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
+          <h2 className="mb-8 text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
             O que dizem por aí
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -356,10 +356,10 @@ export default function MarketingHomePage() {
 
       {/* ===================== PREÇO / PLANOS ===================== */}
       {/* PLACEHOLDER preços — não inventar valores */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
+      <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+            <h2 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
               Planos em breve
             </h2>
             <p className="max-w-xl text-muted-foreground">
@@ -378,9 +378,9 @@ export default function MarketingHomePage() {
 
       {/* ===================== FAQ ===================== */}
       <section className="border-t border-border bg-muted/30">
-        <div className="mx-auto w-full max-w-3xl px-4 py-16 md:py-24">
+        <div className="mx-auto w-full max-w-3xl px-4 py-12 md:py-24">
           <div className="mb-8">
-            <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+            <h2 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
               Dúvidas comuns
             </h2>
             <p className="mt-2 text-muted-foreground">
@@ -400,9 +400,9 @@ export default function MarketingHomePage() {
       </section>
 
       {/* ===================== CTA FINAL ===================== */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
+      <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-primary/5 px-6 py-12 text-center">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+          <h2 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
             Pronto para começar?
           </h2>
           <p className="max-w-xl text-muted-foreground">

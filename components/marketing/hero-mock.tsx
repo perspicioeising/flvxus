@@ -11,7 +11,12 @@ export function HeroMock() {
   const barras = [38, 52, 44, 66, 58, 78, 70];
 
   return (
-    <div aria-hidden="true" className="relative mx-auto w-full max-w-sm select-none">
+    <div
+      aria-hidden="true"
+      /* overflow-x-hidden contém o brilho decorativo (-inset-6), que no mobile
+         vazava ~8px além da largura da viewport e gerava scroll horizontal. */
+      className="relative mx-auto w-full max-w-sm select-none overflow-x-hidden"
+    >
       {/* brilho de acento atrás do device */}
       <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] bg-primary/10 blur-2xl" />
 
