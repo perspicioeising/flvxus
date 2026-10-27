@@ -2,6 +2,22 @@
 
 ## Não lançado
 
+### Upload direto de mídia de exercício (vídeos até 50 MB)
+
+- **Upload DIRETO ao Supabase Storage via signed upload URL**: vídeo/thumbnail de
+  exercício não trafega mais pela Server Action (que travava em ~10 MB). Nova
+  Server Action leve `criarUploadUrlMidiaExercicio` valida metadados
+  (tamanho/tipo) no servidor e emite `createSignedUploadUrl` para um `path`
+  determinístico derivado no servidor; o cliente envia o arquivo direto ao bucket
+  privado com `uploadToSignedUrl`; `confirmarMidiaExercicio` persiste o `path`.
+- **Limites:** vídeo até 50 MB, thumbnail até 5 MB (validados no cliente e no
+  servidor). Constantes centralizadas em `lib/storage`.
+- **Bucket:** migration idempotente
+  `supabase/migrations/20261023090000_exercise_videos_file_size_limit.sql` define
+  `file_size_limit = 50 MB` no bucket privado `exercise-videos` (aplicar no
+  Supabase). `next.config.js` → `bodySizeLimit` reduzido para `4mb` (o vídeo não
+  depende mais dele). Exibição por URL assinada no RSC preservada.
+
 ### Fase 2.2 — Biblioteca global de exercícios (professor)
 
 - **Importação em lote do catálogo global** na tela de Exercícios

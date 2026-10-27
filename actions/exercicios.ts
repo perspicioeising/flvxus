@@ -6,6 +6,10 @@ import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
   uploadExerciseMedia,
+  montarPathExerciseMedia,
+  limiteMidiaExercicio,
+  prefixoMimePermitido,
+  EXERCISE_MEDIA_BUCKET,
   type ExerciseMediaKind,
 } from '@/lib/storage';
 import {
@@ -352,6 +356,154 @@ export async function uploadMidiaExercicio(
       ok: false,
       message: erro instanceof Error ? erro.message : 'Falha ao enviar a mídia.',
     };
+  }
+
+  const coluna = kind === 'video' ? 'video_url' : 'thumbnail_url';
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('exercises')
+    .update({ [coluna]: path })
+    .eq('id', exerciseId);
+
+  if (error) {
+    return { ok: false, message: `Mídia enviada, mas falhou ao salvar: ${error.message}` };
+  }
+
+  revalidatePath('/professor/exercicios');
+  revalidatePath(`/professor/exercicios/${exerciseId}`);
+
+  return { ok: true, message: 'Mídia enviada.', id: exerciseId, path };
+}
+
+/** Metadados do arquivo enviados pelo cliente (NUNCA o arquivo em si). */
+export interface MidiaExercicioMeta {
+  /** Nome original do arquivo (sanitizado no servidor ao montar o path). */
+  name: string;
+  /** Tamanho em bytes, validado contra o limite do `kind`. */
+  size: number;
+  /** MIME type, validado contra o prefixo permitido do `kind`. */
+  type: string;
+}
+
+export interface SignedUploadResultado extends EstadoAcao {
+  /** Bucket privado de destino (o cliente faz o upload direto nele). */
+  bucket?: string;
+  /** URL assinada de upload (válida por tempo curto). */
+  url?: string;
+  /** Token da signed upload URL, usado por `uploadToSignedUrl`. */
+  token?: string;
+  /** Path DETERMINÍSTICO derivado no servidor (nunca vindo do cliente). */
+  path?: string;
+}
+
+/**
+ * Formata um limite em bytes como "N MB" para mensagens em pt-BR.
+ */
+function limiteEmMB(bytes: number): string {
+  return `${Math.round(bytes / (1024 * 1024))}MB`;
+}
+
+/**
+ * Server Action LEVE que emite uma SIGNED UPLOAD URL para a mídia de um
+ * exercício do tenant. NÃO recebe o arquivo — só os metadados. O arquivo é
+ * enviado DIRETO ao Storage pelo cliente (fora da Server Action), o que remove o
+ * gargalo do `bodySizeLimit` e viabiliza vídeos de até 50MB.
+ *
+ * Guards (iguais ao `uploadMidiaExercicio`): só o trainer; o isolamento de
+ * tenant é garantido pela RLS do bucket (a signed upload URL é criada com a
+ * sessão do trainer via `createClient`, passando pela policy de insert que exige
+ * 1º segmento = `app_tenant_id()` e `app_role() = 'trainer'`).
+ *
+ * Validação no SERVIDOR: tamanho contra `limiteMidiaExercicio(kind)` e MIME
+ * contra `prefixoMimePermitido(kind)`. O `path` é derivado no servidor a partir
+ * de `professor.tenantId` + `exerciseId` + nome sanitizado — nunca aceito do
+ * cliente.
+ */
+export async function criarUploadUrlMidiaExercicio(
+  exerciseId: string,
+  kind: ExerciseMediaKind,
+  fileMeta: MidiaExercicioMeta
+): Promise<SignedUploadResultado> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode enviar mídia.' };
+  }
+
+  if (!fileMeta || typeof fileMeta.name !== 'string' || fileMeta.name.length === 0) {
+    return { ok: false, message: 'Selecione um arquivo para enviar.' };
+  }
+
+  const limite = limiteMidiaExercicio(kind);
+  if (!Number.isFinite(fileMeta.size) || fileMeta.size <= 0) {
+    return { ok: false, message: 'Selecione um arquivo para enviar.' };
+  }
+  if (fileMeta.size > limite) {
+    const alvo = kind === 'video' ? 'O vídeo' : 'A imagem';
+    return { ok: false, message: `${alvo} excede o limite de ${limiteEmMB(limite)}.` };
+  }
+
+  const prefixo = prefixoMimePermitido(kind);
+  if (typeof fileMeta.type !== 'string' || !fileMeta.type.startsWith(prefixo)) {
+    const esperado = kind === 'video' ? 'um vídeo' : 'uma imagem';
+    return { ok: false, message: `Envie ${esperado} em um formato válido.` };
+  }
+
+  const path = montarPathExerciseMedia({
+    tenantId: professor.tenantId,
+    exerciseId,
+    kind,
+    fileName: fileMeta.name,
+  });
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage
+    .from(EXERCISE_MEDIA_BUCKET)
+    .createSignedUploadUrl(path, { upsert: true });
+
+  if (error || !data) {
+    return {
+      ok: false,
+      message: `Não foi possível preparar o envio: ${error?.message ?? 'erro desconhecido'}`,
+    };
+  }
+
+  return {
+    ok: true,
+    bucket: EXERCISE_MEDIA_BUCKET,
+    url: data.signedUrl,
+    token: data.token,
+    path: data.path,
+  };
+}
+
+/**
+ * Server Action de CONFIRMAÇÃO. Depois que o cliente envia o arquivo DIRETO ao
+ * Storage (via signed upload URL), esta action só PERSISTE o `path` em
+ * `video_url`/`thumbnail_url` do exercício.
+ *
+ * Defesa em profundidade: além do guard de trainer, o `path` recebido é
+ * revalidado contra o prefixo determinístico esperado
+ * (`{tenantId}/{exerciseId}/{kind}-`). Um path arbitrário/cross-tenant é
+ * rejeitado aqui antes de qualquer gravação; a RLS do `update` em `exercises`
+ * reforça o isolamento.
+ */
+export async function confirmarMidiaExercicio(
+  exerciseId: string,
+  kind: ExerciseMediaKind,
+  path: string
+): Promise<UploadMidiaResultado> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode enviar mídia.' };
+  }
+
+  if (typeof path !== 'string' || path.length === 0) {
+    return { ok: false, message: 'Envio inválido. Tente novamente.' };
+  }
+
+  const prefixoEsperado = `${professor.tenantId}/${exerciseId}/${kind}-`;
+  if (!path.startsWith(prefixoEsperado)) {
+    return { ok: false, message: 'Envio inválido. Tente novamente.' };
   }
 
   const coluna = kind === 'video' ? 'video_url' : 'thumbnail_url';

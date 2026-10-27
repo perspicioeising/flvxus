@@ -409,21 +409,37 @@ a validação de ponta a ponta (receber o e-mail e clicar no link) precisa ser f
 em produção/staging, após conferir os itens acima. As verificações automáticas aqui cobrem
 `typecheck`, `lint`, `build` e os testes de unidade.
 
-## Upload de vídeo de exercício — limite de corpo da Server Action
+## Upload de vídeo de exercício — upload direto ao Storage (APLICADO)
 
 O upload de vídeo/thumbnail de exercício (área do professor) passava pela Server Action e
-estourava o limite padrão do Next 15 (1 MB) com o erro **413 "Body exceeded 1 MB limit"**.
+estourava o limite de corpo (na prática ~10 MB no ambiente hospedado, independentemente do
+`bodySizeLimit` do Next).
 
-**Correção aplicada:** `next.config.js` → `experimental.serverActions.bodySizeLimit = '50mb'`,
-suficiente para vídeos curtos de demonstração.
+**Correção aplicada — upload DIRETO ao Supabase Storage via *signed upload URL*:** o arquivo não
+trafega mais pela Server Action. O fluxo é:
 
-**Melhoria recomendada (não aplicada agora):** para arquivos grandes, o ideal é **upload direto
-ao Supabase Storage** usando *signed upload URL* (`createSignedUploadUrl`), em vez de trafegar o
-arquivo pela Server Action (que roda em função serverless com limites de tempo/memória e custo
-por payload). O fluxo seria: o cliente pede uma URL assinada de upload ao servidor, envia o
-arquivo direto ao Storage, e então só grava o `path` no banco. Fica como próximo passo de
-robustez para a mídia de exercícios. Na Vercel, atenção também ao limite de corpo da plataforma
-por plano — o `bodySizeLimit` do Next não contorna um teto do provedor.
+1. O cliente valida tamanho/tipo e pede a URL assinada à Server Action leve
+   `criarUploadUrlMidiaExercicio` (`actions/exercicios.ts`), que só recebe metadados
+   (nome/tamanho/tipo), revalida no servidor, deriva o `path` DETERMINÍSTICO
+   (`{tenant_id}/{exercise_id}/{kind}-{arquivo}`) e emite `createSignedUploadUrl`.
+2. O cliente (`components/professor/exercicios/exercise-media-upload.tsx`) envia o arquivo DIRETO
+   ao bucket privado `exercise-videos` via `uploadToSignedUrl`.
+3. A Server Action `confirmarMidiaExercicio` persiste o `path` em `video_url`/`thumbnail_url`
+   (revalidando o prefixo esperado — defesa contra path arbitrário/cross-tenant).
+
+A exibição continua por **URL assinada no RSC** (`signExerciseMedia`), com o path no mesmo
+esquema de antes — nada mudou na leitura. O bucket segue **PRIVADO** e o isolamento de tenant é
+garantido pela RLS do Storage.
+
+**Limites:** vídeo até **50 MB**; thumbnail/imagem até **5 MB** (constantes centralizadas em
+`lib/storage`). Validados no cliente (antes de pedir a URL) **e** no servidor (ao emitir a URL).
+
+**Teto do bucket (aplicar no Supabase):** o teto de tamanho de arquivo é do bucket no Supabase,
+não do Next. A migration `supabase/migrations/20261023090000_exercise_videos_file_size_limit.sql`
+define `file_size_limit = 52428800` (50 MB) de forma idempotente, sem alterar `public`. **Você
+aplica** essa mudança no ambiente Supabase (via `supabase db push`/`db reset` ou pelo painel:
+Storage → `exercise-videos` → file size limit). O `bodySizeLimit` do Next foi reduzido para
+`4mb` (cobre só os demais FormData pequenos das actions) — o vídeo não depende mais dele.
 
 ## Fase 5 (área do aluno) — interrompida por limite de uso
 

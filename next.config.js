@@ -6,12 +6,14 @@ const nextConfig = {
   outputFileTracingRoot: __dirname,
   experimental: {
     serverActions: {
-      // Vídeos/thumbnails de exercício sobem via Server Action. O padrão do
-      // Next (1 MB) estoura com vídeo (erro 413 "Body exceeded 1 MB limit").
-      // 50 MB cobre vídeos curtos de demonstração. Observação: upload direto
-      // ao Storage (signed upload URL) seria o ideal para arquivos grandes —
-      // ver docs/pendencias.md.
-      bodySizeLimit: '100mb',
+      // O vídeo/thumbnail de exercício NÃO passa mais pela Server Action: sobe
+      // DIRETO ao Supabase Storage via signed upload URL (ver
+      // actions/exercicios.ts → criarUploadUrlMidiaExercicio e
+      // components/professor/exercicios/exercise-media-upload.tsx). Com isso o
+      // teto do vídeo (50 MB) depende do `file_size_limit` do bucket no Supabase,
+      // não deste limite. O `bodySizeLimit` cobre só os demais FormData pequenos
+      // das Server Actions, então um valor modesto basta.
+      bodySizeLimit: '4mb',
     },
   },
   images: {

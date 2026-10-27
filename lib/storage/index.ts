@@ -1,4 +1,26 @@
 import { createClient } from '@/lib/supabase/server';
+import {
+  montarPathExerciseMedia,
+  nomeArquivoSeguro,
+  EXERCISE_MEDIA_BUCKET,
+  type ExerciseMediaKind,
+} from '@/lib/storage/exercise-media';
+
+// Reexporta as primitivas PURAS de mídia de exercício (limites, helpers de
+// kind, bucket, builder de path, tipo) para que Client Components possam
+// importá-las de `@/lib/storage` sem arrastar este módulo de servidor
+// (`next/headers`) para o bundle do cliente — elas vivem em
+// `lib/storage/exercise-media.ts`.
+export {
+  EXERCISE_MEDIA_BUCKET,
+  MAX_EXERCISE_VIDEO_BYTES,
+  MAX_EXERCISE_THUMBNAIL_BYTES,
+  limiteMidiaExercicio,
+  prefixoMimePermitido,
+  montarPathExerciseMedia,
+  type ExerciseMediaKind,
+  type MontarPathExerciseMediaArgs,
+} from '@/lib/storage/exercise-media';
 
 /**
  * Upload + URLs assinadas para buckets PRIVADOS (architecture.md §7 · ADR 0005).
@@ -23,22 +45,11 @@ import { createClient } from '@/lib/supabase/server';
  */
 
 const BUCKET_ASSESSMENT_PHOTOS = 'assessment-photos';
-const BUCKET_EXERCISE_VIDEOS = 'exercise-videos';
+const BUCKET_EXERCISE_VIDEOS = EXERCISE_MEDIA_BUCKET;
 
 /** TTL padrão das URLs assinadas, em segundos. */
 export const TTL_ASSESSMENT_PHOTO = 300; // 5 min — dado de saúde (foto de avaliação).
 export const TTL_EXERCISE_MEDIA = 36000; // 1 h — mídia de exercício.
-
-/**
- * Normaliza o nome do arquivo para o path do Storage: remove segmentos de
- * diretório e caracteres inseguros, preservando a extensão. Evita que um
- * `file.name` com barras ou `..` escape da convenção de path.
- */
-function nomeArquivoSeguro(nome: string): string {
-  const base = nome.split(/[\\/]/).pop() ?? nome;
-  const limpo = base.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/^\.+/, '');
-  return limpo.length > 0 ? limpo : `arquivo-${Date.now()}`;
-}
 
 /** Extrai o content-type de um `File`, com fallback binário genérico. */
 function contentType(file: File): string {
@@ -116,8 +127,6 @@ export async function signAssessmentPhoto(
   return data.signedUrl;
 }
 
-export type ExerciseMediaKind = 'video' | 'thumbnail';
-
 export interface UploadExerciseMediaArgs {
   tenantId: string;
   exerciseId: string;
@@ -138,7 +147,7 @@ export async function uploadExerciseMedia({
   kind,
 }: UploadExerciseMediaArgs): Promise<string> {
   const supabase = await createClient();
-  const path = `${tenantId}/${exerciseId}/${kind}-${nomeArquivoSeguro(file.name)}`;
+  const path = montarPathExerciseMedia({ tenantId, exerciseId, kind, fileName: file.name });
 
   const { error } = await supabase.storage
     .from(BUCKET_EXERCISE_VIDEOS)
