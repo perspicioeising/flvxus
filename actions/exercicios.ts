@@ -6,6 +6,7 @@ import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
   uploadExerciseMedia,
+  removeExerciseMedia,
   montarPathExerciseMedia,
   limiteMidiaExercicio,
   prefixoMimePermitido,
@@ -521,4 +522,84 @@ export async function confirmarMidiaExercicio(
   revalidatePath(`/professor/exercicios/${exerciseId}`);
 
   return { ok: true, message: 'Mídia enviada.', id: exerciseId, path };
+}
+
+/**
+ * Exclui a mídia (vídeo ou thumbnail) de um exercício do tenant: remove o
+ * arquivo do bucket privado `exercise-videos` E zera a coluna
+ * `video_url`/`thumbnail_url`. Só o trainer do tenant dono do exercício consegue
+ * excluir (guard + RLS); o isolamento de tenant é garantido pela RLS tanto na
+ * leitura/update de `exercises` quanto no DELETE do Storage — nunca filtramos
+ * `tenant_id` na mão.
+ *
+ * O path é derivado NO SERVIDOR a partir da coluna gravada (nunca aceito do
+ * cliente, que envia só `exerciseId` + `kind`). É IDEMPOTENTE: se a coluna já
+ * estiver vazia, não há o que fazer; e o `remove` do Storage não falha quando o
+ * objeto já não existe, então um path obsoleto ainda zera a coluna. Valores
+ * http(s) legados (mídia pública: `exercise-gifs`/CDN/YouTube) não vivem no
+ * bucket privado, então pulam a remoção do Storage e apenas zeram a coluna —
+ * espelhando o ramo http(s) de `signExerciseMedia`.
+ */
+export async function excluirMidiaExercicio(
+  exerciseId: string,
+  kind: ExerciseMediaKind
+): Promise<EstadoAcao> {
+  const professor = await getSessionUser();
+  if (!professor || professor.role !== 'trainer') {
+    return { ok: false, message: 'Apenas o professor pode excluir mídia.' };
+  }
+
+  const supabase = await createClient();
+
+  // RLS já barra exercício de outro tenant (linha simplesmente não é retornada).
+  const { data: exercicio, error: erroLeitura } = await supabase
+    .from('exercises')
+    .select('id, video_url, thumbnail_url')
+    .eq('id', exerciseId)
+    .single();
+
+  if (erroLeitura || !exercicio) {
+    return { ok: false, message: 'Exercício não encontrado.' };
+  }
+
+  const coluna = kind === 'video' ? 'video_url' : 'thumbnail_url';
+  const valorAtual = exercicio[coluna] as string | null;
+
+  // Idempotência: nada gravado -> nada a remover.
+  if (!valorAtual) {
+    revalidatePath('/professor/exercicios');
+    revalidatePath(`/professor/exercicios/${exerciseId}`);
+    return { ok: true, message: 'Mídia já removida.', id: exerciseId };
+  }
+
+  // Mídia pública legada (http/https) não está no bucket privado: pula o
+  // Storage e só zera a coluna. Caso contrário, remove o arquivo primeiro (a
+  // RLS do Storage barra path de outro tenant; remover inexistente não falha).
+  if (!/^https?:\/\//i.test(valorAtual)) {
+    try {
+      await removeExerciseMedia(valorAtual);
+    } catch (erro) {
+      return {
+        ok: false,
+        message: erro instanceof Error ? erro.message : 'Falha ao excluir a mídia.',
+      };
+    }
+  }
+
+  const { error: erroUpdate } = await supabase
+    .from('exercises')
+    .update({ [coluna]: null })
+    .eq('id', exerciseId);
+
+  if (erroUpdate) {
+    return {
+      ok: false,
+      message: `Mídia removida, mas falhou ao atualizar o registro: ${erroUpdate.message}`,
+    };
+  }
+
+  revalidatePath('/professor/exercicios');
+  revalidatePath(`/professor/exercicios/${exerciseId}`);
+
+  return { ok: true, message: 'Mídia excluída.', id: exerciseId };
 }

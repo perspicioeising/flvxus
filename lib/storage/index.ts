@@ -161,6 +161,27 @@ export async function uploadExerciseMedia({
 }
 
 /**
+ * Remove uma mídia de exercício (vídeo/thumbnail) do bucket privado
+ * `exercise-videos`. Usa o client de servidor (RLS ativo): a policy de DELETE
+ * exige que o 1º segmento do path seja o `tenant_id` e que o papel seja trainer
+ * — path de outro tenant é barrado aqui. É IDEMPOTENTE: o `remove` do Storage
+ * NÃO falha quando o objeto já não existe, então um path obsoleto não quebra a
+ * exclusão. Lança `Error` com mensagem em pt-BR em caso de falha, espelhando
+ * `uploadExerciseMedia`/`removeAssessmentPhoto`.
+ */
+export async function removeExerciseMedia(path: string): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.storage
+    .from(BUCKET_EXERCISE_VIDEOS)
+    .remove([path]);
+
+  if (error) {
+    throw new Error(`Falha ao excluir mídia de exercício: ${error.message}`);
+  }
+}
+
+/**
  * Resolve a URL de exibição de uma mídia de exercício.
  *
  * - Se o valor JÁ for uma URL absoluta http(s) (mídia pública: bucket

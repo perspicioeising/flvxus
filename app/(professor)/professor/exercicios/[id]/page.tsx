@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { PageContainer, StatusBadge } from '@/components/patterns';
 import { ExerciseMedia } from '@/components/professor/exercicios/exercise-media';
 import { ExerciseMediaUpload } from '@/components/professor/exercicios/exercise-media-upload';
+import { ExerciseMediaDeleteButton } from '@/components/professor/exercicios/exercise-media-delete-button';
 import { ExerciseDeleteButton } from '@/components/professor/exercicios/exercise-delete-button';
 import { ExerciseDuplicateButton } from '@/components/professor/exercicios/exercise-duplicate-button';
 
@@ -158,8 +159,21 @@ export default async function ExercicioDetalhePage({
             <CardTitle className="text-lg font-extrabold">Mídia demonstrativa</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ExerciseMediaUpload exerciseId={id} kind="video" />
-            <ExerciseMediaUpload exerciseId={id} kind="thumbnail" />
+            {/* Existência checada pelas colunas CRUAS do banco (não pelas URLs
+                assinadas): uma falha ao assinar retorna null mas a mídia existe,
+                então o botão de excluir deve continuar disponível. */}
+            <div className="space-y-2">
+              <ExerciseMediaUpload exerciseId={id} kind="video" />
+              {exercicio.video_url ? (
+                <ExerciseMediaDeleteButton exerciseId={id} kind="video" />
+              ) : null}
+            </div>
+            <div className="space-y-2">
+              <ExerciseMediaUpload exerciseId={id} kind="thumbnail" />
+              {exercicio.thumbnail_url ? (
+                <ExerciseMediaDeleteButton exerciseId={id} kind="thumbnail" />
+              ) : null}
+            </div>
           </CardContent>
         </Card>
       ) : null}
