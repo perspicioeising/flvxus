@@ -11,7 +11,7 @@ const nextConfig = {
       // 50 MB cobre vídeos curtos de demonstração. Observação: upload direto
       // ao Storage (signed upload URL) seria o ideal para arquivos grandes —
       // ver docs/pendencias.md.
-      bodySizeLimit: '50mb',
+      bodySizeLimit: '100mb',
     },
   },
   images: {
