@@ -27,7 +27,7 @@ const BUCKET_EXERCISE_VIDEOS = 'exercise-videos';
 
 /** TTL padrão das URLs assinadas, em segundos. */
 export const TTL_ASSESSMENT_PHOTO = 300; // 5 min — dado de saúde (foto de avaliação).
-export const TTL_EXERCISE_MEDIA = 3600; // 1 h — mídia de exercício.
+export const TTL_EXERCISE_MEDIA = 36000; // 1 h — mídia de exercício.
 
 /**
  * Normaliza o nome do arquivo para o path do Storage: remove segmentos de
