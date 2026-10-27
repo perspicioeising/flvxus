@@ -73,6 +73,60 @@ export function volumeSessao(logs: SerieLog[]): number {
 }
 
 /**
+ * Reconstrói a "série atual" de um exercício a partir dos seus logs: o primeiro
+ * `set_number` (1..sets) ainda NÃO concluído (sem log OU com `completed !==
+ * true`). Se TODOS os `sets` já estão concluídos, retorna `sets` (permanece na
+ * última). Lista vazia ⇒ 1. O resultado é sempre limitado ao teto `sets`.
+ *
+ * Só `completed === true` conta como concluído: uma série tocada e destocada
+ * (`completed === false`) volta a ser a "série atual", preservando o
+ * comportamento de edição. Puro e testável (sem UI, sem I/O).
+ */
+export function serieAtualDeLogs(logsDoItem: SerieLog[], sets: number): number {
+  const teto = Math.max(sets, 1);
+  const concluidas = new Set(
+    logsDoItem
+      .filter((log) => log.completed === true)
+      .map((log) => log.set_number)
+  );
+  for (let n = 1; n <= teto; n += 1) {
+    if (!concluidas.has(n)) return n;
+  }
+  return teto;
+}
+
+/** Valores reidratados de UMA série para o estado da UI de execução. */
+export interface SerieHidratada {
+  reps: string;
+  carga: string;
+  completed: boolean;
+}
+
+/**
+ * Reconstrói o valor de UMA série (reps/carga/completed) a partir de um
+ * `SerieLog`, aplicando a coerção numérica INVERSA da escrita. `reps_done` e
+ * `load_done` são `integer`/`numeric(6,2)` nullable que podem chegar como STRING
+ * em runtime; normalizamos para a string que a UI exibe:
+ *
+ * - `reps`  = `''` quando nulo; senão `String(reps_done)`.
+ * - `carga` = `''` quando nulo; senão `String(Number(load_done))` — o
+ *   `Number(...)` descarta zeros de escala do `numeric` (`"30.00" → "30"`,
+ *   `"27.50" → "27.5"`), ficando compatível com o default da prescrição e com
+ *   `passoCarga` (1 casa decimal, sem `.0` supérfluo).
+ * - `completed` propagado como veio (logs `completed === false` reidratam
+ *   reps/carga mas NÃO contam como concluídos no posicionamento).
+ *
+ * Puro e testável — ponto único de coerção de reidratação.
+ */
+export function hidratarSerie(log: SerieLog): SerieHidratada {
+  return {
+    reps: log.reps_done == null ? '' : String(log.reps_done),
+    carga: log.load_done == null ? '' : String(Number(log.load_done)),
+    completed: log.completed,
+  };
+}
+
+/**
  * Volume total das séries CONCLUÍDAS (`completed === true`): Σ reps×carga.
  *
  * Diferente de `volumeSessao` (que soma todas as séries registradas), este é o

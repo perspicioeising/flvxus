@@ -18,12 +18,21 @@ const iniciarSessao = vi.fn(async (..._args: unknown[]) => ({
 }));
 const finalizarSessao = vi.fn(async (_arg: unknown) => ({ ok: true, id: 'sess-1' }));
 
+// Hidratação ao montar: por padrão NÃO há sessão aberta (`data:null`), então o
+// componente segue com os defaults da prescrição e cria a sessão no 1º toque.
+// Casos específicos sobrescrevem este mock para simular retomada.
+const carregarSessaoAberta = vi.fn(async (..._args: unknown[]) => ({
+  ok: true,
+  data: null as null | { sessionId: string; logs: unknown[] },
+}));
+
 vi.mock('@/actions/execucao', () => ({
   registrarSerie: (arg: unknown) => registrarSerie(arg),
   // Repassa TODOS os argumentos: o eixo divisão chama `iniciarSessao(planId,
   // divisao)`, e o caminho legado chama `iniciarSessao(planId)` (um argumento).
   iniciarSessao: (...args: unknown[]) => iniciarSessao(...args),
   finalizarSessao: (arg: unknown) => finalizarSessao(arg),
+  carregarSessaoAberta: (...args: unknown[]) => carregarSessaoAberta(...args),
 }));
 
 const toast = vi.fn();
@@ -64,7 +73,11 @@ function itemFake(overrides: Partial<ItemExecucao> = {}): ItemExecucao {
 async function concluirSerieAtual(reps: string) {
   const inputReps = screen.getByLabelText('Reps') as HTMLInputElement;
   fireEvent.change(inputReps, { target: { value: reps } });
-  fireEvent.click(screen.getByRole('button', { name: /concluir série/i }));
+  // A hidratação ao montar (carregarSessaoAberta) gate o botão enquanto resolve;
+  // aguarda ficar habilitado antes de clicar.
+  const botao = screen.getByRole('button', { name: /concluir série/i });
+  await waitFor(() => expect(botao).not.toBeDisabled());
+  fireEvent.click(botao);
   // Aguarda a transição (registrarSerie) resolver e o estado atualizar.
   await screen.findByLabelText('Editar série 1');
 }
@@ -164,7 +177,11 @@ describe('SessaoExecucao — editar série já concluída', () => {
       // Conclui a série 1 (o resumo somente-leitura aparece atrás do modal).
       const inputReps = screen.getByLabelText('Reps') as HTMLInputElement;
       fireEvent.change(inputReps, { target: { value: '10' } });
-      fireEvent.click(screen.getByRole('button', { name: /concluir série/i }));
+      const botaoConcluir = screen.getByRole('button', {
+        name: /concluir série/i,
+      });
+      await waitFor(() => expect(botaoConcluir).not.toBeDisabled());
+      fireEvent.click(botaoConcluir);
 
       // O modal de descanso abre com o anel/timer a partir de 1:00.
       const modal = await screen.findByRole('dialog', { name: /descanso/i });
@@ -214,7 +231,9 @@ describe('SessaoExecucao — editar série já concluída', () => {
 
     const inputReps = screen.getByLabelText('Reps') as HTMLInputElement;
     fireEvent.change(inputReps, { target: { value: '10' } });
-    fireEvent.click(screen.getByRole('button', { name: /concluir série/i }));
+    const botaoUltima = screen.getByRole('button', { name: /concluir série/i });
+    await waitFor(() => expect(botaoUltima).not.toBeDisabled());
+    fireEvent.click(botaoUltima);
 
     // A série entra no resumo (confirma que a conclusão ocorreu)…
     await screen.findByRole('button', { name: 'Editar série 1' });
@@ -472,5 +491,94 @@ describe('SessaoExecucao — executado pelo professor (treino presencial)', () =
       expect(finalizarSessao).toHaveBeenCalledTimes(1);
       expect(push).toHaveBeenCalledWith('/professor/alunos/aluno-99');
     });
+  });
+});
+
+describe('SessaoExecucao — retomada de sessão aberta (hidratação)', () => {
+  it('reconstrói o estado a partir dos logs da sessão aberta e NÃO cria segunda sessão', async () => {
+    // A sessão aberta tem a série 1 concluída (10 reps · 20 kg). Ao montar, a
+    // hidratação deve exibir essa série no resumo somente-leitura e posicionar
+    // a "série atual" na 2 — sem criar sessão nova.
+    carregarSessaoAberta.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        sessionId: 'sess-aberta',
+        logs: [
+          {
+            set_number: 1,
+            reps_done: 10,
+            load_done: 20,
+            completed: true,
+            plan_item_id: 'item-1',
+          },
+        ],
+      },
+    });
+
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake({ sets: 2 })]} />);
+
+    // A série 1 reidratada aparece no resumo de séries concluídas.
+    const resumo = await screen.findByLabelText('Séries concluídas');
+    expect(within(resumo).getByText(/10 reps/)).toBeInTheDocument();
+    expect(within(resumo).getByText(/20 kg/)).toBeInTheDocument();
+
+    // Posicionou na série 2 (primeira não concluída do item).
+    expect(screen.getByText('Série 2 de 2')).toBeInTheDocument();
+
+    // Conclui a série 2: usa a sessão JÁ aberta, sem chamar iniciarSessao.
+    const inputReps = screen.getByLabelText('Reps') as HTMLInputElement;
+    fireEvent.change(inputReps, { target: { value: '8' } });
+    const botao = screen.getByRole('button', { name: /concluir série/i });
+    await waitFor(() => expect(botao).not.toBeDisabled());
+    fireEvent.click(botao);
+
+    await waitFor(() =>
+      expect(registrarSerie).toHaveBeenCalledWith(
+        expect.objectContaining({ session_id: 'sess-aberta', set_number: 2 })
+      )
+    );
+    // Nenhuma sessão nova foi criada — retomou a aberta.
+    expect(iniciarSessao).not.toHaveBeenCalled();
+  });
+
+  it('descarta logs com plan_item_id null ou fora da divisão visível', async () => {
+    carregarSessaoAberta.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        sessionId: 'sess-aberta',
+        logs: [
+          // Órfão (item removido) — ignorado.
+          {
+            set_number: 1,
+            reps_done: 99,
+            load_done: 99,
+            completed: true,
+            plan_item_id: null,
+          },
+          // De outro item não visível — ignorado.
+          {
+            set_number: 1,
+            reps_done: 77,
+            load_done: 77,
+            completed: true,
+            plan_item_id: 'outro-item',
+          },
+        ],
+      },
+    });
+
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake({ sets: 2 })]} />);
+
+    // Deu tempo da hidratação resolver (sessão foi gravada no mapa).
+    await waitFor(() =>
+      expect(carregarSessaoAberta).toHaveBeenCalledTimes(1)
+    );
+
+    // Nenhuma série concluída foi reidratada (logs descartados) → sem resumo.
+    expect(
+      screen.queryByLabelText('Séries concluídas')
+    ).not.toBeInTheDocument();
+    // Segue na série 1 (nada hidratado a posicionou adiante).
+    expect(screen.getByText('Série 1 de 2')).toBeInTheDocument();
   });
 });

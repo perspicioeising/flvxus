@@ -15,12 +15,16 @@ import {
 
 import {
   exercicioConcluido,
+  hidratarSerie,
+  seriesPorItem,
+  serieAtualDeLogs,
   progressoSessao,
   type SerieLog,
 } from '@/lib/treino/progresso';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
+  carregarSessaoAberta,
   finalizarSessao,
   iniciarSessao,
   registrarSerie,
@@ -43,7 +47,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { agruparPorDia } from '@/lib/semana';
-import { agruparPorDivisao } from '@/lib/divisao';
+import { agruparPorDivisao, DIVISAO_SEM } from '@/lib/divisao';
 import { TimerDescanso } from './timer-descanso';
 import { ExercicioInfo } from './exercicio-info';
 import { SeletorDia, type OpcaoDia } from './seletor-dia';
@@ -183,7 +187,21 @@ export function SessaoExecucao({
   permitirTrocaDeGrupo?: boolean;
 }) {
   const router = useRouter();
-  const [sessionId, setSessionId] = React.useState<string | null>(null);
+  // Estado multi-divisão (design §4.3): uma sessão por divisão-alvo, chaveada
+  // pela divisão (sentinela DIVISAO_SEM para o balde sem divisão). O fluxo do
+  // professor (permitirTrocaDeGrupo) pode alternar de divisão; o índice único
+  // garante uma sessão ABERTA por divisão, e o estado reflete isso sem cruzar
+  // sessões de divisões diferentes.
+  const [sessionIdPorGrupo, setSessionIdPorGrupo] = React.useState<
+    Record<string, string>
+  >({});
+  // Divisões já hidratadas (guarda contra re-disparo do effect em re-render).
+  const [gruposHidratados, setGruposHidratados] = React.useState<Set<string>>(
+    () => new Set()
+  );
+  // `true` enquanto a hidratação do grupo ativo não resolveu — gate dos
+  // controles para evitar a corrida "marca série antes de hidratar".
+  const [hidratando, setHidratando] = React.useState(true);
   const [iniciando, setIniciando] = React.useState(false);
   const [finalizando, setFinalizando] = React.useState(false);
   const [nota, setNota] = React.useState('');
@@ -274,6 +292,23 @@ export function SessaoExecucao({
   const grupoAtivo: number | string | null = porDivisao
     ? divisaoSelecionada
     : diaSelecionado;
+
+  // Divisão-alvo da sessão (ou `undefined` para o balde sem divisão / eixo dia).
+  // A retomada de sessão é por `(plan, division, student)`; o eixo DIA (legado)
+  // nunca carimbou divisão, então sua sessão também é resolvida com `division`
+  // ausente (o balde `null`).
+  const divisaoAlvo: string | undefined = React.useMemo(() => {
+    if (!porDivisao) return undefined;
+    return divisaoSelecionada ?? undefined;
+  }, [porDivisao, divisaoSelecionada]);
+
+  // Chave do grupo ativo no mapa de sessões: a divisão-alvo ou o sentinela do
+  // balde sem divisão (inclui o eixo dia legado, sempre `DIVISAO_SEM`).
+  const grupoAtivoKey = divisaoAlvo ?? DIVISAO_SEM;
+
+  // `sessionId` EFETIVO: o da divisão ativa (usado por garantirSessao/registrar/
+  // concluir). Sem hidratação/criação ainda, é `null`.
+  const sessionId = sessionIdPorGrupo[grupoAtivoKey] ?? null;
 
   // Fluxo guiado: um exercício por vez. `indiceAtual` navega dentro do grupo.
   const [indiceAtual, setIndiceAtual] = React.useState(0);
@@ -375,6 +410,105 @@ export function SessaoExecucao({
     () => new Set(itensVisiveis.map((item) => item.id)),
     [itensVisiveis]
   );
+
+  // --- HIDRATAÇÃO da sessão ABERTA a partir do banco (design §4.1–§4.3). ---
+  // Dispara UMA vez por divisão visitada: quando `grupoAtivoKey` muda e ainda
+  // não está em `gruposHidratados`, chama `carregarSessaoAberta` e reconstrói o
+  // estado `series`/`indiceAtual`/`serieAtualPorItem` a partir dos logs. O
+  // estado nunca mora em localStorage: recarga/navegação/reabertura re-resolvem
+  // a mesma sessão aberta por `(plan, division, student)`.
+  React.useEffect(() => {
+    if (gruposHidratados.has(grupoAtivoKey)) {
+      setHidratando(false);
+      return;
+    }
+
+    let cancelado = false;
+    setHidratando(true);
+
+    (async () => {
+      const r = await carregarSessaoAberta(
+        planId,
+        divisaoAlvo,
+        studentId ?? undefined
+      );
+      if (cancelado) return;
+
+      // Marca o grupo como hidratado independentemente do resultado (não
+      // re-disparar). Erro/`data:null` apenas deixam os defaults da prescrição.
+      setGruposHidratados((s) => new Set(s).add(grupoAtivoKey));
+
+      if (r.ok && r.data) {
+        const { sessionId: idAberta, logs: logsDaSessao } = r.data;
+
+        // Só os logs CASADOS com itens prescritos visíveis hidratam: descarta
+        // `plan_item_id === null` (item removido via on delete set null) e logs
+        // de outra divisão / órfãos.
+        const casados = logsDaSessao.filter(
+          (log) =>
+            log.plan_item_id !== null && idsVisiveis.has(log.plan_item_id)
+        );
+
+        setSessionIdPorGrupo((m) => ({ ...m, [grupoAtivoKey]: idAberta }));
+
+        if (casados.length > 0) {
+          // Merge no estado `series` SEM sobrescrever edição não confirmada
+          // (série `salvando`). Como a hidratação roda uma vez por grupo com os
+          // controles gated, não há edição pendente no primeiro merge; a guarda
+          // é defesa contra re-hidratação acidental.
+          setSeries((atual) => {
+            const proximo = { ...atual };
+            for (const log of casados) {
+              const chave = chaveSerie(log.plan_item_id as string, log.set_number);
+              const estadoAtual = proximo[chave];
+              if (estadoAtual?.salvando) continue;
+              const h = hidratarSerie(log);
+              proximo[chave] = {
+                reps: h.reps,
+                carga: h.carga,
+                completed: h.completed,
+                salvando: false,
+              };
+            }
+            return proximo;
+          });
+
+          // Posiciona a "série atual" de cada item e o `indiceAtual` no primeiro
+          // exercício não concluído do grupo, usando a lógica pura.
+          const porItem = seriesPorItem(casados);
+          setSerieAtualPorItem((m) => {
+            const proximo = { ...m };
+            for (const item of itensVisiveis) {
+              const logsDoItem = porItem.get(item.id) ?? [];
+              if (logsDoItem.length > 0) {
+                proximo[item.id] = serieAtualDeLogs(logsDoItem, item.sets);
+              }
+            }
+            return proximo;
+          });
+
+          const primeiroNaoConcluido = itensVisiveis.findIndex(
+            (item) => !exercicioConcluido(porItem.get(item.id) ?? [])
+          );
+          setIndiceAtual(
+            primeiroNaoConcluido >= 0 ? primeiroNaoConcluido : 0
+          );
+        }
+      }
+
+      if (!cancelado) setHidratando(false);
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+    // `divisaoAlvo`/`planId`/`studentId` identificam a sessão; `grupoAtivoKey`
+    // dispara por divisão. `itensVisiveis`/`idsVisiveis` são estáveis para um
+    // mesmo grupo. `gruposHidratados` é lido como guarda (não re-dispara porque
+    // o próprio effect o atualiza e sai cedo).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grupoAtivoKey, planId, divisaoAlvo, studentId]);
+
   const logs: SerieLog[] = React.useMemo(
     () =>
       Object.entries(series)
@@ -422,7 +556,8 @@ export function SessaoExecucao({
 
   /** Garante uma sessão criada; retorna o id ou null se falhar. */
   async function garantirSessao(): Promise<string | null> {
-    if (sessionId) return sessionId;
+    const existente = sessionIdPorGrupo[grupoAtivoKey];
+    if (existente) return existente;
     setIniciando(true);
     try {
       // Repasse CONDICIONAL do 3º arg (`studentId`): só anexa quando há
@@ -440,8 +575,9 @@ export function SessaoExecucao({
           : await iniciarSessao(planId);
       }
       if (r.ok && r.id) {
-        setSessionId(r.id);
-        return r.id;
+        const idNovo = r.id;
+        setSessionIdPorGrupo((m) => ({ ...m, [grupoAtivoKey]: idNovo }));
+        return idNovo;
       }
       toast({
         title: r.message ?? 'Não foi possível iniciar o treino.',
@@ -894,6 +1030,7 @@ export function SessaoExecucao({
                             size="icon"
                             className="min-h-11 min-w-11"
                             aria-label={`Editar série ${setNumber}`}
+                            disabled={hidratando}
                             onClick={() =>
                               abrirEdicao(itemAtual.id, setNumber)
                             }
@@ -1045,7 +1182,12 @@ export function SessaoExecucao({
                     )}
                     aria-pressed={estado.completed}
                     aria-disabled={estado.completed || undefined}
-                    disabled={estado.completed || estado.salvando || iniciando}
+                    disabled={
+                      estado.completed ||
+                      estado.salvando ||
+                      iniciando ||
+                      hidratando
+                    }
                     onClick={() => alternarSerie(itemAtual.id, setNumber)}
                   >
                     {estado.salvando ? (

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   exercicioConcluido,
+  hidratarSerie,
   progressoSessao,
+  serieAtualDeLogs,
   seriesPorItem,
   volumeConcluido,
   volumeSessao,
@@ -143,6 +145,85 @@ describe('exercicioConcluido', () => {
       serie({ set_number: 2, completed: true }),
     ];
     expect(exercicioConcluido(logs)).toBe(true);
+  });
+});
+
+describe('serieAtualDeLogs', () => {
+  it('lista vazia → 1', () => {
+    expect(serieAtualDeLogs([], 3)).toBe(1);
+  });
+
+  it('posiciona no primeiro set sem log (séries à frente ainda não iniciadas)', () => {
+    const logs = [serie({ set_number: 1, completed: true })];
+    expect(serieAtualDeLogs(logs, 3)).toBe(2);
+  });
+
+  it('completed=false conta como NÃO concluído e posiciona ali', () => {
+    const logs = [
+      serie({ set_number: 1, completed: true }),
+      serie({ set_number: 2, completed: false }),
+      serie({ set_number: 3, completed: true }),
+    ];
+    // Apesar da 3 estar concluída, a 2 (destocada) é a série atual.
+    expect(serieAtualDeLogs(logs, 3)).toBe(2);
+  });
+
+  it('todas concluídas → sets (permanece na última)', () => {
+    const logs = [
+      serie({ set_number: 1, completed: true }),
+      serie({ set_number: 2, completed: true }),
+      serie({ set_number: 3, completed: true }),
+    ];
+    expect(serieAtualDeLogs(logs, 3)).toBe(3);
+  });
+
+  it('respeita sets como teto mesmo com logs além do prescrito', () => {
+    const logs = [
+      serie({ set_number: 1, completed: true }),
+      serie({ set_number: 2, completed: true }),
+    ];
+    // sets=2 e ambas concluídas → 2 (não extrapola).
+    expect(serieAtualDeLogs(logs, 2)).toBe(2);
+  });
+});
+
+describe('hidratarSerie', () => {
+  it('reps_done null → reps vazio', () => {
+    const r = hidratarSerie(serie({ set_number: 1, reps_done: null }));
+    expect(r.reps).toBe('');
+  });
+
+  it('reps_done numérico → string', () => {
+    const r = hidratarSerie(serie({ set_number: 1, reps_done: 12 }));
+    expect(r.reps).toBe('12');
+  });
+
+  it('carga "30.00" (zeros de escala do numeric) → "30"', () => {
+    const r = hidratarSerie(
+      serie({ set_number: 1, load_done: '30.00' as unknown as number })
+    );
+    expect(r.carga).toBe('30');
+  });
+
+  it('carga "27.50" → "27.5"', () => {
+    const r = hidratarSerie(
+      serie({ set_number: 1, load_done: '27.50' as unknown as number })
+    );
+    expect(r.carga).toBe('27.5');
+  });
+
+  it('load_done null → carga vazia', () => {
+    const r = hidratarSerie(serie({ set_number: 1, load_done: null }));
+    expect(r.carga).toBe('');
+  });
+
+  it('propaga completed', () => {
+    expect(hidratarSerie(serie({ set_number: 1, completed: true })).completed).toBe(
+      true
+    );
+    expect(
+      hidratarSerie(serie({ set_number: 1, completed: false })).completed
+    ).toBe(false);
   });
 });
 

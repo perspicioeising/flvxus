@@ -1,9 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
+import type { SerieLog } from '@/lib/treino/progresso';
+import type { Database } from '@/types/database.types';
 import {
   finalizarSessaoSchema,
   iniciarSessaoSchema,
@@ -43,6 +46,48 @@ function erroDeCampo(flatten: {
     }
   }
   return out;
+}
+
+/**
+ * Helper INTERNO (não exportado como action). Resolve o id da sessão ABERTA
+ * (`finished_at is null`) de `(plan_id, student_id, division)`, ou `null` quando
+ * não há. Roda sob RLS (`createClient()` já carrega a identidade do chamador),
+ * então NÃO refiltramos posse manualmente. `division` usa `.eq` quando informada
+ * e `.is(null)` quando ausente (espelha a semântica do balde "divisão única").
+ * Ordena `started_at desc` para, por garantia, retornar a mais recente — na
+ * prática o índice único parcial (FEAT-001) garante no máximo uma aberta.
+ */
+async function buscarSessaoAberta(
+  supabase: SupabaseClient<Database>,
+  args: { planId: string; studentId: string; division?: string }
+): Promise<string | null> {
+  let query = supabase
+    .from('workout_sessions')
+    .select('id')
+    .eq('plan_id', args.planId)
+    .eq('student_id', args.studentId)
+    .is('finished_at', null);
+
+  query = args.division !== undefined
+    ? query.eq('division', args.division)
+    : query.is('division', null);
+
+  const { data } = await query
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data?.id ?? null;
+}
+
+/**
+ * Leitura retornada à UI pela `carregarSessaoAberta`: o id da sessão aberta e os
+ * logs já persistidos (resolução + logs num ÚNICO round-trip — a UI nunca
+ * precisa de duas chamadas).
+ */
+export interface SessaoAbertaCarregada {
+  sessionId: string;
+  logs: SerieLog[];
 }
 
 /**
@@ -119,6 +164,19 @@ export async function iniciarSessao(
     return { ok: false, message: 'Esta ficha não está disponível para treino.' };
   }
 
+  // RESOLVER-ANTES-DE-INSERIR: se já existe uma sessão ABERTA desta
+  // `(plan, division, student)`, retoma-a em vez de criar outra. Isso elimina a
+  // duplicação de sessão mesmo quando a UI chama `iniciarSessao` direto; o
+  // índice único parcial (FEAT-001) é a última linha de defesa contra corrida.
+  const abertaExistente = await buscarSessaoAberta(supabase, {
+    planId: plano.id,
+    studentId: studentIdAlvo,
+    division: parsed.data.division,
+  });
+  if (abertaExistente) {
+    return { ok: true, message: 'Treino em andamento retomado.', id: abertaExistente };
+  }
+
   const { data: sessao, error: erroSessao } = await supabase
     .from('workout_sessions')
     .insert({
@@ -134,6 +192,23 @@ export async function iniciarSessao(
     .single();
 
   if (erroSessao || !sessao) {
+    // Corrida: duas requisições passaram pela checagem acima e o índice único
+    // parcial recusou o INSERT perdedor (23505). Traduz a mensagem e re-resolve
+    // a sessão aberta para devolver o id da vencedora, sem erro ao usuário.
+    if (erroSessao?.code === '23505') {
+      console.warn(
+        'iniciarSessao: colisão de sessão aberta (23505), re-resolvendo a existente.'
+      );
+      const reaberta = await buscarSessaoAberta(supabase, {
+        planId: plano.id,
+        studentId: studentIdAlvo,
+        division: parsed.data.division,
+      });
+      if (reaberta) {
+        return { ok: true, message: 'Treino em andamento retomado.', id: reaberta };
+      }
+      return { ok: false, message: 'Já existe um treino em andamento desta divisão.' };
+    }
     return {
       ok: false,
       message: `Não foi possível iniciar o treino: ${erroSessao?.message ?? 'erro desconhecido'}`,
@@ -143,6 +218,88 @@ export async function iniciarSessao(
   revalidatePath('/aluno/execucao');
 
   return { ok: true, message: 'Treino iniciado.', id: sessao.id };
+}
+
+/**
+ * Resolve a sessão ABERTA de `(plan, division[, aluno-alvo])` e, havendo,
+ * retorna seu id + os logs persistidos num ÚNICO round-trip (para a UI de
+ * execução hidratar o estado a partir do banco). `data: null` = não há sessão
+ * aberta (a UI inicia uma nova no primeiro toque).
+ *
+ * A autorização de papel é IDÊNTICA a `iniciarSessao`: sem `targetStudentId`
+ * exige `role==='student'` (alvo = usuário logado); com, exige `role==='trainer'`
+ * (alvo = `targetStudentId`). A posse real é da RLS — um aluno tentando resolver
+ * a sessão de outro recebe vazio sob RLS (sem 500), e a UI inicia a própria.
+ */
+export async function carregarSessaoAberta(
+  planId: string,
+  division?: string,
+  targetStudentId?: string
+): Promise<EstadoAcao & { data?: SessaoAbertaCarregada | null }> {
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
+  }
+
+  const parsed = iniciarSessaoSchema.safeParse({
+    plan_id: planId,
+    division,
+    target_student_id: targetStudentId,
+  });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: 'Ficha inválida.',
+      fieldErrors: erroDeCampo(parsed.error.flatten()),
+    };
+  }
+
+  // Mesma resolução/autorização de papel de `iniciarSessao`.
+  let studentIdAlvo: string;
+  if (parsed.data.target_student_id === undefined) {
+    if (usuario.role !== 'student') {
+      return { ok: false, message: 'Apenas o aluno pode iniciar um treino.' };
+    }
+    studentIdAlvo = usuario.userId;
+  } else {
+    if (usuario.role !== 'trainer') {
+      return {
+        ok: false,
+        message: 'Apenas o professor pode registrar treino em nome do aluno.',
+      };
+    }
+    studentIdAlvo = parsed.data.target_student_id;
+  }
+
+  const supabase = await createClient();
+
+  const sessionId = await buscarSessaoAberta(supabase, {
+    planId: parsed.data.plan_id,
+    studentId: studentIdAlvo,
+    division: parsed.data.division,
+  });
+
+  if (!sessionId) {
+    return { ok: true, data: null };
+  }
+
+  const { data: logs, error: erroLogs } = await supabase
+    .from('workout_set_logs')
+    .select('set_number, reps_done, load_done, completed, plan_item_id')
+    .eq('session_id', sessionId);
+
+  if (erroLogs) {
+    console.error('carregarSessaoAberta: erro ao buscar logs', erroLogs);
+    return { ok: false, message: `Não foi possível retomar o treino: ${erroLogs.message}` };
+  }
+
+  return {
+    ok: true,
+    data: {
+      sessionId,
+      logs: (logs ?? []) as SerieLog[],
+    },
+  };
 }
 
 /**
