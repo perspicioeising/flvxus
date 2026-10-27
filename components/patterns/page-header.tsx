@@ -52,7 +52,12 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex shrink-0 items-center gap-2">{actions}</div>
+        // Mobile: ações quebram em várias linhas (flex-wrap) em vez de
+        // transbordar numa linha única com scroll horizontal. Desktop (sm+):
+        // linha única encostada à direita, sem encolher.
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:shrink-0">
+          {actions}
+        </div>
       ) : null}
     </div>
   );
