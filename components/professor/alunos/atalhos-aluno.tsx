@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {
   Dumbbell,
+  History,
   LineChart,
   PlayCircle,
   Plus,
@@ -105,6 +106,12 @@ export function AtalhosAluno({
       titulo: 'Ver evolução',
       descricao: 'Progressão de carga, volume, frequência e composição.',
       icone: Dumbbell,
+    },
+    {
+      href: '#historico',
+      titulo: 'Histórico',
+      descricao: 'Treinos concluídos com duração, volume e detalhes.',
+      icone: History,
     },
   ];
 

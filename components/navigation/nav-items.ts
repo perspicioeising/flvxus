@@ -13,6 +13,7 @@ import {
   HeartPulse,
   HelpCircle,
   CreditCard,
+  History,
   type LucideIcon,
   Trophy,
 } from 'lucide-react';
@@ -49,6 +50,7 @@ const masterNavItem: NavItem = {
 const studentNav: NavItem[] = [
   { label: 'Início', href: '/aluno', icon: LayoutDashboard },
   { label: 'Treinos', href: '/aluno/treinos', icon: Activity },
+  { label: 'Histórico', href: '/aluno/historico', icon: History },
   { label: 'Dieta', href: '/aluno/dieta', icon: Utensils },
   { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
   { label: 'Avaliações', href: '/aluno/avaliacoes', icon: HeartPulse },

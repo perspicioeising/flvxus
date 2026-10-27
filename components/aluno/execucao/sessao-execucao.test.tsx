@@ -463,7 +463,7 @@ describe('SessaoExecucao — executado pelo professor (treino presencial)', () =
     expect(iniciarSessao).toHaveBeenCalledWith('plan-1', undefined, 'aluno-99');
   });
 
-  it('ao finalizar, navega para destinoAoFinalizar (ficha do aluno no professor)', async () => {
+  it('ao finalizar, navega para a rota-espelho de resumo do professor (FEAT-003)', async () => {
     render(
       <SessaoExecucao
         planId="plan-1"
@@ -486,10 +486,13 @@ describe('SessaoExecucao — executado pelo professor (treino presencial)', () =
     fireEvent.click(gatilho);
     fireEvent.click(await screen.findByRole('button', { name: /^finalizar$/i }));
 
-    // finalizarSessao resolve e navega para o destino do professor.
+    // finalizarSessao resolve e navega para a MESMA tela de resumo, na rota do
+    // professor (contexto do aluno-alvo). sess-1 é o id do mock de iniciarSessao.
     await waitFor(() => {
       expect(finalizarSessao).toHaveBeenCalledTimes(1);
-      expect(push).toHaveBeenCalledWith('/professor/alunos/aluno-99');
+      expect(push).toHaveBeenCalledWith(
+        '/professor/alunos/aluno-99/execucao/plan-1/resumo/sess-1'
+      );
     });
   });
 });

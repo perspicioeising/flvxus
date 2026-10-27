@@ -767,13 +767,17 @@ export function SessaoExecucao({
 
     if (r.ok) {
       toast({ title: 'Treino finalizado. Bom trabalho!' });
-      // Fluxo do ALUNO (`studentId == null`): vai para o resumo pós-treino da
-      // sessão. Fluxo do PROFESSOR: mantém `destinoAoFinalizar` (resumo é uma
-      // experiência do aluno).
+      // Ambos os fluxos vão para a MESMA tela de resumo pós-treino da sessão,
+      // variando só a rota por papel: o ALUNO (`studentId == null`) vai à rota
+      // do aluno; o PROFESSOR (presencial) vai à rota-espelho do resumo dentro
+      // do contexto do aluno-alvo. `destinoAoFinalizar` segue valendo para o
+      // caso "concluir sem sessão criada" (nenhuma série marcada) tratado acima.
       if (studentId == null) {
         router.push(`/aluno/execucao/${planId}/resumo/${sessionId}`);
       } else {
-        router.push(destinoAoFinalizar);
+        router.push(
+          `/professor/alunos/${studentId}/execucao/${planId}/resumo/${sessionId}`
+        );
       }
       router.refresh();
     } else {

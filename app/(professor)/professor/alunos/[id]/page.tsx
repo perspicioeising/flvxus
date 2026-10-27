@@ -11,6 +11,7 @@ import {
 
 import { createClient } from '@/lib/supabase/server';
 import { diasDesde, formatarData } from '@/lib/datas';
+import { normalizarPagina, normalizarTamanho } from '@/lib/paginacao';
 import {
   Card,
   CardContent,
@@ -40,6 +41,7 @@ import {
 import { StudentStatusActions } from '@/components/professor/alunos/student-status-actions';
 import { ResendInviteButton } from '@/components/professor/alunos/resend-invite-button';
 import { SecaoEvolucao } from '@/components/professor/alunos/secao-evolucao';
+import { SecaoHistorico } from '@/components/professor/alunos/secao-historico';
 import { AtalhosAluno } from '@/components/professor/alunos/atalhos-aluno';
 import type {
   ExperienceLevel,
@@ -87,10 +89,21 @@ function iniciais(nome: string | null, email: string | null): string {
 
 export default async function FichaAlunoPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  // Paginação DEDICADA do histórico (prefixo `hist_`), isolada dos demais
+  // paginadores da página.
+  const histPage = normalizarPagina(
+    Array.isArray(sp.hist_page) ? sp.hist_page[0] : sp.hist_page
+  );
+  const histSize = normalizarTamanho(
+    Array.isArray(sp.hist_size) ? sp.hist_size[0] : sp.hist_size
+  );
   const supabase = await createClient();
 
   const { data: aluno, error } = await supabase
@@ -252,6 +265,9 @@ export default async function FichaAlunoPage({
       <div id="evolucao" className="scroll-mt-20">
         <SecaoEvolucao studentId={id} />
       </div>
+
+      {/* Histórico de sessões concluídas (visibilidade herdada do cadastro) */}
+      <SecaoHistorico studentId={id} page={histPage} pageSize={histSize} />
 
       {/* Demais informações do aluno — recolhíveis num acordeon */}
       <Card className="rounded-2xl">
