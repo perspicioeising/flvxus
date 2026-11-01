@@ -82,9 +82,19 @@ export const finalizarSessaoSchema = z.object({
   perceived_intensity: intensidadePercebidaOpcional,
 });
 
+/**
+ * Cancelamento (abandono) de uma sessão ABERTA: descarta a sessão e seus logs,
+ * voltando ao estado "não iniciado". Só o `session_id` é necessário; a posse
+ * (aluno dono OU trainer do tenant) é imposta pela action + RLS.
+ */
+export const cancelarSessaoSchema = z.object({
+  session_id: z.string().uuid('Sessão inválida.'),
+});
+
 export type IniciarSessaoInput = z.infer<typeof iniciarSessaoSchema>;
 export type RegistrarSerieInput = z.infer<typeof registrarSerieSchema>;
 export type FinalizarSessaoInput = z.infer<typeof finalizarSessaoSchema>;
+export type CancelarSessaoInput = z.infer<typeof cancelarSessaoSchema>;
 
 /**
  * Tipo de ENTRADA de `registrarSerieSchema` (antes dos preprocessos). O cliente

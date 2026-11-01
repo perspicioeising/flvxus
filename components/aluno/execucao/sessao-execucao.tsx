@@ -24,6 +24,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
+  cancelarSessao,
   carregarSessaoAberta,
   finalizarSessao,
   iniciarSessao,
@@ -223,6 +224,10 @@ export function SessaoExecucao({
   const [pendenciasAviso, setPendenciasAviso] = React.useState<
     { exercicio: string; serie: number }[] | null
   >(null);
+  // Confirmação de ABANDONO do treino (clique no X). `true` = diálogo aberto.
+  const [abandonoAberto, setAbandonoAberto] = React.useState(false);
+  // `true` enquanto a sessão está sendo descartada no servidor (gate do botão).
+  const [abandonando, setAbandonando] = React.useState(false);
   const [pendente, startTransition] = React.useTransition();
 
   // Eixo de agrupamento da ficha: se QUALQUER item tem divisão, a ficha é por
@@ -822,6 +827,33 @@ export function SessaoExecucao({
     }
   }
 
+  /**
+   * Confirma o ABANDONO do treino (após o AlertDialog): descarta a sessão
+   * ABERTA e seus logs no servidor (quando já existir uma) e navega de volta.
+   * Se nenhuma sessão foi criada ainda (nenhuma série marcada), não há nada a
+   * descartar — só navega. O cancelamento é idempotente, então um erro de
+   * limpeza não prende o aluno na tela: navegamos mesmo assim, apenas avisando.
+   */
+  async function abandonarTreino() {
+    setAbandonando(true);
+    try {
+      if (sessionId) {
+        const r = await cancelarSessao({ session_id: sessionId });
+        if (!r.ok) {
+          toast({
+            title: r.message ?? 'Não foi possível abandonar o treino.',
+            variant: 'destructive',
+          });
+        }
+      }
+    } finally {
+      setAbandonando(false);
+      setAbandonoAberto(false);
+      router.push(destinoAoFinalizar);
+      router.refresh();
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Seletor do eixo da ficha: divisão (A/B/C/…) ou dia (legado). Cada um
@@ -873,7 +905,7 @@ export function SessaoExecucao({
                 size="icon"
                 className="min-h-11 min-w-11"
                 aria-label="Sair da execução"
-                onClick={() => router.push(destinoAoFinalizar)}
+                onClick={() => setAbandonoAberto(true)}
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </Button>
@@ -1372,6 +1404,46 @@ export function SessaoExecucao({
             <AlertDialogCancel>Voltar e preencher</AlertDialogCancel>
             <AlertDialogAction onClick={() => concluir()}>
               Finalizar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmação de ABANDONO do treino (clique no X). "Continuar treino"
+          fecha o diálogo e mantém o aluno na tela; "Abandonar treino" descarta
+          a sessão aberta e seus logs (volta ao estado "não iniciado") e navega
+          de volta à tela de treinos (aluno) ou à ficha do aluno (professor). */}
+      <AlertDialog
+        open={abandonoAberto}
+        onOpenChange={(open) => {
+          // Não deixa fechar (ESC/overlay) enquanto descarta a sessão.
+          if (!abandonando) setAbandonoAberto(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Abandonar o treino?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O progresso desta sessão será descartado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={abandonando}>
+              Continuar treino
+            </AlertDialogCancel>
+            {/* `onSelect` com preventDefault: mantém o diálogo aberto enquanto a
+                action roda; a navegação acontece no fim de `abandonarTreino`. */}
+            <AlertDialogAction
+              disabled={abandonando}
+              onClick={(e) => {
+                e.preventDefault();
+                void abandonarTreino();
+              }}
+            >
+              {abandonando ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : null}
+              Abandonar treino
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

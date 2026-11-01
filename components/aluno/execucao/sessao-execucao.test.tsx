@@ -25,6 +25,7 @@ const carregarSessaoAberta = vi.fn(async (..._args: unknown[]) => ({
   ok: true,
   data: null as null | { sessionId: string; logs: unknown[] },
 }));
+const cancelarSessao = vi.fn(async (_arg: unknown) => ({ ok: true, id: 'sess-1' }));
 
 vi.mock('@/actions/execucao', () => ({
   registrarSerie: (arg: unknown) => registrarSerie(arg),
@@ -33,6 +34,7 @@ vi.mock('@/actions/execucao', () => ({
   iniciarSessao: (...args: unknown[]) => iniciarSessao(...args),
   finalizarSessao: (arg: unknown) => finalizarSessao(arg),
   carregarSessaoAberta: (...args: unknown[]) => carregarSessaoAberta(...args),
+  cancelarSessao: (arg: unknown) => cancelarSessao(arg),
 }));
 
 const toast = vi.fn();
@@ -591,5 +593,78 @@ describe('SessaoExecucao — retomada de sessão aberta (hidratação)', () => {
     ).not.toBeInTheDocument();
     // Segue na série 1 (nada hidratado a posicionou adiante).
     expect(screen.getByText('Série 1 de 2')).toBeInTheDocument();
+  });
+});
+
+describe('SessaoExecucao — abandonar o treino (X na execução)', () => {
+  it('o X abre o diálogo de confirmação (não navega direto)', async () => {
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake()]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sair da execução' }));
+
+    expect(
+      await screen.findByRole('alertdialog', { name: /abandonar o treino/i })
+    ).toBeInTheDocument();
+    // Ainda não navegou nem cancelou nada.
+    expect(push).not.toHaveBeenCalled();
+    expect(cancelarSessao).not.toHaveBeenCalled();
+  });
+
+  it('"Continuar treino" fecha o diálogo e mantém o aluno na tela', async () => {
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake()]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sair da execução' }));
+    await screen.findByRole('alertdialog', { name: /abandonar o treino/i });
+
+    fireEvent.click(screen.getByRole('button', { name: /continuar treino/i }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('alertdialog', { name: /abandonar o treino/i })
+      ).not.toBeInTheDocument()
+    );
+    expect(cancelarSessao).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('sem sessão criada, "Abandonar" só navega (nada a descartar)', async () => {
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake()]} />);
+
+    // Abre o X sem ter marcado nenhuma série (sessão nunca criada).
+    fireEvent.click(screen.getByRole('button', { name: 'Sair da execução' }));
+    await screen.findByRole('alertdialog', { name: /abandonar o treino/i });
+
+    fireEvent.click(screen.getByRole('button', { name: /abandonar treino/i }));
+
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith('/aluno/treinos')
+    );
+    // Sem sessão, não chama a action de cancelamento.
+    expect(cancelarSessao).not.toHaveBeenCalled();
+  });
+
+  it('com sessão criada, "Abandonar" cancela a sessão e navega ao destino', async () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        studentId="aluno-99"
+        destinoAoFinalizar="/professor/alunos/aluno-99"
+        itens={[itemFake()]}
+      />
+    );
+
+    // Cria a sessão concluindo uma série (sess-1 do mock de iniciarSessao).
+    await concluirSerieAtual('10');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sair da execução' }));
+    await screen.findByRole('alertdialog', { name: /abandonar o treino/i });
+
+    fireEvent.click(screen.getByRole('button', { name: /abandonar treino/i }));
+
+    await waitFor(() => {
+      expect(cancelarSessao).toHaveBeenCalledWith({ session_id: 'sess-1' });
+      // Fluxo do professor volta à ficha do aluno (destinoAoFinalizar).
+      expect(push).toHaveBeenCalledWith('/professor/alunos/aluno-99');
+    });
   });
 });

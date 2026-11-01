@@ -8,9 +8,11 @@ import { createClient } from '@/lib/supabase/server';
 import type { SerieLog } from '@/lib/treino/progresso';
 import type { Database } from '@/types/database.types';
 import {
+  cancelarSessaoSchema,
   finalizarSessaoSchema,
   iniciarSessaoSchema,
   registrarSerieSchema,
+  type CancelarSessaoInput,
   type FinalizarSessaoInput,
   type RegistrarSerieEntrada,
 } from '@/schemas/execucao';
@@ -400,4 +402,78 @@ export async function finalizarSessao(input: FinalizarSessaoInput): Promise<Esta
   revalidatePath('/aluno/execucao');
 
   return { ok: true, message: 'Treino finalizado.', id: parsed.data.session_id };
+}
+
+/**
+ * CANCELA (abandona) uma sessão ABERTA, voltando ao estado "não iniciado": o
+ * aluno (ou o professor presencial que a abriu) desistiu do treino e o progresso
+ * desta sessão é descartado — ela NÃO deve aparecer no histórico como treino
+ * incompleto.
+ *
+ * Apaga os `workout_set_logs` da sessão e, em seguida, a própria
+ * `workout_sessions`. Dois guards garantem que apenas sessões descartáveis sejam
+ * tocadas:
+ * - Só deleta quando `finished_at is null` (nunca mexe numa sessão já
+ *   finalizada — o filtro no delete da sessão protege contra corrida).
+ * - A posse (aluno dono OU trainer do tenant) é imposta pela RLS: um usuário que
+ *   não pode ver/escrever a sessão simplesmente não afeta nenhuma linha.
+ *
+ * Idempotente: cancelar uma sessão já inexistente/finalizada retorna `ok:true`
+ * sem efeito (o delete casa zero linhas). Isso cobre o double-click no "Abandonar
+ * treino" e a UI que chama cancelar sem ter criado sessão.
+ */
+export async function cancelarSessao(
+  input: CancelarSessaoInput
+): Promise<EstadoAcao> {
+  // Qualquer usuário logado pode chamar; a RLS garante que só cancela a sessão
+  // cujo dono é (aluno dono OU trainer do tenant). Habilita o fluxo presencial.
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
+  }
+
+  const parsed = cancelarSessaoSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: 'Não foi possível abandonar o treino.',
+      fieldErrors: erroDeCampo(parsed.error.flatten()),
+    };
+  }
+
+  const supabase = await createClient();
+
+  // Apaga PRIMEIRO os logs de série (dependentes da sessão). A RLS limita ao
+  // que o chamador pode escrever; se não houver logs, casa zero linhas (ok).
+  const { error: erroLogs } = await supabase
+    .from('workout_set_logs')
+    .delete()
+    .eq('session_id', parsed.data.session_id);
+
+  if (erroLogs) {
+    return {
+      ok: false,
+      message: `Não foi possível abandonar o treino: ${erroLogs.message}`,
+    };
+  }
+
+  // Apaga a sessão SOMENTE se ainda está ABERTA (`finished_at is null`): nunca
+  // remove uma sessão já finalizada (histórico), mesmo em corrida.
+  const { error: erroSessao } = await supabase
+    .from('workout_sessions')
+    .delete()
+    .eq('id', parsed.data.session_id)
+    .is('finished_at', null);
+
+  if (erroSessao) {
+    return {
+      ok: false,
+      message: `Não foi possível abandonar o treino: ${erroSessao.message}`,
+    };
+  }
+
+  revalidatePath('/aluno');
+  revalidatePath('/aluno/execucao');
+
+  return { ok: true, message: 'Treino abandonado.', id: parsed.data.session_id };
 }
