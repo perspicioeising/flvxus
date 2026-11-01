@@ -28,6 +28,12 @@ import { createClient } from '@supabase/supabase-js';
 
 import type { AuthenticatedUser, ProfileContext, UserRole } from './auth-guard.ts';
 import { estimateCostUsd, type AiJobType, type ModelPricing, type UsageLogRecord } from './logging.ts';
+import {
+  aiFeatureForTier,
+  resolvePeriodStart,
+  type PlanTier,
+  type SubscriptionStatus,
+} from './quota-policy.ts';
 import type { JsonSchema } from './structured-output.ts';
 
 /** Tipos de job desta fase (weekly_adherence fica fora — adiado). */
@@ -176,9 +182,10 @@ interface SupabaseLike {
     getUser(jwt: string): Promise<{ data: { user: { id: string } | null }; error: unknown }>;
   };
   from(table: string): {
-    select: (columns: string) => any;
+    select: (columns: string, options?: unknown) => any;
     insert: (values: unknown) => any;
     update: (values: unknown) => any;
+    upsert: (values: unknown, options?: unknown) => any;
   };
 }
 
@@ -196,6 +203,18 @@ export interface GenerationResult {
   output: unknown;
 }
 
+/** Franquia de IA resolvida para o tenant (FR-B3). */
+export interface AiQuota {
+  /** Cota mensal do plano: `null` = ilimitado. */
+  limit: number | null;
+  /** Status efetivo da assinatura (null = sem direito/sem linha). */
+  status: SubscriptionStatus | null;
+  /** `features.ai` do tier efetivo (false quando o plano não inclui IA). */
+  aiFeatureOn: boolean;
+  /** Início do período corrente (`YYYY-MM-DD`) usado no contador. */
+  periodStart: string;
+}
+
 /** Superfície de efeitos que cada `index.ts` consome. */
 export interface Runtime {
   verifyJwt: (authorizationHeader: string | null) => Promise<AuthenticatedUser | null>;
@@ -205,6 +224,12 @@ export interface Runtime {
   finishGeneration: (id: string, result: GenerationResult) => Promise<void>;
   writeUsageLog: (record: UsageLogRecord) => Promise<void>;
   estimateCost: (model: string | null, inputTokens: number | null, outputTokens: number | null) => number | null;
+  /** Resolve a franquia de IA do tenant (status, limite, feature, período). */
+  getAiQuota: (tenantId: string) => Promise<AiQuota>;
+  /** Lê o uso consumido no período (0 se não houver linha). */
+  getAiUsed: (tenantId: string, periodStart: string) => Promise<number>;
+  /** Incrementa o contador do período (upsert +1). */
+  incrementAiUsed: (tenantId: string, periodStart: string) => Promise<void>;
 }
 
 /** Leitor de env (default Deno.env) — injetável para teste futuro. */
@@ -330,6 +355,81 @@ export function buildRuntime(env: EnvReader = defaultEnvReader): Runtime {
 
     estimateCost(model, inputTokens, outputTokens) {
       return estimateCostUsd(inputTokens, outputTokens, pricingForModel(model));
+    },
+
+    async getAiQuota(tenantId) {
+      // Assinatura do tenant + tier/franquia do plano (service_role, public.-qual.).
+      const { data: sub } = await admin
+        .from('subscriptions')
+        .select('status, stripe_subscription_id, current_period_start, plans ( tier, ai_quota_monthly )')
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      // account_type do MASTER do tenant.
+      const { data: master } = await admin
+        .from('profiles')
+        .select('account_type')
+        .eq('tenant_id', tenantId)
+        .eq('is_tenant_master', true)
+        .maybeSingle();
+
+      const planos = (sub as { plans?: { tier: PlanTier; ai_quota_monthly: number | null } | { tier: PlanTier; ai_quota_monthly: number | null }[] } | null)?.plans;
+      const plano = Array.isArray(planos) ? (planos[0] ?? null) : (planos ?? null);
+
+      let tier: PlanTier | null = plano?.tier ?? null;
+      let limit: number | null = plano?.ai_quota_monthly ?? null;
+      let status: SubscriptionStatus | null = (sub?.status as SubscriptionStatus | null) ?? null;
+
+      const accountType = (master?.account_type as string | null) ?? 'professional';
+      const hasStripeSubscriptionId = sub?.stripe_subscription_id != null;
+      const preTrial =
+        status == null || status === 'incomplete' || status === 'incomplete_expired';
+
+      // Graça pré-trial do aluno autônomo: sem assinatura real e status pré-trial
+      // => tier individual em trialing (franquia individual = 50; ver seed).
+      if (accountType === 'self_managed' && !hasStripeSubscriptionId && preTrial) {
+        tier = 'individual';
+        status = 'trialing';
+        limit = 50;
+      }
+
+      const periodStart = resolvePeriodStart(sub?.current_period_start as string | null | undefined);
+
+      return {
+        limit,
+        status,
+        aiFeatureOn: aiFeatureForTier(tier),
+        periodStart,
+      };
+    },
+
+    async getAiUsed(tenantId, periodStart) {
+      const { data, error } = await admin
+        .from('ai_usage_counters')
+        .select('used')
+        .eq('tenant_id', tenantId)
+        .eq('period_start', periodStart)
+        .maybeSingle();
+      if (error || !data) return 0;
+      return (data.used as number) ?? 0;
+    },
+
+    async incrementAiUsed(tenantId, periodStart) {
+      // Lê o uso atual e re-grava +1 (upsert). Espelha o
+      // `on conflict (tenant_id, period_start) do update set used = used + 1`.
+      const { data } = await admin
+        .from('ai_usage_counters')
+        .select('used')
+        .eq('tenant_id', tenantId)
+        .eq('period_start', periodStart)
+        .maybeSingle();
+      const atual = (data?.used as number | undefined) ?? 0;
+      await admin
+        .from('ai_usage_counters')
+        .upsert(
+          { tenant_id: tenantId, period_start: periodStart, used: atual + 1, updated_at: new Date().toISOString() },
+          { onConflict: 'tenant_id,period_start' },
+        );
     },
   };
 }

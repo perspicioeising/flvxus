@@ -18,8 +18,9 @@ import { suggestWorkoutOutputSchema } from '../../../schemas/ia/suggest-workout.
 import { AnthropicClient } from '../_shared/anthropic.ts';
 import { requireTrainer } from '../_shared/auth-guard.ts';
 import { handlePreflight } from '../_shared/cors.ts';
-import { aiFailure, badRequest, errorResponse, jsonResponse, rateLimited } from '../_shared/errors.ts';
+import { aiFailure, aiForbidden, aiQuotaExceeded, badRequest, errorResponse, jsonResponse, rateLimited } from '../_shared/errors.ts';
 import { recordUsage } from '../_shared/logging.ts';
+import { statusComDireito } from '../_shared/quota-policy.ts';
 import { checkRateLimit, DEFAULT_WINDOW } from '../_shared/rate-limit.ts';
 import { buildTool, parseToolOutput } from '../_shared/structured-output.ts';
 import { SUGGEST_WORKOUT_SYSTEM, buildSuggestWorkoutUserMessage } from '../_prompts/suggest-workout.ts';
@@ -81,6 +82,39 @@ Deno.serve(async (req) => {
       throw rateLimited();
     }
 
+    // Gate de FRANQUIA de IA (FR-B3): sem IA no plano/status => 403; franquia
+    // esgotada => 429 distinto. Loga 'blocked' no ponto do gate.
+    const quota = await runtime.getAiQuota(ctx.tenantId);
+    if (!statusComDireito(quota.status) || !quota.aiFeatureOn) {
+      await runtime.writeUsageLog({
+        tenant_id: ctx.tenantId,
+        user_id: ctx.userId,
+        job_type: JOB_TYPE.suggest_workout,
+        model: null,
+        input_tokens: null,
+        output_tokens: null,
+        estimated_cost_usd: null,
+        status: 'blocked',
+        latency_ms: null,
+      });
+      throw aiForbidden();
+    }
+    const used = await runtime.getAiUsed(ctx.tenantId, quota.periodStart);
+    if (quota.limit !== null && used >= quota.limit) {
+      await runtime.writeUsageLog({
+        tenant_id: ctx.tenantId,
+        user_id: ctx.userId,
+        job_type: JOB_TYPE.suggest_workout,
+        model: null,
+        input_tokens: null,
+        output_tokens: null,
+        estimated_cost_usd: null,
+        status: 'blocked',
+        latency_ms: null,
+      });
+      throw aiQuotaExceeded();
+    }
+
     const generationId = await runtime.insertPendingGeneration({
       tenant_id: ctx.tenantId,
       created_by: ctx.userId,
@@ -128,6 +162,9 @@ Deno.serve(async (req) => {
         status: 'succeeded',
         output: parsedOutput.data,
       });
+
+      // Incrementa a franquia APÓS o sucesso do Anthropic (FR-B3).
+      await runtime.incrementAiUsed(ctx.tenantId, quota.periodStart);
 
       return jsonResponse({ generation_id: generationId, status: 'succeeded', draft: parsedOutput.data });
     } catch (aiErr) {

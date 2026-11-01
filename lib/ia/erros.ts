@@ -47,6 +47,16 @@ export function mapearErroIa(entrada: EntradaErroIa | null | undefined): string 
   const status = entrada?.status ?? null;
   const nome = entrada?.name ?? null;
 
+  // Franquia de IA (FR-B3): o código do corpo distingue estes casos do
+  // rate-limit horário (429 genérico) e do 403 de papel. Precede o switch.
+  const code = entrada?.body?.error?.code ?? null;
+  if (code === 'ai_quota_exceeded') {
+    return 'Você atingiu o limite de gerações de IA do seu plano neste período. Faça upgrade ou aguarde o próximo ciclo.';
+  }
+  if (code === 'ai_forbidden') {
+    return 'Seu plano atual não inclui recursos de IA. Faça upgrade para usar.';
+  }
+
   // Erro de transporte do supabase-js (função ausente/não deployada ou rede):
   // não tem status HTTP útil → degrada para "indisponível".
   if (nome === 'FunctionsFetchError' || nome === 'FunctionsRelayError') {

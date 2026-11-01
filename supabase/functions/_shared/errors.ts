@@ -41,6 +41,15 @@ export const badRequest = (message = 'Requisição inválida.') =>
 export const rateLimited = (message = 'Muitas requisições. Tente novamente em instantes.') =>
   new AiError('rate_limited', message, 429);
 
+/** 429 — franquia mensal de gerações de IA do plano esgotada (distinta do rate-limit). */
+export const aiQuotaExceeded = (
+  message = 'Limite de gerações de IA do plano atingido neste período.',
+) => new AiError('ai_quota_exceeded', message, 429);
+
+/** 403 — plano atual não inclui recursos de IA. */
+export const aiForbidden = (message = 'Plano atual não inclui recursos de IA.') =>
+  new AiError('ai_forbidden', message, 403);
+
 /** 502 — falha ao gerar/validar a saída da IA. */
 export const aiFailure = (
   message = 'Não foi possível gerar o conteúdo agora. Tente novamente.',

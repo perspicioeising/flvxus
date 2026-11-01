@@ -1,6 +1,7 @@
 import { requireMaster } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { statusComDireito } from '@/lib/billing/entitlement';
+import { resolvePeriodStart } from '@/lib/ia/quota';
 import { CheckoutButton } from '@/components/professor/plano/checkout-button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -28,12 +29,14 @@ export default async function ProfessorPlanoPage() {
     supabase
       .from('plans')
       .select(
-        'id, tier, name, max_affiliates, price_monthly_cents, price_yearly_cents, stripe_price_id_monthly, stripe_price_id_yearly, trial_days'
+        'id, tier, name, max_affiliates, ai_quota_monthly, price_monthly_cents, price_yearly_cents, stripe_price_id_monthly, stripe_price_id_yearly, trial_days'
       )
       .eq('is_active', true),
     supabase
       .from('subscriptions')
-      .select('status, plan_id, current_period_end, cancel_at_period_end, billing_cycle')
+      .select(
+        'status, plan_id, current_period_start, current_period_end, cancel_at_period_end, billing_cycle'
+      )
       .eq('tenant_id', master.tenantId)
       .maybeSingle(),
     supabase
@@ -47,6 +50,19 @@ export default async function ProfessorPlanoPage() {
   const status = (sub?.status ?? null) as SubscriptionStatus | null;
   const planoAtual = (planos ?? []).find((p) => p.id === sub?.plan_id) ?? null;
   const limiteAtual = planoAtual?.max_affiliates ?? null;
+
+  // Uso de franquia de IA do período corrente (FR-B3). O período espelha o
+  // contador das Edge Functions: current_period_start truncado a date, com
+  // fallback no 1º dia do mês. A leitura é via RLS do master (ai_usage_counters).
+  const periodoFranquia = resolvePeriodStart(sub?.current_period_start ?? null);
+  const franquiaTotal = planoAtual?.ai_quota_monthly ?? null;
+  const { data: contador } = await supabase
+    .from('ai_usage_counters')
+    .select('used')
+    .eq('tenant_id', master.tenantId)
+    .eq('period_start', periodoFranquia)
+    .maybeSingle();
+  const franquiaUsada = contador?.used ?? 0;
   // Ciclo vigente (default mensal) para rotular o resumo e os botões.
   const cicloAtual = (sub?.billing_cycle ?? 'monthly') as BillingCycle;
 
@@ -98,10 +114,17 @@ export default async function ProfessorPlanoPage() {
               : ''}
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4 text-sm text-muted-foreground">
-          {sub?.current_period_end
-            ? `Período atual até ${new Date(sub.current_period_end).toLocaleDateString('pt-BR')}.`
-            : 'Sem período ativo.'}
+        <CardContent className="space-y-1 p-4 text-sm text-muted-foreground">
+          <p>
+            {sub?.current_period_end
+              ? `Período atual até ${new Date(sub.current_period_end).toLocaleDateString('pt-BR')}.`
+              : 'Sem período ativo.'}
+          </p>
+          <p>
+            {franquiaTotal === null
+              ? `Gerações de IA neste período: ${franquiaUsada} (ilimitado).`
+              : `${franquiaUsada} de ${franquiaTotal} gerações de IA neste período.`}
+          </p>
         </CardContent>
       </Card>
 

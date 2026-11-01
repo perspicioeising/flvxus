@@ -52,4 +52,22 @@ describe('mapearErroIa', () => {
     const msg = mapearErroIa({ status: 500 });
     expect(msg).toMatch(/Não foi possível concluir/i);
   });
+
+  it('429 com code ai_quota_exceeded → mensagem de franquia (NÃO a de rate-limit)', () => {
+    const msg = mapearErroIa({
+      status: 429,
+      body: { error: { code: 'ai_quota_exceeded' } },
+    });
+    expect(msg).toMatch(/limite de gerações de IA do seu plano/i);
+    expect(msg).not.toMatch(/Muitas requisições/i);
+  });
+
+  it('403 com code ai_forbidden → mensagem de plano sem IA', () => {
+    const msg = mapearErroIa({
+      status: 403,
+      body: { error: { code: 'ai_forbidden' } },
+    });
+    expect(msg).toMatch(/plano atual não inclui recursos de IA/i);
+    expect(msg).not.toMatch(/Apenas o professor/i);
+  });
 });
