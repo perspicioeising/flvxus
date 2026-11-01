@@ -48,3 +48,6 @@ docs/**/_*-review.*
 
 # metadados internos dos workflows de agentes (nao versionar)
 /.agents/
+
+# checkpoint/saída intermediária do gerador de seed da biblioteca (pt-BR)
+/scripts/out/
