@@ -21,19 +21,27 @@ describe('normalizeGroup', () => {
 });
 
 describe('regionsForGroups', () => {
-  it('mapeia cada grupo canônico amplo para suas regiões', () => {
+  it('mapeia cada grupo canônico amplo para seus músculos (slug da lib)', () => {
     expect([...regionsForGroups(['Peito'])]).toEqual(['chest']);
-    expect([...regionsForGroups(['Costas'])]).toEqual(['upperBack']);
-    expect([...regionsForGroups(['Ombros'])]).toEqual(['shoulders']);
-    expect([...regionsForGroups(['Braços'])]).toEqual(['arms']);
-    expect([...regionsForGroups(['Core'])]).toEqual(['core']);
+    expect([...regionsForGroups(['Costas'])].sort()).toEqual(
+      ['lower-back', 'trapezius', 'upper-back'].sort()
+    );
+    expect([...regionsForGroups(['Ombros'])]).toEqual(['deltoids']);
+    expect([...regionsForGroups(['Braços'])].sort()).toEqual(
+      ['biceps', 'forearm', 'triceps'].sort()
+    );
+    expect([...regionsForGroups(['Core'])].sort()).toEqual(
+      ['abs', 'obliques'].sort()
+    );
   });
 
-  it('acende frente e costas das pernas (quadríceps + posterior + glúteos)', () => {
+  it('acende frente e costas das pernas (quadríceps + posterior + glúteos + panturrilha)', () => {
     const r = regionsForGroups(['Pernas']);
-    expect(r.has('quads')).toBe(true);
-    expect(r.has('hamstrings')).toBe(true);
-    expect(r.has('glutes')).toBe(true);
+    expect(r.has('quadriceps')).toBe(true);
+    expect(r.has('hamstring')).toBe(true);
+    expect(r.has('gluteal')).toBe(true);
+    expect(r.has('calves')).toBe(true);
+    expect(r.has('adductors')).toBe(true);
   });
 
   it('"Corpo Inteiro" acende todas as regiões', () => {
@@ -43,20 +51,26 @@ describe('regionsForGroups', () => {
   });
 
   it('normaliza variações de acento/caixa antes do mapeamento', () => {
-    expect([...regionsForGroups(['braços'])]).toEqual(['arms']);
-    expect([...regionsForGroups(['BRACOS'])]).toEqual(['arms']);
+    expect([...regionsForGroups(['braços'])].sort()).toEqual(
+      ['biceps', 'forearm', 'triceps'].sort()
+    );
+    expect([...regionsForGroups(['BRACOS'])].sort()).toEqual(
+      ['biceps', 'forearm', 'triceps'].sort()
+    );
     expect([...regionsForGroups(['  peito '])]).toEqual(['chest']);
   });
 
   it('faz a união deduplicada de vários grupos', () => {
     const r = regionsForGroups(['Peito', 'Ombros', 'Braços', 'Peito']);
-    expect([...r].sort()).toEqual(['arms', 'chest', 'shoulders']);
+    expect([...r].sort()).toEqual(
+      ['biceps', 'chest', 'deltoids', 'forearm', 'triceps'].sort()
+    );
   });
 
   it('ignora com segurança valores desconhecidos (fallback) sem quebrar', () => {
     expect([...regionsForGroups(['Flexibilidade'])]).toEqual([]);
     const r = regionsForGroups(['Peito', 'Mobilidade', 'Ombros']);
-    expect([...r].sort()).toEqual(['chest', 'shoulders']);
+    expect([...r].sort()).toEqual(['chest', 'deltoids'].sort());
   });
 
   it('"Cardio" não acende nenhuma região (não é grupo localizado)', () => {

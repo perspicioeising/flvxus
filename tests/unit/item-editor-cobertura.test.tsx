@@ -46,6 +46,16 @@ function mapaCobertura(): HTMLElement {
   return screen.getByRole('img', { name: /Músculos trabalhados/ });
 }
 
+/**
+ * Músculos acesos no mapa, lidos do hook estável `data-active-regions` do
+ * wrapper (o SVG anatômico vem da lib `@mjcdev/react-body-highlighter`, que
+ * carrega só no cliente; o wrapper expõe os `slug` ativos de forma síncrona).
+ */
+function ativas(mapa: HTMLElement): Set<string> {
+  const raw = mapa.getAttribute('data-active-regions') ?? '';
+  return new Set(raw.split(' ').filter(Boolean));
+}
+
 describe('ItemEditor — cobertura muscular', () => {
   it('mostra a cobertura com a união dos grupos dos itens', () => {
     render(
@@ -62,14 +72,10 @@ describe('ItemEditor — cobertura muscular', () => {
       'aria-label',
       'Músculos trabalhados: Peito, Pernas'
     );
-    // Regiões ativas incluem peito e as da perna.
-    const ativas = new Set(
-      Array.from(mapa.querySelectorAll('[data-region][data-active="true"]')).map(
-        (el) => el.getAttribute('data-region')
-      )
-    );
-    expect(ativas.has('chest')).toBe(true);
-    expect(ativas.has('quads')).toBe(true);
+    // Músculos ativos incluem peito e os da perna.
+    const acesos = ativas(mapa);
+    expect(acesos.has('chest')).toBe(true);
+    expect(acesos.has('quadriceps')).toBe(true);
   });
 
   it('atualiza a cobertura ao remover um exercício', () => {
@@ -89,13 +95,9 @@ describe('ItemEditor — cobertura muscular', () => {
 
     const mapa = mapaCobertura();
     expect(mapa).toHaveAttribute('aria-label', 'Músculos trabalhados: Peito');
-    const ativas = new Set(
-      Array.from(mapa.querySelectorAll('[data-region][data-active="true"]')).map(
-        (el) => el.getAttribute('data-region')
-      )
-    );
-    expect(ativas.has('chest')).toBe(true);
-    expect(ativas.has('quads')).toBe(false);
+    const acesos = ativas(mapa);
+    expect(acesos.has('chest')).toBe(true);
+    expect(acesos.has('quadriceps')).toBe(false);
   });
 
   it('não mostra cobertura quando não há itens', () => {

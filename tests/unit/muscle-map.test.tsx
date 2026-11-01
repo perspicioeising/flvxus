@@ -10,11 +10,15 @@ import { MuscleMap } from '@/components/muscle-map';
  */
 afterEach(cleanup);
 
-/** Regiões marcadas como ativas (`data-active="true"`), ordenadas. */
+/**
+ * Músculos acesos, lidos do hook estável `data-active-regions` do wrapper. O
+ * SVG anatômico vem da lib `@mjcdev/react-body-highlighter` (carrega só no
+ * cliente), mas o wrapper expõe os `slug` ativos de forma síncrona.
+ */
 function regioesAtivas(container: HTMLElement): string[] {
-  return Array.from(container.querySelectorAll('[data-region][data-active="true"]'))
-    .map((el) => el.getAttribute('data-region') ?? '')
-    .sort();
+  const el = container.querySelector('[data-active-regions]');
+  const raw = el?.getAttribute('data-active-regions') ?? '';
+  return raw.split(' ').filter(Boolean).sort();
 }
 
 describe('MuscleMap', () => {
@@ -30,18 +34,21 @@ describe('MuscleMap', () => {
   it('acende as regiões de peito, ombros e braços (frente e costas)', () => {
     const { container } = render(<MuscleMap grupos={['Peito', 'Ombros', 'Braços']} />);
     const ativas = regioesAtivas(container);
-    // Duplicatas frente/costas: cada região pode aparecer 2x no SVG.
-    expect(new Set(ativas)).toEqual(new Set(['chest', 'shoulders', 'arms']));
-    expect(ativas).not.toContain('quads');
-    expect(ativas).not.toContain('upperBack');
+    // Peito → peitoral; ombros → deltoides; braços → bíceps+tríceps+antebraço.
+    expect(new Set(ativas)).toEqual(
+      new Set(['chest', 'deltoids', 'biceps', 'triceps', 'forearm'])
+    );
+    expect(ativas).not.toContain('quadriceps');
+    expect(ativas).not.toContain('upper-back');
   });
 
-  it('"Pernas" acende quadríceps, posterior e glúteos', () => {
+  it('"Pernas" acende quadríceps, posterior, glúteos e panturrilha', () => {
     const { container } = render(<MuscleMap grupos={['Pernas']} />);
     const ativas = new Set(regioesAtivas(container));
-    expect(ativas.has('quads')).toBe(true);
-    expect(ativas.has('hamstrings')).toBe(true);
-    expect(ativas.has('glutes')).toBe(true);
+    expect(ativas.has('quadriceps')).toBe(true);
+    expect(ativas.has('hamstring')).toBe(true);
+    expect(ativas.has('gluteal')).toBe(true);
+    expect(ativas.has('calves')).toBe(true);
     expect(ativas.has('chest')).toBe(false);
   });
 
