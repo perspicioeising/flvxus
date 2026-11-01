@@ -416,6 +416,10 @@ describe('SessaoExecucao — resumo pós-treino (fluxo do aluno)', () => {
     fireEvent.click(gatilho);
     fireEvent.click(await screen.findByRole('button', { name: /^finalizar$/i }));
 
+    // Pode abrir o aviso de séries incompletas: confirma finalização.
+    const avisoBtn = screen.queryByRole('button', { name: /finalizar mesmo assim/i });
+    if (avisoBtn) fireEvent.click(avisoBtn);
+
     await waitFor(() => {
       expect(finalizarSessao).toHaveBeenCalledTimes(1);
       // sess-1 é o id devolvido pelo mock de iniciarSessao.
@@ -485,6 +489,10 @@ describe('SessaoExecucao — executado pelo professor (treino presencial)', () =
     // Abre o diálogo de finalização e confirma.
     fireEvent.click(gatilho);
     fireEvent.click(await screen.findByRole('button', { name: /^finalizar$/i }));
+
+    // Pode abrir o aviso de séries incompletas: confirma finalização.
+    const avisoBtn = screen.queryByRole('button', { name: /finalizar mesmo assim/i });
+    if (avisoBtn) fireEvent.click(avisoBtn);
 
     // finalizarSessao resolve e navega para a MESMA tela de resumo, na rota do
     // professor (contexto do aluno-alvo). sess-1 é o id do mock de iniciarSessao.

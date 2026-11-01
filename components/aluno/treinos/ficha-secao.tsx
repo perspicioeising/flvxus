@@ -5,6 +5,7 @@ import { DivisaoResumoCard } from '@/components/aluno/treinos/divisao-resumo-car
 /** Item de ficha vindo do select (campos usados pela seção). */
 interface ItemFicha {
   id: string;
+  weekday?: number | null;
   division: string | null;
   order_index: number;
   sets: number | null;
@@ -31,10 +32,23 @@ export interface FichaSecaoProps {
   /** A ficha a renderizar como seção. */
   ficha: FichaSecaoDados;
   /**
-   * Quando `true`, a primeira divisão desta ficha recebe o selo "Próximo".
-   * Só a ficha mais recente passa `true` (uma única divisão com o selo na tela).
+   * Quando `true`, alguma divisão desta ficha recebe o selo "Próximo".
+   * `false` quando `proximoTreinoDaFicha` retornou `null` (ficha legada sem
+   * treino hoje) — nesse caso nenhuma divisão recebe o selo.
    */
   marcarProximo: boolean;
+  /**
+   * Rótulo da divisão que deve receber o selo "Próximo" (ex.: 'A'), ou `null`
+   * para o balde sem divisão. `undefined` = fichas legadas por dia (sem
+   * divisão nomeada) → aplica o comportamento anterior (index 0).
+   */
+  proximaDivisao?: string | null;
+  /**
+   * Set das divisões (rótulo ou `null` para o balde) que têm sessão ABERTA
+   * para esta ficha. Quando uma divisão está no set, exibe "Em andamento"
+   * em vez de (ou com prioridade sobre) "Próximo".
+   */
+  sessoesAbertas?: Set<string | null>;
 }
 
 /**
@@ -44,9 +58,17 @@ export interface FichaSecaoProps {
  * (`?divisao=`); o balde "Divisão única" usa o sentinela `__sem__`. Com uma só
  * ficha na tela, o resultado é equivalente em conteúdo e layout ao anterior.
  */
-export function FichaSecao({ ficha, marcarProximo }: FichaSecaoProps) {
+export function FichaSecao({
+  ficha,
+  marcarProximo,
+  proximaDivisao,
+  sessoesAbertas = new Set(),
+}: FichaSecaoProps) {
   const itens = ficha.workout_plan_items ?? [];
   const divisoes = agruparPorDivisao(itens, (item) => item.division ?? null);
+
+  // Detecta se a ficha usa eixo divisão (pelo menos um item com divisão).
+  const porDivisao = itens.some((item) => (item.division ?? null) !== null);
 
   return (
     <section className="space-y-3">
@@ -69,14 +91,43 @@ export function FichaSecao({ ficha, marcarProximo }: FichaSecaoProps) {
           // Eixo explícito no href: divisão nomeada → ?divisao=A; balde sem
           // divisão → sentinela __sem__ (nunca "sem query").
           const eixo = grupo.division ?? DIVISAO_SEM;
+
+          // Chave de comparação da divisão neste card (null = balde sem divisão).
+          const divKey = grupo.division;
+
+          // "Em andamento": sessão aberta para esta divisão.
+          const emAndamento = sessoesAbertas.has(divKey);
+
+          // "Próximo": depende do eixo da ficha.
+          // - Por divisão: marca o card cuja divisão bate com `proximaDivisao`.
+          //   Quando `proximaDivisao` não foi passado (`undefined`) e a ficha é
+          //   por divisão, cai no comportamento anterior (index 0).
+          //   (null == null para o balde sem divisão)
+          // - Legado por dia (proximaDivisao === undefined E não porDivisao): index 0.
+          let eProximo = false;
+          if (marcarProximo) {
+            if (porDivisao && proximaDivisao !== undefined) {
+              eProximo = !emAndamento && divKey === proximaDivisao;
+            } else {
+              // Fichas legadas por dia OU chamadores sem proximaDivisao: index 0.
+              eProximo = !emAndamento && index === 0;
+            }
+          }
+
+          // CTA para execução quando em andamento (aponta direto para a execução).
+          const hrefExecucao = `/aluno/execucao/${ficha.id}?divisao=${encodeURIComponent(eixo)}`;
+          const hrefDetalhe = `/aluno/treinos/${ficha.id}?divisao=${encodeURIComponent(eixo)}`;
+
           return (
             <DivisaoResumoCard
               key={grupo.division ?? 'sem-divisao'}
               letra={grupo.division}
               nome={grupos.length > 0 ? grupos.join(', ') : ''}
               grupos={grupos}
-              proximo={marcarProximo && index === 0}
-              href={`/aluno/treinos/${ficha.id}?divisao=${encodeURIComponent(eixo)}`}
+              proximo={eProximo}
+              emAndamento={emAndamento}
+              href={hrefDetalhe}
+              ctaHref={emAndamento ? hrefExecucao : undefined}
             />
           );
         })}
