@@ -36,6 +36,9 @@ interface SerieJoin {
   set_number: number;
   kind: SetKind;
   note: string | null;
+  target_reps: string | null;
+  rest_seconds: number | null;
+  target_load: number | null;
 }
 
 /**
@@ -45,7 +48,14 @@ interface SerieJoin {
 function seriesDoJoin(sets: unknown): ItemExecucao['series'] {
   if (!Array.isArray(sets) || sets.length === 0) return undefined;
   return (sets as SerieJoin[])
-    .map((s) => ({ setNumber: s.set_number, kind: s.kind, note: s.note }))
+    .map((s) => ({
+      setNumber: s.set_number,
+      kind: s.kind,
+      note: s.note,
+      targetReps: s.target_reps,
+      restSeconds: s.rest_seconds,
+      targetLoad: s.target_load,
+    }))
     .sort((a, b) => a.setNumber - b.setNumber);
 }
 
@@ -133,7 +143,7 @@ export default async function ProfessorTreinarAlunoPage({
   const { data: itensData } = await supabase
     .from('workout_plan_items')
     .select(
-      'id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors), workout_plan_item_sets(set_number, kind, note)'
+      'id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors), workout_plan_item_sets(set_number, kind, note, target_reps, rest_seconds, target_load)'
     )
     .eq('plan_id', ficha.id)
     .order('order_index', { ascending: true })

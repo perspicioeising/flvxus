@@ -61,6 +61,7 @@ import { agruparPorDia } from '@/lib/semana';
 import { agruparPorDivisao, DIVISAO_SEM } from '@/lib/divisao';
 import { Badge } from '@/components/ui/badge';
 import type { SetKind } from '@/types/database.types';
+import { valoresDaSerie, type ValoresResolvidos } from '@/lib/treino/series';
 import { SET_KIND_LABEL, SET_KIND_VARIANTE } from '@/components/professor/treinos/labels';
 import { TimerDescanso } from './timer-descanso';
 import { ExercicioInfo } from './exercicio-info';
@@ -95,26 +96,19 @@ export interface ItemExecucao {
   /** URL JÁ ASSINADA da thumbnail (TTL curto) ou `null`. */
   thumbnailUrl: string | null;
   /**
-   * Séries detalhadas (tipo + observação), ordenadas por `setNumber`. Ausente
-   * em fichas legadas (sem séries detalhadas): a UI usa o fallback de
-   * `serieInfo` ('work', sem observação). Somente LEITURA nesta tela.
+   * Séries detalhadas (tipo + observação + reps/descanso/carga por série),
+   * ordenadas por `setNumber`. Ausente em fichas legadas (sem séries
+   * detalhadas): a resolução cai no fallback do item (`resolver`/`valoresDaSerie`
+   * → 'work', sem observação, valores do item). Somente LEITURA nesta tela.
    */
-  series?: { setNumber: number; kind: SetKind; note: string | null }[];
-}
-
-/**
- * Tipo + observação de uma série de um item, com FALLBACK para fichas legadas
- * (sem séries detalhadas): `{ kind: 'work', note: null }`. Função pura, só
- * leitura — não participa do registro/progresso da sessão.
- */
-function serieInfo(
-  item: ItemExecucao,
-  setNumber: number
-): { kind: SetKind; note: string | null } {
-  const encontrada = item.series?.find((s) => s.setNumber === setNumber);
-  return encontrada
-    ? { kind: encontrada.kind, note: encontrada.note }
-    : { kind: 'work', note: null };
+  series?: {
+    setNumber: number;
+    kind: SetKind;
+    note: string | null;
+    targetReps: string | null;
+    restSeconds: number | null;
+    targetLoad: number | null;
+  }[];
 }
 
 /** Estado local de uma série (uma linha do exercício). */
@@ -128,6 +122,20 @@ interface EstadoSerie {
 /** Chave única de uma série no mapa de estado: `itemId:setNumber`. */
 function chaveSerie(itemId: string, setNumber: number): string {
   return `${itemId}:${setNumber}`;
+}
+
+/**
+ * Wrapper fino sobre o helper puro `valoresDaSerie`: resolve kind/nota/reps/
+ * descanso/carga de UMA série (série vence; o item é fallback). Achata o item
+ * em `ItemDefaults` para não acoplar o helper à UI. Fichas legadas (sem séries
+ * ou com coluna NULL cujo item também é NULL) caem no valor do item.
+ */
+function resolver(item: ItemExecucao, setNumber: number): ValoresResolvidos {
+  return valoresDaSerie(item.series, setNumber, {
+    reps: item.reps,
+    restSeconds: item.descansoSegundos,
+    cargaAlvo: item.cargaAlvo,
+  });
 }
 
 /**
@@ -433,13 +441,16 @@ export function SessaoExecucao({
     const inicial: Record<string, EstadoSerie> = {};
     for (const item of itens) {
       for (let n = 1; n <= item.sets; n += 1) {
+        // Carga inicial por SÉRIE (série vence; item é fallback), não mais só a
+        // do item. `resolver` resolve a carga-alvo daquela série específica.
+        const cargaSerie = resolver(item, n).cargaAlvo;
         inicial[chaveSerie(item.id, n)] = {
           // `reps` fica VAZIO: a prescrição (`item.reps`) costuma ser uma FAIXA
           // de texto ("10-12") e `reps_done` é um inteiro (quantas o aluno fez).
           // Pré-preencher com a faixa fazia o registro falhar na validação Zod.
           // A faixa prescrita vira placeholder no input.
           reps: '',
-          carga: item.cargaAlvo !== null ? String(item.cargaAlvo) : '',
+          carga: cargaSerie !== null ? String(cargaSerie) : '',
           completed: false,
           salvando: false,
         };
@@ -683,10 +694,12 @@ export function SessaoExecucao({
           const proximaSerie = proximo[proximaChave];
           if (item && proximaSerie && !proximaSerie.completed) {
             // `reps` nasce vazio (não herda a faixa prescrita); a carga nasce
-            // da prescrição. A próxima série ainda está "intocada" quando bate
-            // esses defaults — só então herdamos os valores desta série.
+            // da prescrição DA PRÓXIMA SÉRIE (série vence; item é fallback). A
+            // próxima série ainda está "intocada" quando bate esses defaults —
+            // só então herdamos os valores desta série.
+            const cargaProxima = resolver(item, setNumber + 1).cargaAlvo;
             const defaultCarga =
-              item.cargaAlvo !== null ? String(item.cargaAlvo) : '';
+              cargaProxima !== null ? String(cargaProxima) : '';
             if (
               proximaSerie.reps === '' &&
               proximaSerie.carga === defaultCarga
@@ -711,7 +724,12 @@ export function SessaoExecucao({
         // descanso — segue para o fluxo de finalizar/RPE já existente).
         const ehUltimaSerie = item ? setNumber === item.sets : false;
         const ehUltimoExercicio = indiceAtual >= itensVisiveis.length - 1;
-        const temDescanso = (item?.descansoSegundos ?? 0) > 0;
+        // Descanso da SÉRIE concluída (série vence; item é fallback), não mais
+        // o descanso único do item.
+        const descansoSerie = item
+          ? resolver(item, setNumber).restSeconds
+          : null;
+        const temDescanso = (descansoSerie ?? 0) > 0;
 
         if (item && temDescanso && !(ehUltimaSerie && ehUltimoExercicio)) {
           // Rótulo opcional "a seguir": próxima série do mesmo exercício, ou o
@@ -724,7 +742,7 @@ export function SessaoExecucao({
           setDescansoResetKey((k) => k + 1);
           setDescansoAberto({
             itemId,
-            segundos: item.descansoSegundos as number,
+            segundos: descansoSerie as number,
             proximoRotulo,
           });
         }
@@ -1049,7 +1067,10 @@ export function SessaoExecucao({
                                 id={`${chave}-reps`}
                                 inputMode="numeric"
                                 value={estado.reps}
-                                placeholder={itemAtual.reps ?? undefined}
+                                placeholder={
+                                  resolver(itemAtual, setNumber).reps ??
+                                  undefined
+                                }
                                 onChange={(e) =>
                                   atualizarCampo(chave, 'reps', e.target.value)
                                 }
@@ -1125,7 +1146,7 @@ export function SessaoExecucao({
                             />
                             Série {setNumber}
                             {(() => {
-                              const info = serieInfo(itemAtual, setNumber);
+                              const info = resolver(itemAtual, setNumber);
                               return (
                                 <Badge
                                   variant={SET_KIND_VARIANTE[info.kind]}
@@ -1137,7 +1158,7 @@ export function SessaoExecucao({
                             })()}
                           </span>
                           {(() => {
-                            const info = serieInfo(itemAtual, setNumber);
+                            const info = resolver(itemAtual, setNumber);
                             return info.note ? (
                               <span className="text-xs text-muted-foreground">
                                 {info.note}
@@ -1180,14 +1201,14 @@ export function SessaoExecucao({
               const estado = series[chave];
               if (!estado) return null;
 
-              const info = serieInfo(itemAtual, setNumber);
+              const info = resolver(itemAtual, setNumber);
 
               return (
                 <div className="space-y-4">
                   {/* Tipo da série + observação específica (só leitura). O
                       Badge comunica aquecimento/adaptação/trabalho; a nota, se
                       houver, aparece abaixo. Fichas legadas caem no fallback
-                      'Trabalho' sem observação via serieInfo. */}
+                      'Trabalho' sem observação via resolver/valoresDaSerie. */}
                   <div className="space-y-1.5">
                     <Badge variant={SET_KIND_VARIANTE[info.kind]}>
                       {SET_KIND_LABEL[info.kind]}
@@ -1210,7 +1231,9 @@ export function SessaoExecucao({
                         id={`${chave}-reps`}
                         inputMode="numeric"
                         value={estado.reps}
-                        placeholder={itemAtual.reps ?? undefined}
+                        placeholder={
+                          resolver(itemAtual, setNumber).reps ?? undefined
+                        }
                         onChange={(e) =>
                           atualizarCampo(chave, 'reps', e.target.value)
                         }
