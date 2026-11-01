@@ -38,6 +38,7 @@ export type GoalType =
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 export type AssessmentProtocol = 'pollock_3' | 'pollock_7' | 'guedes' | 'durnin' | 'manual';
 export type PlanStatus = 'draft' | 'pending_review' | 'approved' | 'released' | 'archived';
+export type SetKind = 'warmup' | 'adaptation' | 'work';
 export type AiJobType = 'generate_diet' | 'suggest_workout' | 'analyze_assessment' | 'weekly_adherence';
 export type AiJobStatus = 'pending' | 'succeeded' | 'failed' | 'rejected';
 export type AppointmentStatus = 'scheduled' | 'done' | 'canceled' | 'no_show';
@@ -284,6 +285,38 @@ export interface Database {
           created_at?: string;
         };
       };
+      workout_exercise_sets: {
+        Row: {
+          id: string;
+          workout_exercise_id: string;
+          set_number: number;
+          kind: SetKind;
+          note: string | null;
+          target_reps: string | null;
+          target_load: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workout_exercise_id: string;
+          set_number: number;
+          kind?: SetKind;
+          note?: string | null;
+          target_reps?: string | null;
+          target_load?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workout_exercise_id?: string;
+          set_number?: number;
+          kind?: SetKind;
+          note?: string | null;
+          target_reps?: string | null;
+          target_load?: number | null;
+          created_at?: string;
+        };
+      };
       workout_plans: {
         Row: {
           id: string;
@@ -366,6 +399,38 @@ export interface Database {
           rest_seconds?: number | null;
           target_load?: number | null;
           notes?: string | null;
+          created_at?: string;
+        };
+      };
+      workout_plan_item_sets: {
+        Row: {
+          id: string;
+          plan_item_id: string;
+          set_number: number;
+          kind: SetKind;
+          note: string | null;
+          target_reps: string | null;
+          target_load: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_item_id: string;
+          set_number: number;
+          kind?: SetKind;
+          note?: string | null;
+          target_reps?: string | null;
+          target_load?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_item_id?: string;
+          set_number?: number;
+          kind?: SetKind;
+          note?: string | null;
+          target_reps?: string | null;
+          target_load?: number | null;
           created_at?: string;
         };
       };
@@ -1252,6 +1317,7 @@ export interface Database {
       experience_level: ExperienceLevel;
       assessment_protocol: AssessmentProtocol;
       plan_status: PlanStatus;
+      set_kind: SetKind;
       ai_job_type: AiJobType;
       ai_job_status: AiJobStatus;
       appointment_status: AppointmentStatus;

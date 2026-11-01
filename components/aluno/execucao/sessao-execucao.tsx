@@ -59,6 +59,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { agruparPorDia } from '@/lib/semana';
 import { agruparPorDivisao, DIVISAO_SEM } from '@/lib/divisao';
+import { Badge } from '@/components/ui/badge';
+import type { SetKind } from '@/types/database.types';
+import { SET_KIND_LABEL, SET_KIND_VARIANTE } from '@/components/professor/treinos/labels';
 import { TimerDescanso } from './timer-descanso';
 import { ExercicioInfo } from './exercicio-info';
 import { SeletorDia, type OpcaoDia } from './seletor-dia';
@@ -91,6 +94,27 @@ export interface ItemExecucao {
   videoUrl: string | null;
   /** URL JÁ ASSINADA da thumbnail (TTL curto) ou `null`. */
   thumbnailUrl: string | null;
+  /**
+   * Séries detalhadas (tipo + observação), ordenadas por `setNumber`. Ausente
+   * em fichas legadas (sem séries detalhadas): a UI usa o fallback de
+   * `serieInfo` ('work', sem observação). Somente LEITURA nesta tela.
+   */
+  series?: { setNumber: number; kind: SetKind; note: string | null }[];
+}
+
+/**
+ * Tipo + observação de uma série de um item, com FALLBACK para fichas legadas
+ * (sem séries detalhadas): `{ kind: 'work', note: null }`. Função pura, só
+ * leitura — não participa do registro/progresso da sessão.
+ */
+function serieInfo(
+  item: ItemExecucao,
+  setNumber: number
+): { kind: SetKind; note: string | null } {
+  const encontrada = item.series?.find((s) => s.setNumber === setNumber);
+  return encontrada
+    ? { kind: encontrada.kind, note: encontrada.note }
+    : { kind: 'work', note: null };
 }
 
 /** Estado local de uma série (uma linha do exercício). */
@@ -1082,12 +1106,33 @@ export function SessaoExecucao({
                         key={chave}
                         className="flex items-center justify-between gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm"
                       >
-                        <span className="flex items-center gap-2 font-medium text-foreground">
-                          <Check
-                            className="h-4 w-4 text-primary"
-                            aria-hidden="true"
-                          />
-                          Série {setNumber}
+                        <span className="flex min-w-0 flex-col gap-1">
+                          <span className="flex items-center gap-2 font-medium text-foreground">
+                            <Check
+                              className="h-4 w-4 text-primary"
+                              aria-hidden="true"
+                            />
+                            Série {setNumber}
+                            {(() => {
+                              const info = serieInfo(itemAtual, setNumber);
+                              return (
+                                <Badge
+                                  variant={SET_KIND_VARIANTE[info.kind]}
+                                  className="shrink-0"
+                                >
+                                  {SET_KIND_LABEL[info.kind]}
+                                </Badge>
+                              );
+                            })()}
+                          </span>
+                          {(() => {
+                            const info = serieInfo(itemAtual, setNumber);
+                            return info.note ? (
+                              <span className="text-xs text-muted-foreground">
+                                {info.note}
+                              </span>
+                            ) : null;
+                          })()}
                         </span>
                         <span className="flex items-center gap-2">
                           <span className="tabular-nums text-muted-foreground">
@@ -1124,8 +1169,23 @@ export function SessaoExecucao({
               const estado = series[chave];
               if (!estado) return null;
 
+              const info = serieInfo(itemAtual, setNumber);
+
               return (
                 <div className="space-y-4">
+                  {/* Tipo da série + observação específica (só leitura). O
+                      Badge comunica aquecimento/adaptação/trabalho; a nota, se
+                      houver, aparece abaixo. Fichas legadas caem no fallback
+                      'Trabalho' sem observação via serieInfo. */}
+                  <div className="space-y-1.5">
+                    <Badge variant={SET_KIND_VARIANTE[info.kind]}>
+                      {SET_KIND_LABEL[info.kind]}
+                    </Badge>
+                    {info.note ? (
+                      <p className="text-sm text-muted-foreground">{info.note}</p>
+                    ) : null}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     {/* Card REPS */}
                     <div className="space-y-3 rounded-3xl border border-border p-4">

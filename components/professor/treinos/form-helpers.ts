@@ -28,6 +28,17 @@ export function itensEditaveisParaInput(
     if (comDivisao) {
       base.division = item.division ?? undefined;
     }
+    // Propaga as séries detalhadas só quando materializadas no editor; o schema
+    // normaliza cada campo (strings vazias → undefined).
+    if (item.series !== undefined) {
+      base.series = item.series.map((serie) => ({
+        set_number: serie.set_number,
+        kind: serie.kind,
+        note: serie.note,
+        target_reps: serie.target_reps,
+        target_load: serie.target_load,
+      }));
+    }
     return base;
   });
 }

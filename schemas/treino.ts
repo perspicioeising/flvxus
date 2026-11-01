@@ -59,6 +59,35 @@ const repsOpcional = z.preprocess(
   z.string().trim().min(1).optional()
 );
 
+/** Observação opcional de série: texto com teto defensivo de 280 caracteres. */
+const notaSerieOpcional = z.preprocess(
+  (valor) => (valor === '' || valor === null ? undefined : valor),
+  z.string().trim().min(1).max(280).optional()
+);
+
+// -----------------------------------------------------------------------------
+// Séries detalhadas (tipo + observação por série) — opcionais por item
+// -----------------------------------------------------------------------------
+
+/**
+ * Tipos de série do domínio (enum nativo `public.set_kind`). Centralizados aqui
+ * para o schema e a UI compartilharem a mesma fonte. `work` é o default.
+ */
+export const SET_KINDS = ['warmup', 'adaptation', 'work'] as const;
+
+/**
+ * Uma SÉRIE detalhada de um item. Opcional por item: fichas/modelos sem séries
+ * detalhadas continuam válidos (retrocompatibilidade — a execução assume o
+ * default 'work' sem observação). `set_number` numera a série dentro do item.
+ */
+export const serieSchema = z.object({
+  set_number: z.coerce.number().int().min(1),
+  kind: z.enum(SET_KINDS).default('work'),
+  note: notaSerieOpcional,
+  target_reps: repsOpcional.optional(),
+  target_load: numeroPositivoOpcional,
+});
+
 // -----------------------------------------------------------------------------
 // Itens (um exercício prescrito dentro de um modelo ou de uma ficha)
 // -----------------------------------------------------------------------------
@@ -74,10 +103,37 @@ const camposPrescricao = {
   rest_seconds: inteiroPositivoOpcional,
   target_load: numeroPositivoOpcional,
   notes: textoOpcional,
+  series: z.array(serieSchema).optional(),
 };
 
+/**
+ * Valida que, QUANDO há séries detalhadas, elas formam um conjunto CONTÍGUO
+ * `1..N` (sem buraco nem repetição). Itens sem `series` (ou com lista vazia)
+ * passam direto — não comparamos com `sets`. Reutilizado pelo item de modelo e
+ * de ficha.
+ */
+function validarSeriesContiguas(
+  item: { series?: Array<{ set_number: number }> },
+  ctx: z.RefinementCtx
+): void {
+  const series = item.series;
+  if (!series || series.length === 0) return;
+
+  const numeros = series.map((s) => s.set_number).sort((a, b) => a - b);
+  const contiguo = numeros.every((n, i) => n === i + 1);
+  if (!contiguo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'As séries detalhadas devem ser numeradas de 1 a N sem falhas.',
+      path: ['series'],
+    });
+  }
+}
+
 /** Item de um MODELO de treino (`workout_exercises`). */
-export const itemModeloSchema = z.object(camposPrescricao);
+export const itemModeloSchema = z
+  .object(camposPrescricao)
+  .superRefine(validarSeriesContiguas);
 
 /** Dia da semana 0 (domingo) a 6 (sábado), opcional. */
 const weekdayOpcional = z.preprocess((valor) => {
@@ -99,11 +155,13 @@ const divisaoOpcional = z.preprocess(
 );
 
 /** Item de uma FICHA (`workout_plan_items`) — acrescenta `weekday` e `division`. */
-export const itemFichaSchema = z.object({
-  ...camposPrescricao,
-  weekday: weekdayOpcional,
-  division: divisaoOpcional,
-});
+export const itemFichaSchema = z
+  .object({
+    ...camposPrescricao,
+    weekday: weekdayOpcional,
+    division: divisaoOpcional,
+  })
+  .superRefine(validarSeriesContiguas);
 
 // -----------------------------------------------------------------------------
 // Modelo e Ficha
@@ -139,6 +197,7 @@ export const fichaSchema = z.object({
     .min(1, 'Adicione ao menos um exercício à ficha.'),
 });
 
+export type SerieInput = z.infer<typeof serieSchema>;
 export type ItemModeloInput = z.infer<typeof itemModeloSchema>;
 export type ItemFichaInput = z.infer<typeof itemFichaSchema>;
 export type ModeloInput = z.infer<typeof modeloSchema>;

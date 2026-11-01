@@ -111,6 +111,84 @@ describe('itemFichaSchema', () => {
   });
 });
 
+describe('séries detalhadas (tipo + observação por série)', () => {
+  it('aceita item SEM series (retrocompatibilidade)', () => {
+    const modelo = itemModeloSchema.safeParse({ exercise_id: EX_ID });
+    expect(modelo.success).toBe(true);
+    if (modelo.success) {
+      expect(modelo.data.series).toBeUndefined();
+    }
+    const ficha = itemFichaSchema.safeParse({ exercise_id: EX_ID });
+    expect(ficha.success).toBe(true);
+  });
+
+  it('aceita series contíguas 1..N (fora de ordem na entrada)', () => {
+    const r = itemFichaSchema.safeParse({
+      exercise_id: EX_ID,
+      series: [
+        { set_number: 2, kind: 'work', note: 'série de trabalho' },
+        { set_number: 1, kind: 'warmup' },
+        { set_number: 3, kind: 'adaptation', note: '' },
+      ],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.series).toHaveLength(3);
+      // `kind` default aplicado e `note` vazia normalizada para undefined.
+      expect(r.data.series?.[1].kind).toBe('warmup');
+    }
+  });
+
+  it('aplica o default kind="work" quando ausente', () => {
+    const r = serieSchemaDefaultKind();
+    expect(r).toBe('work');
+  });
+
+  it('rejeita series com buraco (1,3 sem o 2)', () => {
+    const r = itemFichaSchema.safeParse({
+      exercise_id: EX_ID,
+      series: [
+        { set_number: 1, kind: 'work' },
+        { set_number: 3, kind: 'work' },
+      ],
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path.includes('series'))).toBe(true);
+    }
+  });
+
+  it('rejeita series com número repetido (1,1)', () => {
+    const r = itemModeloSchema.safeParse({
+      exercise_id: EX_ID,
+      series: [
+        { set_number: 1, kind: 'work' },
+        { set_number: 1, kind: 'warmup' },
+      ],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('item com series vazio é válido (não compara com sets)', () => {
+    const r = itemFichaSchema.safeParse({
+      exercise_id: EX_ID,
+      sets: '3',
+      series: [],
+    });
+    expect(r.success).toBe(true);
+  });
+});
+
+/** Helper local: confirma o default de `kind` ao parsear uma série sem o campo. */
+function serieSchemaDefaultKind(): string {
+  const r = itemFichaSchema.safeParse({
+    exercise_id: EX_ID,
+    series: [{ set_number: 1 }],
+  });
+  if (!r.success) throw new Error('esperava sucesso');
+  return r.data.series?.[0].kind ?? 'erro';
+}
+
 describe('divisaoModeloSchema', () => {
   it('aceita um modelo com rótulo de divisão válido', () => {
     const r = divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: 'A' });

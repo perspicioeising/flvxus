@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
+
+/** Cliente Supabase (RLS ativo) usado em todas as actions deste módulo. */
+type SupabaseClientRls = Awaited<ReturnType<typeof createClient>>;
 import {
   agendamentoSchema,
   clonarFichaSchema,
@@ -19,9 +22,10 @@ import {
   type ItemFichaInput,
   type ItemModeloInput,
   type ModeloInput,
+  type SerieInput,
 } from '@/schemas/treino';
 import { formatarDataBr } from '@/components/professor/treinos/labels';
-import type { PlanStatus } from '@/types/database.types';
+import type { PlanStatus, SetKind } from '@/types/database.types';
 
 /**
  * Server Actions do domínio de treinos (architecture.md §6.2, §6.4).
@@ -65,9 +69,20 @@ function erroDeCampo(flatten: {
 // Montagem de payloads de itens
 // -----------------------------------------------------------------------------
 
-/** Linha de `workout_exercises` a partir de um item validado do modelo. */
-function itemModeloParaLinha(workoutId: string, item: ItemModeloInput, indice: number) {
+/**
+ * Linha de `workout_exercises` a partir de um item validado do modelo. O `id` é
+ * GERADO NO SERVIDOR (`crypto.randomUUID()`) antes do insert em lote para casar
+ * cada linha filha de séries ao seu item pai (PostgREST não garante a ordem de
+ * retorno do insert — ver context.json).
+ */
+function itemModeloParaLinha(
+  workoutId: string,
+  item: ItemModeloInput,
+  indice: number,
+  id: string
+) {
   return {
+    id,
     workout_id: workoutId,
     exercise_id: item.exercise_id,
     order_index: item.order_index ?? indice,
@@ -80,8 +95,14 @@ function itemModeloParaLinha(workoutId: string, item: ItemModeloInput, indice: n
 }
 
 /** Linha de `workout_plan_items` a partir de um item validado da ficha. */
-function itemFichaParaLinha(planId: string, item: ItemFichaInput, indice: number) {
+function itemFichaParaLinha(
+  planId: string,
+  item: ItemFichaInput,
+  indice: number,
+  id: string
+) {
   return {
+    id,
     plan_id: planId,
     exercise_id: item.exercise_id,
     weekday: item.weekday ?? null,
@@ -93,6 +114,87 @@ function itemFichaParaLinha(planId: string, item: ItemFichaInput, indice: number
     target_load: item.target_load ?? null,
     notes: item.notes ?? null,
   };
+}
+
+/**
+ * Achata as séries detalhadas de uma lista de itens (cada um com seu `id` já
+ * gerado) em linhas de uma tabela de séries, carimbando a FK do item pai
+ * (`plan_item_id` ou `workout_exercise_id`). Itens sem séries são ignorados
+ * (legado). Usada para FICHA e MODELO via o nome da coluna FK.
+ */
+function linhasDeSeries<K extends 'plan_item_id' | 'workout_exercise_id'>(
+  colunaFk: K,
+  itens: Array<{ id: string; series?: SerieInput[] }>
+): Array<Record<string, unknown>> {
+  const linhas: Array<Record<string, unknown>> = [];
+  for (const item of itens) {
+    if (!item.series || item.series.length === 0) continue;
+    for (const serie of item.series) {
+      linhas.push({
+        [colunaFk]: item.id,
+        set_number: serie.set_number,
+        kind: serie.kind,
+        note: serie.note ?? null,
+        target_reps: serie.target_reps ?? null,
+        target_load: serie.target_load ?? null,
+      });
+    }
+  }
+  return linhas;
+}
+
+/** Série lida de uma tabela de séries da origem (modelo ou ficha). */
+interface SerieLida {
+  set_number: number;
+  kind: SetKind;
+  note: string | null;
+  target_reps: string | null;
+  target_load: number | null;
+}
+
+/**
+ * Lê as séries detalhadas de uma tabela de séries agrupadas pelo id do item
+ * pai. Usado por `criarFichaDeModelo`/`criarFichaMultiModelo`/`clonarFicha` para
+ * reaproveitar as séries da origem. Lista vazia de ids retorna mapa vazio sem
+ * consultar o banco.
+ */
+async function lerSeriesPorItem(
+  supabase: SupabaseClientRls,
+  tabela: 'workout_exercise_sets' | 'workout_plan_item_sets',
+  colunaFk: 'workout_exercise_id' | 'plan_item_id',
+  idsItens: string[]
+): Promise<
+  | { ok: true; porItem: Map<string, SerieLida[]> }
+  | { ok: false; message: string }
+> {
+  const porItem = new Map<string, SerieLida[]>();
+  if (idsItens.length === 0) return { ok: true, porItem };
+
+  const { data, error } = await supabase
+    .from(tabela)
+    .select(`${colunaFk}, set_number, kind, note, target_reps, target_load`)
+    .in(colunaFk, idsItens)
+    .order('set_number', { ascending: true });
+
+  if (error) {
+    return { ok: false, message: `Não foi possível ler as séries: ${error.message}` };
+  }
+
+  for (const linha of data ?? []) {
+    const registro = linha as Record<string, unknown>;
+    const idItem = registro[colunaFk] as string;
+    const atual = porItem.get(idItem) ?? [];
+    atual.push({
+      set_number: registro.set_number as number,
+      kind: registro.kind as SetKind,
+      note: (registro.note as string | null) ?? null,
+      target_reps: (registro.target_reps as string | null) ?? null,
+      target_load: (registro.target_load as number | null) ?? null,
+    });
+    porItem.set(idItem, atual);
+  }
+
+  return { ok: true, porItem };
 }
 
 // =============================================================================
@@ -140,7 +242,13 @@ export async function criarModelo(entrada: ModeloInput): Promise<EstadoAcao> {
     };
   }
 
-  const linhas = parsed.data.itens.map((item, i) => itemModeloParaLinha(workout.id, item, i));
+  const itensComId = parsed.data.itens.map((item) => ({
+    id: crypto.randomUUID(),
+    item,
+  }));
+  const linhas = itensComId.map(({ id, item }, i) =>
+    itemModeloParaLinha(workout.id, item, i, id)
+  );
   const { error: erroItens } = await supabase.from('workout_exercises').insert(linhas);
 
   if (erroItens) {
@@ -150,6 +258,23 @@ export async function criarModelo(entrada: ModeloInput): Promise<EstadoAcao> {
       ok: false,
       message: `Não foi possível salvar os exercícios: ${erroItens.message}`,
     };
+  }
+
+  const linhasSeries = linhasDeSeries(
+    'workout_exercise_id',
+    itensComId.map(({ id, item }) => ({ id, series: item.series }))
+  );
+  if (linhasSeries.length > 0) {
+    const { error: erroSeries } = await supabase
+      .from('workout_exercise_sets')
+      .insert(linhasSeries);
+    if (erroSeries) {
+      await supabase.from('workouts').delete().eq('id', workout.id);
+      return {
+        ok: false,
+        message: `Não foi possível salvar as séries: ${erroSeries.message}`,
+      };
+    }
   }
 
   revalidatePath('/professor/modelos-treino');
@@ -203,11 +328,30 @@ export async function editarModelo(
     return { ok: false, message: `Não foi possível atualizar os itens: ${erroDelete.message}` };
   }
 
-  const linhas = parsed.data.itens.map((item, i) => itemModeloParaLinha(workoutId, item, i));
+  const itensComId = parsed.data.itens.map((item) => ({
+    id: crypto.randomUUID(),
+    item,
+  }));
+  const linhas = itensComId.map(({ id, item }, i) =>
+    itemModeloParaLinha(workoutId, item, i, id)
+  );
   const { error: erroItens } = await supabase.from('workout_exercises').insert(linhas);
 
   if (erroItens) {
     return { ok: false, message: `Não foi possível salvar os exercícios: ${erroItens.message}` };
+  }
+
+  const linhasSeries = linhasDeSeries(
+    'workout_exercise_id',
+    itensComId.map(({ id, item }) => ({ id, series: item.series }))
+  );
+  if (linhasSeries.length > 0) {
+    const { error: erroSeries } = await supabase
+      .from('workout_exercise_sets')
+      .insert(linhasSeries);
+    if (erroSeries) {
+      return { ok: false, message: `Não foi possível salvar as séries: ${erroSeries.message}` };
+    }
   }
 
   revalidatePath('/professor/modelos-treino');
@@ -282,7 +426,13 @@ export async function criarFicha(entrada: FichaInput): Promise<EstadoAcao> {
     };
   }
 
-  const linhas = parsed.data.itens.map((item, i) => itemFichaParaLinha(plan.id, item, i));
+  const itensComId = parsed.data.itens.map((item) => ({
+    id: crypto.randomUUID(),
+    item,
+  }));
+  const linhas = itensComId.map(({ id, item }, i) =>
+    itemFichaParaLinha(plan.id, item, i, id)
+  );
   const { error: erroItens } = await supabase.from('workout_plan_items').insert(linhas);
 
   if (erroItens) {
@@ -291,6 +441,23 @@ export async function criarFicha(entrada: FichaInput): Promise<EstadoAcao> {
       ok: false,
       message: `Não foi possível salvar os exercícios: ${erroItens.message}`,
     };
+  }
+
+  const linhasSeries = linhasDeSeries(
+    'plan_item_id',
+    itensComId.map(({ id, item }) => ({ id, series: item.series }))
+  );
+  if (linhasSeries.length > 0) {
+    const { error: erroSeries } = await supabase
+      .from('workout_plan_item_sets')
+      .insert(linhasSeries);
+    if (erroSeries) {
+      await supabase.from('workout_plans').delete().eq('id', plan.id);
+      return {
+        ok: false,
+        message: `Não foi possível salvar as séries: ${erroSeries.message}`,
+      };
+    }
   }
 
   revalidatePath('/professor/treinos');
@@ -344,11 +511,30 @@ export async function editarFicha(
     return { ok: false, message: `Não foi possível atualizar os itens: ${erroDelete.message}` };
   }
 
-  const linhas = parsed.data.itens.map((item, i) => itemFichaParaLinha(planId, item, i));
+  const itensComId = parsed.data.itens.map((item) => ({
+    id: crypto.randomUUID(),
+    item,
+  }));
+  const linhas = itensComId.map(({ id, item }, i) =>
+    itemFichaParaLinha(planId, item, i, id)
+  );
   const { error: erroItens } = await supabase.from('workout_plan_items').insert(linhas);
 
   if (erroItens) {
     return { ok: false, message: `Não foi possível salvar os exercícios: ${erroItens.message}` };
+  }
+
+  const linhasSeries = linhasDeSeries(
+    'plan_item_id',
+    itensComId.map(({ id, item }) => ({ id, series: item.series }))
+  );
+  if (linhasSeries.length > 0) {
+    const { error: erroSeries } = await supabase
+      .from('workout_plan_item_sets')
+      .insert(linhasSeries);
+    if (erroSeries) {
+      return { ok: false, message: `Não foi possível salvar as séries: ${erroSeries.message}` };
+    }
   }
 
   revalidatePath('/professor/treinos');
@@ -408,7 +594,7 @@ export async function criarFichaDeModelo(
 
   const { data: itensModelo, error: erroItensModelo } = await supabase
     .from('workout_exercises')
-    .select('exercise_id, order_index, sets, reps, rest_seconds, target_load, notes')
+    .select('id, exercise_id, order_index, sets, reps, rest_seconds, target_load, notes')
     .eq('workout_id', sourceWorkoutId)
     .order('order_index', { ascending: true });
 
@@ -418,6 +604,18 @@ export async function criarFichaDeModelo(
 
   if (!itensModelo || itensModelo.length === 0) {
     return { ok: false, message: 'O modelo não possui exercícios para copiar.' };
+  }
+
+  // Lê as séries detalhadas do modelo de origem (se houver) para regravá-las na
+  // ficha, casando por `workout_exercise_id`.
+  const seriesPorItemOrigem = await lerSeriesPorItem(
+    supabase,
+    'workout_exercise_sets',
+    'workout_exercise_id',
+    itensModelo.map((item) => item.id)
+  );
+  if (!seriesPorItemOrigem.ok) {
+    return { ok: false, message: seriesPorItemOrigem.message };
   }
 
   const { data: plan, error: erroPlan } = await supabase
@@ -440,11 +638,18 @@ export async function criarFichaDeModelo(
     };
   }
 
-  const linhas = itensModelo.map((item, i) => ({
+  const itensComId = itensModelo.map((item, i) => ({
+    novoId: crypto.randomUUID(),
+    item,
+    ordem: item.order_index ?? i,
+  }));
+
+  const linhas = itensComId.map(({ novoId, item, ordem }) => ({
+    id: novoId,
     plan_id: plan.id,
     exercise_id: item.exercise_id,
     weekday: null,
-    order_index: item.order_index ?? i,
+    order_index: ordem,
     sets: item.sets,
     reps: item.reps,
     rest_seconds: item.rest_seconds,
@@ -457,6 +662,26 @@ export async function criarFichaDeModelo(
   if (erroItens) {
     await supabase.from('workout_plans').delete().eq('id', plan.id);
     return { ok: false, message: `Não foi possível copiar os exercícios: ${erroItens.message}` };
+  }
+
+  const linhasSeries = itensComId.flatMap(({ novoId, item }) =>
+    (seriesPorItemOrigem.porItem.get(item.id) ?? []).map((serie) => ({
+      plan_item_id: novoId,
+      set_number: serie.set_number,
+      kind: serie.kind,
+      note: serie.note,
+      target_reps: serie.target_reps,
+      target_load: serie.target_load,
+    }))
+  );
+  if (linhasSeries.length > 0) {
+    const { error: erroSeries } = await supabase
+      .from('workout_plan_item_sets')
+      .insert(linhasSeries);
+    if (erroSeries) {
+      await supabase.from('workout_plans').delete().eq('id', plan.id);
+      return { ok: false, message: `Não foi possível copiar as séries: ${erroSeries.message}` };
+    }
   }
 
   revalidatePath('/professor/treinos');
@@ -497,13 +722,26 @@ export async function criarFichaMultiModelo(
 
   // Lê os itens de cada modelo (RLS garante que são do tenant) e monta as
   // linhas de workout_plan_items já carimbando a divisão, com order_index
-  // GLOBAL e contínuo na ordem das divisões (A antes de B antes de C...).
-  const linhas: Array<Omit<ReturnType<typeof itemFichaParaLinha>, 'plan_id'>> = [];
+  // GLOBAL e contínuo na ordem das divisões (A antes de B antes de C...). O id
+  // de cada novo item é gerado no servidor para casar as séries copiadas.
+  const linhas: Array<{
+    id: string;
+    exercise_id: string;
+    weekday: null;
+    division: string;
+    order_index: number;
+    sets: number | null;
+    reps: string | null;
+    rest_seconds: number | null;
+    target_load: number | null;
+    notes: string | null;
+    origemItemId: string;
+  }> = [];
   let ordemGlobal = 0;
   for (const modelo of parsed.data.modelos) {
     const { data: itensModelo, error: erroItensModelo } = await supabase
       .from('workout_exercises')
-      .select('exercise_id, order_index, sets, reps, rest_seconds, target_load, notes')
+      .select('id, exercise_id, order_index, sets, reps, rest_seconds, target_load, notes')
       .eq('workout_id', modelo.source_workout_id)
       .order('order_index', { ascending: true });
 
@@ -520,6 +758,7 @@ export async function criarFichaMultiModelo(
 
     for (const item of itensModelo) {
       linhas.push({
+        id: crypto.randomUUID(),
         exercise_id: item.exercise_id,
         weekday: null,
         division: modelo.division,
@@ -529,9 +768,22 @@ export async function criarFichaMultiModelo(
         rest_seconds: item.rest_seconds,
         target_load: item.target_load,
         notes: item.notes,
+        origemItemId: item.id,
       });
       ordemGlobal += 1;
     }
+  }
+
+  // Séries detalhadas de TODOS os itens de origem (de todas as divisões), para
+  // regravar na ficha casando por id de origem.
+  const seriesPorItemOrigem = await lerSeriesPorItem(
+    supabase,
+    'workout_exercise_sets',
+    'workout_exercise_id',
+    linhas.map((linha) => linha.origemItemId)
+  );
+  if (!seriesPorItemOrigem.ok) {
+    return { ok: false, message: seriesPorItemOrigem.message };
   }
 
   const { data: plan, error: erroPlan } = await supabase
@@ -557,13 +809,36 @@ export async function criarFichaMultiModelo(
     };
   }
 
-  const { error: erroItens } = await supabase
-    .from('workout_plan_items')
-    .insert(linhas.map((linha) => ({ ...linha, plan_id: plan.id })));
+  const { error: erroItens } = await supabase.from('workout_plan_items').insert(
+    linhas.map(({ origemItemId: _origem, ...linha }) => {
+      void _origem;
+      return { ...linha, plan_id: plan.id };
+    })
+  );
 
   if (erroItens) {
     await supabase.from('workout_plans').delete().eq('id', plan.id);
     return { ok: false, message: `Não foi possível copiar os exercícios: ${erroItens.message}` };
+  }
+
+  const linhasSeries = linhas.flatMap((linha) =>
+    (seriesPorItemOrigem.porItem.get(linha.origemItemId) ?? []).map((serie) => ({
+      plan_item_id: linha.id,
+      set_number: serie.set_number,
+      kind: serie.kind,
+      note: serie.note,
+      target_reps: serie.target_reps,
+      target_load: serie.target_load,
+    }))
+  );
+  if (linhasSeries.length > 0) {
+    const { error: erroSeries } = await supabase
+      .from('workout_plan_item_sets')
+      .insert(linhasSeries);
+    if (erroSeries) {
+      await supabase.from('workout_plans').delete().eq('id', plan.id);
+      return { ok: false, message: `Não foi possível copiar as séries: ${erroSeries.message}` };
+    }
   }
 
   revalidatePath('/professor/treinos');
@@ -631,13 +906,24 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
   const { data: itensOrigem, error: erroItensOrigem } = await supabase
     .from('workout_plan_items')
     .select(
-      'exercise_id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes'
+      'id, exercise_id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes'
     )
     .eq('plan_id', parsed.data.source_plan_id)
     .order('order_index', { ascending: true });
 
   if (erroItensOrigem) {
     return { ok: false, message: `Não foi possível ler a ficha de origem: ${erroItensOrigem.message}` };
+  }
+
+  // Séries detalhadas da ficha origem (se houver), casadas por id de item.
+  const seriesPorItemOrigem = await lerSeriesPorItem(
+    supabase,
+    'workout_plan_item_sets',
+    'plan_item_id',
+    (itensOrigem ?? []).map((item) => item.id)
+  );
+  if (!seriesPorItemOrigem.ok) {
+    return { ok: false, message: seriesPorItemOrigem.message };
   }
 
   // Nova ficha: sempre rascunho, nunca herda released/released_at da origem.
@@ -662,7 +948,13 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
   }
 
   if (itensOrigem && itensOrigem.length > 0) {
-    const linhas = itensOrigem.map((item) => ({
+    const itensComId = itensOrigem.map((item) => ({
+      novoId: crypto.randomUUID(),
+      item,
+    }));
+
+    const linhas = itensComId.map(({ novoId, item }) => ({
+      id: novoId,
       plan_id: plan.id,
       exercise_id: item.exercise_id,
       weekday: item.weekday,
@@ -681,6 +973,26 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
       // Rollback: remove a ficha para não deixar cópia parcial.
       await supabase.from('workout_plans').delete().eq('id', plan.id);
       return { ok: false, message: `Não foi possível copiar os exercícios: ${erroItens.message}` };
+    }
+
+    const linhasSeries = itensComId.flatMap(({ novoId, item }) =>
+      (seriesPorItemOrigem.porItem.get(item.id) ?? []).map((serie) => ({
+        plan_item_id: novoId,
+        set_number: serie.set_number,
+        kind: serie.kind,
+        note: serie.note,
+        target_reps: serie.target_reps,
+        target_load: serie.target_load,
+      }))
+    );
+    if (linhasSeries.length > 0) {
+      const { error: erroSeries } = await supabase
+        .from('workout_plan_item_sets')
+        .insert(linhasSeries);
+      if (erroSeries) {
+        await supabase.from('workout_plans').delete().eq('id', plan.id);
+        return { ok: false, message: `Não foi possível copiar as séries: ${erroSeries.message}` };
+      }
     }
   }
 

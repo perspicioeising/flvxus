@@ -1,9 +1,26 @@
-import type { PlanStatus } from '@/types/database.types';
+import type { PlanStatus, SetKind } from '@/types/database.types';
 
 /**
  * Rótulos pt-BR do domínio de treinos, compartilhados entre páginas (RSC) e
  * componentes client. Centralizar evita divergência de texto/cor.
  */
+
+/** Rótulo pt-BR de cada tipo de série. */
+export const SET_KIND_LABEL: Record<SetKind, string> = {
+  warmup: 'Aquecimento',
+  adaptation: 'Adaptação',
+  work: 'Trabalho',
+};
+
+/** Variante visual do `Badge` por tipo de série. */
+export const SET_KIND_VARIANTE: Record<
+  SetKind,
+  'default' | 'secondary' | 'outline'
+> = {
+  warmup: 'secondary',
+  adaptation: 'outline',
+  work: 'default',
+};
 
 /** Rótulo legível de cada status de ficha. */
 export const STATUS_LABEL: Record<PlanStatus, string> = {

@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { signExerciseMedia } from '@/lib/storage';
+import type { SetKind } from '@/types/database.types';
 import { WEEKDAY_LABEL, parseDia } from '@/lib/semana';
 import { parseDivisao } from '@/lib/divisao';
 import { EmptyState } from '@/components/patterns';
@@ -28,6 +29,24 @@ interface ExercicioJoin {
 function exercicioDoJoin(exercises: unknown): ExercicioJoin | null {
   const e = Array.isArray(exercises) ? exercises[0] : exercises;
   return (e as ExercicioJoin | null) ?? null;
+}
+
+/** Linha de série vinda do join aninhado `workout_plan_item_sets`. */
+interface SerieJoin {
+  set_number: number;
+  kind: SetKind;
+  note: string | null;
+}
+
+/**
+ * Normaliza o join `workout_plan_item_sets` em séries ordenadas. Join vazio →
+ * `undefined` (ficha legada, sem séries detalhadas: a execução usa o default).
+ */
+function seriesDoJoin(sets: unknown): ItemExecucao['series'] {
+  if (!Array.isArray(sets) || sets.length === 0) return undefined;
+  return (sets as SerieJoin[])
+    .map((s) => ({ setNumber: s.set_number, kind: s.kind, note: s.note }))
+    .sort((a, b) => a.setNumber - b.setNumber);
 }
 
 /**
@@ -77,10 +96,14 @@ export default async function AlunoExecucaoFichaPage({
   const { data: itensData } = await supabase
     .from('workout_plan_items')
     .select(
-      'id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors)'
+      'id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors), workout_plan_item_sets(set_number, kind, note)'
     )
     .eq('plan_id', planId)
-    .order('order_index', { ascending: true });
+    .order('order_index', { ascending: true })
+    .order('set_number', {
+      referencedTable: 'workout_plan_item_sets',
+      ascending: true,
+    });
 
   // Assina a mídia de cada item no servidor (bucket privado, nunca URL pública).
   const todosItens: ItemExecucao[] = await Promise.all(
@@ -109,6 +132,7 @@ export default async function AlunoExecucaoFichaPage({
         equipamento: ex?.equipment ?? [],
         videoUrl,
         thumbnailUrl,
+        series: seriesDoJoin(item.workout_plan_item_sets),
       } satisfies ItemExecucao;
     })
   );
