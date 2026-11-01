@@ -34,6 +34,34 @@ const carregarUltimosRegistros = vi.fn(async (..._args: unknown[]) => ({
   data: {} as Record<string, { reps: number | null; load: number | null }>,
 }));
 
+// Detalhe do substituto na troca ad-hoc (FEAT-002): por padrão devolve um
+// exercício completo (mídia/instruções/dicas/erros/grupos) para o id pedido.
+// Casos específicos sobrescrevem com `mockResolvedValueOnce` ou falha.
+const carregarDetalheExercicio = vi.fn(async (_exerciseId: string) => ({
+  ok: true,
+  data: {
+    id: 'ex-sub',
+    nome: 'Supino máquina',
+    gruposMusculares: ['Peito'],
+    equipamento: ['Máquina'],
+    instrucoes: 'Sente na máquina e empurre.',
+    dicas: ['Dica do substituto'],
+    errosComuns: ['Erro do substituto'],
+    videoUrl: 'https://cdn.exemplo/sub-video.mp4',
+    thumbnailUrl: 'https://cdn.exemplo/sub-thumb.gif',
+  } as {
+    id: string;
+    nome: string;
+    gruposMusculares: string[];
+    equipamento: string[];
+    instrucoes: string | null;
+    dicas: string[];
+    errosComuns: string[];
+    videoUrl: string | null;
+    thumbnailUrl: string | null;
+  },
+}));
+
 vi.mock('@/actions/execucao', () => ({
   registrarSerie: (arg: unknown) => registrarSerie(arg),
   // Repassa TODOS os argumentos: o eixo divisão chama `iniciarSessao(planId,
@@ -43,6 +71,8 @@ vi.mock('@/actions/execucao', () => ({
   carregarSessaoAberta: (...args: unknown[]) => carregarSessaoAberta(...args),
   carregarUltimosRegistros: (...args: unknown[]) =>
     carregarUltimosRegistros(...args),
+  carregarDetalheExercicio: (exerciseId: string) =>
+    carregarDetalheExercicio(exerciseId),
   cancelarSessao: (arg: unknown) => cancelarSessao(arg),
 }));
 
@@ -776,10 +806,135 @@ describe('SessaoExecucao — trocar exercício na sessão (backup — FEAT-002)'
     );
     expect(screen.getByText(/trocado nesta sessão/i)).toBeInTheDocument();
 
+    // Carregou os detalhes do substituto SOB DEMANDA (id escolhido).
+    expect(carregarDetalheExercicio).toHaveBeenCalledWith('ex-sub');
+
     // As séries/inputs do slot permanecem (ainda há "Série 1 de 2" e inputs).
     expect(screen.getByText('Série 1 de 2')).toBeInTheDocument();
     expect(screen.getByLabelText('Reps')).toBeInTheDocument();
     expect(screen.getByLabelText('Carga (kg)')).toBeInTheDocument();
+  });
+
+  it('ao trocar, instruções e grupos passam a ser do substituto (não do original)', async () => {
+    // Item prescrito com instruções/grupos PRÓPRIOS: ao trocar, a exibição deve
+    // refletir os dados do SUBSTITUTO (carregados sob demanda), não os do
+    // prescrito. Instruções ficam na aba "Como fazer" (ativa por padrão) e os
+    // grupos efetivos aparecem na linha de prescrição do cabeçalho.
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[
+          itemFake({
+            sets: 2,
+            instrucoes: 'Instrução do original.',
+            gruposMusculares: ['Costas'],
+            equipamento: ['Barra'],
+            videoUrl: 'https://cdn.exemplo/orig.mp4',
+            thumbnailUrl: 'https://cdn.exemplo/orig.gif',
+          }),
+        ]}
+        exerciciosDisponiveis={exerciciosDisponiveis}
+      />
+    );
+
+    // Antes da troca: instruções e grupo do ORIGINAL.
+    expect(screen.getByText('Instrução do original.')).toBeInTheDocument();
+    expect(screen.getAllByText(/Costas/).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: /trocar exercício/i }));
+    const dialog = await screen.findByRole('dialog', {
+      name: /trocar exercício/i,
+    });
+    fireEvent.click(within(dialog).getByText('Supino máquina'));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Supino máquina' })
+      ).toBeInTheDocument()
+    );
+
+    // Instruções (aba "Como fazer", ativa por padrão) agora são do substituto…
+    expect(screen.getByText('Sente na máquina e empurre.')).toBeInTheDocument();
+    // …e as do original NÃO aparecem mais.
+    expect(screen.queryByText('Instrução do original.')).not.toBeInTheDocument();
+
+    // O grupo muscular exibido (linha de prescrição) é o do substituto.
+    expect(screen.getAllByText(/Peito/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Costas/)).not.toBeInTheDocument();
+
+    // A prescrição do slot permanece (mesmas séries do item original).
+    expect(screen.getByText('Série 1 de 2')).toBeInTheDocument();
+  });
+
+  it('ao trocar, as dicas e erros comuns passam a ser do substituto', async () => {
+    // Item SEM instruções nem observações: a aba "Dicas" é a ativa por padrão,
+    // então as dicas/erros ficam visíveis sem interação de abas. O item carrega
+    // dicas/erros PRÓPRIOS que a troca deve substituir.
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[
+          itemFake({
+            sets: 2,
+            instrucoes: null,
+            observacoes: null,
+            dicas: ['Dica do original'],
+            errosComuns: ['Erro do original'],
+          }),
+        ]}
+        exerciciosDisponiveis={exerciciosDisponiveis}
+      />
+    );
+
+    // Antes da troca: dicas/erros do ORIGINAL (aba Dicas ativa por padrão).
+    expect(screen.getByText('Dica do original')).toBeInTheDocument();
+    expect(screen.getByText('Erro do original')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /trocar exercício/i }));
+    const dialog = await screen.findByRole('dialog', {
+      name: /trocar exercício/i,
+    });
+    fireEvent.click(within(dialog).getByText('Supino máquina'));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Supino máquina' })
+      ).toBeInTheDocument()
+    );
+
+    // Dicas/erros agora são do substituto; os do original somem.
+    expect(screen.getByText('Dica do substituto')).toBeInTheDocument();
+    expect(screen.getByText('Erro do substituto')).toBeInTheDocument();
+    expect(screen.queryByText('Dica do original')).not.toBeInTheDocument();
+    expect(screen.queryByText('Erro do original')).not.toBeInTheDocument();
+  });
+
+  it('se o detalhe do substituto falhar, mantém o exercício prescrito e avisa', async () => {
+    carregarDetalheExercicio.mockResolvedValueOnce({
+      ok: false,
+      message: 'Exercício não disponível.',
+    } as never);
+
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[itemFake({ sets: 2 })]}
+        exerciciosDisponiveis={exerciciosDisponiveis}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /trocar exercício/i }));
+    const dialog = await screen.findByRole('dialog', {
+      name: /trocar exercício/i,
+    });
+    fireEvent.click(within(dialog).getByText('Supino máquina'));
+
+    await waitFor(() => expect(toast).toHaveBeenCalled());
+    // Continua no exercício prescrito (sem marca de troca).
+    expect(
+      screen.getByRole('heading', { name: 'Supino reto' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/trocado nesta sessão/i)).not.toBeInTheDocument();
   });
 
   it('ao concluir a série após trocar, registrarSerie recebe o substitute_exercise_id escolhido', async () => {

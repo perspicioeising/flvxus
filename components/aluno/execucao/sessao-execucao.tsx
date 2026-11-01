@@ -25,6 +25,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
   cancelarSessao,
+  carregarDetalheExercicio,
   carregarSessaoAberta,
   carregarUltimosRegistros,
   finalizarSessao,
@@ -403,32 +404,86 @@ export function SessaoExecucao({
       : undefined;
 
   // Troca AD-HOC de exercício por item, SÓ nesta sessão (FEAT-002): mapeia
-  // `item.id -> {exerciseId, nome, gruposMusculares}` do exercício alternativo
-  // escolhido quando a máquina do prescrito está ocupada. NÃO persiste na ficha:
-  // o `plan_item_id` dos logs continua o prescrito; o exercício efetivo vai em
-  // `substitute_exercise_id` ao registrar a série. Vazio = executando o prescrito.
+  // `item.id -> dados de EXIBIÇÃO completos do substituto` escolhido quando a
+  // máquina do prescrito está ocupada. Além de id/nome/grupos, guarda a mídia JÁ
+  // ASSINADA e instruções/dicas/erros/equipamento (carregados SOB DEMANDA pela
+  // `carregarDetalheExercicio` ao escolher — o catálogo da lista é leve). NÃO
+  // persiste na ficha: o `plan_item_id` dos logs continua o prescrito; o
+  // exercício efetivo vai em `substitute_exercise_id` ao registrar a série.
+  // Vazio = executando o prescrito.
   const [trocaPorItem, setTrocaPorItem] = React.useState<
-    Record<string, { exerciseId: string; nome: string; gruposMusculares: string[] }>
+    Record<
+      string,
+      {
+        exerciseId: string;
+        nome: string;
+        gruposMusculares: string[];
+        equipamento: string[];
+        instrucoes: string | null;
+        dicas: string[];
+        errosComuns: string[];
+        videoUrl: string | null;
+        thumbnailUrl: string | null;
+      }
+    >
   >({});
+  // `item.id` cuja troca está CARREGANDO os detalhes (mídia/instruções) do
+  // substituto. Gate leve para feedback; `null` = nenhuma troca em voo.
+  const [trocaCarregando, setTrocaCarregando] = React.useState<string | null>(
+    null
+  );
 
-  /** Registra a troca ad-hoc do item atual pelo exercício alternativo escolhido. */
+  /**
+   * Registra a troca ad-hoc do item atual pelo substituto escolhido. A lista de
+   * troca é leve ({id,name,grupos}); aqui carregamos SOB DEMANDA os dados
+   * completos + mídia assinada do exercício escolhido (RLS no servidor) para que
+   * GIF/vídeo, instruções, dicas, erros e grupos passem a ser do substituto. A
+   * prescrição (séries/reps/carga/descanso) segue a do slot original.
+   */
   function trocarExercicio(itemId: string, escolhido: ExercicioDisponivel) {
-    setTrocaPorItem((m) => ({
-      ...m,
-      [itemId]: {
-        exerciseId: escolhido.id,
-        nome: escolhido.name,
-        gruposMusculares: escolhido.muscle_groups ?? [],
-      },
-    }));
+    setTrocaCarregando(itemId);
+    startTransition(async () => {
+      const r = await carregarDetalheExercicio(escolhido.id);
+      if (!r.ok || !r.data) {
+        setTrocaCarregando((atual) => (atual === itemId ? null : atual));
+        toast({
+          title: r.message ?? 'Não foi possível trocar o exercício.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const d = r.data;
+      setTrocaPorItem((m) => ({
+        ...m,
+        [itemId]: {
+          exerciseId: d.id,
+          nome: d.nome,
+          gruposMusculares: d.gruposMusculares,
+          equipamento: d.equipamento,
+          instrucoes: d.instrucoes,
+          dicas: d.dicas,
+          errosComuns: d.errosComuns,
+          videoUrl: d.videoUrl,
+          thumbnailUrl: d.thumbnailUrl,
+        },
+      }));
+      setTrocaCarregando((atual) => (atual === itemId ? null : atual));
+    });
   }
 
   // Troca ad-hoc ativa no item atual (FEAT-002). Quando presente, o exercício
-  // EFETIVO (nome/grupos) vence o prescrito na exibição; os parâmetros de série
-  // (sets/reps/carga/descanso/placeholder) seguem os do slot prescrito.
+  // EFETIVO (nome, mídia, instruções, dicas, erros e grupos) vence o prescrito
+  // na exibição; os parâmetros de série (sets/reps/carga/descanso/placeholder)
+  // seguem os do slot prescrito.
   const trocaAtual = itemAtual ? trocaPorItem[itemAtual.id] : undefined;
   const nomeEfetivo = trocaAtual?.nome ?? itemAtual?.nome ?? '';
   const gruposEfetivos = trocaAtual?.gruposMusculares ?? itemAtual?.gruposMusculares ?? [];
+  const equipamentoEfetivo = trocaAtual?.equipamento ?? itemAtual?.equipamento ?? [];
+  const instrucoesEfetivas = trocaAtual ? trocaAtual.instrucoes : (itemAtual?.instrucoes ?? null);
+  const dicasEfetivas = trocaAtual?.dicas ?? itemAtual?.dicas ?? [];
+  const errosEfetivos = trocaAtual?.errosComuns ?? itemAtual?.errosComuns ?? [];
+  const videoUrlEfetivo = trocaAtual ? trocaAtual.videoUrl : (itemAtual?.videoUrl ?? null);
+  const thumbnailUrlEfetivo = trocaAtual ? trocaAtual.thumbnailUrl : (itemAtual?.thumbnailUrl ?? null);
 
   // Descanso em MODAL: abre automaticamente ao concluir uma série (quando há
   // descanso prescrito e não é a última série do último exercício). Guardamos
@@ -1149,22 +1204,25 @@ export function SessaoExecucao({
           <CardContent className="space-y-4 p-4">
             <ExercicioInfo
               info={{
-                // Nome/grupos EFETIVOS (troca ad-hoc vence o prescrito). O vídeo/
-                // thumb/instruções/dicas seguem o prescrito: a troca é um
-                // substituto rápido na sessão, sem remontar a mídia no servidor.
+                // Dados de EXIBIÇÃO EFETIVOS (troca ad-hoc vence o prescrito):
+                // nome, mídia (GIF/vídeo/thumb), instruções, dicas, erros e
+                // grupos passam a ser do substituto quando há troca — carregados
+                // sob demanda + assinados no servidor. A PRESCRIÇÃO
+                // (sets/reps/carga/descanso) e as OBSERVAÇÕES do professor seguem
+                // o slot original (a troca mantém o que foi prescrito).
                 nome: nomeEfetivo,
-                videoUrl: itemAtual.videoUrl,
-                thumbnailUrl: itemAtual.thumbnailUrl,
+                videoUrl: videoUrlEfetivo,
+                thumbnailUrl: thumbnailUrlEfetivo,
                 sets: itemAtual.sets,
                 reps: itemAtual.reps,
                 cargaAlvo: itemAtual.cargaAlvo,
                 descansoSegundos: itemAtual.descansoSegundos,
                 observacoes: itemAtual.observacoes,
-                instrucoes: itemAtual.instrucoes,
-                dicas: itemAtual.dicas,
-                errosComuns: itemAtual.errosComuns,
+                instrucoes: instrucoesEfetivas,
+                dicas: dicasEfetivas,
+                errosComuns: errosEfetivos,
                 gruposMusculares: gruposEfetivos,
-                equipamento: itemAtual.equipamento,
+                equipamento: equipamentoEfetivo,
               }}
             />
 
