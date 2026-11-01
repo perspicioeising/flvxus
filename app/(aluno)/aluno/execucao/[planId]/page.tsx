@@ -12,6 +12,7 @@ import {
   SessaoExecucao,
   type ItemExecucao,
 } from '@/components/aluno/execucao/sessao-execucao';
+import type { ExercicioDisponivel } from '@/components/professor/treinos/exercise-picker';
 
 /** Shape do join `exercises` que precisamos (array ou objeto, conforme o join). */
 interface ExercicioJoin {
@@ -114,6 +115,18 @@ export default async function AlunoExecucaoFichaPage({
       referencedTable: 'workout_plan_item_sets',
       ascending: true,
     });
+
+  // Catálogo de exercícios para a TROCA ad-hoc na execução (máquina ocupada —
+  // FEAT-002). Mesmo padrão de `professor/treinos/nova`: `.not('tenant_id','is',
+  // null)` traz só os do tenant (o catálogo global já foi copiado por tenant),
+  // evitando duplicatas global + cópia. RLS limita ao que o aluno pode ver.
+  const { data: exerciciosData } = await supabase
+    .from('exercises')
+    .select('id, name, muscle_groups')
+    .not('tenant_id', 'is', null)
+    .order('name', { ascending: true });
+
+  const exerciciosDisponiveis: ExercicioDisponivel[] = exerciciosData ?? [];
 
   // Assina a mídia de cada item no servidor (bucket privado, nunca URL pública).
   const todosItens: ItemExecucao[] = await Promise.all(
@@ -228,6 +241,7 @@ export default async function AlunoExecucaoFichaPage({
           diaInicial={diaInicial}
           divisaoInicial={divisaoInicial}
           permitirTrocaDeGrupo={false}
+          exerciciosDisponiveis={exerciciosDisponiveis}
         />
       )}
     </section>

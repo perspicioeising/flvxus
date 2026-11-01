@@ -732,3 +732,101 @@ describe('SessaoExecucao — abandonar o treino (X na execução)', () => {
     });
   });
 });
+
+describe('SessaoExecucao — trocar exercício na sessão (backup — FEAT-002)', () => {
+  const exerciciosDisponiveis = [
+    { id: 'ex-1', name: 'Supino reto', muscle_groups: ['Peito'] },
+    { id: 'ex-sub', name: 'Supino máquina', muscle_groups: ['Peito'] },
+  ];
+
+  it('sem catálogo, o botão de trocar exercício não aparece', () => {
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake()]} />);
+
+    expect(
+      screen.queryByRole('button', { name: /trocar exercício/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('ao trocar, o nome exibido muda mantendo as séries/inputs do slot', async () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[itemFake({ sets: 2 })]}
+        exerciciosDisponiveis={exerciciosDisponiveis}
+      />
+    );
+
+    // Título inicial = exercício prescrito.
+    expect(
+      screen.getByRole('heading', { name: 'Supino reto' })
+    ).toBeInTheDocument();
+
+    // Abre o diálogo e escolhe o substituto.
+    fireEvent.click(screen.getByRole('button', { name: /trocar exercício/i }));
+    const dialog = await screen.findByRole('dialog', {
+      name: /trocar exercício/i,
+    });
+    fireEvent.click(within(dialog).getByText('Supino máquina'));
+
+    // O título passa a refletir o exercício efetivo e sinaliza a troca.
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Supino máquina' })
+      ).toBeInTheDocument()
+    );
+    expect(screen.getByText(/trocado nesta sessão/i)).toBeInTheDocument();
+
+    // As séries/inputs do slot permanecem (ainda há "Série 1 de 2" e inputs).
+    expect(screen.getByText('Série 1 de 2')).toBeInTheDocument();
+    expect(screen.getByLabelText('Reps')).toBeInTheDocument();
+    expect(screen.getByLabelText('Carga (kg)')).toBeInTheDocument();
+  });
+
+  it('ao concluir a série após trocar, registrarSerie recebe o substitute_exercise_id escolhido', async () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[itemFake({ sets: 2 })]}
+        exerciciosDisponiveis={exerciciosDisponiveis}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /trocar exercício/i }));
+    const dialog = await screen.findByRole('dialog', {
+      name: /trocar exercício/i,
+    });
+    fireEvent.click(within(dialog).getByText('Supino máquina'));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Supino máquina' })
+      ).toBeInTheDocument()
+    );
+
+    await concluirSerieAtual('10');
+
+    expect(registrarSerie).toHaveBeenCalledWith(
+      expect.objectContaining({
+        plan_item_id: 'item-1',
+        set_number: 1,
+        substitute_exercise_id: 'ex-sub',
+      })
+    );
+  });
+
+  it('sem troca, registrarSerie recebe substitute_exercise_id null/undefined', async () => {
+    render(
+      <SessaoExecucao
+        planId="plan-1"
+        itens={[itemFake({ sets: 2 })]}
+        exerciciosDisponiveis={exerciciosDisponiveis}
+      />
+    );
+
+    await concluirSerieAtual('10');
+
+    const [arg] = registrarSerie.mock.calls[0] as [
+      { substitute_exercise_id?: string | null },
+    ];
+    expect(arg.substitute_exercise_id ?? null).toBeNull();
+  });
+});

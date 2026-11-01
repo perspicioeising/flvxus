@@ -9,6 +9,7 @@ import {
 const PLAN_ID = '11111111-1111-1111-1111-111111111111';
 const SESSION_ID = '22222222-2222-2222-2222-222222222222';
 const ITEM_ID = '33333333-3333-3333-3333-333333333333';
+const EXERCISE_ID = '44444444-4444-4444-4444-444444444444';
 
 describe('iniciarSessaoSchema', () => {
   it('aceita um plan_id válido', () => {
@@ -114,6 +115,41 @@ describe('registrarSerieSchema', () => {
       plan_item_id: ITEM_ID,
       set_number: 1,
       reps_done: -1,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('aceita série sem substitute_exercise_id (compat — executou o prescrito)', () => {
+    const r = registrarSerieSchema.safeParse({
+      session_id: SESSION_ID,
+      plan_item_id: ITEM_ID,
+      set_number: 1,
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.substitute_exercise_id).toBeUndefined();
+    }
+  });
+
+  it('aceita substitute_exercise_id com um uuid válido (troca ad-hoc)', () => {
+    const r = registrarSerieSchema.safeParse({
+      session_id: SESSION_ID,
+      plan_item_id: ITEM_ID,
+      set_number: 1,
+      substitute_exercise_id: EXERCISE_ID,
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.substitute_exercise_id).toBe(EXERCISE_ID);
+    }
+  });
+
+  it('rejeita substitute_exercise_id que não é uuid', () => {
+    const r = registrarSerieSchema.safeParse({
+      session_id: SESSION_ID,
+      plan_item_id: ITEM_ID,
+      set_number: 1,
+      substitute_exercise_id: 'nao-eh-uuid',
     });
     expect(r.success).toBe(false);
   });

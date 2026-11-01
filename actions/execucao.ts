@@ -475,11 +475,16 @@ export async function registrarSerie(input: RegistrarSerieEntrada): Promise<Esta
     .upsert(
       {
         session_id: dados.session_id,
+        // `plan_item_id` continua apontando ao item PRESCRITO (retomada,
+        // pré-preenchimento e progresso seguem por ele). A troca ad-hoc de
+        // exercício (FEAT-002) vive em `substitute_exercise_id`: null = executou
+        // o prescrito; preenchida = executou o alternativo escolhido na sessão.
         plan_item_id: dados.plan_item_id,
         set_number: dados.set_number,
         reps_done: dados.reps_done ?? null,
         load_done: dados.load_done ?? null,
         completed: dados.completed,
+        substitute_exercise_id: dados.substitute_exercise_id ?? null,
       },
       { onConflict: 'session_id,plan_item_id,set_number' }
     )

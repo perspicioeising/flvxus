@@ -55,6 +55,11 @@ export const registrarSerieSchema = z.object({
   reps_done: inteiroNaoNegativoOpcional,
   load_done: numeroNaoNegativoOpcional,
   completed: z.coerce.boolean().default(false),
+  // Exercício EFETIVAMENTE executado quando o aluno trocou o prescrito por um
+  // alternativo nesta sessão (troca ad-hoc — FEAT-002). Opcional/nullable:
+  // ausente = executou o prescrito (via plan_item_id), não quebra as chamadas
+  // atuais. Espelha a coluna nullable `substitute_exercise_id`.
+  substitute_exercise_id: z.string().uuid('Exercício inválido.').optional(),
 });
 
 /**

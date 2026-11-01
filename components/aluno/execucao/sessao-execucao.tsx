@@ -65,7 +65,9 @@ import type { SetKind } from '@/types/database.types';
 import { valoresDaSerie, type ValoresResolvidos } from '@/lib/treino/series';
 import { valorInicialDaSerie } from '@/lib/treino/prefill';
 import { SET_KIND_LABEL, SET_KIND_VARIANTE } from '@/components/professor/treinos/labels';
+import type { ExercicioDisponivel } from '@/components/professor/treinos/exercise-picker';
 import { TimerDescanso } from './timer-descanso';
+import { TrocarExercicioDialog } from './trocar-exercicio-dialog';
 import { ExercicioInfo } from './exercicio-info';
 import { SeletorDia, type OpcaoDia } from './seletor-dia';
 import { SeletorDivisao, type OpcaoDivisao } from './seletor-divisao';
@@ -198,6 +200,7 @@ export function SessaoExecucao({
   studentId = null,
   destinoAoFinalizar = '/aluno/treinos',
   permitirTrocaDeGrupo = true,
+  exerciciosDisponiveis = [],
 }: {
   planId: string;
   itens: ItemExecucao[];
@@ -236,6 +239,14 @@ export function SessaoExecucao({
    * no treino em andamento. A prop NÃO muda a gravação — só esconde os seletores.
    */
   permitirTrocaDeGrupo?: boolean;
+  /**
+   * Catálogo de exercícios (id, nome, grupos) para a TROCA ad-hoc durante a
+   * execução (máquina ocupada — FEAT-002). Entregue pelo servidor (RLS: catálogo
+   * global + do tenant). Default `[]`: sem catálogo, o botão de trocar não
+   * aparece (fichas/fakes legados seguem funcionando). A troca NÃO altera a
+   * ficha — vive só no estado da sessão (`trocaPorItem`).
+   */
+  exerciciosDisponiveis?: ExercicioDisponivel[];
 }) {
   const router = useRouter();
   // Estado multi-divisão (design §4.3): uma sessão por divisão-alvo, chaveada
@@ -390,6 +401,34 @@ export function SessaoExecucao({
     itensVisiveis.length > 0
       ? itensVisiveis[Math.min(indiceAtual, itensVisiveis.length - 1)]
       : undefined;
+
+  // Troca AD-HOC de exercício por item, SÓ nesta sessão (FEAT-002): mapeia
+  // `item.id -> {exerciseId, nome, gruposMusculares}` do exercício alternativo
+  // escolhido quando a máquina do prescrito está ocupada. NÃO persiste na ficha:
+  // o `plan_item_id` dos logs continua o prescrito; o exercício efetivo vai em
+  // `substitute_exercise_id` ao registrar a série. Vazio = executando o prescrito.
+  const [trocaPorItem, setTrocaPorItem] = React.useState<
+    Record<string, { exerciseId: string; nome: string; gruposMusculares: string[] }>
+  >({});
+
+  /** Registra a troca ad-hoc do item atual pelo exercício alternativo escolhido. */
+  function trocarExercicio(itemId: string, escolhido: ExercicioDisponivel) {
+    setTrocaPorItem((m) => ({
+      ...m,
+      [itemId]: {
+        exerciseId: escolhido.id,
+        nome: escolhido.name,
+        gruposMusculares: escolhido.muscle_groups ?? [],
+      },
+    }));
+  }
+
+  // Troca ad-hoc ativa no item atual (FEAT-002). Quando presente, o exercício
+  // EFETIVO (nome/grupos) vence o prescrito na exibição; os parâmetros de série
+  // (sets/reps/carga/descanso/placeholder) seguem os do slot prescrito.
+  const trocaAtual = itemAtual ? trocaPorItem[itemAtual.id] : undefined;
+  const nomeEfetivo = trocaAtual?.nome ?? itemAtual?.nome ?? '';
+  const gruposEfetivos = trocaAtual?.gruposMusculares ?? itemAtual?.gruposMusculares ?? [];
 
   // Descanso em MODAL: abre automaticamente ao concluir uma série (quando há
   // descanso prescrito e não é a última série do último exercício). Guardamos
@@ -746,6 +785,10 @@ export function SessaoExecucao({
         reps_done: estadoAtual.reps,
         load_done: estadoAtual.carga,
         completed: novoCompleted,
+        // Troca ad-hoc (FEAT-002): grava o exercício EFETIVO. Sem troca =
+        // ausente (o schema é opcional; a action normaliza para `null`, ou
+        // seja, executou o prescrito via plan_item_id).
+        substitute_exercise_id: trocaPorItem[itemId]?.exerciseId,
       });
 
       setSeries((atual) => {
@@ -865,6 +908,9 @@ export function SessaoExecucao({
         reps_done: estado.reps,
         load_done: estado.carga,
         completed: true,
+        // Mantém o exercício efetivo da troca ad-hoc ao corrigir uma série já
+        // registrada (FEAT-002); sem troca fica ausente (= prescrito).
+        substitute_exercise_id: trocaPorItem[itemId]?.exerciseId,
       });
 
       setSeries((atual) => ({
@@ -1034,10 +1080,32 @@ export function SessaoExecucao({
                 <X className="h-5 w-5" aria-hidden="true" />
               </Button>
             </div>
-            <CardTitle className="text-2xl font-black text-foreground">
-              {itemAtual.nome}
-            </CardTitle>
-            {/* Prescrição em uma linha discreta. */}
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-2xl font-black text-foreground">
+                  {nomeEfetivo}
+                </CardTitle>
+                {/* Sinaliza (texto, não só cor) que o exercício foi trocado nesta
+                    sessão — a ficha original segue intacta. */}
+                {trocaAtual ? (
+                  <Badge variant="secondary" className="shrink-0">
+                    Trocado nesta sessão
+                  </Badge>
+                ) : null}
+              </div>
+              {/* Botão/diálogo de TROCA ad-hoc (FEAT-002): só quando há catálogo
+                  entregue. A troca mantém as séries/parâmetros do slot. */}
+              {exerciciosDisponiveis.length > 0 ? (
+                <TrocarExercicioDialog
+                  exercicios={exerciciosDisponiveis}
+                  grupoAtual={itemAtual.gruposMusculares[0]}
+                  exercicioAtualId={trocaAtual?.exerciseId ?? itemAtual.exerciseId}
+                  onTrocar={(escolhido) => trocarExercicio(itemAtual.id, escolhido)}
+                />
+              ) : null}
+            </div>
+            {/* Prescrição em uma linha discreta (parâmetros do slot prescrito;
+                grupos refletem o exercício efetivo quando há troca). */}
             <p className="text-sm text-muted-foreground">
               {itemAtual.reps
                 ? `${itemAtual.sets}×${itemAtual.reps}`
@@ -1045,8 +1113,8 @@ export function SessaoExecucao({
               {itemAtual.descansoSegundos !== null
                 ? ` · Descanso ${itemAtual.descansoSegundos}s`
                 : ''}
-              {itemAtual.gruposMusculares.length > 0
-                ? ` · ${itemAtual.gruposMusculares.join(', ')}`
+              {gruposEfetivos.length > 0
+                ? ` · ${gruposEfetivos.join(', ')}`
                 : ''}
             </p>
             {/* "Série k de sets" + dots de progresso do exercício atual. */}
@@ -1081,7 +1149,10 @@ export function SessaoExecucao({
           <CardContent className="space-y-4 p-4">
             <ExercicioInfo
               info={{
-                nome: itemAtual.nome,
+                // Nome/grupos EFETIVOS (troca ad-hoc vence o prescrito). O vídeo/
+                // thumb/instruções/dicas seguem o prescrito: a troca é um
+                // substituto rápido na sessão, sem remontar a mídia no servidor.
+                nome: nomeEfetivo,
                 videoUrl: itemAtual.videoUrl,
                 thumbnailUrl: itemAtual.thumbnailUrl,
                 sets: itemAtual.sets,
@@ -1092,7 +1163,7 @@ export function SessaoExecucao({
                 instrucoes: itemAtual.instrucoes,
                 dicas: itemAtual.dicas,
                 errosComuns: itemAtual.errosComuns,
-                gruposMusculares: itemAtual.gruposMusculares,
+                gruposMusculares: gruposEfetivos,
                 equipamento: itemAtual.equipamento,
               }}
             />
