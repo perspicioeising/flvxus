@@ -3,8 +3,18 @@ import { notFound, redirect } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
+import { signExerciseMedia } from '@/lib/storage';
 import { editarExercicio, type EstadoAcao } from '@/actions/exercicios';
 import { ExerciseForm } from '@/components/professor/exercicios/exercise-form';
+import { ExerciseMedia } from '@/components/professor/exercicios/exercise-media';
+import { ExerciseMediaUpload } from '@/components/professor/exercicios/exercise-media-upload';
+import { ExerciseMediaDeleteButton } from '@/components/professor/exercicios/exercise-media-delete-button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 /**
  * Edição de exercício do tenant. Carrega via RSC (RLS) e submete via Server
@@ -22,7 +32,7 @@ export default async function EditarExercicioPage({
   const { data: exercicio, error } = await supabase
     .from('exercises')
     .select(
-      'id, tenant_id, name, muscle_groups, equipment, instructions, tips, common_errors'
+      'id, tenant_id, name, muscle_groups, equipment, instructions, tips, common_errors, video_url, thumbnail_url'
     )
     .eq('id', id)
     .single();
@@ -34,6 +44,14 @@ export default async function EditarExercicioPage({
   if (exercicio.tenant_id === null) {
     redirect(`/professor/exercicios/${id}`);
   }
+
+  // Mídia SEMPRE por URL assinada de TTL curto (bucket privado). Nunca pública.
+  const [videoUrl, thumbnailUrl] = await Promise.all([
+    exercicio.video_url ? signExerciseMedia(exercicio.video_url) : Promise.resolve(null),
+    exercicio.thumbnail_url
+      ? signExerciseMedia(exercicio.thumbnail_url)
+      : Promise.resolve(null),
+  ]);
 
   async function action(formData: FormData): Promise<EstadoAcao> {
     'use server';
@@ -70,6 +88,35 @@ export default async function EditarExercicioPage({
           common_errors: exercicio.common_errors ?? [],
         }}
       />
+
+      {/* Mídia demonstrativa gerida INLINE na edição: preview da mídia atual
+          (URL assinada) + envio/exclusão pelas actions dedicadas. É um fluxo
+          independente do salvar do texto acima — salvar o texto NÃO toca a
+          mídia (ver `exercicioDeDados` em actions/exercicios.ts). */}
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle className="text-lg font-extrabold">Mídia demonstrativa</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ExerciseMedia videoUrl={videoUrl} thumbnailUrl={thumbnailUrl} nome={exercicio.name} />
+
+          {/* Existência checada pelas colunas CRUAS do banco (não pelas URLs
+              assinadas): uma falha ao assinar retorna null mas a mídia existe,
+              então o botão de excluir deve continuar disponível. */}
+          <div className="space-y-2">
+            <ExerciseMediaUpload exerciseId={id} kind="video" />
+            {exercicio.video_url ? (
+              <ExerciseMediaDeleteButton exerciseId={id} kind="video" />
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <ExerciseMediaUpload exerciseId={id} kind="thumbnail" />
+            {exercicio.thumbnail_url ? (
+              <ExerciseMediaDeleteButton exerciseId={id} kind="thumbnail" />
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
     </section>
   );
 }
