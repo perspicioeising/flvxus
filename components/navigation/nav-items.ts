@@ -99,3 +99,18 @@ export function isNavItemActive(
   }
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
+
+/**
+ * Decide se `pathname` é uma TELA PRINCIPAL (de nível de aba do menu) do papel.
+ * É principal quando corresponde EXATAMENTE ao `href` de algum item de
+ * navegação — a raiz da aba, nunca uma subrota (detalhe/execução/criação). Ex.:
+ * `/aluno/treinos` é principal; `/aluno/treinos/[id]` ou `/aluno/execucao/...`
+ * não são. Usada no mobile para exibir a logo só nas telas principais.
+ */
+export function isMainScreen(
+  pathname: string,
+  role: UserRole,
+  isMaster = false,
+): boolean {
+  return getNavItems(role, isMaster).some((item) => item.href === pathname);
+}

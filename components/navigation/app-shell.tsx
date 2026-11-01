@@ -30,7 +30,7 @@ export function AppShell({ role, rootHref, isMaster = false, children }: AppShel
     <div className="flex h-dvh overflow-hidden bg-background text-foreground">
       <AppSidebar role={role} rootHref={rootHref} isMaster={isMaster} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <AppHeader role={role} rootHref={rootHref} />
+        <AppHeader role={role} rootHref={rootHref} isMaster={isMaster} />
         {/* O <main> é a área rolável. pb extra no mobile para o conteúdo não
             ficar sob a bottom-nav fixa. */}
         <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 md:p-6 md:pb-6">
