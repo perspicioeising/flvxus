@@ -36,6 +36,7 @@ export function itensEditaveisParaInput(
         kind: serie.kind,
         note: serie.note,
         target_reps: serie.target_reps,
+        rest_seconds: serie.rest_seconds,
         target_load: serie.target_load,
       }));
     }

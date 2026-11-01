@@ -136,6 +136,7 @@ function linhasDeSeries<K extends 'plan_item_id' | 'workout_exercise_id'>(
         kind: serie.kind,
         note: serie.note ?? null,
         target_reps: serie.target_reps ?? null,
+        rest_seconds: serie.rest_seconds ?? null,
         target_load: serie.target_load ?? null,
       });
     }
@@ -149,6 +150,7 @@ interface SerieLida {
   kind: SetKind;
   note: string | null;
   target_reps: string | null;
+  rest_seconds: number | null;
   target_load: number | null;
 }
 
@@ -172,7 +174,7 @@ async function lerSeriesPorItem(
 
   const { data, error } = await supabase
     .from(tabela)
-    .select(`${colunaFk}, set_number, kind, note, target_reps, target_load`)
+    .select(`${colunaFk}, set_number, kind, note, target_reps, rest_seconds, target_load`)
     .in(colunaFk, idsItens)
     .order('set_number', { ascending: true });
 
@@ -189,6 +191,7 @@ async function lerSeriesPorItem(
       kind: registro.kind as SetKind,
       note: (registro.note as string | null) ?? null,
       target_reps: (registro.target_reps as string | null) ?? null,
+      rest_seconds: (registro.rest_seconds as number | null) ?? null,
       target_load: (registro.target_load as number | null) ?? null,
     });
     porItem.set(idItem, atual);
@@ -677,6 +680,7 @@ export async function criarFichaDeModelo(
       kind: serie.kind,
       note: serie.note,
       target_reps: serie.target_reps,
+      rest_seconds: serie.rest_seconds,
       target_load: serie.target_load,
     }))
   );
@@ -834,6 +838,7 @@ export async function criarFichaMultiModelo(
       kind: serie.kind,
       note: serie.note,
       target_reps: serie.target_reps,
+      rest_seconds: serie.rest_seconds,
       target_load: serie.target_load,
     }))
   );
@@ -991,6 +996,7 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
         kind: serie.kind,
         note: serie.note,
         target_reps: serie.target_reps,
+        rest_seconds: serie.rest_seconds,
         target_load: serie.target_load,
       }))
     );

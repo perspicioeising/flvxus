@@ -20,6 +20,7 @@ interface SerieLinha {
   kind: SetKind;
   note: string | null;
   target_reps: string | null;
+  rest_seconds: number | null;
   target_load: number | null;
 }
 
@@ -38,6 +39,7 @@ function hidratarSeries(linhas: SerieLinha[] | null | undefined): SerieEditavel[
       kind: linha.kind,
       note: linha.note ?? '',
       target_reps: linha.target_reps ?? undefined,
+      rest_seconds: linha.rest_seconds === null ? undefined : String(linha.rest_seconds),
       target_load: linha.target_load === null ? undefined : String(linha.target_load),
     }));
 }
@@ -70,7 +72,7 @@ export default async function EditarModeloPage({
     supabase
       .from('workout_exercises')
       .select(
-        'id, exercise_id, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups), workout_exercise_sets(set_number, kind, note, target_reps, target_load)'
+        'id, exercise_id, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups), workout_exercise_sets(set_number, kind, note, target_reps, rest_seconds, target_load)'
       )
       .eq('workout_id', id)
       .order('order_index', { ascending: true }),

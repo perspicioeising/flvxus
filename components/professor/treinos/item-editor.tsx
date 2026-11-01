@@ -48,6 +48,7 @@ export interface SerieEditavel {
   kind: SetKind;
   note: string;
   target_reps?: string;
+  rest_seconds?: string;
   target_load?: string;
 }
 
@@ -108,12 +109,15 @@ function quantidadeSeries(sets: string): number | null {
 /**
  * Sincroniza o array `series` de um item com a quantidade `sets`: cresce
  * acrescentando linhas 'work' no fim, encolhe cortando o fim. Preserva as
- * linhas existentes (tipo/observação já configurados). Retorna o array ajustado
- * — ou o mesmo array se nada mudou.
+ * linhas existentes (tipo/observação já configurados). As linhas novas nascem
+ * pré-preenchidas com os defaults do exercício (reps/descanso/carga), para que
+ * o professor não precise redigitar o que já informou no bloco geral. Retorna o
+ * array ajustado — ou o mesmo array se nada mudou.
  */
 function sincronizarSeries(
   series: SerieEditavel[],
-  quantidade: number
+  quantidade: number,
+  defaults: { reps: string; rest_seconds: string; target_load: string }
 ): SerieEditavel[] {
   if (series.length === quantidade) return series;
   if (series.length > quantidade) {
@@ -121,7 +125,14 @@ function sincronizarSeries(
   }
   const proximo = [...series];
   for (let n = series.length + 1; n <= quantidade; n += 1) {
-    proximo.push({ set_number: n, kind: 'work', note: '' });
+    proximo.push({
+      set_number: n,
+      kind: 'work',
+      note: '',
+      target_reps: defaults.reps === '' ? undefined : defaults.reps,
+      rest_seconds: defaults.rest_seconds === '' ? undefined : defaults.rest_seconds,
+      target_load: defaults.target_load === '' ? undefined : defaults.target_load,
+    });
   }
   return proximo;
 }
@@ -171,7 +182,11 @@ export function ItemEditor({
           proximo.series =
             quantidade === null
               ? item.series
-              : sincronizarSeries(item.series, quantidade);
+              : sincronizarSeries(item.series, quantidade, {
+                  reps: item.reps,
+                  rest_seconds: item.rest_seconds,
+                  target_load: item.target_load,
+                });
         }
         return proximo;
       })
@@ -190,7 +205,14 @@ export function ItemEditor({
           return resto;
         }
         const quantidade = quantidadeSeries(item.sets) ?? 0;
-        return { ...item, series: sincronizarSeries(item.series ?? [], quantidade) };
+        return {
+          ...item,
+          series: sincronizarSeries(item.series ?? [], quantidade, {
+            reps: item.reps,
+            rest_seconds: item.rest_seconds,
+            target_load: item.target_load,
+          }),
+        };
       })
     );
   }
@@ -504,6 +526,61 @@ export function ItemEditor({
                               </Select>
                             </div>
                             <div className="space-y-1.5">
+                              <Label htmlFor={`${item.key}-set-${serie.set_number}-reps`}>
+                                Repetições
+                              </Label>
+                              <Input
+                                id={`${item.key}-set-${serie.set_number}-reps`}
+                                className="min-h-11"
+                                value={serie.target_reps ?? ''}
+                                onChange={(e) =>
+                                  atualizarSerie(indice, serie.set_number, {
+                                    target_reps: e.target.value,
+                                  })
+                                }
+                                placeholder="8-12"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label htmlFor={`${item.key}-set-${serie.set_number}-rest`}>
+                                Descanso (s)
+                              </Label>
+                              <Input
+                                id={`${item.key}-set-${serie.set_number}-rest`}
+                                className="min-h-11"
+                                type="number"
+                                inputMode="numeric"
+                                min={1}
+                                value={serie.rest_seconds ?? ''}
+                                onChange={(e) =>
+                                  atualizarSerie(indice, serie.set_number, {
+                                    rest_seconds: e.target.value,
+                                  })
+                                }
+                                placeholder="60"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Deixe vazio para herdar do exercício.
+                              </p>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label htmlFor={`${item.key}-set-${serie.set_number}-load`}>
+                                Carga (kg)
+                              </Label>
+                              <Input
+                                id={`${item.key}-set-${serie.set_number}-load`}
+                                className="min-h-11"
+                                inputMode="decimal"
+                                value={serie.target_load ?? ''}
+                                onChange={(e) =>
+                                  atualizarSerie(indice, serie.set_number, {
+                                    target_load: e.target.value,
+                                  })
+                                }
+                                placeholder="40"
+                              />
+                            </div>
+                            <div className="space-y-1.5 sm:col-span-2">
                               <Label htmlFor={`${item.key}-set-${serie.set_number}-note`}>
                                 Observação
                               </Label>
