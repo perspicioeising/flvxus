@@ -26,6 +26,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { EmptyState } from '@/components/patterns';
+import { MuscleMap } from '@/components/muscle-map';
 import type { SetKind } from '@/types/database.types';
 import { cn } from '@/lib/utils';
 import { SET_KINDS } from '@/schemas/treino';
@@ -66,6 +67,12 @@ export interface ItemEditavel {
   /** Apenas quando `comDivisao` — rótulo da divisão (ex.: 'A') ou null. */
   division?: string | null;
   /**
+   * Grupos musculares do exercício (de `exercises.muscle_groups`), usados só
+   * para o mapa de COBERTURA no editor — não são persistidos. Opcional: itens
+   * legados sem esse dado simplesmente não contribuem para a cobertura.
+   */
+  muscle_groups?: string[];
+  /**
    * Séries detalhadas (tipo + observação). Ausente/vazio = usa o padrão
    * ('Trabalho', sem observação) na execução. Materializada sob demanda ao
    * expandir o bloco "Configurar séries individualmente".
@@ -86,6 +93,7 @@ export function novoItem(exercicio: ExercicioDisponivel): ItemEditavel {
     notes: '',
     weekday: null,
     division: null,
+    muscle_groups: exercicio.muscle_groups ?? [],
   };
 }
 
@@ -218,8 +226,46 @@ export function ItemEditor({
     onChange(copia);
   }
 
+  // COBERTURA MUSCULAR da ficha/modelo sendo montada: união dos grupos de todos
+  // os itens adicionados, reativa (recalcula a cada add/remove). Ajuda o
+  // professor a enxergar os grupos ainda não cobertos.
+  const gruposCobertura = React.useMemo(() => {
+    const vistos = new Set<string>();
+    const ordenados: string[] = [];
+    for (const item of itens) {
+      for (const g of item.muscle_groups ?? []) {
+        const t = g.trim();
+        if (t.length === 0 || vistos.has(t)) continue;
+        vistos.add(t);
+        ordenados.push(t);
+      }
+    }
+    return ordenados;
+  }, [itens]);
+
   return (
     <div className="space-y-4">
+      {gruposCobertura.length > 0 ? (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">
+            Cobertura muscular
+          </p>
+          <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <MuscleMap grupos={gruposCobertura} size="md" className="shrink-0" />
+            <ul className="flex flex-wrap gap-2">
+              {gruposCobertura.map((g) => (
+                <li
+                  key={g}
+                  className="rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-primary-soft-foreground"
+                >
+                  {g}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
       {itens.length === 0 ? (
         <EmptyState
           icon={Dumbbell}

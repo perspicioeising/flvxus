@@ -77,7 +77,7 @@ export default async function FichaDetalhePage({
       supabase
         .from('workout_plan_items')
         .select(
-          'id, exercise_id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name), workout_plan_item_sets(set_number, kind, note, target_reps, target_load)'
+          'id, exercise_id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups), workout_plan_item_sets(set_number, kind, note, target_reps, target_load)'
         )
         .eq('plan_id', id)
         .order('order_index', { ascending: true }),
@@ -109,6 +109,9 @@ export default async function FichaDetalhePage({
     notes: item.notes ?? '',
     weekday: item.weekday,
     division: item.division,
+    muscle_groups:
+      (item.exercises as unknown as { muscle_groups: string[] | null } | null)
+        ?.muscle_groups ?? [],
     series: hidratarSeries(item.workout_plan_item_sets as SerieLinha[] | null),
   }));
 

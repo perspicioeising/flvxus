@@ -70,7 +70,7 @@ export default async function EditarModeloPage({
     supabase
       .from('workout_exercises')
       .select(
-        'id, exercise_id, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name), workout_exercise_sets(set_number, kind, note, target_reps, target_load)'
+        'id, exercise_id, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups), workout_exercise_sets(set_number, kind, note, target_reps, target_load)'
       )
       .eq('workout_id', id)
       .order('order_index', { ascending: true }),
@@ -96,6 +96,9 @@ export default async function EditarModeloPage({
     target_load: num(item.target_load),
     notes: item.notes ?? '',
     weekday: null,
+    muscle_groups:
+      (item.exercises as unknown as { muscle_groups: string[] | null } | null)
+        ?.muscle_groups ?? [],
     series: hidratarSeries(item.workout_exercise_sets as SerieLinha[] | null),
   }));
 

@@ -28,6 +28,38 @@ Dado de entrada: união dos `muscle_groups` dos exercícios do conjunto (divisã
   grandes (ainda útil); se forem específicos, fica mais rico. Investigar e normalizar o de-para.
 - Sem mudança de schema esperada na Fase 1 (só leitura de muscle_groups já existente).
 
+### De-para implementado (valor `muscle_groups` → região do SVG)
+Granularidade confirmada na investigação (seeds `supabase/*seed*.sql` + rótulos das
+telas + `schemas/exercicio.ts` / `components/exercices/.../constants/exercise.ts`): os
+valores reais são AMPLOS, os 8 canônicos abaixo. O de-para vive em
+`lib/muscle-map/regions.ts` (`normalizeGroup` + `regionsForGroups`), normaliza
+acentos/caixa e IGNORA com segurança valores não mapeados (fallback conservador,
+nunca quebra o render). Regiões do boneco (frente/costas): `chest`, `shoulders`,
+`arms`, `core`, `quads`, `upperBack`, `glutes`, `hamstrings`.
+
+| `muscle_groups` | Regiões acendidas |
+| --- | --- |
+| Peito | chest |
+| Costas | upperBack |
+| Ombros | shoulders |
+| Braços | arms |
+| Core | core |
+| Pernas | quads + hamstrings + glutes |
+| Corpo Inteiro | todas as regiões |
+| Cardio | nenhuma (não é grupo localizado) |
+| *(desconhecido)* | nenhuma (ignorado com segurança) |
+
+Extras tolerados (aparecem em dados/rótulos reais, fora das 8 sugestões):
+`Glúteos → glutes`, `Abdômen/Abdominal → core`.
+
+Pontos de uso: (1) `components/aluno/inicio/card-treino-hoje.tsx` — mini mapa `sm`
+`onPrimary` com os grupos da divisão (dia de descanso é tratado fora, por
+`DescansoResumoCard`, então não quebra); (2) `components/aluno/execucao/resumo-sessao.tsx`
+— mapa `md` com a união dos grupos executados na sessão (dado montado em
+`lib/treino/resumo-dados.ts`), compartilhado pelas rotas de resumo do aluno e do
+professor; (3) `components/professor/treinos/item-editor.tsx` — mapa de COBERTURA da
+ficha/modelo inteiro sendo montado, reativo ao add/remove de exercícios.
+
 ## Fase 2 — Mapa de análise (3 modos) na tela de Evolução (futuro, não iniciada)
 Mais pesada. Exige agregar histórico de sessões por grupo muscular ao longo do tempo. Três modos:
 - **Volume**: onde o volume foi no período (grupos mais treinados).
