@@ -15,7 +15,9 @@ describe('PageHeader', () => {
     render(<PageHeader title="Treinos" emphasis="caps" />);
     const h1 = screen.getByRole('heading', { level: 1 });
     expect(h1.className).toContain('uppercase');
-    expect(h1.className).toContain('text-4xl');
+    // Escala gigante agora é responsiva via clamp() (text-balance + clamp),
+    // substituiu o text-4xl/md:text-5xl fixo. Valida a presença do clamp.
+    expect(h1.className).toContain('clamp(');
     expect(h1.className).toContain('font-black');
   });
 
