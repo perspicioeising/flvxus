@@ -143,7 +143,7 @@ export default async function ProfessorTreinarAlunoPage({
   const { data: itensData } = await supabase
     .from('workout_plan_items')
     .select(
-      'id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors), workout_plan_item_sets(set_number, kind, note, target_reps, rest_seconds, target_load)'
+      'id, exercise_id, weekday, division, order_index, sets, reps, rest_seconds, target_load, notes, exercises(name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors), workout_plan_item_sets(set_number, kind, note, target_reps, rest_seconds, target_load)'
     )
     .eq('plan_id', ficha.id)
     .order('order_index', { ascending: true })
@@ -163,6 +163,7 @@ export default async function ProfessorTreinarAlunoPage({
 
       return {
         id: item.id,
+        exerciseId: item.exercise_id,
         nome: ex?.name?.trim() || 'Exercício',
         weekday: item.weekday,
         division: item.division,

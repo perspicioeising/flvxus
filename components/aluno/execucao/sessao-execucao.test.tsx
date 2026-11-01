@@ -27,6 +27,13 @@ const carregarSessaoAberta = vi.fn(async (..._args: unknown[]) => ({
 }));
 const cancelarSessao = vi.fn(async (_arg: unknown) => ({ ok: true, id: 'sess-1' }));
 
+// Pré-preenchimento (FEAT-001): por padrão SEM histórico (`data:{}`), então o
+// componente fica nos defaults da prescrição. Casos específicos sobrescrevem.
+const carregarUltimosRegistros = vi.fn(async (..._args: unknown[]) => ({
+  ok: true,
+  data: {} as Record<string, { reps: number | null; load: number | null }>,
+}));
+
 vi.mock('@/actions/execucao', () => ({
   registrarSerie: (arg: unknown) => registrarSerie(arg),
   // Repassa TODOS os argumentos: o eixo divisão chama `iniciarSessao(planId,
@@ -34,6 +41,8 @@ vi.mock('@/actions/execucao', () => ({
   iniciarSessao: (...args: unknown[]) => iniciarSessao(...args),
   finalizarSessao: (arg: unknown) => finalizarSessao(arg),
   carregarSessaoAberta: (...args: unknown[]) => carregarSessaoAberta(...args),
+  carregarUltimosRegistros: (...args: unknown[]) =>
+    carregarUltimosRegistros(...args),
   cancelarSessao: (arg: unknown) => cancelarSessao(arg),
 }));
 
@@ -53,6 +62,7 @@ vi.mock('next/navigation', () => ({
 function itemFake(overrides: Partial<ItemExecucao> = {}): ItemExecucao {
   return {
     id: 'item-1',
+    exerciseId: 'ex-1',
     nome: 'Supino reto',
     weekday: null,
     sets: 2,
@@ -593,6 +603,60 @@ describe('SessaoExecucao — retomada de sessão aberta (hidratação)', () => {
     ).not.toBeInTheDocument();
     // Segue na série 1 (nada hidratado a posicionou adiante).
     expect(screen.getByText('Série 1 de 2')).toBeInTheDocument();
+  });
+});
+
+describe('SessaoExecucao — pré-preenchimento pelo último realizado (FEAT-001)', () => {
+  it('sem sessão aberta, semeia reps e carga do último realizado e permite sobrescrever', async () => {
+    carregarUltimosRegistros.mockResolvedValueOnce({
+      ok: true,
+      data: { 'item-1': { reps: 12, load: 40 } },
+    });
+
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake({ sets: 2 })]} />);
+
+    // A série atual (1) aparece pré-preenchida com o último realizado.
+    const inputReps = (await screen.findByLabelText('Reps')) as HTMLInputElement;
+    await waitFor(() => expect(inputReps.value).toBe('12'));
+    const inputCarga = screen.getByLabelText('Carga (kg)') as HTMLInputElement;
+    expect(inputCarga.value).toBe('40');
+
+    // O aluno consegue sobrescrever (input não travado).
+    fireEvent.change(inputReps, { target: { value: '15' } });
+    expect(inputReps.value).toBe('15');
+  });
+
+  it('com sessão aberta reidratando a série, o valor da sessão vence o pré-preenchimento', async () => {
+    // Sessão aberta reidrata a série 1 com 10 reps · 20 kg; o pré-preenchimento
+    // devolve 12·40 para o MESMO item, mas não deve sobrescrever o log aberto.
+    carregarSessaoAberta.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        sessionId: 'sess-aberta',
+        logs: [
+          {
+            set_number: 1,
+            reps_done: 10,
+            load_done: 20,
+            completed: true,
+            plan_item_id: 'item-1',
+          },
+        ],
+      },
+    });
+    carregarUltimosRegistros.mockResolvedValueOnce({
+      ok: true,
+      data: { 'item-1': { reps: 12, load: 40 } },
+    });
+
+    render(<SessaoExecucao planId="plan-1" itens={[itemFake({ sets: 2 })]} />);
+
+    // A série 1 reidratada (do log aberto) aparece no resumo — valor da sessão.
+    const resumo = await screen.findByLabelText('Séries concluídas');
+    expect(within(resumo).getByText(/10 reps/)).toBeInTheDocument();
+    expect(within(resumo).getByText(/20 kg/)).toBeInTheDocument();
+    // Posicionou na série 2 (o item foi reidratado, não pré-preenchido).
+    expect(screen.getByText('Série 2 de 2')).toBeInTheDocument();
   });
 });
 

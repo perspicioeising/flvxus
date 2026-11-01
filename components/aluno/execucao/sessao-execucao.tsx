@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import {
   cancelarSessao,
   carregarSessaoAberta,
+  carregarUltimosRegistros,
   finalizarSessao,
   iniciarSessao,
   registrarSerie,
@@ -62,6 +63,7 @@ import { agruparPorDivisao, DIVISAO_SEM } from '@/lib/divisao';
 import { Badge } from '@/components/ui/badge';
 import type { SetKind } from '@/types/database.types';
 import { valoresDaSerie, type ValoresResolvidos } from '@/lib/treino/series';
+import { valorInicialDaSerie } from '@/lib/treino/prefill';
 import { SET_KIND_LABEL, SET_KIND_VARIANTE } from '@/components/professor/treinos/labels';
 import { TimerDescanso } from './timer-descanso';
 import { ExercicioInfo } from './exercicio-info';
@@ -72,6 +74,12 @@ import { DialogAvaliacaoTreino } from './dialog-avaliacao-treino';
 /** Item prescrito, com tudo que a UI de execução precisa exibir. */
 export interface ItemExecucao {
   id: string;
+  /**
+   * `exercise_id` BASE deste item (a linha de `workout_plan_items` referencia um
+   * exercício do catálogo). Usado para CASAR o último realizado ENTRE fichas no
+   * pré-preenchimento (FEAT-001) — o histórico segue o exercício, não o item.
+   */
+  exerciseId: string;
   nome: string;
   /** Dia da semana (0..6) ou `null` (sem dia definido) deste item. */
   weekday: number | null;
@@ -493,6 +501,12 @@ export function SessaoExecucao({
       // re-disparar). Erro/`data:null` apenas deixam os defaults da prescrição.
       setGruposHidratados((s) => new Set(s).add(grupoAtivoKey));
 
+      // Itens do grupo que foram reidratados de logs de sessão ABERTA. A
+      // precedência é por ITEM: um item reidratado NUNCA é pré-preenchido (o
+      // log da sessão aberta vence); os demais itens do grupo podem semear o
+      // último realizado. Preenchido abaixo quando há sessão aberta.
+      const itensReidratados = new Set<string>();
+
       if (r.ok && r.data) {
         const { sessionId: idAberta, logs: logsDaSessao } = r.data;
 
@@ -505,6 +519,10 @@ export function SessaoExecucao({
         );
 
         setSessionIdPorGrupo((m) => ({ ...m, [grupoAtivoKey]: idAberta }));
+
+        for (const log of casados) {
+          if (log.plan_item_id !== null) itensReidratados.add(log.plan_item_id);
+        }
 
         if (casados.length > 0) {
           // Merge no estado `series` SEM sobrescrever edição não confirmada
@@ -548,6 +566,59 @@ export function SessaoExecucao({
           setIndiceAtual(
             primeiroNaoConcluido >= 0 ? primeiroNaoConcluido : 0
           );
+        }
+      }
+
+      // --- PRÉ-PREENCHIMENTO pelo ÚLTIMO realizado (FEAT-001). ---
+      // Depois de resolver a sessão aberta, semeia o último realizado (casado
+      // por exercício, herdado entre fichas) nas séries AINDA intocadas dos
+      // itens do grupo que NÃO foram reidratados de logs de sessão aberta. O
+      // placeholder segue sendo a prescrição (via `resolver()`); aqui só muda o
+      // VALOR inicial, que o aluno pode sobrescrever.
+      const itensParaPrefill = itensVisiveis.filter(
+        (item) => !itensReidratados.has(item.id)
+      );
+      if (itensParaPrefill.length > 0) {
+        const rUlt = await carregarUltimosRegistros(
+          itensParaPrefill.map((item) => ({
+            planItemId: item.id,
+            exerciseId: item.exerciseId,
+          })),
+          studentId ?? undefined
+        );
+        if (cancelado) return;
+
+        if (rUlt.ok && rUlt.data) {
+          const ultimos = rUlt.data;
+          setSeries((atual) => {
+            const proximo = { ...atual };
+            for (const item of itensParaPrefill) {
+              const ultimo = ultimos[item.id];
+              if (!ultimo) continue; // exercício sem histórico: fica no default
+              for (let n = 1; n <= item.sets; n += 1) {
+                const chave = chaveSerie(item.id, n);
+                const estado = proximo[chave];
+                // Só semeia séries INTOCADAS: nunca sobrescreve conclusão,
+                // salvamento em voo nem edição manual do aluno. O "intocado" é
+                // o default da prescrição: reps vazio e carga = carga-alvo.
+                if (!estado || estado.completed || estado.salvando) continue;
+                const cargaSerie = resolver(item, n).cargaAlvo;
+                const cargaDefault =
+                  cargaSerie !== null ? String(cargaSerie) : '';
+                if (estado.reps !== '' || estado.carga !== cargaDefault) continue;
+                const inicial = valorInicialDaSerie(ultimo, {
+                  reps: '',
+                  carga: cargaDefault,
+                });
+                proximo[chave] = {
+                  ...estado,
+                  reps: inicial.reps,
+                  carga: inicial.carga,
+                };
+              }
+            }
+            return proximo;
+          });
         }
       }
 

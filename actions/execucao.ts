@@ -311,6 +311,135 @@ export async function carregarSessaoAberta(
 }
 
 /**
+ * Mapa `planItemId -> {reps, load}` do ÚLTIMO realizado casado por exercício,
+ * devolvido pela `carregarUltimosRegistros` para o pré-preenchimento (FEAT-001).
+ */
+export type UltimosRegistros = Record<
+  string,
+  { reps: number | null; load: number | null }
+>;
+
+/**
+ * Linha achatada do `select` aninhado de `workout_set_logs`: além das colunas de
+ * reps/carga, traz o `exercise_id` do item (via join) e o `finished_at` da
+ * sessão (via join), para resolver o mais recente por exercício no servidor.
+ */
+interface RegistroComExercicio {
+  reps_done: number | null;
+  load_done: number | null;
+  plan_item: { exercise_id: string } | null;
+  workout_sessions: { finished_at: string | null } | null;
+}
+
+/**
+ * Carrega o ÚLTIMO realizado (reps/carga) de cada exercício para PRÉ-PREENCHER a
+ * execução, casando por `exercise_id` (o histórico é herdado ENTRE fichas, não
+ * só por `plan_item_id`). Recebe os itens visíveis `{planItemId, exerciseId}` e
+ * devolve `Record<planItemId, {reps, load}>` — mapeado de volta por item de
+ * ENTRADA para que a UI semeie cada série sem reconstruir o casamento.
+ *
+ * Apenas LEITURA: não cria schema nem muta estado. Só olha séries
+ * `completed = true` de sessões FINALIZADAS (`finished_at is not null`) do
+ * aluno-alvo, reduzindo no servidor ao registro mais recente por exercício
+ * (ordenado por `finished_at desc`).
+ *
+ * Autorização de papel IDÊNTICA a `carregarSessaoAberta`/`iniciarSessao`: sem
+ * `targetStudentId` = fluxo do próprio aluno (`role==='student'`, alvo =
+ * `auth.uid()`); com = fluxo do professor (`role==='trainer'`, alvo =
+ * `targetStudentId`). Roda sob `createClient()` (RLS ativo) — um aluno nunca
+ * enxerga o histórico de outro. Sem dados → `{ok:true, data:{}}`.
+ */
+export async function carregarUltimosRegistros(
+  itens: { planItemId: string; exerciseId: string }[],
+  targetStudentId?: string
+): Promise<EstadoAcao & { data?: UltimosRegistros }> {
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
+  }
+
+  // Mesma resolução/autorização de papel de `carregarSessaoAberta`.
+  let studentIdAlvo: string;
+  if (targetStudentId === undefined) {
+    if (usuario.role !== 'student') {
+      return { ok: false, message: 'Apenas o aluno pode iniciar um treino.' };
+    }
+    studentIdAlvo = usuario.userId;
+  } else {
+    if (usuario.role !== 'trainer') {
+      return {
+        ok: false,
+        message: 'Apenas o professor pode registrar treino em nome do aluno.',
+      };
+    }
+    studentIdAlvo = targetStudentId;
+  }
+
+  // `exercise_id` distintos dos itens de entrada. Sem itens (ou todos sem
+  // exercício) não há o que buscar: devolve mapa vazio.
+  const exerciseIds = Array.from(
+    new Set(itens.map((i) => i.exerciseId).filter(Boolean))
+  );
+  if (exerciseIds.length === 0) {
+    return { ok: true, data: {} };
+  }
+
+  const supabase = await createClient();
+
+  // Uma query: séries concluídas de sessões FINALIZADAS do aluno-alvo cujo item
+  // é de um dos exercícios pedidos. Os `!inner` filtram pelas colunas da sessão
+  // (finished_at/student_id) e do item (exercise_id). Ordena por sessão
+  // finalizada desc para que o PRIMEIRO registro visto de cada exercício seja o
+  // mais recente (reduzimos no servidor abaixo). A posse real (aluno dono OU
+  // trainer do tenant) é imposta pela RLS; `student_id` no join é defesa extra.
+  const { data, error } = await supabase
+    .from('workout_set_logs')
+    .select(
+      'reps_done, load_done, plan_item:workout_plan_items!inner(exercise_id), workout_sessions!inner(finished_at, student_id)'
+    )
+    .eq('completed', true)
+    .not('workout_sessions.finished_at', 'is', null)
+    .eq('workout_sessions.student_id', studentIdAlvo)
+    .in('plan_item.exercise_id', exerciseIds)
+    .order('finished_at', {
+      referencedTable: 'workout_sessions',
+      ascending: false,
+    });
+
+  if (error) {
+    console.error('carregarUltimosRegistros: erro ao buscar histórico', error);
+    return {
+      ok: false,
+      message: `Não foi possível carregar o histórico: ${error.message}`,
+    };
+  }
+
+  // Reduz ao MAIS RECENTE por exercício: como os registros já vêm ordenados por
+  // `finished_at desc`, o primeiro visto de cada `exercise_id` é o vencedor.
+  const porExercicio = new Map<string, { reps: number | null; load: number | null }>();
+  for (const linha of (data ?? []) as unknown as RegistroComExercicio[]) {
+    const exerciseId = linha.plan_item?.exercise_id;
+    if (!exerciseId || porExercicio.has(exerciseId)) continue;
+    porExercicio.set(exerciseId, {
+      reps: linha.reps_done,
+      load: linha.load_done,
+    });
+  }
+
+  // Mapeia de volta cada planItemId de ENTRADA para o realizado do seu
+  // exercício. Itens sem histórico simplesmente não entram no mapa.
+  const resultado: UltimosRegistros = {};
+  for (const item of itens) {
+    const realizado = porExercicio.get(item.exerciseId);
+    if (realizado) {
+      resultado[item.planItemId] = realizado;
+    }
+  }
+
+  return { ok: true, data: resultado };
+}
+
+/**
  * Registra (ou atualiza) uma série executada em `workout_set_logs`. Faz um
  * ÚNICO UPSERT por `(session_id, plan_item_id, set_number)` com
  * `onConflict` nessas colunas: se a série já existe, atualiza
