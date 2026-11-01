@@ -46,6 +46,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { agruparPorDia } from '@/lib/semana';
 import { agruparPorDivisao, DIVISAO_SEM } from '@/lib/divisao';
 import { TimerDescanso } from './timer-descanso';
@@ -208,6 +218,11 @@ export function SessaoExecucao({
   // Intensidade percebida (RPE 1..10) opcional ao finalizar. `null` = não
   // informada (não bloqueia a finalização).
   const [intensidade, setIntensidade] = React.useState<number | null>(null);
+  // Aviso de séries incompletas antes de finalizar. `null` = diálogo fechado;
+  // array não-vazio = diálogo aberto com a lista de pendências.
+  const [pendenciasAviso, setPendenciasAviso] = React.useState<
+    { exercicio: string; serie: number }[] | null
+  >(null);
   const [pendente, startTransition] = React.useTransition();
 
   // Eixo de agrupamento da ficha: se QUALQUER item tem divisão, a ficha é por
@@ -757,6 +772,24 @@ export function SessaoExecucao({
       router.push(destinoAoFinalizar);
       return;
     }
+
+    // Verifica séries incompletas ANTES de finalizar (somente na primeira chamada).
+    if (pendenciasAviso === null) {
+      const pendencias: { exercicio: string; serie: number }[] = [];
+      for (const item of itensVisiveis) {
+        for (let n = 1; n <= item.sets; n += 1) {
+          if (series[chaveSerie(item.id, n)]?.completed !== true) {
+            pendencias.push({ exercicio: item.nome, serie: n });
+          }
+        }
+      }
+      if (pendencias.length > 0) {
+        setPendenciasAviso(pendencias);
+        return; // Aguarda confirmação do aluno.
+      }
+    }
+
+    // Prossegue com a finalização (sem pendências ou já confirmado pelo aluno).
     setFinalizando(true);
     const r = await finalizarSessao({
       session_id: sessionId,
@@ -766,6 +799,7 @@ export function SessaoExecucao({
     setFinalizando(false);
 
     if (r.ok) {
+      setPendenciasAviso(null);
       toast({ title: 'Treino finalizado. Bom trabalho!' });
       // Ambos os fluxos vão para a MESMA tela de resumo pós-treino da sessão,
       // variando só a rota por papel: o ALUNO (`studentId == null`) vai à rota
@@ -1296,6 +1330,52 @@ export function SessaoExecucao({
           ) : null}
         </DialogContent>
       </Dialog>
+
+      {/* Aviso de séries incompletas antes de finalizar (opção A: avisar, não
+          bloquear). Abre quando o aluno toca "Finalizar" com séries por marcar.
+          "Voltar e preencher" fecha o diálogo sem finalizar; "Finalizar mesmo
+          assim" chama concluir() novamente com `pendenciasAviso !== null` e
+          prossegue direto para a finalização. */}
+      <AlertDialog
+        open={pendenciasAviso !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendenciasAviso(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Séries não preenchidas</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p>
+                  Você deixou {pendenciasAviso?.length ?? 0}{' '}
+                  {(pendenciasAviso?.length ?? 0) === 1
+                    ? 'série sem preencher'
+                    : 'séries sem preencher'}
+                  :
+                </p>
+                <ul className="mt-2 list-disc pl-5 text-sm">
+                  {(pendenciasAviso ?? []).map(({ exercicio, serie }) => (
+                    <li key={`${exercicio}-${serie}`}>
+                      {exercicio} — Série {serie}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3">
+                  Você pode voltar e preencher as séries ou finalizar o treino
+                  mesmo assim.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar e preencher</AlertDialogCancel>
+            <AlertDialogAction onClick={() => concluir()}>
+              Finalizar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
