@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 import { TimerDescanso } from '@/components/aluno/execucao/timer-descanso';
 
@@ -27,8 +27,10 @@ describe('TimerDescanso — callbacks de modal', () => {
     expect(onConcluir).not.toHaveBeenCalled();
   });
 
-  it('chama onConcluir quando o tempo chega a zero', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+  it('chama onConcluir quando o tempo chega a zero', () => {
+    // Sem `shouldAdvanceTime`: só o avanço explícito move o relógio, tornando a
+    // contagem determinística (o relógio real não disputa os ticks do intervalo).
+    vi.useFakeTimers();
     try {
       const onConcluir = vi.fn();
       const onPular = vi.fn();
@@ -46,7 +48,9 @@ describe('TimerDescanso — callbacks de modal', () => {
       expect(screen.getByText('0:03')).toBeInTheDocument();
 
       // Avança além do total: o timer zera e avisa o pai.
-      await vi.advanceTimersByTimeAsync(3000);
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
 
       expect(screen.getByText('0:00')).toBeInTheDocument();
       expect(onConcluir).toHaveBeenCalledTimes(1);
