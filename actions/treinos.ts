@@ -4,9 +4,6 @@ import { revalidatePath } from 'next/cache';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-
-/** Cliente Supabase (RLS ativo) usado em todas as actions deste módulo. */
-type SupabaseClientRls = Awaited<ReturnType<typeof createClient>>;
 import {
   agendamentoSchema,
   clonarFichaSchema,
@@ -26,6 +23,9 @@ import {
 } from '@/schemas/treino';
 import { formatarDataBr } from '@/components/professor/treinos/labels';
 import type { PlanStatus, SetKind } from '@/types/database.types';
+
+/** Cliente Supabase (RLS ativo) usado em todas as actions deste módulo. */
+type SupabaseClientRls = Awaited<ReturnType<typeof createClient>>;
 
 /**
  * Server Actions do domínio de treinos (architecture.md §6.2, §6.4).
