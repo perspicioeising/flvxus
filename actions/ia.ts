@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 
 import { getSessionUser } from '@/lib/auth';
+import { requireEntitlement } from '@/lib/billing/guard';
+import type { FeatureKey } from '@/lib/billing/entitlements';
 import { createClient } from '@/lib/supabase/server';
 import {
   mapearErroIa,
@@ -116,6 +118,18 @@ async function exigirProfessor(): Promise<
   return { ok: true, userId: user.userId, tenantId: user.tenantId };
 }
 
+/**
+ * Aplica `requireEntitlement` para cada feature exigida (na ordem). Retorna o
+ * primeiro `{ ok:false }` encontrado, ou `{ ok:true }` quando todas liberadas.
+ */
+async function exigirEntitlements(...features: FeatureKey[]): Promise<EstadoAcao> {
+  for (const feature of features) {
+    const direito = await requireEntitlement(feature);
+    if (!direito.ok) return direito;
+  }
+  return { ok: true };
+}
+
 /** Invoca uma Edge Function de IA com o JWT do professor e trata erros em pt-BR. */
 async function invocarFuncaoIa(
   nome: 'generate-diet' | 'suggest-workout' | 'analyze-assessment',
@@ -150,6 +164,9 @@ export async function gerarDieta(input: unknown): Promise<EstadoGeracao> {
   const guard = await exigirProfessor();
   if (!guard.ok) return guard.estado;
 
+  const direito = await exigirEntitlements('diets', 'ai');
+  if (!direito.ok) return direito;
+
   const parsed = gerarDietaInputSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -169,6 +186,9 @@ export async function sugerirTreino(input: unknown): Promise<EstadoGeracao> {
   const guard = await exigirProfessor();
   if (!guard.ok) return guard.estado;
 
+  const direito = await exigirEntitlements('ai');
+  if (!direito.ok) return direito;
+
   const parsed = sugerirTreinoInputSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -187,6 +207,9 @@ export async function sugerirTreino(input: unknown): Promise<EstadoGeracao> {
 export async function analisarAvaliacao(input: unknown): Promise<EstadoGeracao> {
   const guard = await exigirProfessor();
   if (!guard.ok) return guard.estado;
+
+  const direito = await exigirEntitlements('assessments', 'ai');
+  if (!direito.ok) return direito;
 
   const parsed = analisarAvaliacaoInputSchema.safeParse(input);
   if (!parsed.success) {
@@ -313,6 +336,21 @@ export async function aprovarGeracao(generationId: string): Promise<EstadoAcao> 
   }
   if (gen.target_id) {
     return { ok: false, message: 'Este rascunho já foi aprovado.' };
+  }
+
+  // Gate de entitlement por job_type ANTES de materializar: mesmo com o
+  // rascunho gerado, aprovar (materializar) uma feature bloqueada por plano
+  // retorna { ok:false }.
+  const featurePorJob: Record<AiJobType, FeatureKey | null> = {
+    generate_diet: 'diets',
+    suggest_workout: null,
+    analyze_assessment: 'assessments',
+    weekly_adherence: null,
+  };
+  const featureAprovacao = featurePorJob[gen.job_type as AiJobType] ?? null;
+  if (featureAprovacao != null) {
+    const direito = await requireEntitlement(featureAprovacao);
+    if (!direito.ok) return direito;
   }
 
   const validado = validarDraftPorJob(gen.job_type as AiJobType, gen.output);

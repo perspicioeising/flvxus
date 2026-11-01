@@ -41,24 +41,33 @@ export async function iniciarCheckout(
 
   const supabase = await createClient();
 
-  // 1) Resolve o plano pelo tier; recusa price não configurado (placeholder).
+  // 1) Resolve o plano pelo tier; seleciona o price do CICLO escolhido.
   const { data: plano, error: erroPlano } = await supabase
     .from('plans')
-    .select('id, stripe_price_id')
+    .select('id, stripe_price_id_monthly, stripe_price_id_yearly, trial_days')
     .eq('tier', parsed.data.tier)
     .single();
 
   if (erroPlano || !plano) {
     return { ok: false, message: 'Plano não encontrado.' };
   }
-  if (!plano.stripe_price_id) {
+
+  const priceId =
+    parsed.data.cycle === 'yearly'
+      ? plano.stripe_price_id_yearly
+      : plano.stripe_price_id_monthly;
+
+  if (!priceId) {
     return {
       ok: false,
       message:
-        'Este plano ainda não foi configurado (price ID do Stripe ausente). ' +
-        'Defina o price em plans.stripe_price_id antes de assinar.',
+        parsed.data.cycle === 'yearly'
+          ? 'O plano anual ainda não foi configurado (price ID do Stripe ausente).'
+          : 'O plano mensal ainda não foi configurado (price ID do Stripe ausente).',
     };
   }
+
+  const trialDays = plano.trial_days ?? 14;
 
   try {
     const stripe = getStripe();
@@ -97,11 +106,14 @@ export async function iniciarCheckout(
     const checkout = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
-      line_items: [{ price: plano.stripe_price_id, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: siteUrl('/professor/plano?checkout=sucesso'),
       cancel_url: siteUrl('/professor/plano?checkout=cancelado'),
       metadata: { tenant_id: master.tenantId },
-      subscription_data: { metadata: { tenant_id: master.tenantId } },
+      subscription_data: {
+        metadata: { tenant_id: master.tenantId },
+        trial_period_days: trialDays,
+      },
     });
 
     if (!checkout.url) {

@@ -9,6 +9,8 @@ import type { PlanTier } from '@/types/database.types';
 
 export interface CheckoutButtonProps {
   tier: PlanTier;
+  /** Ciclo de cobrança escolhido (mensal/anual). */
+  cycle: 'monthly' | 'yearly';
   /** Rótulo do botão (ex.: "Assinar", "Trocar para este plano"). */
   label: string;
   /** Desabilita quando o plano não tem price configurado ou é o atual. */
@@ -21,7 +23,7 @@ export interface CheckoutButtonProps {
  * e redireciona o navegador para `session.url`. O enforcement/validação real
  * (gate master, price configurado) é no backend.
  */
-export function CheckoutButton({ tier, label, disabled, variant = 'default' }: CheckoutButtonProps) {
+export function CheckoutButton({ tier, cycle, label, disabled, variant = 'default' }: CheckoutButtonProps) {
   const [carregando, setCarregando] = React.useState(false);
 
   async function aoClicar() {
@@ -29,6 +31,7 @@ export function CheckoutButton({ tier, label, disabled, variant = 'default' }: C
     try {
       const fd = new FormData();
       fd.append('tier', tier);
+      fd.append('cycle', cycle);
       const r = await iniciarCheckout(undefined, fd);
       if (r.ok && r.url) {
         window.location.assign(r.url);

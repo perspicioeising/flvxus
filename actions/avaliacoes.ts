@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { getSessionUser } from '@/lib/auth';
+import { requireEntitlement } from '@/lib/billing/guard';
 import { createClient } from '@/lib/supabase/server';
 import { uploadAssessmentPhoto, removeAssessmentPhoto } from '@/lib/storage';
 import { calcularComposicao, type ProtocoloCalculo } from '@/lib/assessment';
@@ -141,6 +142,9 @@ export async function criarAvaliacao(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode registrar avaliações.' };
   }
+
+  const direito = await requireEntitlement('assessments');
+  if (!direito.ok) return direito;
 
   const parsed = criarAvaliacaoSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

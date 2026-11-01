@@ -75,7 +75,15 @@ function fd(obj: Record<string, string>): FormData {
 beforeEach(() => {
   vi.clearAllMocks();
   assertMasterMock.mockResolvedValue(MASTER);
-  planSingleMock.mockResolvedValue({ data: { id: 'plan-team', stripe_price_id: 'price_team' }, error: null });
+  planSingleMock.mockResolvedValue({
+    data: {
+      id: 'plan-team',
+      stripe_price_id_monthly: 'price_team_month',
+      stripe_price_id_yearly: 'price_team_year',
+      trial_days: 14,
+    },
+    error: null,
+  });
   subMaybeSingleMock.mockResolvedValue({ data: { stripe_customer_id: 'cus_123' }, error: null });
   checkoutCreateMock.mockResolvedValue({ url: 'https://checkout.stripe.test/sess_1' });
   adminInsertMock.mockResolvedValue({ error: null });
@@ -85,21 +93,29 @@ beforeEach(() => {
 describe('iniciarCheckout', () => {
   it('recusa não-master', async () => {
     assertMasterMock.mockResolvedValueOnce(null);
-    const r = await iniciarCheckout(undefined, fd({ tier: 'team' }));
+    const r = await iniciarCheckout(undefined, fd({ tier: 'team', cycle: 'monthly' }));
     expect(r.ok).toBe(false);
     expect(checkoutCreateMock).not.toHaveBeenCalled();
   });
 
-  it('recusa plano sem price configurado (placeholder)', async () => {
-    planSingleMock.mockResolvedValueOnce({ data: { id: 'plan-solo', stripe_price_id: null }, error: null });
-    const r = await iniciarCheckout(undefined, fd({ tier: 'solo' }));
+  it('recusa plano sem price do ciclo configurado (placeholder)', async () => {
+    planSingleMock.mockResolvedValueOnce({
+      data: {
+        id: 'plan-solo',
+        stripe_price_id_monthly: null,
+        stripe_price_id_yearly: null,
+        trial_days: 14,
+      },
+      error: null,
+    });
+    const r = await iniciarCheckout(undefined, fd({ tier: 'individual', cycle: 'monthly' }));
     expect(r.ok).toBe(false);
     expect(r.message).toMatch(/price/i);
     expect(checkoutCreateMock).not.toHaveBeenCalled();
   });
 
-  it('cria a checkout session e retorna a url (customer já existe)', async () => {
-    const r = await iniciarCheckout(undefined, fd({ tier: 'team' }));
+  it('usa o price mensal e passa trial_period_days (customer já existe)', async () => {
+    const r = await iniciarCheckout(undefined, fd({ tier: 'team', cycle: 'monthly' }));
     expect(r.ok).toBe(true);
     expect(r.url).toBe('https://checkout.stripe.test/sess_1');
     expect(customersCreateMock).not.toHaveBeenCalled();
@@ -107,14 +123,23 @@ describe('iniciarCheckout', () => {
     expect(args).toMatchObject({
       mode: 'subscription',
       customer: 'cus_123',
+      line_items: [{ price: 'price_team_month', quantity: 1 }],
       metadata: { tenant_id: 'tenant-1' },
     });
+    expect(args.subscription_data.trial_period_days).toBe(14);
+  });
+
+  it('usa o price anual quando cycle=yearly', async () => {
+    const r = await iniciarCheckout(undefined, fd({ tier: 'team', cycle: 'yearly' }));
+    expect(r.ok).toBe(true);
+    const [args] = checkoutCreateMock.mock.calls[0];
+    expect(args.line_items).toEqual([{ price: 'price_team_year', quantity: 1 }]);
   });
 
   it('cria o customer quando ausente e segue para o checkout', async () => {
     subMaybeSingleMock.mockResolvedValueOnce({ data: null, error: null });
     customersCreateMock.mockResolvedValueOnce({ id: 'cus_new' });
-    const r = await iniciarCheckout(undefined, fd({ tier: 'team' }));
+    const r = await iniciarCheckout(undefined, fd({ tier: 'team', cycle: 'monthly' }));
     expect(r.ok).toBe(true);
     expect(customersCreateMock).toHaveBeenCalledOnce();
     const [args] = checkoutCreateMock.mock.calls[0];
@@ -122,7 +147,7 @@ describe('iniciarCheckout', () => {
   });
 
   it('rejeita tier inválido', async () => {
-    const r = await iniciarCheckout(undefined, fd({ tier: 'enterprise' }));
+    const r = await iniciarCheckout(undefined, fd({ tier: 'enterprise', cycle: 'monthly' }));
     expect(r.ok).toBe(false);
   });
 });

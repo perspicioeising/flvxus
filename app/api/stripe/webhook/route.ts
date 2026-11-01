@@ -40,16 +40,30 @@ async function aplicarPatch(
   const { stripePriceId, ...campos } = patch;
   const update: Record<string, unknown> = { ...campos };
 
-  // Resolve plan_id pelo price (lookup em plans.stripe_price_id). Price
-  // desconhecido => mantém o plan_id atual (não derruba o webhook).
+  // Resolve plan_id pelo price, cobrindo as colunas mensal/anual e o legado
+  // (stripe_price_id). Price desconhecido => mantém o plan_id atual (não derruba
+  // o webhook). O ciclo é derivado da coluna que casou.
   if (stripePriceId) {
-    const { data: plano } = await db
-      .from('plans')
-      .select('id')
-      .eq('stripe_price_id', stripePriceId)
-      .maybeSingle();
-    if (plano?.id) {
-      update.plan_id = plano.id;
+    // Valida o formato do price antes de montar o filtro `.or` (evita injeção
+    // de operadores PostgREST via string do evento). Price malformado => não
+    // altera plan_id/billing_cycle.
+    if (!/^price_[A-Za-z0-9]+$/.test(stripePriceId)) {
+      console.warn('[stripe webhook] price com formato inesperado, ignorado:', stripePriceId);
+    } else {
+      const { data: plano } = await db
+        .from('plans')
+        .select('id, stripe_price_id_monthly, stripe_price_id_yearly')
+        .or(
+          `stripe_price_id_monthly.eq.${stripePriceId},stripe_price_id_yearly.eq.${stripePriceId},stripe_price_id.eq.${stripePriceId}`
+        )
+        .maybeSingle();
+      if (plano?.id) {
+        update.plan_id = plano.id;
+        // yearly quando casou a coluna anual; senão monthly (anual explícito,
+        // mensal ou o legado stripe_price_id).
+        update.billing_cycle =
+          plano.stripe_price_id_yearly === stripePriceId ? 'yearly' : 'monthly';
+      }
     }
   }
 

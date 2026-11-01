@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { getSessionUser } from '@/lib/auth';
+import { requireEntitlement } from '@/lib/billing/guard';
 import { createClient } from '@/lib/supabase/server';
 import {
   agendamentoSchema,
@@ -215,6 +216,9 @@ export async function criarModelo(entrada: ModeloInput): Promise<EstadoAcao> {
     return { ok: false, message: 'Apenas o professor pode criar modelos.' };
   }
 
+  const direito = await requireEntitlement(null);
+  if (!direito.ok) return direito;
+
   const parsed = modeloSchema.safeParse(entrada);
   if (!parsed.success) {
     return {
@@ -397,6 +401,9 @@ export async function criarFicha(entrada: FichaInput): Promise<EstadoAcao> {
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode criar fichas.' };
   }
+
+  const direito = await requireEntitlement(null);
+  if (!direito.ok) return direito;
 
   const parsed = fichaSchema.safeParse(entrada);
   if (!parsed.success) {
@@ -588,6 +595,9 @@ export async function criarFichaDeModelo(
     return { ok: false, message: 'Apenas o professor pode criar fichas.' };
   }
 
+  const direito = await requireEntitlement(null);
+  if (!direito.ok) return direito;
+
   const supabase = await createClient();
 
   // Lê o modelo (RLS garante que é do tenant) + seus itens.
@@ -718,6 +728,9 @@ export async function criarFichaMultiModelo(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode criar fichas.' };
   }
+
+  const direito = await requireEntitlement(null);
+  if (!direito.ok) return direito;
 
   const parsed = criarFichaMultiModeloSchema.safeParse(entrada);
   if (!parsed.success) {
@@ -877,6 +890,9 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode clonar fichas.' };
   }
+
+  const direito = await requireEntitlement(null);
+  if (!direito.ok) return direito;
 
   const parsed = clonarFichaSchema.safeParse(entrada);
   if (!parsed.success) {

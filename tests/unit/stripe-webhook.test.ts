@@ -101,7 +101,8 @@ describe('mapWebhookEvent', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Route handler: rejeição de assinatura inválida (Stripe MOCKADO)
+// Route handler: rejeição de assinatura inválida (Stripe MOCKADO) + resolve de
+// plan_id/billing_cycle por price mensal/anual/legado.
 // ---------------------------------------------------------------------------
 const constructEventMock = vi.fn();
 
@@ -111,9 +112,58 @@ vi.mock('@/lib/stripe/server', () => ({
   }),
 }));
 
+// Mock do service_role client: captura o filtro `.or` da resolução de plano e o
+// payload do upsert, sem rede. Reconfigurável por teste via `planRow`/`orSpy`.
+const { createClientMock, planRow, orSpy, upsertSpy, planSelectSpy } = vi.hoisted(() => ({
+  createClientMock: vi.fn(),
+  planRow: { current: null as unknown },
+  orSpy: vi.fn(),
+  upsertSpy: vi.fn(),
+  planSelectSpy: vi.fn(),
+}));
+
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: createClientMock,
+}));
+
+function makeDb() {
+  return {
+    from(table: string) {
+      if (table === 'plans') {
+        return {
+          select: (cols: string) => {
+            planSelectSpy(cols);
+            return {
+              or: (expr: string) => {
+                orSpy(expr);
+                return { maybeSingle: async () => ({ data: planRow.current }) };
+              },
+            };
+          },
+        };
+      }
+      if (table === 'subscriptions') {
+        return {
+          upsert: (payload: unknown, opts: unknown) => {
+            upsertSpy(payload, opts);
+            return Promise.resolve({ error: null });
+          },
+          select: () => ({
+            eq: () => ({ maybeSingle: async () => ({ data: null }) }),
+          }),
+        };
+      }
+      throw new Error(`tabela inesperada no mock: ${table}`);
+    },
+  };
+}
+
 afterEach(() => {
   vi.clearAllMocks();
   delete process.env.STRIPE_WEBHOOK_SECRET;
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  planRow.current = null;
 });
 
 async function importRoute() {
@@ -155,5 +205,85 @@ describe('POST /api/stripe/webhook', () => {
     const { POST } = await importRoute();
     const res = await POST(makeRequest('{}', { 'stripe-signature': 'sig' }));
     expect(res.status).toBe(500);
+  });
+});
+
+describe('POST /api/stripe/webhook — resolve de plan_id/billing_cycle', () => {
+  function setupEnv() {
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test';
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+    createClientMock.mockReturnValue(makeDb());
+  }
+
+  function subscriptionEvent(priceId: string): Stripe.Event {
+    return {
+      type: 'customer.subscription.updated',
+      data: {
+        object: {
+          id: 'sub_123',
+          customer: 'cus_123',
+          status: 'active',
+          current_period_start: 1_700_000_000,
+          current_period_end: 1_702_592_000,
+          cancel_at_period_end: false,
+          metadata: { tenant_id: 'tenant-1' },
+          items: { data: [{ price: { id: priceId } }] },
+        },
+      },
+    } as unknown as Stripe.Event;
+  }
+
+  it('deriva billing_cycle=yearly quando casa a coluna anual', async () => {
+    setupEnv();
+    planRow.current = {
+      id: 'plan-1',
+      stripe_price_id_monthly: 'price_month',
+      stripe_price_id_yearly: 'price_year',
+    };
+    constructEventMock.mockReturnValue(subscriptionEvent('price_year'));
+
+    const { POST } = await importRoute();
+    const res = await POST(makeRequest('{}', { 'stripe-signature': 'sig' }));
+
+    expect(res.status).toBe(200);
+    // O filtro `.or` cobre as 3 colunas (mensal/anual/legado).
+    expect(orSpy).toHaveBeenCalledWith(
+      'stripe_price_id_monthly.eq.price_year,stripe_price_id_yearly.eq.price_year,stripe_price_id.eq.price_year'
+    );
+    const [payload] = upsertSpy.mock.calls[0];
+    expect(payload).toMatchObject({ plan_id: 'plan-1', billing_cycle: 'yearly' });
+  });
+
+  it('deriva billing_cycle=monthly quando casa a coluna mensal', async () => {
+    setupEnv();
+    planRow.current = {
+      id: 'plan-1',
+      stripe_price_id_monthly: 'price_month',
+      stripe_price_id_yearly: 'price_year',
+    };
+    constructEventMock.mockReturnValue(subscriptionEvent('price_month'));
+
+    const { POST } = await importRoute();
+    const res = await POST(makeRequest('{}', { 'stripe-signature': 'sig' }));
+
+    expect(res.status).toBe(200);
+    const [payload] = upsertSpy.mock.calls[0];
+    expect(payload).toMatchObject({ plan_id: 'plan-1', billing_cycle: 'monthly' });
+  });
+
+  it('price malformado => não consulta plans nem grava plan_id/billing_cycle', async () => {
+    setupEnv();
+    // price com caractere inválido (burla de operador PostgREST).
+    constructEventMock.mockReturnValue(subscriptionEvent('price_bad,injection'));
+
+    const { POST } = await importRoute();
+    const res = await POST(makeRequest('{}', { 'stripe-signature': 'sig' }));
+
+    expect(res.status).toBe(200);
+    expect(orSpy).not.toHaveBeenCalled();
+    const [payload] = upsertSpy.mock.calls[0];
+    expect(payload).not.toHaveProperty('plan_id');
+    expect(payload).not.toHaveProperty('billing_cycle');
   });
 });

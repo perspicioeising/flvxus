@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import type { PlanTier, SubscriptionStatus } from '@/types/database.types';
+import type { BillingCycle, PlanTier, SubscriptionStatus } from '@/types/database.types';
 
 /**
  * Plano/Assinatura — MASTER-ONLY (Fase 3). Gate server-side `requireMaster()`:
@@ -22,14 +22,18 @@ export default async function ProfessorPlanoPage() {
   const master = await requireMaster();
   const supabase = await createClient();
 
+  const soloEu = master.accountType === 'self_managed';
+
   const [{ data: planos }, { data: sub }, { data: trainers }] = await Promise.all([
     supabase
       .from('plans')
-      .select('id, tier, name, max_affiliates, stripe_price_id')
+      .select(
+        'id, tier, name, max_affiliates, price_monthly_cents, price_yearly_cents, stripe_price_id_monthly, stripe_price_id_yearly, trial_days'
+      )
       .eq('is_active', true),
     supabase
       .from('subscriptions')
-      .select('status, plan_id, current_period_end, cancel_at_period_end')
+      .select('status, plan_id, current_period_end, cancel_at_period_end, billing_cycle')
       .eq('tenant_id', master.tenantId)
       .maybeSingle(),
     supabase
@@ -43,15 +47,17 @@ export default async function ProfessorPlanoPage() {
   const status = (sub?.status ?? null) as SubscriptionStatus | null;
   const planoAtual = (planos ?? []).find((p) => p.id === sub?.plan_id) ?? null;
   const limiteAtual = planoAtual?.max_affiliates ?? null;
+  // Ciclo vigente (default mensal) para rotular o resumo e os botões.
+  const cicloAtual = (sub?.billing_cycle ?? 'monthly') as BillingCycle;
 
-  // Ordena por tier. Legados (solo/team/gym) primeiro; Fase B em seguida.
+  // Ordem canônica dos 6 tiers: Fase B primeiro, legados por último.
   const ordemTier: Record<PlanTier, number> = {
-    solo: 0,
-    team: 1,
-    gym: 2,
-    individual: 3,
-    personal: 4,
-    assessoria: 5,
+    individual: 0,
+    personal: 1,
+    assessoria: 2,
+    solo: 3,
+    team: 4,
+    gym: 5,
   };
   const planosOrdenados = [...(planos ?? [])].sort(
     (a, b) => ordemTier[a.tier as PlanTier] - ordemTier[b.tier as PlanTier]
@@ -64,7 +70,9 @@ export default async function ProfessorPlanoPage() {
           Plano
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sua assinatura e o limite de filiados. A cobrança é feita no seu plano.
+          {soloEu
+            ? 'Sua assinatura individual. A cobrança é feita no seu plano.'
+            : 'Sua assinatura e o limite de filiados. A cobrança é feita no seu plano.'}
         </p>
       </header>
 
@@ -80,7 +88,11 @@ export default async function ProfessorPlanoPage() {
             </Badge>
           </div>
           <CardDescription>
-            Filiados em uso: {usados} de {limiteAtual === null ? (planoAtual ? 'ilimitado' : '0') : limiteAtual}.
+            {soloEu
+              ? `Cobrança ${rotuloCiclo(cicloAtual)}.`
+              : `Filiados em uso: ${usados} de ${
+                  limiteAtual === null ? (planoAtual ? 'ilimitado' : '0') : limiteAtual
+                }. Cobrança ${rotuloCiclo(cicloAtual)}.`}
             {sub?.cancel_at_period_end
               ? ' Assinatura marcada para cancelar no fim do período.'
               : ''}
@@ -97,20 +109,38 @@ export default async function ProfessorPlanoPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         {planosOrdenados.map((plano) => {
           const atual = plano.id === sub?.plan_id && statusComDireito(status);
-          const semPrice = !plano.stripe_price_id;
+          // Price e valor do CICLO vigente. Sem price configurado => desabilita.
+          const priceId =
+            cicloAtual === 'yearly'
+              ? plano.stripe_price_id_yearly
+              : plano.stripe_price_id_monthly;
+          const centavos =
+            cicloAtual === 'yearly' ? plano.price_yearly_cents : plano.price_monthly_cents;
+          const semPrice = !priceId;
           return (
             <Card key={plano.id} className="flex flex-col">
               <CardHeader className="p-4 pb-0">
                 <CardTitle className="text-base">{plano.name}</CardTitle>
                 <CardDescription>
-                  {plano.max_affiliates === null
-                    ? 'Filiados ilimitados'
-                    : plano.max_affiliates === 0
-                      ? 'Sem filiados (só você)'
-                      : `Até ${plano.max_affiliates} filiados`}
+                  {soloEu
+                    ? 'Sua conta individual'
+                    : plano.max_affiliates === null
+                      ? 'Filiados ilimitados'
+                      : plano.max_affiliates === 0
+                        ? 'Sem filiados (só você)'
+                        : `Até ${plano.max_affiliates} filiados`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="mt-auto space-y-2 p-4">
+                {centavos != null ? (
+                  <p className="text-sm font-semibold text-foreground">
+                    {formatarPreco(centavos)}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {' '}
+                      /{cicloAtual === 'yearly' ? 'ano' : 'mês'}
+                    </span>
+                  </p>
+                ) : null}
                 {semPrice ? (
                   <p className="text-xs text-muted-foreground">
                     Preço ainda não configurado.
@@ -118,6 +148,7 @@ export default async function ProfessorPlanoPage() {
                 ) : null}
                 <CheckoutButton
                   tier={plano.tier}
+                  cycle={cicloAtual}
                   label={atual ? 'Plano atual' : 'Assinar / trocar'}
                   disabled={atual || semPrice}
                   variant={atual ? 'outline' : 'default'}
@@ -129,6 +160,19 @@ export default async function ProfessorPlanoPage() {
       </div>
     </section>
   );
+}
+
+/** Rótulo pt-BR do ciclo de cobrança. */
+function rotuloCiclo(cycle: BillingCycle): string {
+  return cycle === 'yearly' ? 'anual' : 'mensal';
+}
+
+/** Formata centavos em BRL (ex.: 1990 => "R$ 19,90"). */
+function formatarPreco(centavos: number): string {
+  return (centavos / 100).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 }
 
 /** Rótulo pt-BR do status da assinatura. */
