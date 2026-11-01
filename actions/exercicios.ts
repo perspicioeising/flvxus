@@ -55,7 +55,16 @@ function erroDeCampo(flatten: {
   return out;
 }
 
-/** Monta o payload de `exercises` a partir dos dados validados. */
+/**
+ * Monta o payload de texto de `exercises` a partir dos dados validados.
+ *
+ * NÃO inclui `video_url`/`thumbnail_url`: a mídia é um fluxo SEPARADO, gravado
+ * exclusivamente pelas actions dedicadas (`confirmarMidiaExercicio`,
+ * `uploadMidiaExercicio`, `excluirMidiaExercicio`). Assim, editar o texto de um
+ * exercício NUNCA sobrescreve/zera a mídia existente — o UPDATE só toca os
+ * campos abaixo e deixa as colunas de mídia intactas. Na criação, a mídia nasce
+ * `null` (default da coluna) e é enviada depois.
+ */
 function exercicioDeDados(dados: CriarExercicioInput | EditarExercicioInput) {
   return {
     name: dados.name,
@@ -64,8 +73,6 @@ function exercicioDeDados(dados: CriarExercicioInput | EditarExercicioInput) {
     instructions: dados.instructions ?? null,
     tips: dados.tips,
     common_errors: dados.common_errors,
-    video_url: dados.video_url ?? null,
-    thumbnail_url: dados.thumbnail_url ?? null,
   };
 }
 
