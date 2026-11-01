@@ -2,9 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
+import { signExerciseMedia } from '@/lib/storage';
 import type { SerieLog } from '@/lib/treino/progresso';
 import {
   proximoTreinoDaFicha,
@@ -437,6 +439,100 @@ export async function carregarUltimosRegistros(
   }
 
   return { ok: true, data: resultado };
+}
+
+/**
+ * Dados de EXIBIÇÃO completos de um exercício para a troca ad-hoc (FEAT-002):
+ * nome, mídia JÁ ASSINADA (bucket privado) e instruções/dicas/erros/grupos. É o
+ * que a sessão sobrescreve na UI ao trocar o prescrito pelo substituto; a
+ * PRESCRIÇÃO (séries/reps/carga/descanso) segue a do slot original.
+ */
+export interface DetalheExercicioTroca {
+  id: string;
+  nome: string;
+  gruposMusculares: string[];
+  equipamento: string[];
+  instrucoes: string | null;
+  dicas: string[];
+  errosComuns: string[];
+  /** URL JÁ ASSINADA do vídeo (TTL curto) ou `null`. */
+  videoUrl: string | null;
+  /** URL JÁ ASSINADA da thumbnail (TTL curto) ou `null`. */
+  thumbnailUrl: string | null;
+}
+
+/**
+ * Carrega os dados COMPLETOS de exibição de UM exercício do catálogo (para a
+ * troca ad-hoc durante a execução — FEAT-002) e ASSINA sua mídia no servidor
+ * (bucket privado; mesmo `signExerciseMedia` da rota de execução). SOB DEMANDA:
+ * a lista/busca de troca carrega só `{id, name, muscle_groups}` (leve); quando o
+ * aluno escolhe o substituto, esta action resolve a mídia/instruções SÓ daquele
+ * exercício — evitando pré-assinar o catálogo inteiro (biblioteca global pode ter
+ * centenas de itens).
+ *
+ * RLS: roda sob `createClient()`, então só enxerga exercícios que o chamador pode
+ * ver (catálogo global `tenant_id null` OU do tenant). Um `exercise_id` de outro
+ * tenant não casa linha e retorna `{ok:false}` — a troca não puxa mídia alheia.
+ * Qualquer usuário logado pode chamar (aluno executando a própria ficha ou
+ * professor no presencial); a visibilidade é da RLS.
+ */
+export async function carregarDetalheExercicio(
+  exerciseId: string
+): Promise<EstadoAcao & { data?: DetalheExercicioTroca }> {
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
+  }
+
+  const parsed = z.string().uuid().safeParse(exerciseId);
+  if (!parsed.success) {
+    return { ok: false, message: 'Exercício inválido.' };
+  }
+
+  const supabase = await createClient();
+
+  // RLS limita ao catálogo visível (global OU do tenant). `maybeSingle` →
+  // `null` quando o id não é visível (outro tenant) ou não existe.
+  const { data: ex, error } = await supabase
+    .from('exercises')
+    .select(
+      'id, name, muscle_groups, equipment, video_url, thumbnail_url, instructions, tips, common_errors'
+    )
+    .eq('id', parsed.data)
+    .maybeSingle();
+
+  if (error) {
+    return {
+      ok: false,
+      message: `Não foi possível carregar o exercício: ${error.message}`,
+    };
+  }
+
+  if (!ex) {
+    return { ok: false, message: 'Exercício não disponível.' };
+  }
+
+  // Assina a mídia no servidor (nunca URL pública de bucket privado), mesmo
+  // padrão/TTL da rota de execução. Valores http(s) públicos passam direto.
+  const [videoUrl, thumbnailUrl] = await Promise.all([
+    ex.video_url ? signExerciseMedia(ex.video_url) : Promise.resolve(null),
+    ex.thumbnail_url ? signExerciseMedia(ex.thumbnail_url) : Promise.resolve(null),
+  ]);
+
+  return {
+    ok: true,
+    data: {
+      id: ex.id,
+      nome: ex.name?.trim() || 'Exercício',
+      gruposMusculares: ex.muscle_groups ?? [],
+      equipamento: ex.equipment ?? [],
+      instrucoes: ex.instructions ?? null,
+      dicas: ex.tips ?? [],
+      errosComuns: ex.common_errors ?? [],
+      videoUrl,
+      thumbnailUrl,
+    },
+  };
 }
 
 /**
