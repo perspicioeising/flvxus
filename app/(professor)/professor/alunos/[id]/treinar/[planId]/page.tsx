@@ -197,14 +197,6 @@ export default async function ProfessorTreinarAlunoPage({
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
-      <Link
-        href={`/professor/alunos/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-        Voltar para a ficha do aluno
-      </Link>
-
       <header className="space-y-1">
         <p className="text-sm font-medium text-muted-foreground">
           Treinar com {nomeAluno}
@@ -214,10 +206,22 @@ export default async function ProfessorTreinarAlunoPage({
       </header>
 
       {itens.length === 0 ? (
-        <EmptyState
-          title="Nenhum exercício nesta ficha"
-          description="Esta ficha ainda não tem exercícios prescritos."
-        />
+        <>
+          {/* Sem execução ativa (ficha sem exercícios): o "Voltar" navega direto,
+              pois não há sessão a abandonar. Na execução ativa, o controle de
+              voltar vive no SessaoExecucao e dispara a confirmação de abandono. */}
+          <Link
+            href={`/professor/alunos/${id}`}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            Voltar para a ficha do aluno
+          </Link>
+          <EmptyState
+            title="Nenhum exercício nesta ficha"
+            description="Esta ficha ainda não tem exercícios prescritos."
+          />
+        </>
       ) : (
         <SessaoExecucao
           planId={ficha.id}

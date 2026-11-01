@@ -914,9 +914,20 @@ export function SessaoExecucao({
       {itemAtual ? (
         <Card key={itemAtual.id} className="rounded-3xl">
           <CardHeader className="space-y-3 p-4 pb-0">
-            {/* Topo: "Exercício i de n" centralizado + X de fechar à direita. */}
+            {/* Topo: "Voltar" à esquerda + "Exercício i de n" centralizado + X
+                de fechar à direita. O "Voltar" dispara o MESMO fluxo de abandono
+                do X (confirma e descarta a sessão), em vez de navegar direto. */}
             <div className="flex items-center justify-between gap-2">
-              <span className="w-11" aria-hidden="true" />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="min-h-11 min-w-11"
+                aria-label="Voltar para a ficha"
+                onClick={() => setAbandonoAberto(true)}
+              >
+                <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+              </Button>
               <span
                 className="text-sm font-semibold text-muted-foreground"
                 aria-live="polite"
