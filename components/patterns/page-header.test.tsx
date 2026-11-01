@@ -16,8 +16,9 @@ describe('PageHeader', () => {
     const h1 = screen.getByRole('heading', { level: 1 });
     expect(h1.className).toContain('uppercase');
     // Escala gigante agora é responsiva via clamp() (text-balance + clamp),
-    // substituiu o text-4xl/md:text-5xl fixo. Valida a presença do clamp.
-    expect(h1.className).toContain('clamp(');
+    // substituiu o text-4xl/md:text-5xl fixo. Assertiva precisa casa o valor
+    // shipado no componente (clamp(2rem,9vw,3rem)).
+    expect(h1.className).toContain('text-[clamp(2rem,9vw,3rem)]');
     expect(h1.className).toContain('font-black');
   });
 
