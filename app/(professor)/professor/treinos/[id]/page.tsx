@@ -5,6 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { Separator } from '@/components/ui/separator';
 import { FichaForm, type AlunoOpcao } from '@/components/professor/treinos/ficha-form';
+import { rotationStepsSchema, type RotationStepInput } from '@/schemas/treino';
 import { StatusControl } from '@/components/professor/treinos/status-control';
 import { AgendarLiberacao } from '@/components/professor/treinos/agendar-liberacao';
 import { FichaDeleteButton } from '@/components/professor/treinos/delete-buttons';
@@ -33,7 +34,9 @@ export default async function FichaDetalhePage({
 
   const { data: ficha } = await supabase
     .from('workout_plans')
-    .select('id, name, status, student_id, source_workout_id, scheduled_release_at')
+    .select(
+      'id, name, status, student_id, source_workout_id, scheduled_release_at, rotation_steps'
+    )
     .eq('id', id)
     .single();
 
@@ -74,6 +77,13 @@ export default async function FichaDetalhePage({
 
   const alunos: AlunoOpcao[] = alunosData ?? [];
   const exercicios: ExercicioDisponivel[] = exerciciosData ?? [];
+
+  // Sequência de rotação persistida (jsonb). Forma inválida/ausente → `null`
+  // (rotação automática), para não travar a edição por dados legados.
+  const rotacaoParsed = rotationStepsSchema.safeParse(ficha.rotation_steps);
+  const rotationSteps: RotationStepInput[] | null = rotacaoParsed.success
+    ? rotacaoParsed.data
+    : null;
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -125,6 +135,7 @@ export default async function FichaDetalhePage({
           name: ficha.name,
           source_workout_id: ficha.source_workout_id,
           itens,
+          rotationSteps,
         }}
       />
     </section>

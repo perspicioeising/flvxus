@@ -13,6 +13,7 @@ import {
 import { EmptyState, ErrorState } from '@/components/patterns';
 import { CardTreinoHoje } from '@/components/aluno/inicio/card-treino-hoje';
 import { CardFichaSemTreino } from '@/components/aluno/inicio/card-ficha-sem-treino';
+import { DescansoResumoCard } from '@/components/aluno/treinos/descanso-resumo-card';
 
 /**
  * Tela de início do aluno. Lê TODAS as fichas liberadas (o aluno Bruno tem
@@ -31,13 +32,13 @@ export default async function AlunoHomePage() {
   const supabase = await createClient();
   const weekday = weekdayAtual();
 
-  const [fichasRes, avaliacaoRes, sessoesRes] = await Promise.all([
+  const [fichasRes, avaliacaoRes, sessoesRes, descansosRes] = await Promise.all([
     // TODAS as fichas liberadas do aluno + itens (RLS garante posse e released).
     // Desempate determinístico: released_at desc, id desc (nunca some ficha).
     supabase
       .from('workout_plans')
       .select(
-        'id, name, status, workout_plan_items(id, weekday, division, order_index, sets, reps, exercises(name, muscle_groups))'
+        'id, name, status, rotation_steps, workout_plan_items(id, weekday, division, order_index, sets, reps, exercises(name, muscle_groups))'
       )
       .eq('status', 'released')
       .order('released_at', { ascending: false, nullsFirst: false })
@@ -59,9 +60,14 @@ export default async function AlunoHomePage() {
       .not('finished_at', 'is', null)
       .order('finished_at', { ascending: false })
       .order('id', { ascending: false }),
+    // Descansos CUMPRIDOS (FEAT-003): mais recente primeiro por plano.
+    supabase
+      .from('workout_plan_rest_completions')
+      .select('plan_id, rest_step_index, completed_at')
+      .order('completed_at', { ascending: false }),
   ]);
 
-  if (fichasRes.error || avaliacaoRes.error || sessoesRes.error) {
+  if (fichasRes.error || avaliacaoRes.error || sessoesRes.error || descansosRes.error) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
         <Saudacao nome={sessionUser.fullName} weekday={weekday} />
@@ -82,10 +88,35 @@ export default async function AlunoHomePage() {
   // `has(planId)` distingue "sem histórico" (ausente) de "última foi o balde sem
   // divisão" (presente com valor `null`). Alimenta a rotação do próximo treino.
   const ultimaDivisaoPorPlano = new Map<string, string | null>();
+  const ultimaSessaoPorPlano = new Map<
+    string,
+    { label: string | null; finishedAt: string }
+  >();
   for (const sessao of sessoesRes.data ?? []) {
     if (sessao.plan_id === null) continue;
     if (!ultimaDivisaoPorPlano.has(sessao.plan_id)) {
       ultimaDivisaoPorPlano.set(sessao.plan_id, sessao.division ?? null);
+      if (sessao.finished_at) {
+        ultimaSessaoPorPlano.set(sessao.plan_id, {
+          label: sessao.division ?? null,
+          finishedAt: sessao.finished_at,
+        });
+      }
+    }
+  }
+
+  // Mapa plan_id → último DESCANSO cumprido (FEAT-003), já ordenado desc.
+  const ultimoDescansoPorPlano = new Map<
+    string,
+    { restStepIndex: number; completedAt: string }
+  >();
+  for (const descanso of descansosRes.data ?? []) {
+    if (descanso.plan_id === null) continue;
+    if (!ultimoDescansoPorPlano.has(descanso.plan_id)) {
+      ultimoDescansoPorPlano.set(descanso.plan_id, {
+        restStepIndex: descanso.rest_step_index,
+        completedAt: descanso.completed_at,
+      });
     }
   }
 
@@ -111,7 +142,11 @@ export default async function AlunoHomePage() {
             const proximo = proximoTreinoDaFicha(
               ficha,
               undefined,
-              ultimaConcluida
+              ultimaConcluida,
+              {
+                ultimaDivisao: ultimaSessaoPorPlano.get(ficha.id) ?? null,
+                ultimoDescanso: ultimoDescansoPorPlano.get(ficha.id) ?? null,
+              }
             );
             if (proximo === null) {
               // Ficha legada sem treino para hoje: mostra o cartão dedicado.
@@ -120,6 +155,16 @@ export default async function AlunoHomePage() {
                   key={ficha.id}
                   fichaNome={ficha.name}
                   href={`/aluno/treinos/${ficha.id}`}
+                />
+              );
+            }
+            if (proximo.descanso && proximo.restStepIndex !== null) {
+              // Próximo passo da rotação é descanso (FEAT-003).
+              return (
+                <DescansoResumoCard
+                  key={ficha.id}
+                  planId={ficha.id}
+                  restStepIndex={proximo.restStepIndex}
                 />
               );
             }

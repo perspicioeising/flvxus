@@ -33,6 +33,24 @@ export interface FichaInicio {
   id: string;
   name: string;
   workout_plan_items: ItemFichaInicio[] | null;
+  /**
+   * Sequência de rotação (FEAT-003). `null`/ausente = ficha legada: a rotação
+   * derivada atual permanece intacta (critério 10). Lida da coluna jsonb.
+   */
+  rotation_steps?: PassoRotacao[] | null;
+}
+
+/**
+ * Último evento concluído da ficha para resolver o ponto atual da rotação
+ * EXPLÍCITA (`rotation_steps`). A page cruza, sob RLS:
+ *   - `ultimaDivisao`: label + `finished_at` da última `workout_sessions`;
+ *   - `ultimoDescanso`: `rest_step_index` + `completed_at` do último descanso
+ *     cumprido (`workout_plan_rest_completions`).
+ * O passo atual é o MAIS RECENTE entre os dois (desempate por timestamp).
+ */
+export interface UltimoEventoRotacao {
+  ultimaDivisao?: { label: string | null; finishedAt: string } | null;
+  ultimoDescanso?: { restStepIndex: number; completedAt: string } | null;
 }
 
 /** "Próximo treino" derivado de uma ficha. */
@@ -45,6 +63,48 @@ export interface ProximoTreino {
   exercicios: ExercicioHojeDados[];
   /** Deep-link do CTA, com o eixo explícito (`?divisao=`/`?dia=`). */
   href: string;
+  /**
+   * `true` quando o próximo passo da rotação é um DESCANSO (só em fichas com
+   * `rotation_steps`). Nesse caso `exercicios`/`grupos` ficam vazios e
+   * `divisionLabel` é `null`. Default `false` (fichas legadas/sem rotação).
+   */
+  descanso: boolean;
+  /**
+   * Índice do passo de descanso em `rotation_steps` quando `descanso === true`
+   * (para o aluno confirmar o descanso cumprido); `null` caso contrário.
+   */
+  restStepIndex: number | null;
+}
+
+/** Um passo da sequência de rotação (divisão nomeada ou descanso). */
+export type PassoRotacao =
+  | { type: 'division'; label: string }
+  | { type: 'rest' };
+
+/**
+ * Decide o PRÓXIMO passo na rotação (divisão ou descanso) a partir dos `passos`
+ * e do ÍNDICE do último passo concluído (`ultimoPassoConcluido`). Função PURA.
+ *
+ * - lista vazia → `null`;
+ * - sem último passo (`null`) → o primeiro passo (índice 0);
+ * - com último passo → o SEGUINTE, com wrap-around `(idx + 1) % n`;
+ * - índice fora de faixa (ficha reeditada) → fallback no primeiro passo.
+ *
+ * Retorna `{ step, index }` para o chamador saber qual passo e sua posição.
+ */
+export function proximoPassoNaRotacao(
+  passos: PassoRotacao[],
+  ultimoPassoConcluido: number | null
+): { step: PassoRotacao; index: number } | null {
+  if (passos.length === 0) return null;
+  if (ultimoPassoConcluido === null) {
+    return { step: passos[0], index: 0 };
+  }
+  if (ultimoPassoConcluido < 0 || ultimoPassoConcluido >= passos.length) {
+    return { step: passos[0], index: 0 };
+  }
+  const index = (ultimoPassoConcluido + 1) % passos.length;
+  return { step: passos[index], index };
 }
 
 /**
@@ -113,10 +173,19 @@ function infoExercicio(exercises: unknown): { nome: string; grupos: string[] } {
 export function proximoTreinoDaFicha(
   ficha: FichaInicio,
   referencia: Date = new Date(),
-  ultimaConcluida: string | null | undefined = undefined
+  ultimaConcluida: string | null | undefined = undefined,
+  ultimoEvento?: UltimoEventoRotacao
 ): ProximoTreino | null {
   const itens = ficha.workout_plan_items ?? [];
   const porDivisao = itens.some((item) => (item.division ?? null) !== null);
+
+  // RAMO ROTAÇÃO EXPLÍCITA (FEAT-003): só quando `rotation_steps` está presente
+  // e não-nulo. Fichas legadas (null/ausente) NUNCA entram aqui — a rotação
+  // derivada atual segue byte-a-byte (critério 10).
+  const steps = ficha.rotation_steps;
+  if (porDivisao && steps !== undefined && steps !== null && steps.length > 0) {
+    return proximoComRotacaoExplicita(ficha, itens, steps, ultimoEvento);
+  }
 
   let itensTreino: ItemFichaInicio[] = [];
   let divisionLabel: string | null = null;
@@ -175,5 +244,100 @@ export function proximoTreinoDaFicha(
     }
   }
 
-  return { divisionLabel, grupos, exercicios, href };
+  return { divisionLabel, grupos, exercicios, href, descanso: false, restStepIndex: null };
+}
+
+/**
+ * Monta o "próximo treino" de uma ficha POR DIVISÃO com rotação EXPLÍCITA
+ * (`rotation_steps`). Resolve o ponto atual cruzando os dois últimos eventos:
+ *   - última divisão concluída → `findIndex` do passo `division` com esse label
+ *     (inequívoco: R1 garante label único na sequência);
+ *   - último descanso cumprido → o `rest_step_index` direto.
+ * O passo "mais recente" (desempate por timestamp) define `ultimoPassoConcluido`;
+ * daí `proximoPassoNaRotacao` avança (wrap-around). Se o próximo é descanso,
+ * retorna `descanso: true` + `restStepIndex`; se é divisão, monta o treino dela.
+ */
+function proximoComRotacaoExplicita(
+  ficha: FichaInicio,
+  itens: ItemFichaInicio[],
+  steps: PassoRotacao[],
+  ultimoEvento: UltimoEventoRotacao | undefined
+): ProximoTreino {
+  // Índice do passo correspondente à última divisão concluída (se houver).
+  let idxDivisao: number | null = null;
+  const labelDivisao = ultimoEvento?.ultimaDivisao?.label ?? null;
+  if (labelDivisao !== null) {
+    const encontrado = steps.findIndex(
+      (s) => s.type === 'division' && s.label === labelDivisao
+    );
+    idxDivisao = encontrado === -1 ? null : encontrado;
+  }
+
+  // Índice do passo do último descanso cumprido (se houver e no range).
+  let idxDescanso: number | null = null;
+  const descanso = ultimoEvento?.ultimoDescanso ?? null;
+  if (
+    descanso &&
+    descanso.restStepIndex >= 0 &&
+    descanso.restStepIndex < steps.length &&
+    steps[descanso.restStepIndex]?.type === 'rest'
+  ) {
+    idxDescanso = descanso.restStepIndex;
+  }
+
+  // Desempate por timestamp: o passo concluído MAIS RECENTE vence.
+  let ultimoPassoConcluido: number | null = null;
+  if (idxDivisao !== null && idxDescanso !== null) {
+    const tDiv = Date.parse(ultimoEvento!.ultimaDivisao!.finishedAt);
+    const tRest = Date.parse(ultimoEvento!.ultimoDescanso!.completedAt);
+    ultimoPassoConcluido = tRest >= tDiv ? idxDescanso : idxDivisao;
+  } else if (idxDivisao !== null) {
+    ultimoPassoConcluido = idxDivisao;
+  } else if (idxDescanso !== null) {
+    ultimoPassoConcluido = idxDescanso;
+  }
+
+  const proximo = proximoPassoNaRotacao(steps, ultimoPassoConcluido);
+  // `steps.length > 0` garantido pelo chamador → `proximo` nunca é null.
+  const passo = proximo!.step;
+
+  if (passo.type === 'rest') {
+    return {
+      divisionLabel: null,
+      grupos: [],
+      exercicios: [],
+      href: `/aluno/treinos/${ficha.id}`,
+      descanso: true,
+      restStepIndex: proximo!.index,
+    };
+  }
+
+  // Passo de divisão: monta o treino daquela divisão (itens + grupos + href).
+  const alvo = itens.filter((item) => (item.division ?? null) === passo.label);
+  const itensOrdenados = [...alvo].sort((a, b) => a.order_index - b.order_index);
+
+  const exercicios: ExercicioHojeDados[] = itensOrdenados.map((item) => ({
+    id: item.id,
+    nome: infoExercicio(item.exercises).nome,
+    sets: item.sets,
+    reps: item.reps,
+  }));
+
+  const grupos = Array.from(
+    new Set(itensOrdenados.flatMap((item) => infoExercicio(item.exercises).grupos))
+  );
+
+  const href =
+    exercicios.length > 0
+      ? `/aluno/execucao/${ficha.id}?divisao=${encodeURIComponent(passo.label)}`
+      : `/aluno/treinos/${ficha.id}`;
+
+  return {
+    divisionLabel: passo.label,
+    grupos,
+    exercicios,
+    href,
+    descanso: false,
+    restStepIndex: null,
+  };
 }

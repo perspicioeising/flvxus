@@ -22,11 +22,16 @@ import {
 export default async function AlunoTreinosPage() {
   const supabase = await createClient();
 
-  const [fichasRes, sessoesConcluidasRes, sessoesAbertasRes] = await Promise.all([
+  const [
+    fichasRes,
+    sessoesConcluidasRes,
+    sessoesAbertasRes,
+    descansosRes,
+  ] = await Promise.all([
     supabase
       .from('workout_plans')
       .select(
-        'id, name, released_at, workout_plan_items(id, weekday, division, order_index, sets, reps, exercises(name, muscle_groups))'
+        'id, name, released_at, rotation_steps, workout_plan_items(id, weekday, division, order_index, sets, reps, exercises(name, muscle_groups))'
       )
       .eq('status', 'released')
       .order('released_at', { ascending: false, nullsFirst: false })
@@ -35,7 +40,7 @@ export default async function AlunoTreinosPage() {
     // Sessões CONCLUÍDAS: mais recente primeiro para montar o mapa da rotação.
     supabase
       .from('workout_sessions')
-      .select('plan_id, division')
+      .select('plan_id, division, finished_at')
       .not('finished_at', 'is', null)
       .order('finished_at', { ascending: false })
       .order('id', { ascending: false }),
@@ -45,9 +50,20 @@ export default async function AlunoTreinosPage() {
       .from('workout_sessions')
       .select('plan_id, division')
       .is('finished_at', null),
+
+    // Descansos CUMPRIDOS (FEAT-003): mais recente primeiro por plano.
+    supabase
+      .from('workout_plan_rest_completions')
+      .select('plan_id, rest_step_index, completed_at')
+      .order('completed_at', { ascending: false }),
   ]);
 
-  if (fichasRes.error || sessoesConcluidasRes.error || sessoesAbertasRes.error) {
+  if (
+    fichasRes.error ||
+    sessoesConcluidasRes.error ||
+    sessoesAbertasRes.error ||
+    descansosRes.error
+  ) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
         <PageHeader
@@ -66,12 +82,38 @@ export default async function AlunoTreinosPage() {
   const fichas = (fichasRes.data ?? []) as FichaSecaoDados[];
 
   // Mapa plan_id → última divisão CONCLUÍDA (a primeira linha de cada plan_id
-  // nas sessões já ordenadas por finished_at desc, id desc).
+  // nas sessões já ordenadas por finished_at desc, id desc). Guarda também o
+  // `finished_at` para o desempate por timestamp da rotação com descanso.
   const ultimaDivisaoPorPlano = new Map<string, string | null>();
+  const ultimaSessaoPorPlano = new Map<
+    string,
+    { label: string | null; finishedAt: string }
+  >();
   for (const sessao of sessoesConcluidasRes.data ?? []) {
     if (sessao.plan_id === null) continue;
     if (!ultimaDivisaoPorPlano.has(sessao.plan_id)) {
       ultimaDivisaoPorPlano.set(sessao.plan_id, sessao.division ?? null);
+      if (sessao.finished_at) {
+        ultimaSessaoPorPlano.set(sessao.plan_id, {
+          label: sessao.division ?? null,
+          finishedAt: sessao.finished_at,
+        });
+      }
+    }
+  }
+
+  // Mapa plan_id → último DESCANSO cumprido (já ordenado por completed_at desc).
+  const ultimoDescansoPorPlano = new Map<
+    string,
+    { restStepIndex: number; completedAt: string }
+  >();
+  for (const descanso of descansosRes.data ?? []) {
+    if (descanso.plan_id === null) continue;
+    if (!ultimoDescansoPorPlano.has(descanso.plan_id)) {
+      ultimoDescansoPorPlano.set(descanso.plan_id, {
+        restStepIndex: descanso.rest_step_index,
+        completedAt: descanso.completed_at,
+      });
     }
   }
 
@@ -112,7 +154,11 @@ export default async function AlunoTreinosPage() {
             const proximo = proximoTreinoDaFicha(
               ficha as unknown as FichaInicio,
               undefined,
-              ultimaConcluida
+              ultimaConcluida,
+              {
+                ultimaDivisao: ultimaSessaoPorPlano.get(ficha.id) ?? null,
+                ultimoDescanso: ultimoDescansoPorPlano.get(ficha.id) ?? null,
+              }
             );
             // `proximaDivisao` = rótulo da divisão-alvo (ou `undefined` quando
             // ficha legada sem treino hoje → manter comportamento atual index 0).
@@ -128,6 +174,8 @@ export default async function AlunoTreinosPage() {
                 marcarProximo={proximo !== null}
                 proximaDivisao={proximaDivisao}
                 sessoesAbertas={sessoesAbertas}
+                descansoProximo={proximo?.descanso ?? false}
+                restStepIndex={proximo?.restStepIndex ?? null}
               />
             );
           })}

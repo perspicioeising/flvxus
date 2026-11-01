@@ -179,23 +179,100 @@ export const modeloSchema = z.object({
     .min(1, 'Adicione ao menos um exercício ao modelo.'),
 });
 
+// -----------------------------------------------------------------------------
+// Sequência de rotação (divisões + descanso) — FEAT-003
+// -----------------------------------------------------------------------------
+
+/**
+ * Um PASSO da sequência de rotação da ficha (`workout_plans.rotation_steps`):
+ *   - `division` → uma divisão nomeada (ex.: 'A'), pelo seu `label`;
+ *   - `rest`     → um dia de descanso (sem rótulo).
+ * A ordem do array É a ordem da rotação (ex.: A, B, descanso, C). Usada apenas
+ * por fichas POR DIVISÃO; fichas legadas por dia têm `rotation_steps = null`.
+ */
+export const rotationStepsSchema = z.array(
+  z.discriminatedUnion('type', [
+    z.object({ type: z.literal('division'), label: z.string().min(1) }),
+    z.object({ type: z.literal('rest') }),
+  ])
+);
+
+export type RotationStepInput = z.infer<typeof rotationStepsSchema>[number];
+
 /** Criação/edição de FICHA por aluno (`workout_plans` + itens). */
-export const fichaSchema = z.object({
-  student_id: z
-    .string({ required_error: 'Selecione um aluno.' })
-    .uuid('Aluno inválido.'),
-  name: z
-    .string({ required_error: 'Informe o nome da ficha.' })
-    .trim()
-    .min(1, 'Informe o nome da ficha.'),
-  source_workout_id: z
-    .string()
-    .uuid('Modelo de origem inválido.')
-    .optional(),
-  itens: z
-    .array(itemFichaSchema)
-    .min(1, 'Adicione ao menos um exercício à ficha.'),
-});
+export const fichaSchema = z
+  .object({
+    student_id: z
+      .string({ required_error: 'Selecione um aluno.' })
+      .uuid('Aluno inválido.'),
+    name: z
+      .string({ required_error: 'Informe o nome da ficha.' })
+      .trim()
+      .min(1, 'Informe o nome da ficha.'),
+    source_workout_id: z
+      .string()
+      .uuid('Modelo de origem inválido.')
+      .optional(),
+    itens: z
+      .array(itemFichaSchema)
+      .min(1, 'Adicione ao menos um exercício à ficha.'),
+    // Sequência de rotação opcional/nullable. Ausente ou `null` = ficha legada
+    // sem rotação explícita (rotação derivada atual intacta — critério 10).
+    rotation_steps: rotationStepsSchema.nullish(),
+  })
+  .superRefine((ficha, ctx) => {
+    const steps = ficha.rotation_steps;
+    // Só valida quando a sequência está PRESENTE e não-nula.
+    if (steps === undefined || steps === null) return;
+
+    const labels = steps
+      .filter((s): s is { type: 'division'; label: string } => s.type === 'division')
+      .map((s) => s.label);
+
+    // R1: nenhum label de divisão repetido na sequência.
+    if (new Set(labels).size !== labels.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Cada divisão só pode aparecer uma vez na sequência de rotação.',
+        path: ['rotation_steps'],
+      });
+    }
+
+    // Divisões distintas dos itens (ignorando itens sem divisão).
+    const divisoesItens = new Set(
+      ficha.itens
+        .map((item) => item.division ?? null)
+        .filter((d): d is string => d !== null)
+    );
+    const temItemSemDivisao = ficha.itens.some(
+      (item) => (item.division ?? null) === null
+    );
+
+    // R3: se algum item não tem divisão, a sequência de descanso não se aplica.
+    if (temItemSemDivisao) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'A sequência de descanso só está disponível para fichas organizadas por divisão.',
+        path: ['rotation_steps'],
+      });
+      return;
+    }
+
+    // R2: conjunto de labels EXATAMENTE igual ao conjunto de divisões dos itens
+    // (nos dois sentidos: nenhuma faltando, nenhuma a mais).
+    const labelsSet = new Set(labels);
+    const todasNaSequencia = [...divisoesItens].every((d) => labelsSet.has(d));
+    const soDivisoesDaFicha = labels.every((l) => divisoesItens.has(l));
+    if (!todasNaSequencia || !soDivisoesDaFicha) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'A sequência de rotação deve incluir todas as divisões da ficha, e só elas.',
+        path: ['rotation_steps'],
+      });
+    }
+  });
 
 export type SerieInput = z.infer<typeof serieSchema>;
 export type ItemModeloInput = z.infer<typeof itemModeloSchema>;

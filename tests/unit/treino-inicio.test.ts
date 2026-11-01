@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   proximaDivisaoNaRotacao,
+  proximoPassoNaRotacao,
   proximoTreinoDaFicha,
   type FichaInicio,
+  type PassoRotacao,
 } from '@/lib/treino/inicio';
 
 /** Item de ficha mínimo para a derivação. */
@@ -178,5 +180,140 @@ describe('proximoTreinoDaFicha — ficha legada por dia', () => {
     expect(comHistorico).not.toBeNull();
     expect(comHistorico!.href).toBe('/aluno/execucao/f2?dia=3');
     expect(comHistorico!.exercicios.map((e) => e.id)).toEqual(['b', 'a']);
+  });
+});
+
+// =============================================================================
+// FEAT-003 — rotação EXPLÍCITA com dias de descanso
+// =============================================================================
+
+describe('proximoPassoNaRotacao — lógica pura de passos (divisão/descanso)', () => {
+  const passos: PassoRotacao[] = [
+    { type: 'division', label: 'A' },
+    { type: 'division', label: 'B' },
+    { type: 'rest' },
+    { type: 'division', label: 'C' },
+  ];
+
+  it('lista vazia → null', () => {
+    expect(proximoPassoNaRotacao([], null)).toBeNull();
+  });
+
+  it('sem último passo → primeiro passo (índice 0)', () => {
+    expect(proximoPassoNaRotacao(passos, null)).toEqual({
+      step: { type: 'division', label: 'A' },
+      index: 0,
+    });
+  });
+
+  it('após A (0) → B (1); após B (1) → descanso (2); após descanso (2) → C (3)', () => {
+    expect(proximoPassoNaRotacao(passos, 0)).toEqual({
+      step: { type: 'division', label: 'B' },
+      index: 1,
+    });
+    expect(proximoPassoNaRotacao(passos, 1)).toEqual({
+      step: { type: 'rest' },
+      index: 2,
+    });
+    expect(proximoPassoNaRotacao(passos, 2)).toEqual({
+      step: { type: 'division', label: 'C' },
+      index: 3,
+    });
+  });
+
+  it('após o último passo (3) → wrap para o primeiro (0)', () => {
+    expect(proximoPassoNaRotacao(passos, 3)).toEqual({
+      step: { type: 'division', label: 'A' },
+      index: 0,
+    });
+  });
+
+  it('índice fora de faixa → fallback no primeiro passo', () => {
+    expect(proximoPassoNaRotacao(passos, 99)).toEqual({
+      step: { type: 'division', label: 'A' },
+      index: 0,
+    });
+    expect(proximoPassoNaRotacao(passos, -1)).toEqual({
+      step: { type: 'division', label: 'A' },
+      index: 0,
+    });
+  });
+});
+
+describe('proximoTreinoDaFicha — ficha com rotation_steps (descanso)', () => {
+  /** Ficha A/B/C com descanso entre B e C: A, B, descanso, C. */
+  function fichaComDescanso(): FichaInicio {
+    return {
+      id: 'f3',
+      name: 'ABC + descanso',
+      rotation_steps: [
+        { type: 'division', label: 'A' },
+        { type: 'division', label: 'B' },
+        { type: 'rest' },
+        { type: 'division', label: 'C' },
+      ],
+      workout_plan_items: [
+        item('b', { division: 'B', grupos: ['Costas'] }),
+        item('a', { division: 'A', grupos: ['Peito'] }),
+        item('c', { division: 'C', grupos: ['Perna'] }),
+      ],
+    };
+  }
+
+  it('sem histórico → primeira divisão (A), não é descanso', () => {
+    const r = proximoTreinoDaFicha(fichaComDescanso(), QUARTA);
+    expect(r).not.toBeNull();
+    expect(r!.descanso).toBe(false);
+    expect(r!.divisionLabel).toBe('A');
+    expect(r!.href).toBe('/aluno/execucao/f3?divisao=A');
+  });
+
+  it('após concluir B → o próximo passo é DESCANSO', () => {
+    const r = proximoTreinoDaFicha(fichaComDescanso(), QUARTA, undefined, {
+      ultimaDivisao: { label: 'B', finishedAt: '2024-01-01T10:00:00Z' },
+    });
+    expect(r!.descanso).toBe(true);
+    expect(r!.restStepIndex).toBe(2);
+    expect(r!.divisionLabel).toBeNull();
+    expect(r!.exercicios).toHaveLength(0);
+  });
+
+  it('último evento = descanso cumprido → o próximo é a divisão C', () => {
+    const r = proximoTreinoDaFicha(fichaComDescanso(), QUARTA, undefined, {
+      ultimoDescanso: { restStepIndex: 2, completedAt: '2024-01-02T10:00:00Z' },
+    });
+    expect(r!.descanso).toBe(false);
+    expect(r!.divisionLabel).toBe('C');
+    expect(r!.href).toBe('/aluno/execucao/f3?divisao=C');
+  });
+
+  it('desempate por timestamp: descanso mais recente que a divisão → avança para C', () => {
+    const r = proximoTreinoDaFicha(fichaComDescanso(), QUARTA, undefined, {
+      // Divisão B concluída ANTES; descanso cumprido DEPOIS → vence o descanso.
+      ultimaDivisao: { label: 'B', finishedAt: '2024-01-01T10:00:00Z' },
+      ultimoDescanso: { restStepIndex: 2, completedAt: '2024-01-02T10:00:00Z' },
+    });
+    expect(r!.descanso).toBe(false);
+    expect(r!.divisionLabel).toBe('C');
+  });
+
+  it('desempate por timestamp: divisão mais recente que o descanso → próximo é descanso', () => {
+    const r = proximoTreinoDaFicha(fichaComDescanso(), QUARTA, undefined, {
+      // Descanso cumprido ANTES; divisão B concluída DEPOIS → vence a divisão B,
+      // cujo passo seguinte é o descanso (índice 2).
+      ultimaDivisao: { label: 'B', finishedAt: '2024-01-03T10:00:00Z' },
+      ultimoDescanso: { restStepIndex: 2, completedAt: '2024-01-02T10:00:00Z' },
+    });
+    expect(r!.descanso).toBe(true);
+    expect(r!.restStepIndex).toBe(2);
+  });
+
+  it('retrocompatibilidade: rotation_steps null NÃO entra no ramo de descanso', () => {
+    const ficha: FichaInicio = { ...fichaComDescanso(), rotation_steps: null };
+    // Mesmo com a última divisão sendo B, sem rotation_steps a rotação derivada
+    // segue (B → C) e NUNCA retorna descanso.
+    const r = proximoTreinoDaFicha(ficha, QUARTA, 'B');
+    expect(r!.descanso).toBe(false);
+    expect(r!.divisionLabel).toBe('C');
   });
 });

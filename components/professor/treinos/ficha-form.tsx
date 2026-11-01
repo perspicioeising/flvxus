@@ -14,9 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { fichaSchema } from '@/schemas/treino';
+import { fichaSchema, type RotationStepInput } from '@/schemas/treino';
 import { criarFicha, editarFicha, type EstadoAcao } from '@/actions/treinos';
 import { ItemEditor, type ItemEditavel } from './item-editor';
+import { RotationEditor } from './rotation-editor';
 import type { ExercicioDisponivel } from './exercise-picker';
 import { itensEditaveisParaInput } from './form-helpers';
 
@@ -37,6 +38,8 @@ export interface FichaFormProps {
     name: string;
     source_workout_id: string | null;
     itens: ItemEditavel[];
+    /** Sequência de rotação persistida (ou `null` quando automática). */
+    rotationSteps?: RotationStepInput[] | null;
   };
   /** Aluno pré-selecionado no modo criar (ex.: via `?aluno=` da ficha do aluno). */
   alunoInicial?: string;
@@ -64,11 +67,38 @@ export function FichaForm({
   const [itens, setItens] = React.useState<ItemEditavel[]>(
     valoresIniciais?.itens ?? []
   );
+  const [rotationSteps, setRotationSteps] = React.useState<
+    RotationStepInput[] | null
+  >(valoresIniciais?.rotationSteps ?? null);
   const sourceWorkoutId = valoresIniciais?.source_workout_id ?? null;
+
+  // Divisões detectadas nos itens (ordenadas) e flag de ficha POR DIVISÃO sem
+  // itens "sem divisão" — pré-condição para a sequência de descanso (R3).
+  const divisoes = React.useMemo(() => {
+    const set = new Set<string>();
+    for (const item of itens) {
+      const d = item.division ?? null;
+      if (d !== null && d !== '') set.add(d);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [itens]);
+  const temItemSemDivisao = itens.some(
+    (item) => (item.division ?? null) === null || item.division === ''
+  );
+  const podeConfigurarDescanso = divisoes.length > 0 && !temItemSemDivisao;
+
+  // Se a ficha deixar de ser elegível (perdeu a divisão ou ganhou item sem
+  // divisão), desliga a sequência para não enviar algo que o schema rejeitaria.
+  React.useEffect(() => {
+    if (!podeConfigurarDescanso && rotationSteps !== null) {
+      setRotationSteps(null);
+    }
+  }, [podeConfigurarDescanso, rotationSteps]);
 
   const [erroAluno, setErroAluno] = React.useState<string | null>(null);
   const [erroNome, setErroNome] = React.useState<string | null>(null);
   const [erroItens, setErroItens] = React.useState<string | null>(null);
+  const [erroRotacao, setErroRotacao] = React.useState<string | null>(null);
   const [enviando, setEnviando] = React.useState(false);
 
   async function enviar(e: React.FormEvent) {
@@ -76,12 +106,16 @@ export function FichaForm({
     setErroAluno(null);
     setErroNome(null);
     setErroItens(null);
+    setErroRotacao(null);
 
     const entrada = {
       student_id: studentId,
       name,
       source_workout_id: sourceWorkoutId ?? undefined,
       itens: itensEditaveisParaInput(itens, true, true),
+      // Só envia a sequência quando elegível e configurada; caso contrário
+      // `null` (rotação automática — retrocompatibilidade, critério 10).
+      rotation_steps: podeConfigurarDescanso ? rotationSteps : null,
     };
 
     const parsed = fichaSchema.safeParse(entrada);
@@ -90,6 +124,7 @@ export function FichaForm({
       if (fe.student_id?.[0]) setErroAluno(fe.student_id[0]);
       if (fe.name?.[0]) setErroNome(fe.name[0]);
       if (fe.itens?.[0]) setErroItens(fe.itens[0]);
+      if (fe.rotation_steps?.[0]) setErroRotacao(fe.rotation_steps[0]);
       toast({ title: 'Verifique os campos destacados.', variant: 'destructive' });
       return;
     }
@@ -181,6 +216,22 @@ export function FichaForm({
           comDivisao
         />
       </div>
+
+      {podeConfigurarDescanso ? (
+        <div className="space-y-2">
+          <h2 className="text-base font-semibold text-foreground">
+            Rotação e descanso
+          </h2>
+          {erroRotacao ? (
+            <p className="text-sm font-medium text-destructive">{erroRotacao}</p>
+          ) : null}
+          <RotationEditor
+            divisoes={divisoes}
+            value={rotationSteps}
+            onChange={setRotationSteps}
+          />
+        </div>
+      ) : null}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button

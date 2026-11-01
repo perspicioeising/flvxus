@@ -345,6 +345,117 @@ describe('fichaSchema', () => {
   });
 });
 
+describe('fichaSchema — rotation_steps (FEAT-003)', () => {
+  /** Ficha base por divisão A/B/C (sem item "sem divisão"). */
+  function baseABC(rotation_steps?: unknown) {
+    return {
+      student_id: ALUNO_ID,
+      name: 'Ficha ABC',
+      itens: [
+        { exercise_id: EX_ID, division: 'A', order_index: 0 },
+        { exercise_id: EX_ID, division: 'B', order_index: 1 },
+        { exercise_id: EX_ID, division: 'C', order_index: 2 },
+      ],
+      ...(rotation_steps !== undefined ? { rotation_steps } : {}),
+    };
+  }
+
+  it('aceita ficha sem rotation_steps (retrocompatibilidade)', () => {
+    expect(fichaSchema.safeParse(baseABC()).success).toBe(true);
+  });
+
+  it('aceita rotation_steps null (rotação automática)', () => {
+    expect(fichaSchema.safeParse(baseABC(null)).success).toBe(true);
+  });
+
+  it('aceita sequência válida A, B, descanso, C', () => {
+    const r = fichaSchema.safeParse(
+      baseABC([
+        { type: 'division', label: 'A' },
+        { type: 'division', label: 'B' },
+        { type: 'rest' },
+        { type: 'division', label: 'C' },
+      ])
+    );
+    expect(r.success).toBe(true);
+  });
+
+  it('R1: rejeita divisão repetida na sequência', () => {
+    const r = fichaSchema.safeParse(
+      baseABC([
+        { type: 'division', label: 'A' },
+        { type: 'division', label: 'A' },
+        { type: 'division', label: 'B' },
+        { type: 'division', label: 'C' },
+      ])
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(
+        r.error.issues.some((i) =>
+          i.message.includes('só pode aparecer uma vez')
+        )
+      ).toBe(true);
+    }
+  });
+
+  it('R2 (falta uma): sequência sem a divisão C é rejeitada', () => {
+    const r = fichaSchema.safeParse(
+      baseABC([
+        { type: 'division', label: 'A' },
+        { type: 'division', label: 'B' },
+      ])
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(
+        r.error.issues.some((i) =>
+          i.message.includes('todas as divisões da ficha, e só elas')
+        )
+      ).toBe(true);
+    }
+  });
+
+  it('R2 (sobra uma): sequência com divisão D inexistente é rejeitada', () => {
+    const r = fichaSchema.safeParse(
+      baseABC([
+        { type: 'division', label: 'A' },
+        { type: 'division', label: 'B' },
+        { type: 'division', label: 'C' },
+        { type: 'division', label: 'D' },
+      ])
+    );
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(
+        r.error.issues.some((i) =>
+          i.message.includes('todas as divisões da ficha, e só elas')
+        )
+      ).toBe(true);
+    }
+  });
+
+  it('R3: rejeita rotation_steps quando algum item não tem divisão', () => {
+    const r = fichaSchema.safeParse({
+      student_id: ALUNO_ID,
+      name: 'Ficha mista',
+      itens: [
+        { exercise_id: EX_ID, division: 'A', order_index: 0 },
+        { exercise_id: EX_ID, order_index: 1 }, // sem divisão
+      ],
+      rotation_steps: [{ type: 'division', label: 'A' }],
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(
+        r.error.issues.some((i) =>
+          i.message.includes('fichas organizadas por divisão')
+        )
+      ).toBe(true);
+    }
+  });
+});
+
 describe('clonarFichaSchema', () => {
   it('aceita clonagem com ficha de origem e novo aluno, sem nome', () => {
     const r = clonarFichaSchema.safeParse({

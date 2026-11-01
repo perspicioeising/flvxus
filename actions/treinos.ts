@@ -415,6 +415,9 @@ export async function criarFicha(entrada: FichaInput): Promise<EstadoAcao> {
       name: parsed.data.name,
       status: 'draft',
       source_workout_id: parsed.data.source_workout_id ?? null,
+      // `null` = rotação automática (retrocompatibilidade). A sequência só é
+      // persistida quando o professor configura descanso (schema já validou R1–R3).
+      rotation_steps: parsed.data.rotation_steps ?? null,
     })
     .select('id')
     .single();
@@ -495,6 +498,9 @@ export async function editarFicha(
       student_id: parsed.data.student_id,
       name: parsed.data.name,
       source_workout_id: parsed.data.source_workout_id ?? null,
+      // Persiste a sequência de rotação (ou `null` = automática). O schema já
+      // garantiu R1–R3; `null` preserva a retrocompatibilidade (critério 10).
+      rotation_steps: parsed.data.rotation_steps ?? null,
     })
     .eq('id', planId);
 
@@ -881,7 +887,7 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
   // Ficha origem (RLS garante que só retorna se for do tenant do professor).
   const { data: origem, error: erroOrigem } = await supabase
     .from('workout_plans')
-    .select('id, name, source_workout_id')
+    .select('id, name, source_workout_id, rotation_steps')
     .eq('id', parsed.data.source_plan_id)
     .single();
 
@@ -936,6 +942,9 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
       name: parsed.data.name?.trim() || `${origem.name} (cópia)`,
       status: 'draft',
       source_workout_id: origem.source_workout_id ?? null,
+      // Copia a sequência de rotação da origem; as CONFIRMAÇÕES de descanso
+      // (workout_plan_rest_completions) NUNCA são copiadas (novo aluno recomeça).
+      rotation_steps: origem.rotation_steps ?? null,
     })
     .select('id')
     .single();

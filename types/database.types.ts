@@ -328,6 +328,7 @@ export interface Database {
           source_workout_id: string | null;
           released_at: string | null;
           scheduled_release_at: string | null;
+          rotation_steps: Json | null;
           created_at: string;
           updated_at: string;
         };
@@ -341,6 +342,7 @@ export interface Database {
           source_workout_id?: string | null;
           released_at?: string | null;
           scheduled_release_at?: string | null;
+          rotation_steps?: Json | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -354,8 +356,32 @@ export interface Database {
           source_workout_id?: string | null;
           released_at?: string | null;
           scheduled_release_at?: string | null;
+          rotation_steps?: Json | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      workout_plan_rest_completions: {
+        Row: {
+          id: string;
+          plan_id: string;
+          student_id: string;
+          rest_step_index: number;
+          completed_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          student_id: string;
+          rest_step_index: number;
+          completed_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          student_id?: string;
+          rest_step_index?: number;
+          completed_at?: string;
         };
       };
       workout_plan_items: {

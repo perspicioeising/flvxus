@@ -6,6 +6,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import type { SerieLog } from '@/lib/treino/progresso';
+import {
+  proximoTreinoDaFicha,
+  type FichaInicio,
+  type PassoRotacao,
+} from '@/lib/treino/inicio';
 import type { Database } from '@/types/database.types';
 import {
   cancelarSessaoSchema,
@@ -16,6 +21,7 @@ import {
   type FinalizarSessaoInput,
   type RegistrarSerieEntrada,
 } from '@/schemas/execucao';
+import { rotationStepsSchema } from '@/schemas/treino';
 
 /**
  * Server Actions da EXECUÇÃO DE TREINO do aluno (architecture.md §6.4).
@@ -494,4 +500,173 @@ export async function cancelarSessao(
   revalidatePath('/aluno/execucao');
 
   return { ok: true, message: 'Treino abandonado.', id: parsed.data.session_id };
+}
+
+/**
+ * Converte o jsonb `rotation_steps` lido do banco numa lista tipada de passos,
+ * validando a forma com `rotationStepsSchema`. Retorna `null` quando ausente/
+ * nulo/inválido (ficha legada: a rotação de descanso NÃO se aplica).
+ */
+function parseRotationSteps(valor: unknown): PassoRotacao[] | null {
+  if (valor === null || valor === undefined) return null;
+  const parsed = rotationStepsSchema.safeParse(valor);
+  return parsed.success ? (parsed.data as PassoRotacao[]) : null;
+}
+
+/**
+ * Confirma que o aluno (ou o professor, no treino presencial) CUMPRIU um dia de
+ * descanso da rotação explícita da ficha. Grava um marcador leve em
+ * `workout_plan_rest_completions` (tabela própria: NÃO toca o histórico de
+ * sessões). Padrão `EstadoAcao`.
+ *
+ * Autorização de papel idêntica a `iniciarSessao`: sem `targetStudentId` =
+ * fluxo do próprio aluno (`role==='student'`, grava `student_id = auth.uid()`);
+ * com = fluxo do professor (`role==='trainer'`, grava o aluno-alvo). A posse
+ * real é da RLS da tabela.
+ *
+ * IDEMPOTÊNCIA na ação: só INSERE se `restStepIndex` for de fato o PRÓXIMO passo
+ * resolvido pela rotação neste momento (cruzando a última divisão concluída e o
+ * último descanso cumprido). Caso contrário retorna `{ok:true}` SEM inserir
+ * (toque repetido/estado já avançado não duplica). `restStepIndex` fora da faixa
+ * de `rotation_steps` → `{ok:false}`.
+ */
+export async function confirmarDescanso(
+  planId: string,
+  restStepIndex: number,
+  targetStudentId?: string
+): Promise<EstadoAcao> {
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
+  }
+
+  // Mesma resolução/autorização de papel de `iniciarSessao`.
+  let studentIdAlvo: string;
+  if (targetStudentId === undefined) {
+    if (usuario.role !== 'student') {
+      return { ok: false, message: 'Apenas o aluno pode confirmar o descanso.' };
+    }
+    studentIdAlvo = usuario.userId;
+  } else {
+    if (usuario.role !== 'trainer') {
+      return {
+        ok: false,
+        message: 'Apenas o professor pode registrar o descanso em nome do aluno.',
+      };
+    }
+    studentIdAlvo = targetStudentId;
+  }
+
+  const supabase = await createClient();
+
+  // Ficha (RLS limita ao que o chamador vê). No fluxo do professor, reconfirma
+  // que é a ficha DAQUELE aluno. Precisa estar liberada e ter rotação explícita.
+  let fichaQuery = supabase
+    .from('workout_plans')
+    .select(
+      'id, status, rotation_steps, workout_plan_items(id, weekday, division, order_index, sets, reps, exercises(name, muscle_groups))'
+    )
+    .eq('id', planId);
+
+  if (targetStudentId !== undefined) {
+    fichaQuery = fichaQuery.eq('student_id', studentIdAlvo);
+  }
+
+  const { data: plano, error: erroPlano } = await fichaQuery.maybeSingle();
+
+  if (erroPlano) {
+    return { ok: false, message: `Não foi possível abrir a ficha: ${erroPlano.message}` };
+  }
+
+  if (!plano || plano.status !== 'released') {
+    return { ok: false, message: 'Esta ficha não está disponível.' };
+  }
+
+  const steps = parseRotationSteps(plano.rotation_steps);
+  if (steps === null || steps.length === 0) {
+    return { ok: false, message: 'Esta ficha não tem dias de descanso configurados.' };
+  }
+
+  // `restStepIndex` precisa estar na faixa E apontar para um passo de descanso.
+  if (
+    !Number.isInteger(restStepIndex) ||
+    restStepIndex < 0 ||
+    restStepIndex >= steps.length ||
+    steps[restStepIndex].type !== 'rest'
+  ) {
+    return { ok: false, message: 'Passo de descanso inválido.' };
+  }
+
+  // Resolve o PRÓXIMO passo da rotação agora (última divisão concluída + último
+  // descanso cumprido, desempatando por timestamp) usando a MESMA lógica pura
+  // da UI, para a ação ser idempotente e consistente.
+  const [ultimaSessaoRes, ultimoDescansoRes] = await Promise.all([
+    supabase
+      .from('workout_sessions')
+      .select('division, finished_at')
+      .eq('plan_id', planId)
+      .eq('student_id', studentIdAlvo)
+      .not('finished_at', 'is', null)
+      .order('finished_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('workout_plan_rest_completions')
+      .select('rest_step_index, completed_at')
+      .eq('plan_id', planId)
+      .eq('student_id', studentIdAlvo)
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  const ficha: FichaInicio = {
+    id: plano.id,
+    name: '',
+    workout_plan_items:
+      (plano.workout_plan_items as FichaInicio['workout_plan_items']) ?? [],
+    rotation_steps: steps,
+  };
+
+  const proximo = proximoTreinoDaFicha(ficha, undefined, undefined, {
+    ultimaDivisao:
+      ultimaSessaoRes.data && ultimaSessaoRes.data.finished_at
+        ? {
+            label: ultimaSessaoRes.data.division ?? null,
+            finishedAt: ultimaSessaoRes.data.finished_at,
+          }
+        : null,
+    ultimoDescanso: ultimoDescansoRes.data
+      ? {
+          restStepIndex: ultimoDescansoRes.data.rest_step_index,
+          completedAt: ultimoDescansoRes.data.completed_at,
+        }
+      : null,
+  });
+
+  // Idempotência: só grava se o passo pedido é mesmo o próximo descanso agora.
+  if (!proximo || !proximo.descanso || proximo.restStepIndex !== restStepIndex) {
+    return { ok: true, message: 'Descanso já registrado.' };
+  }
+
+  const { error: erroInsert } = await supabase
+    .from('workout_plan_rest_completions')
+    .insert({
+      plan_id: planId,
+      student_id: studentIdAlvo,
+      rest_step_index: restStepIndex,
+    });
+
+  if (erroInsert) {
+    return {
+      ok: false,
+      message: `Não foi possível registrar o descanso: ${erroInsert.message}`,
+    };
+  }
+
+  revalidatePath('/aluno');
+  revalidatePath('/aluno/treinos');
+
+  return { ok: true, message: 'Descanso registrado.' };
 }

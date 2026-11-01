@@ -1,6 +1,7 @@
 import { formatarData } from '@/lib/datas';
 import { agruparPorDivisao, DIVISAO_SEM } from '@/lib/divisao';
 import { DivisaoResumoCard } from '@/components/aluno/treinos/divisao-resumo-card';
+import { DescansoResumoCard } from '@/components/aluno/treinos/descanso-resumo-card';
 
 /** Item de ficha vindo do select (campos usados pela seção). */
 interface ItemFicha {
@@ -49,6 +50,17 @@ export interface FichaSecaoProps {
    * em vez de (ou com prioridade sobre) "Próximo".
    */
   sessoesAbertas?: Set<string | null>;
+  /**
+   * Quando `true` (FEAT-003), o próximo passo da rotação é um DESCANSO: injeta
+   * o card "Hoje é descanso" no topo e NENHUM card de divisão recebe o selo
+   * "Próximo" (o estado "Em andamento" é preservado). Default `false`.
+   */
+  descansoProximo?: boolean;
+  /**
+   * Índice do passo de descanso em `rotation_steps` (para o card confirmar o
+   * descanso). Relevante só quando `descansoProximo === true`.
+   */
+  restStepIndex?: number | null;
 }
 
 /**
@@ -63,6 +75,8 @@ export function FichaSecao({
   marcarProximo,
   proximaDivisao,
   sessoesAbertas = new Set(),
+  descansoProximo = false,
+  restStepIndex = null,
 }: FichaSecaoProps) {
   const itens = ficha.workout_plan_items ?? [];
   const divisoes = agruparPorDivisao(itens, (item) => item.division ?? null);
@@ -84,6 +98,9 @@ export function FichaSecao({
       </div>
 
       <div className="space-y-3">
+        {descansoProximo && restStepIndex !== null ? (
+          <DescansoResumoCard planId={ficha.id} restStepIndex={restStepIndex} />
+        ) : null}
         {divisoes.map((grupo, index) => {
           const grupos = Array.from(
             new Set(grupo.itens.flatMap((item) => gruposDoExercicio(item.exercises)))
@@ -104,8 +121,10 @@ export function FichaSecao({
           //   por divisão, cai no comportamento anterior (index 0).
           //   (null == null para o balde sem divisão)
           // - Legado por dia (proximaDivisao === undefined E não porDivisao): index 0.
+          // FEAT-003: quando o próximo passo é descanso, nenhum card de divisão
+          // recebe "Próximo" (o aviso vai no card de descanso no topo).
           let eProximo = false;
-          if (marcarProximo) {
+          if (marcarProximo && !descansoProximo) {
             if (porDivisao && proximaDivisao !== undefined) {
               eProximo = !emAndamento && divKey === proximaDivisao;
             } else {
