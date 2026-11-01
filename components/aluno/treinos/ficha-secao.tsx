@@ -115,8 +115,14 @@ export function FichaSecao({
           }
 
           // CTA para execução quando em andamento (aponta direto para a execução).
-          const hrefExecucao = `/aluno/execucao/${ficha.id}?divisao=${encodeURIComponent(eixo)}`;
+          // Fichas legadas por dia NÃO usam ?divisao= na rota de execução —
+          // precisariam de ?dia=N. Como não temos o weekday da sessão aberta,
+          // o CTA de "Em andamento" para planos legados cai no detalhe da ficha
+          // (hrefDetalhe), onde o aluno pode escolher o dia e retomar.
           const hrefDetalhe = `/aluno/treinos/${ficha.id}?divisao=${encodeURIComponent(eixo)}`;
+          const hrefExecucao = porDivisao
+            ? `/aluno/execucao/${ficha.id}?divisao=${encodeURIComponent(eixo)}`
+            : hrefDetalhe;
 
           return (
             <DivisaoResumoCard
