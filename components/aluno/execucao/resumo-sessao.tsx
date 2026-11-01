@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/patterns';
+import { MuscleMap } from '@/components/muscle-map';
 import {
   formatarDuracao,
   formatarVolumeKg,
@@ -81,6 +82,8 @@ export interface ResumoSessaoProps {
   seriesConcluidas: number;
   /** Exercícios executados (com ≥ 1 série concluída), ordenados. */
   exercicios: ExercicioResumo[];
+  /** União dos grupos musculares trabalhados na sessão (para o mapa muscular). */
+  gruposMusculares: string[];
   /** Estado/deltas da comparação com a última sessão comparável. */
   comparacao: ComparacaoEstado;
   /** Conquistas desbloqueadas nesta sessão (pode ser vazio). */
@@ -148,6 +151,7 @@ export function ResumoSessao({
   volumeKg,
   seriesConcluidas,
   exercicios,
+  gruposMusculares,
   comparacao,
   conquistas,
   href,
@@ -197,6 +201,28 @@ export function ResumoSessao({
           radius="2xl"
         />
       </div>
+
+      {/* Mapa muscular dos grupos trabalhados na sessão. */}
+      {gruposMusculares.length > 0 ? (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">
+            Músculos trabalhados
+          </p>
+          <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <MuscleMap grupos={gruposMusculares} size="md" className="shrink-0" />
+            <ul className="flex flex-wrap gap-2">
+              {gruposMusculares.map((g) => (
+                <li
+                  key={g}
+                  className="rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-primary-soft-foreground"
+                >
+                  {g}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
 
       {/* Comparação com a última sessão comparável. */}
       <div className="rounded-2xl border border-border bg-card p-4">

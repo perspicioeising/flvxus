@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { MuscleMap } from '@/components/muscle-map';
 
 /** Um exercício do treino de hoje (resumo para exibição). */
 export interface ExercicioHoje {
@@ -46,18 +47,27 @@ export function CardTreinoHoje({
       <p className="text-xs font-bold uppercase tracking-widest opacity-80">
         Próximo treino
       </p>
-      {divisionLabel ? (
-        <p className="text-6xl font-black leading-none md:text-7xl">
-          {divisionLabel}
-        </p>
-      ) : null}
-      <p className="mt-2 text-lg font-bold leading-tight">{gruposLabel}</p>
-      <p className="mt-1 text-sm opacity-80">
-        {fichaNome}
-        {exercicios.length > 0
-          ? ` · ${exercicios.length} ${exercicios.length === 1 ? 'exercício' : 'exercícios'}`
-          : ''}
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          {divisionLabel ? (
+            <p className="text-6xl font-black leading-none md:text-7xl">
+              {divisionLabel}
+            </p>
+          ) : null}
+          <p className="mt-2 text-lg font-bold leading-tight">{gruposLabel}</p>
+          <p className="mt-1 text-sm opacity-80">
+            {fichaNome}
+            {exercicios.length > 0
+              ? ` · ${exercicios.length} ${exercicios.length === 1 ? 'exercício' : 'exercícios'}`
+              : ''}
+          </p>
+        </div>
+        {grupos.length > 0 ? (
+          // Mini body-map dos músculos da divisão. Como o cartão tem fundo
+          // primário, usa `onPrimary` (ativas em primary-foreground).
+          <MuscleMap grupos={grupos} size="sm" onPrimary className="shrink-0" />
+        ) : null}
+      </div>
 
       <Button
         asChild

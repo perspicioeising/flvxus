@@ -18,6 +18,7 @@ function baseProps(overrides: Partial<ResumoSessaoProps> = {}): ResumoSessaoProp
     volumeKg: 1200,
     seriesConcluidas: 12,
     exercicios: [{ id: 'i1', nome: 'Supino', seriesConcluidas: 4 }],
+    gruposMusculares: [],
     comparacao: { tipo: 'primeira' },
     conquistas: [],
     href: '/aluno/treinos',
@@ -135,5 +136,24 @@ describe('ResumoSessao', () => {
     expect(
       screen.queryByText('Conquistas desbloqueadas')
     ).not.toBeInTheDocument();
+  });
+
+  it('mostra o mapa muscular com os grupos trabalhados quando há grupos', () => {
+    render(
+      <ResumoSessao
+        {...baseProps({ gruposMusculares: ['Peito', 'Ombros', 'Braços'] })}
+      />
+    );
+    expect(screen.getByText('Músculos trabalhados')).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', {
+        name: 'Músculos trabalhados: Peito, Ombros, Braços',
+      })
+    ).toBeInTheDocument();
+  });
+
+  it('omite o mapa muscular quando não há grupos', () => {
+    render(<ResumoSessao {...baseProps({ gruposMusculares: [] })} />);
+    expect(screen.queryByText('Músculos trabalhados')).not.toBeInTheDocument();
   });
 });

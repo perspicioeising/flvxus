@@ -39,13 +39,22 @@ function nomeDoExercicio(exercises: unknown): string {
   return nome?.trim() || 'Exercício';
 }
 
+/** Extrai os grupos musculares do join `exercises` (array ou objeto). */
+function gruposDoExercicio(exercises: unknown): string[] {
+  const e = Array.isArray(exercises) ? exercises[0] : exercises;
+  const grupos = (e as { muscle_groups: string[] | null } | null)?.muscle_groups;
+  return Array.isArray(grupos) ? grupos : [];
+}
+
 /** Normaliza o join `workout_plan_items` (array ou objeto). */
 function itemDoJoin(join: unknown): {
   order_index: number;
   exercises: unknown;
 } | null {
   const i = Array.isArray(join) ? join[0] : join;
-  return (i as { order_index: number; exercises: unknown } | null) ?? null;
+  return (
+    (i as { order_index: number; exercises: unknown } | null) ?? null
+  );
 }
 
 /** Linha de set log com o join do item prescrito (para nome/ordem). */
@@ -91,6 +100,11 @@ export interface DadosResumo {
   seriesConcluidas: number;
   /** Exercícios executados, ordenados por `order_index` asc e SEM `order`. */
   exercicios: ExercicioResumo[];
+  /**
+   * União dos `muscle_groups` dos exercícios EXECUTADOS (≥ 1 série concluída)
+   * na sessão, deduplicada e em ordem de aparição — alimenta o mapa muscular.
+   */
+  gruposMusculares: string[];
   comparacao: ComparacaoEstado;
   conquistas: ConquistaResumo[];
   /** `student_id` da sessão — base do guard de posse na rota do professor. */
@@ -157,7 +171,7 @@ export async function montarResumoSessao(
   const { data: logsData } = await supabase
     .from('workout_set_logs')
     .select(
-      'set_number, reps_done, load_done, completed, plan_item_id, workout_plan_items(order_index, exercises(name))'
+      'set_number, reps_done, load_done, completed, plan_item_id, workout_plan_items(order_index, exercises(name, muscle_groups))'
     )
     .eq('session_id', sessionId);
 
@@ -169,7 +183,10 @@ export async function montarResumoSessao(
 
   // Lista de exercícios EXECUTADOS (com ≥ 1 série concluída), por item.
   const porItem = seriesPorItem(serieLogs);
-  const metaPorItem = new Map<string, { nome: string; order: number }>();
+  const metaPorItem = new Map<
+    string,
+    { nome: string; order: number; grupos: string[] }
+  >();
   for (const l of logs) {
     if (!l.plan_item_id) continue;
     if (!metaPorItem.has(l.plan_item_id)) {
@@ -177,11 +194,12 @@ export async function montarResumoSessao(
       metaPorItem.set(l.plan_item_id, {
         nome: nomeDoExercicio(item?.exercises),
         order: item?.order_index ?? 0,
+        grupos: gruposDoExercicio(item?.exercises),
       });
     }
   }
 
-  const exercicios: ExercicioResumo[] = Array.from(porItem.entries())
+  const exerciciosComOrdem = Array.from(porItem.entries())
     .map(([itemId, series]) => {
       const concluidas = series.filter((s) => s.completed).length;
       const meta = metaPorItem.get(itemId);
@@ -189,12 +207,21 @@ export async function montarResumoSessao(
         id: itemId,
         nome: meta?.nome ?? 'Exercício',
         order: meta?.order ?? 0,
+        grupos: meta?.grupos ?? [],
         seriesConcluidas: concluidas,
       };
     })
     .filter((e) => e.seriesConcluidas > 0)
-    .sort((a, b) => a.order - b.order)
-    .map(({ id, nome, seriesConcluidas }) => ({ id, nome, seriesConcluidas }));
+    .sort((a, b) => a.order - b.order);
+
+  const exercicios: ExercicioResumo[] = exerciciosComOrdem.map(
+    ({ id, nome, seriesConcluidas }) => ({ id, nome, seriesConcluidas })
+  );
+
+  // União dos grupos musculares dos exercícios executados (ordem de aparição).
+  const gruposMusculares = Array.from(
+    new Set(exerciciosComOrdem.flatMap((e) => e.grupos))
+  );
 
   // --- Comparação com a última sessão comparável do mesmo (plan_id, division).
   let candidatasQuery = supabase
@@ -315,6 +342,7 @@ export async function montarResumoSessao(
       volumeKg: volumeAtual,
       seriesConcluidas: seriesConcluidasAtual,
       exercicios,
+      gruposMusculares,
       comparacao,
       conquistas,
       studentId: sessao.student_id,
