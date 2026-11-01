@@ -44,8 +44,15 @@ export default async function ProfessorPlanoPage() {
   const planoAtual = (planos ?? []).find((p) => p.id === sub?.plan_id) ?? null;
   const limiteAtual = planoAtual?.max_affiliates ?? null;
 
-  // Ordena por tier (solo, team, gym).
-  const ordemTier: Record<PlanTier, number> = { solo: 0, team: 1, gym: 2 };
+  // Ordena por tier. Legados (solo/team/gym) primeiro; Fase B em seguida.
+  const ordemTier: Record<PlanTier, number> = {
+    solo: 0,
+    team: 1,
+    gym: 2,
+    individual: 3,
+    personal: 4,
+    assessoria: 5,
+  };
   const planosOrdenados = [...(planos ?? [])].sort(
     (a, b) => ordemTier[a.tier as PlanTier] - ordemTier[b.tier as PlanTier]
   );

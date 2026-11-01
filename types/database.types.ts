@@ -65,7 +65,7 @@ export type LegalDocumentType = 'terms' | 'privacy';
 // silenciosamente estes tipos (design-review MED #9).
 // -----------------------------------------------------------------------------
 export type VisibilityModule = 'students' | 'workouts' | 'assessments' | 'diets' | 'exercises';
-export type PlanTier = 'solo' | 'team' | 'gym';
+export type PlanTier = 'solo' | 'team' | 'gym' | 'individual' | 'personal' | 'assessoria';
 export type SubscriptionStatus =
   | 'trialing'
   | 'active'
@@ -74,6 +74,14 @@ export type SubscriptionStatus =
   | 'incomplete'
   | 'incomplete_expired'
   | 'unpaid';
+
+// -----------------------------------------------------------------------------
+// Fase B — billing do aluno autônomo (tipo de conta + ciclo de cobrança).
+// Adicionados À MÃO (ver nota de regeneração acima). As migrations de origem
+// são 20261025090000..090400.
+// -----------------------------------------------------------------------------
+export type AccountType = 'professional' | 'self_managed';
+export type BillingCycle = 'monthly' | 'yearly';
 
 export interface Database {
   public: {
@@ -126,6 +134,7 @@ export interface Database {
           total_points: number;
           last_workout_date: string | null;
           is_tenant_master: boolean;
+          account_type: AccountType;
           deactivated_at: string | null;
           created_at: string;
           updated_at: string;
@@ -148,6 +157,7 @@ export interface Database {
           total_points?: number;
           last_workout_date?: string | null;
           is_tenant_master?: boolean;
+          account_type?: AccountType;
           deactivated_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -170,6 +180,7 @@ export interface Database {
           total_points?: number;
           last_workout_date?: string | null;
           is_tenant_master?: boolean;
+          account_type?: AccountType;
           deactivated_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -1252,6 +1263,12 @@ export interface Database {
           name: string;
           max_affiliates: number | null;
           stripe_price_id: string | null;
+          price_monthly_cents: number | null;
+          price_yearly_cents: number | null;
+          stripe_price_id_monthly: string | null;
+          stripe_price_id_yearly: string | null;
+          ai_quota_monthly: number | null;
+          trial_days: number;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -1262,6 +1279,12 @@ export interface Database {
           name: string;
           max_affiliates?: number | null;
           stripe_price_id?: string | null;
+          price_monthly_cents?: number | null;
+          price_yearly_cents?: number | null;
+          stripe_price_id_monthly?: string | null;
+          stripe_price_id_yearly?: string | null;
+          ai_quota_monthly?: number | null;
+          trial_days?: number;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -1272,6 +1295,12 @@ export interface Database {
           name?: string;
           max_affiliates?: number | null;
           stripe_price_id?: string | null;
+          price_monthly_cents?: number | null;
+          price_yearly_cents?: number | null;
+          stripe_price_id_monthly?: string | null;
+          stripe_price_id_yearly?: string | null;
+          ai_quota_monthly?: number | null;
+          trial_days?: number;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -1287,6 +1316,7 @@ export interface Database {
           current_period_start: string | null;
           current_period_end: string | null;
           cancel_at_period_end: boolean;
+          billing_cycle: BillingCycle;
           created_at: string;
           updated_at: string;
         };
@@ -1299,6 +1329,7 @@ export interface Database {
           current_period_start?: string | null;
           current_period_end?: string | null;
           cancel_at_period_end?: boolean;
+          billing_cycle?: BillingCycle;
           created_at?: string;
           updated_at?: string;
         };
@@ -1311,7 +1342,28 @@ export interface Database {
           current_period_start?: string | null;
           current_period_end?: string | null;
           cancel_at_period_end?: boolean;
+          billing_cycle?: BillingCycle;
           created_at?: string;
+          updated_at?: string;
+        };
+      };
+      ai_usage_counters: {
+        Row: {
+          tenant_id: string;
+          period_start: string;
+          used: number;
+          updated_at: string;
+        };
+        Insert: {
+          tenant_id: string;
+          period_start: string;
+          used?: number;
+          updated_at?: string;
+        };
+        Update: {
+          tenant_id?: string;
+          period_start?: string;
+          used?: number;
           updated_at?: string;
         };
       };
@@ -1373,6 +1425,8 @@ export interface Database {
       visibility_module: VisibilityModule;
       plan_tier: PlanTier;
       subscription_status: SubscriptionStatus;
+      account_type: AccountType;
+      billing_cycle: BillingCycle;
     };
     CompositeTypes: Record<string, never>;
   };

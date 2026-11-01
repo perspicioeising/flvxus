@@ -1,0 +1,13 @@
+-- =============================================================================
+-- Flvxus v2 — ROLLBACK de 20261025090100_plan_tier_values.sql
+-- APLICADO À MÃO. NÃO roda no fluxo forward-only.
+--
+-- NO-OP: `ALTER TYPE ... ADD VALUE` NAO e revertivel no Postgres (nao existe
+-- `DROP VALUE`). Remover os labels 'individual'/'personal'/'assessoria' exigiria
+-- recriar o tipo plan_tier do zero e re-apontar todas as colunas que o usam
+-- (plans.tier etc.), operacao fora do escopo deste rollback. Mantido aqui como
+-- documentacao explicita. Reverter o USO dos labels e responsabilidade do
+-- rollback de 20261025090200.
+-- =============================================================================
+
+-- (sem comandos)
