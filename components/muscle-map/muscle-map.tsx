@@ -5,6 +5,23 @@ import {
   type MuscleRegion,
 } from '@/lib/muscle-map/regions';
 
+/*
+ * ----------------------------------------------------------------------------
+ * PROVENIÊNCIA / LICENÇA
+ * ----------------------------------------------------------------------------
+ * Padrão visual INSPIRADO no body-map anatômico do projeto open-source openGym
+ * (https://github.com/DuarteSantos8/openGym) — figura com vista de FRENTE e
+ * COSTAS lado a lado e musculatura detalhada.
+ *
+ * O openGym é licenciado sob AGPL-3.0 (copyleft de rede). Reutilizar os PATHS
+ * SVG deles imporia o copyleft AGPL a todo o Flvxus, o que é incompatível com o
+ * licenciamento deste projeto. Por isso NÃO copiamos nenhum asset/`path` do
+ * openGym: os caminhos abaixo foram DESENHADOS DO ZERO para o Flvxus, apenas
+ * seguindo o mesmo PADRÃO visual (frente + costas, regiões musculares amplas em
+ * verde). Nenhum trecho de código/arte do openGym foi reproduzido.
+ * ----------------------------------------------------------------------------
+ */
+
 /** Tamanhos do boneco: `sm` para cards compactos, `md` para resumos. */
 export type MuscleMapSize = 'sm' | 'md';
 
@@ -33,32 +50,38 @@ export interface MuscleMapProps {
   onPrimary?: boolean;
 }
 
-/** Largura×altura por tamanho (mantém a proporção do viewBox 220×140). */
+/**
+ * Largura×altura por tamanho. A proporção segue o viewBox 240×200 (figura mais
+ * alta/realista que o esquemático anterior). O `sm` mantém proporção para ficar
+ * legível no mini-mapa do card mobile.
+ */
 const DIMENSOES: Record<MuscleMapSize, { largura: number; altura: number }> = {
-  sm: { largura: 132, altura: 84 },
-  md: { largura: 220, altura: 140 },
+  sm: { largura: 120, altura: 100 },
+  md: { largura: 216, altura: 180 },
 };
 
 /**
- * Classe de preenchimento das regiões. Sobre o fundo da página (`onPrimary`
- * falso), ativas usam a primária e neutras o muted. Sobre o fundo primário
- * (`onPrimary`), ativas usam `primary-foreground` cheio e neutras uma versão
- * esmaecida dele — mantendo o contraste ativo×neutro em ambos os temas.
+ * Classe de preenchimento das regiões musculares. Sobre o fundo da página
+ * (`onPrimary` falso), ativas usam a primária (emerald do tema) e neutras um
+ * cinza neutro; sobre o fundo primário (`onPrimary`), ativas usam
+ * `primary-foreground` cheio e neutras uma versão esmaecida dele — mantendo o
+ * contraste ativo×neutro em tema claro e escuro.
  */
 function fillRegiao(ativa: boolean, onPrimary: boolean): string {
   if (onPrimary) {
-    return ativa
-      ? 'fill-primary-foreground'
-      : 'fill-primary-foreground/25';
+    return ativa ? 'fill-primary-foreground' : 'fill-primary-foreground/20';
   }
-  return ativa ? 'fill-primary' : 'fill-muted-foreground/25';
+  return ativa ? 'fill-primary' : 'fill-muted-foreground/20';
 }
 
 /**
- * MAPA MUSCULAR (body map) apresentacional. Desenha um boneco em SVG com vista
- * de FRENTE e COSTAS; as regiões musculares "acendem" (cor primária/emerald do
- * tema) conforme `grupos`, e as demais ficam em tom neutro. Sem fetch: recebe a
- * lista por prop. Tema claro/escuro vem dos tokens (`fill-primary`/`fill-muted`).
+ * MAPA MUSCULAR (body map) apresentacional, no padrão ANATÔMICO: uma figura
+ * humana com vista de FRENTE e COSTAS lado a lado e musculatura detalhada
+ * (peitoral, abdômen, deltoides, bíceps/antebraço, quadríceps e panturrilha na
+ * frente; trapézio, dorsais, lombar, glúteos, posterior de coxa e panturrilha
+ * nas costas). As regiões trabalhadas "acendem" na cor primária/emerald do tema
+ * e o restante fica em cinza neutro. Sem fetch: recebe a lista por prop. Tema
+ * claro/escuro vem dos tokens (`fill-primary`/`fill-muted-foreground`).
  *
  * Acessibilidade: `role="img"` + `aria-label` descrevendo os grupos
  * trabalhados (ex.: "Músculos trabalhados: peito, ombros, braços"); o destaque
@@ -86,6 +109,7 @@ export function MuscleMap({
       'data-region': r,
       'data-active': ativa ? 'true' : 'false',
       className: cn(
+        'transition-colors',
         fillRegiao(ativa, onPrimary),
         // Contorno mais forte nas ativas: destaque que não depende só de cor.
         ativa
@@ -94,8 +118,9 @@ export function MuscleMap({
             : 'stroke-primary'
           : 'stroke-transparent'
       ),
-      strokeWidth: ativa ? 1.25 : 0,
-    } as const;
+      strokeWidth: ativa ? 1.5 : 0,
+      strokeLinejoin: 'round' as const,
+    };
   };
 
   const descricao = accessibleGroupsLabel(grupos);
@@ -114,70 +139,109 @@ export function MuscleMap({
       <svg
         width={largura}
         height={altura}
-        viewBox="0 0 220 140"
+        viewBox="0 0 240 200"
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
         className="overflow-visible"
       >
         {/* ===================== VISTA DE FRENTE ===================== */}
-        <g transform="translate(0 0)">
-          {/* Silhueta base (cabeça + tronco + membros) em neutro. */}
+        <g transform="translate(6 8)">
           <SilhuetaFrente />
 
-          {/* Ombros. */}
+          {/* Deltoides (ombros) — os dois lados. */}
           <path
-            d="M34 42 q-6 2 -8 10 q7 1 12 -2 q-1 -5 -4 -8 Z M66 42 q6 2 8 10 q-7 1 -12 -2 q1 -5 4 -8 Z"
+            d="M27 46 q-10 0 -13 10 q-1 7 1 12 q7 -2 11 -8 q1 -8 0 -14 Z"
             {...regiao('shoulders')}
           />
-          {/* Peito. */}
           <path
-            d="M38 45 q12 -5 24 0 q1 10 -3 16 q-9 4 -18 0 q-4 -6 -3 -16 Z"
+            d="M73 46 q10 0 13 10 q1 7 -1 12 q-7 -2 -11 -8 q-1 -8 0 -14 Z"
+            {...regiao('shoulders')}
+          />
+
+          {/* Peitoral (duas metades). */}
+          <path
+            d="M50 47 l-20 2 q-5 5 -4 13 q1 7 7 10 q9 3 17 -1 l0 -24 Z"
             {...regiao('chest')}
           />
-          {/* Braços (frente: bíceps/antebraço, os dois lados). */}
           <path
-            d="M26 52 q-5 14 -4 30 q5 1 8 -1 q2 -15 4 -27 q-4 -3 -8 -2 Z M74 52 q5 14 4 30 q-5 1 -8 -1 q-2 -15 -4 -27 q4 -3 8 -2 Z"
+            d="M50 47 l20 2 q5 5 4 13 q-1 7 -7 10 q-9 3 -17 -1 l0 -24 Z"
+            {...regiao('chest')}
+          />
+
+          {/* Braços frontais (bíceps + antebraço), os dois lados. */}
+          <path
+            d="M20 68 q-6 12 -7 27 q0 9 3 16 q5 -1 7 -4 q1 -9 3 -18 q2 -11 4 -20 q-4 -4 -10 -1 Z"
             {...regiao('arms')}
           />
-          {/* Core / abdômen. */}
           <path
-            d="M41 62 q9 4 18 0 q0 14 -3 22 q-6 3 -12 0 q-3 -8 -3 -22 Z"
+            d="M80 68 q6 12 7 27 q0 9 -3 16 q-5 -1 -7 -4 q-1 -9 -3 -18 q-2 -11 -4 -20 q4 -4 10 -1 Z"
+            {...regiao('arms')}
+          />
+
+          {/* Core / abdômen (reto abdominal + oblíquos). */}
+          <path
+            d="M38 73 q12 5 24 0 q1 16 -2 30 q-2 6 -10 6 q-8 0 -10 -6 q-3 -14 -2 -30 Z"
             {...regiao('core')}
           />
-          {/* Quadríceps (frente das coxas). */}
+
+          {/* Quadríceps (coxa anterior) + panturrilha frontal, duas pernas. */}
           <path
-            d="M40 86 q8 3 20 0 q1 18 -2 32 q-5 2 -8 0 l-0 -22 l-0 22 q-3 2 -8 0 q-3 -14 -2 -32 Z"
+            d="M37 112 q6 3 12 1 q2 20 0 36 q-1 10 -3 20 q-5 2 -8 -1 q-3 -12 -3 -24 q-1 -17 0 -32 Z"
+            {...regiao('quads')}
+          />
+          <path
+            d="M63 112 q-6 3 -12 1 q-2 20 0 36 q1 10 3 20 q5 2 8 -1 q3 -12 3 -24 q1 -17 0 -32 Z"
             {...regiao('quads')}
           />
         </g>
 
         {/* ===================== VISTA DE COSTAS ===================== */}
-        <g transform="translate(120 0)">
+        <g transform="translate(126 8)">
           <SilhuetaCostas />
 
-          {/* Ombros (costas). */}
+          {/* Deltoides posteriores (ombros). */}
           <path
-            d="M34 42 q-6 2 -8 10 q7 1 12 -2 q-1 -5 -4 -8 Z M66 42 q6 2 8 10 q-7 1 -12 -2 q1 -5 4 -8 Z"
+            d="M27 46 q-10 0 -13 10 q-1 7 1 12 q7 -2 11 -8 q1 -8 0 -14 Z"
             {...regiao('shoulders')}
           />
-          {/* Costas superiores / dorsais. */}
           <path
-            d="M38 45 q12 -5 24 0 q2 14 -2 24 q-10 4 -20 0 q-4 -10 -2 -24 Z"
+            d="M73 46 q10 0 13 10 q1 7 -1 12 q-7 -2 -11 -8 q-1 -8 0 -14 Z"
+            {...regiao('shoulders')}
+          />
+
+          {/* Trapézio + dorsais (costas superiores). */}
+          <path
+            d="M50 44 l-18 3 q-6 6 -6 16 q0 10 6 18 q8 5 18 4 l0 -41 Z"
             {...regiao('upperBack')}
           />
-          {/* Braços (costas: tríceps). */}
           <path
-            d="M26 52 q-5 14 -4 30 q5 1 8 -1 q2 -15 4 -27 q-4 -3 -8 -2 Z M74 52 q5 14 4 30 q-5 1 -8 -1 q-2 -15 -4 -27 q4 -3 8 -2 Z"
+            d="M50 44 l18 3 q6 6 6 16 q0 10 -6 18 q-8 5 -18 4 l0 -41 Z"
+            {...regiao('upperBack')}
+          />
+
+          {/* Braços posteriores (tríceps + antebraço). */}
+          <path
+            d="M20 68 q-6 12 -7 27 q0 9 3 16 q5 -1 7 -4 q1 -9 3 -18 q2 -11 4 -20 q-4 -4 -10 -1 Z"
             {...regiao('arms')}
           />
+          <path
+            d="M80 68 q6 12 7 27 q0 9 -3 16 q-5 -1 -7 -4 q-1 -9 -3 -18 q-2 -11 -4 -20 q4 -4 10 -1 Z"
+            {...regiao('arms')}
+          />
+
           {/* Glúteos. */}
           <path
-            d="M40 70 q10 5 20 0 q1 9 -2 14 q-8 4 -16 0 q-3 -5 -2 -14 Z"
+            d="M38 88 q12 6 24 0 q2 8 0 16 q-3 7 -12 7 q-9 0 -12 -7 q-2 -8 0 -16 Z"
             {...regiao('glutes')}
           />
-          {/* Posterior de coxa + panturrilha. */}
+
+          {/* Posterior de coxa + panturrilha (duas pernas). */}
           <path
-            d="M40 86 q8 3 20 0 q1 18 -2 32 q-5 2 -8 0 l-0 -22 l-0 22 q-3 2 -8 0 q-3 -14 -2 -32 Z"
+            d="M37 113 q6 3 12 1 q2 20 0 35 q-1 11 -3 21 q-5 2 -8 -1 q-3 -12 -3 -24 q-1 -17 0 -32 Z"
+            {...regiao('hamstrings')}
+          />
+          <path
+            d="M63 113 q-6 3 -12 1 q-2 20 0 35 q1 11 3 21 q5 2 8 -1 q3 -12 3 -24 q1 -17 0 -32 Z"
             {...regiao('hamstrings')}
           />
         </g>
@@ -186,22 +250,40 @@ export function MuscleMap({
   );
 }
 
-/** Silhueta neutra da vista de frente (cabeça + contorno do corpo). */
+/**
+ * Silhueta neutra da vista de FRENTE (cabeça + contorno do corpo). Desenhada do
+ * zero para o Flvxus; dá a "moldura" anatômica sob as regiões musculares.
+ */
 function SilhuetaFrente() {
   return (
     <g className="fill-muted-foreground/10">
-      <circle cx="50" cy="26" r="9" />
-      <path d="M38 36 q12 -4 24 0 q10 4 12 20 q-2 26 -6 48 q-2 18 -6 32 q-6 2 -12 0 q-4 -14 -6 -32 q-4 -22 -6 -48 q2 -16 12 -20 Z" />
+      <circle cx="50" cy="22" r="13" />
+      <path
+        d="M44 34 q6 3 12 0 q3 1 4 6
+           q14 3 20 18 q3 10 1 20 q-3 2 -6 1
+           q-4 15 -6 30 q7 1 10 6 q3 22 1 44 q-1 11 -4 21 q-6 2 -10 -1 q-3 -18 -4 -37
+           q-2 12 -4 24 q-1 11 -4 20 q-6 2 -10 -1 q-3 -22 -1 -44 q1 -14 4 -27
+           q-3 1 -6 -1 q-2 -10 1 -20 q6 -15 20 -18 q1 -5 4 -6 Z"
+      />
     </g>
   );
 }
 
-/** Silhueta neutra da vista de costas (igual à de frente, por simetria). */
+/**
+ * Silhueta neutra da vista de COSTAS (espelha a de frente para manter a
+ * proporção/simetria). Desenhada do zero para o Flvxus.
+ */
 function SilhuetaCostas() {
   return (
     <g className="fill-muted-foreground/10">
-      <circle cx="50" cy="26" r="9" />
-      <path d="M38 36 q12 -4 24 0 q10 4 12 20 q-2 26 -6 48 q-2 18 -6 32 q-6 2 -12 0 q-4 -14 -6 -32 q-4 -22 -6 -48 q2 -16 12 -20 Z" />
+      <circle cx="50" cy="22" r="13" />
+      <path
+        d="M44 34 q6 3 12 0 q3 1 4 6
+           q14 3 20 18 q3 10 1 20 q-3 2 -6 1
+           q-4 15 -6 30 q7 1 10 6 q3 22 1 44 q-1 11 -4 21 q-6 2 -10 -1 q-3 -18 -4 -37
+           q-2 12 -4 24 q-1 11 -4 20 q-6 2 -10 -1 q-3 -22 -1 -44 q1 -14 4 -27
+           q-3 1 -6 -1 q-2 -10 1 -20 q6 -15 20 -18 q1 -5 4 -6 Z"
+      />
     </g>
   );
 }
