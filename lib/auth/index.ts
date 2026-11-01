@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
-import type { UserRole } from '@/types/database.types';
+import type { AccountType, UserRole } from '@/types/database.types';
 
 /**
  * Helpers de papel/tenant para o gate server-side (architecture.md §5.2).
@@ -26,6 +26,12 @@ export interface SessionUser {
    * de billing/filiados/visibilidade (`requireMaster`/`assertMaster`).
    */
   isMaster: boolean;
+  /**
+   * Tipo de conta (Fase B1). `'professional'` é o personal que gerencia alunos;
+   * `'self_managed'` é o aluno autônomo (treina por conta própria) e NÃO
+   * convida alunos nem filiados. O enforcement real é no backend; a UI espelha.
+   */
+  accountType: AccountType;
 }
 
 /** Para onde cada papel é enviado quando acessa a área do outro papel. */
@@ -51,7 +57,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('role, tenant_id, email, full_name, avatar_url, is_tenant_master, deactivated_at')
+    .select('role, tenant_id, email, full_name, avatar_url, is_tenant_master, account_type, deactivated_at')
     .eq('user_id', user.id)
     .single();
 
@@ -76,6 +82,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     fullName: profile.full_name,
     avatarUrl: profile.avatar_url,
     isMaster: profile.is_tenant_master,
+    accountType: profile.account_type,
   };
 }
 

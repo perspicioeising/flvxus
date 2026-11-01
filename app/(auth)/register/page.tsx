@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useSupabase } from "@/app/providers";
@@ -40,6 +41,7 @@ function RegisterContent() {
     resolver: zodResolver(cadastroProfessorSchema),
     defaultValues: {
       name: "",
+      accountType: "professional",
       businessName: "",
       email: "",
       password: "",
@@ -51,6 +53,8 @@ function RegisterContent() {
   });
 
   const aceiteLegal = form.watch("aceiteLegal");
+  const accountType = form.watch("accountType");
+  const isSelfManaged = accountType === "self_managed";
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
@@ -64,7 +68,12 @@ function RegisterContent() {
         options: {
           data: {
             full_name: values.name,
-            business_name: values.businessName,
+            // O aluno autônomo (self_managed) não tem empresa; só enviamos
+            // business_name quando há valor para não poluir os metadados.
+            ...(values.businessName
+              ? { business_name: values.businessName }
+              : {}),
+            account_type: values.accountType,
           },
           emailRedirectTo:
             typeof window !== "undefined"
@@ -187,7 +196,11 @@ function RegisterContent() {
             CONTA
           </>
         }
-        subtitle="Comece a organizar seus alunos e treinos"
+        subtitle={
+          isSelfManaged
+            ? "Monte e acompanhe os seus próprios treinos"
+            : "Comece a organizar seus alunos e treinos"
+        }
         primaryAction={
           <Button
             type="submit"
@@ -219,6 +232,70 @@ function RegisterContent() {
       >
         <FormField
           control={form.control}
+          name="accountType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Como você vai usar o Flvxus?</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  className="grid gap-3 sm:grid-cols-2"
+                >
+                  <label
+                    htmlFor="account-type-professional"
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
+                      field.value === "professional"
+                        ? "border-primary bg-primary-soft/40"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <RadioGroupItem
+                      id="account-type-professional"
+                      value="professional"
+                      className="mt-1"
+                    />
+                    <span className="flex flex-col gap-0.5">
+                      <span className="text-sm font-semibold text-foreground">
+                        Sou personal
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Gerencio alunos e crio treinos para eles.
+                      </span>
+                    </span>
+                  </label>
+
+                  <label
+                    htmlFor="account-type-self-managed"
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
+                      field.value === "self_managed"
+                        ? "border-primary bg-primary-soft/40"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <RadioGroupItem
+                      id="account-type-self-managed"
+                      value="self_managed"
+                      className="mt-1"
+                    />
+                    <span className="flex flex-col gap-0.5">
+                      <span className="text-sm font-semibold text-foreground">
+                        Treino por conta própria
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Monto e acompanho os meus próprios treinos.
+                      </span>
+                    </span>
+                  </label>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
@@ -238,26 +315,29 @@ function RegisterContent() {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="businessName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome da empresa</FormLabel>
-              <FormControl>
-                <Input
-                  autoComplete="organization"
-                  autoCapitalize="words"
-                  enterKeyHint="next"
-                  placeholder="Nome do seu negócio"
-                  className="min-h-11 text-base md:text-sm"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!isSelfManaged ? (
+          <FormField
+            control={form.control}
+            name="businessName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome da empresa</FormLabel>
+                <FormControl>
+                  <Input
+                    autoComplete="organization"
+                    autoCapitalize="words"
+                    enterKeyHint="next"
+                    placeholder="Nome do seu negócio"
+                    className="min-h-11 text-base md:text-sm"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ) : null}
 
         <FormField
           control={form.control}

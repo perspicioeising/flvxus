@@ -59,6 +59,14 @@ export async function convidarAluno(
     return { ok: false, message: 'Apenas o professor pode convidar alunos.' };
   }
 
+  // Fase B1: o aluno autônomo (self_managed) NÃO gerencia alunos. Recusa ANTES
+  // de qualquer escrita (inviteUserByEmail/insert) — o gate real é no backend; a
+  // UI apenas esconde o caminho. O trigger do banco também barra role='student'
+  // em tenant self_managed; esta é a fronteira da Server Action.
+  if (professor.accountType === 'self_managed') {
+    return { ok: false, message: 'Sua conta é individual e não gerencia alunos.' };
+  }
+
   const parsed = criarAlunoSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {

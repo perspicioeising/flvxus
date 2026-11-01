@@ -18,7 +18,7 @@ import {
   Trophy,
 } from 'lucide-react';
 
-import type { UserRole } from '@/types/database.types';
+import type { AccountType, UserRole } from '@/types/database.types';
 
 /** Um item de navegação por papel, em pt-BR. */
 export interface NavItem {
@@ -63,16 +63,31 @@ const studentNav: NavItem[] = [
  * Itens de menu distintos por papel. `isMaster` (default false) acrescenta o
  * item "Plano" APENAS para o personal master — o filiado nunca o vê. É aditivo:
  * chamadores antigos (sem o 2º argumento) seguem recebendo o menu padrão.
+ *
+ * `accountType` (Fase B1, default 'professional') espelha na UI o fato de que o
+ * aluno autônomo (self_managed) não gerencia alunos: o item "Alunos" é ocultado.
+ * O enforcement real segue no backend (NFR-3); isto é apenas espelho de UI.
  */
-export function getNavItems(role: UserRole, isMaster = false): NavItem[] {
+export function getNavItems(
+  role: UserRole,
+  isMaster = false,
+  accountType: AccountType = 'professional',
+): NavItem[] {
   if (role !== 'trainer') {
     return studentNav;
   }
+
+  // Aluno autônomo: sem gestão de alunos, remove o item "Alunos" do menu.
+  const base =
+    accountType === 'self_managed'
+      ? trainerNav.filter((item) => item.href !== '/professor/alunos')
+      : trainerNav;
+
   if (!isMaster) {
-    return trainerNav;
+    return base;
   }
   // Insere "Plano" antes do último item ("Ajuda") para o master.
-  const items = [...trainerNav];
+  const items = [...base];
   const ajudaIndex = items.findIndex((item) => item.href === '/professor/ajuda');
   const insertAt = ajudaIndex === -1 ? items.length : ajudaIndex;
   items.splice(insertAt, 0, masterNavItem);
@@ -111,6 +126,9 @@ export function isMainScreen(
   pathname: string,
   role: UserRole,
   isMaster = false,
+  accountType: AccountType = 'professional',
 ): boolean {
-  return getNavItems(role, isMaster).some((item) => item.href === pathname);
+  return getNavItems(role, isMaster, accountType).some(
+    (item) => item.href === pathname,
+  );
 }

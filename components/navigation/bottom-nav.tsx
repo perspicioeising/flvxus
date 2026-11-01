@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useSupabase } from '@/app/providers';
-import type { UserRole } from '@/types/database.types';
+import type { AccountType, UserRole } from '@/types/database.types';
 import {
   getNavItems,
   isNavItemActive,
@@ -28,6 +28,8 @@ interface BottomNavProps {
   rootHref: string;
   /** Fase 3: master vê o item "Plano" (default false, aditivo). */
   isMaster?: boolean;
+  /** Fase B1: aluno autônomo (self_managed) não vê o item "Alunos". */
+  accountType?: AccountType;
 }
 
 /** Quantos itens aparecem na barra inferior antes do botão "Menu". */
@@ -37,13 +39,18 @@ const PRIMARY_COUNT = 3;
  * Navegação inferior (mobile, <md). Mostra os primeiros itens do papel como
  * atalhos e agrupa o restante em um Sheet acessível. Alvos de toque >=44px.
  */
-export function BottomNav({ role, rootHref, isMaster = false }: BottomNavProps) {
+export function BottomNav({
+  role,
+  rootHref,
+  isMaster = false,
+  accountType = 'professional',
+}: BottomNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { supabase } = useSupabase();
   const [open, setOpen] = useState(false);
 
-  const items = getNavItems(role, isMaster);
+  const items = getNavItems(role, isMaster, accountType);
   const primary = items.slice(0, PRIMARY_COUNT);
   const overflow = items.slice(PRIMARY_COUNT);
 

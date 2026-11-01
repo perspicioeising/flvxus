@@ -65,10 +65,48 @@ describe('cadastroProfessorSchema', () => {
     expect(r.success).toBe(false);
   });
 
-  it('rejeita nome da empresa vazio', () => {
+  it('rejeita nome da empresa vazio (conta professional)', () => {
     const r = cadastroProfessorSchema.safeParse({
       ...cadastroValido,
       businessName: '',
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('assume accountType "professional" por padrão quando ausente', () => {
+    const { ...semTipo } = cadastroValido;
+    const r = cadastroProfessorSchema.safeParse(semTipo);
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.accountType).toBe('professional');
+    }
+  });
+
+  it('aceita conta self_managed sem nome da empresa', () => {
+    const { businessName: _businessName, ...semEmpresa } = cadastroValido;
+    const r = cadastroProfessorSchema.safeParse({
+      ...semEmpresa,
+      accountType: 'self_managed',
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('exige nome da empresa quando accountType é "professional"', () => {
+    const { businessName: _businessName, ...semEmpresa } = cadastroValido;
+    const r = cadastroProfessorSchema.safeParse({
+      ...semEmpresa,
+      accountType: 'professional',
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path.includes('businessName'))).toBe(true);
+    }
+  });
+
+  it('rejeita accountType fora do enum', () => {
+    const r = cadastroProfessorSchema.safeParse({
+      ...cadastroValido,
+      accountType: 'empresa',
     });
     expect(r.success).toBe(false);
   });

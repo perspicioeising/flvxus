@@ -36,10 +36,16 @@ export const cadastroProfessorSchema = z
       .string({ required_error: 'Informe o nome completo.' })
       .trim()
       .min(2, 'O nome deve ter pelo menos 2 caracteres.'),
+    // Fase B1: tipo de conta. 'professional' = personal que gerencia alunos;
+    // 'self_managed' = aluno autônomo (treina por conta própria). Default
+    // 'professional' para manter o contrato existente de cadastros sem o campo.
+    accountType: z.enum(['professional', 'self_managed']).default('professional'),
+    // Opcional no schema: o nome da empresa só é EXIGIDO para 'professional'
+    // (validado no superRefine abaixo). Para 'self_managed' o campo é dispensado.
     businessName: z
-      .string({ required_error: 'Informe o nome da empresa.' })
+      .string()
       .trim()
-      .min(2, 'O nome da empresa deve ter pelo menos 2 caracteres.'),
+      .optional(),
     email: z
       .string({ required_error: 'Informe o e-mail.' })
       .trim()
@@ -60,6 +66,19 @@ export const cadastroProfessorSchema = z
   .refine((dados) => dados.password === dados.confirmPassword, {
     message: 'As senhas não coincidem.',
     path: ['confirmPassword'],
+  })
+  // 'professional' PRECISA informar o nome da empresa (mín. 2 caracteres);
+  // 'self_managed' (aluno autônomo) não tem empresa, então o campo é dispensado.
+  .superRefine((dados, ctx) => {
+    if (dados.accountType !== 'professional') return;
+    const nome = dados.businessName?.trim() ?? '';
+    if (nome.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'O nome da empresa deve ter pelo menos 2 caracteres.',
+        path: ['businessName'],
+      });
+    }
   });
 
 /** Login por e-mail e senha. */

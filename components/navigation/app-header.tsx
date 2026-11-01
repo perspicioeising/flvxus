@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 
 import { Logo } from '@/components/navigation/logo';
 import { LogoIcon } from '@/components/navigation/logo-icon';
-import type { UserRole } from '@/types/database.types';
+import type { AccountType, UserRole } from '@/types/database.types';
 import { isMainScreen, roleLabel } from '@/components/navigation/nav-items';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,8 @@ interface AppHeaderProps {
   rootHref: string;
   /** Master vê o item "Plano"; repassado para casar a rota com os nav items. */
   isMaster?: boolean;
+  /** Fase B1: aluno autônomo (self_managed) não vê o item "Alunos". */
+  accountType?: AccountType;
 }
 
 /**
@@ -29,9 +31,14 @@ interface AppHeaderProps {
  * título/voltar. No DESKTOP nada muda: o header segue presente (a logo continua
  * oculta no desktop), só a sidebar cuida da marca.
  */
-export function AppHeader({ role, rootHref, isMaster = false }: AppHeaderProps) {
+export function AppHeader({
+  role,
+  rootHref,
+  isMaster = false,
+  accountType = 'professional',
+}: AppHeaderProps) {
   const pathname = usePathname();
-  const telaPrincipal = isMainScreen(pathname ?? '', role, isMaster);
+  const telaPrincipal = isMainScreen(pathname ?? '', role, isMaster, accountType);
 
   return (
     <header

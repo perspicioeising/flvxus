@@ -80,7 +80,12 @@ export default async function ProfessorConfiguracoesPage() {
   let podeConvidar = false;
   let motivoBloqueio: string | undefined;
 
-  if (user.isMaster) {
+  // Fase B1: o aluno autônomo (self_managed) é master do próprio tenant, mas
+  // não gerencia filiados nem visibilidade de módulos — espelhamos no UI
+  // escondendo essas seções (o enforcement real segue no backend, NFR-3).
+  const mostrarSecoesMaster = user.isMaster && user.accountType !== 'self_managed';
+
+  if (mostrarSecoesMaster) {
     const [{ data: vis }, { data: trainers }, { data: sub }] = await Promise.all([
       supabase.from('tenant_module_visibility').select('module, is_open'),
       supabase
@@ -152,7 +157,7 @@ export default async function ProfessorConfiguracoesPage() {
         </CardContent>
       </Card>
 
-      {user.isMaster && visibilidade ? (
+      {mostrarSecoesMaster && visibilidade ? (
         <>
           <VisibilidadeSection valores={visibilidade} />
           <FiliadosSection

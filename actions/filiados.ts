@@ -67,7 +67,7 @@ export async function convidarFiliado(
       ok: false,
       message:
         'Seu plano atual não permite adicionar mais filiados. Faça upgrade para ' +
-        'Equipe ou Academia na tela de Plano.',
+        'Personal ou Assessoria na tela de Plano.',
     };
   }
 

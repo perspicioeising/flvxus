@@ -11,7 +11,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Logo } from '@/components/navigation/logo';
 import { LogoIcon } from '@/components/navigation/logo-icon';
 import { useSupabase } from '@/app/providers';
-import type { UserRole } from '@/types/database.types';
+import type { AccountType, UserRole } from '@/types/database.types';
 import {
   getNavItems,
   isNavItemActive,
@@ -23,6 +23,8 @@ interface AppSidebarProps {
   rootHref: string;
   /** Fase 3: master vê o item "Plano" (default false, aditivo). */
   isMaster?: boolean;
+  /** Fase B1: aluno autônomo (self_managed) não vê o item "Alunos". */
+  accountType?: AccountType;
 }
 
 /**
@@ -30,12 +32,17 @@ interface AppSidebarProps {
  * 0006), foco visível e alvos de toque confortáveis. O papel vem do layout
  * server-side (sem fetch client).
  */
-export function AppSidebar({ role, rootHref, isMaster = false }: AppSidebarProps) {
+export function AppSidebar({
+  role,
+  rootHref,
+  isMaster = false,
+  accountType = 'professional',
+}: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { supabase } = useSupabase();
   const [collapsed, setCollapsed] = useState(false);
-  const items = getNavItems(role, isMaster);
+  const items = getNavItems(role, isMaster, accountType);
 
   async function handleSignOut() {
     await supabase.auth.signOut();

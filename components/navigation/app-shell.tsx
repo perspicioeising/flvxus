@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import type { UserRole } from '@/types/database.types';
+import type { AccountType, UserRole } from '@/types/database.types';
 import { AppSidebar } from '@/components/navigation/app-sidebar';
 import { AppHeader } from '@/components/navigation/app-header';
 import { BottomNav } from '@/components/navigation/bottom-nav';
@@ -10,6 +10,8 @@ interface AppShellProps {
   rootHref: string;
   /** Fase 3: master vê o item "Plano" no menu. Default false (aditivo). */
   isMaster?: boolean;
+  /** Fase B1: aluno autônomo (self_managed) não vê o item "Alunos". */
+  accountType?: AccountType;
   children: ReactNode;
 }
 
@@ -18,7 +20,13 @@ interface AppShellProps {
  * troca de tema e bottom-nav no mobile. O papel/root vem do layout server-side
  * que já fez o gate — nenhum fetch de perfil no cliente.
  */
-export function AppShell({ role, rootHref, isMaster = false, children }: AppShellProps) {
+export function AppShell({
+  role,
+  rootHref,
+  isMaster = false,
+  accountType = 'professional',
+  children,
+}: AppShellProps) {
   return (
     // h-dvh fixa o shell DIRETO na viewport (altura dinâmica), sem depender da
     // cadeia height:100% de html>body>layouts — que quebrava no desktop e deixava
@@ -28,16 +36,31 @@ export function AppShell({ role, rootHref, isMaster = false, children }: AppShel
     // vive SÓ no <main>. O lock é do SHELL (não do <body> global), então as rotas
     // sem AppShell (auth/marketing) continuam rolando o documento.
     <div className="flex h-dvh overflow-hidden bg-background text-foreground">
-      <AppSidebar role={role} rootHref={rootHref} isMaster={isMaster} />
+      <AppSidebar
+        role={role}
+        rootHref={rootHref}
+        isMaster={isMaster}
+        accountType={accountType}
+      />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <AppHeader role={role} rootHref={rootHref} isMaster={isMaster} />
+        <AppHeader
+          role={role}
+          rootHref={rootHref}
+          isMaster={isMaster}
+          accountType={accountType}
+        />
         {/* O <main> é a área rolável. pb extra no mobile para o conteúdo não
             ficar sob a bottom-nav fixa. */}
         <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 md:p-6 md:pb-6">
           {children}
         </main>
       </div>
-      <BottomNav role={role} rootHref={rootHref} isMaster={isMaster} />
+      <BottomNav
+        role={role}
+        rootHref={rootHref}
+        isMaster={isMaster}
+        accountType={accountType}
+      />
     </div>
   );
 }
