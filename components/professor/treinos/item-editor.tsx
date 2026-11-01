@@ -139,8 +139,8 @@ export function ItemEditor({
   comDiaSemana?: boolean;
   comDivisao?: boolean;
 }) {
-  function adicionar(exercicio: ExercicioDisponivel) {
-    onChange([...itens, novoItem(exercicio)]);
+  function adicionar(exercicios: ExercicioDisponivel[]) {
+    onChange([...itens, ...exercicios.map(novoItem)]);
   }
 
   function atualizar(indice: number, patch: Partial<ItemEditavel>) {
@@ -485,7 +485,7 @@ export function ItemEditor({
         </ol>
       )}
 
-      <ExercisePicker exercicios={exercicios} onSelecionar={adicionar} />
+      <ExercisePicker exercicios={exercicios} onAdicionar={adicionar} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Plus, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -35,20 +37,26 @@ export interface ExercicioDisponivel {
 }
 
 /**
- * Diálogo acessível para escolher um exercício da biblioteca e adicioná-lo ao
- * treino. A lista é passada pelo servidor (RLS entrega catálogo global + do
- * tenant). Busca por nome no cliente. Fecha ao selecionar.
+ * Diálogo acessível para escolher exercícios da biblioteca e adicioná-los ao
+ * treino em LOTE. A lista é passada pelo servidor (RLS entrega catálogo global
+ * + do tenant). Busca por nome e filtro por grupo no cliente. A seleção
+ * acumula (checkbox) e PERSISTE ao mudar busca/filtro; ao confirmar, todos os
+ * exercícios marcados são adicionados na ordem da lista filtrada exibida.
  */
 export function ExercisePicker({
   exercicios,
-  onSelecionar,
+  onAdicionar,
 }: {
   exercicios: ExercicioDisponivel[];
-  onSelecionar: (exercicio: ExercicioDisponivel) => void;
+  onAdicionar: (exercicios: ExercicioDisponivel[]) => void;
 }) {
   const [aberto, setAberto] = React.useState(false);
   const [busca, setBusca] = React.useState('');
   const [grupo, setGrupo] = React.useState(GRUPO_TODOS);
+  // Ids marcados; persiste ao mudar busca/filtro (não limpa ao filtrar).
+  const [selecionados, setSelecionados] = React.useState<Set<string>>(
+    () => new Set()
+  );
 
   // União ordenada dos grupos musculares presentes no catálogo recebido.
   const grupos = React.useMemo(() => {
@@ -68,15 +76,40 @@ export function ExercisePicker({
     });
   }, [busca, grupo, exercicios]);
 
-  function selecionar(exercicio: ExercicioDisponivel) {
-    onSelecionar(exercicio);
-    setAberto(false);
-    setBusca('');
-    setGrupo(GRUPO_TODOS);
+  function alternar(id: string) {
+    setSelecionados((atual) => {
+      const proximo = new Set(atual);
+      if (proximo.has(id)) proximo.delete(id);
+      else proximo.add(id);
+      return proximo;
+    });
   }
 
+  function resetar() {
+    setBusca('');
+    setGrupo(GRUPO_TODOS);
+    setSelecionados(new Set());
+  }
+
+  function confirmar() {
+    // Adiciona na ordem da lista FILTRADA exibida.
+    const escolhidos = filtrados.filter((e) => selecionados.has(e.id));
+    if (escolhidos.length === 0) return;
+    onAdicionar(escolhidos);
+    setAberto(false);
+    resetar();
+  }
+
+  const total = selecionados.size;
+
   return (
-    <Dialog open={aberto} onOpenChange={setAberto}>
+    <Dialog
+      open={aberto}
+      onOpenChange={(proximo) => {
+        setAberto(proximo);
+        if (!proximo) resetar();
+      }}
+    >
       <DialogTrigger asChild>
         <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -85,9 +118,9 @@ export function ExercisePicker({
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Adicionar exercício</DialogTitle>
+          <DialogTitle>Adicionar exercícios</DialogTitle>
           <DialogDescription>
-            Escolha um exercício da sua biblioteca para incluir no treino.
+            Marque os exercícios da sua biblioteca para incluir no treino de uma vez.
           </DialogDescription>
         </DialogHeader>
 
@@ -143,33 +176,55 @@ export function ExercisePicker({
           ) : (
             <ScrollArea className="h-72 pr-3">
               <ul className="space-y-2">
-                {filtrados.map((exercicio) => (
-                  <li key={exercicio.id}>
-                    <button
-                      type="button"
-                      onClick={() => selecionar(exercicio)}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium text-foreground">
-                          {exercicio.name}
+                {filtrados.map((exercicio) => {
+                  const checkboxId = `exercicio-picker-${exercicio.id}`;
+                  const marcado = selecionados.has(exercicio.id);
+                  return (
+                    <li key={exercicio.id}>
+                      <Label
+                        htmlFor={checkboxId}
+                        className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl border border-border p-3 font-normal transition-colors hover:bg-accent focus-within:ring-2 focus-within:ring-ring"
+                      >
+                        <Checkbox
+                          id={checkboxId}
+                          checked={marcado}
+                          onCheckedChange={() => alternar(exercicio.id)}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium text-foreground">
+                            {exercicio.name}
+                          </span>
+                          <span className="mt-1 flex flex-wrap gap-1">
+                            {(exercicio.muscle_groups ?? []).slice(0, 3).map((g) => (
+                              <Badge key={g} variant="secondary" className="font-normal">
+                                {g}
+                              </Badge>
+                            ))}
+                          </span>
                         </span>
-                        <span className="mt-1 flex flex-wrap gap-1">
-                          {(exercicio.muscle_groups ?? []).slice(0, 3).map((g) => (
-                            <Badge key={g} variant="secondary" className="font-normal">
-                              {g}
-                            </Badge>
-                          ))}
-                        </span>
-                      </span>
-                      <Plus className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    </button>
-                  </li>
-                ))}
+                      </Label>
+                    </li>
+                  );
+                })}
               </ul>
             </ScrollArea>
           )}
         </div>
+
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {total} selecionado{total === 1 ? '' : 's'}
+          </p>
+          <Button
+            type="button"
+            className="min-h-11 w-full sm:w-auto"
+            disabled={total === 0}
+            onClick={confirmar}
+          >
+            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+            Adicionar {total} exercício{total === 1 ? '' : 's'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
