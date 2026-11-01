@@ -19,10 +19,11 @@ const getSessionUserMock = vi.fn();
 const logsDeleteEqSpy = vi.fn();
 const sessaoDeleteEqSpy = vi.fn();
 const sessaoDeleteIsSpy = vi.fn();
+const sessaoDeleteSelectSpy = vi.fn();
 
 // Resultados configuráveis por caso.
 let logsDeleteResult: { error: unknown } = { error: null };
-let sessaoDeleteResult: { error: unknown } = { error: null };
+let sessaoDeleteResult: { data: unknown; error: unknown } = { data: [{ id: 'x' }], error: null };
 
 function makeSupabase() {
   return {
@@ -40,14 +41,19 @@ function makeSupabase() {
 
       if (tabela === 'workout_sessions') {
         return {
-          // delete().eq('id', x).is('finished_at', null)
+          // delete().eq('id', x).is('finished_at', null).select('id')
           delete: () => ({
             eq: (col: string, val: string) => {
               sessaoDeleteEqSpy(col, val);
               return {
                 is: (isCol: string, isVal: unknown) => {
                   sessaoDeleteIsSpy(isCol, isVal);
-                  return Promise.resolve(sessaoDeleteResult);
+                  return {
+                    select: (sel: string) => {
+                      sessaoDeleteSelectSpy(sel);
+                      return Promise.resolve(sessaoDeleteResult);
+                    },
+                  };
                 },
               };
             },
@@ -89,7 +95,7 @@ const SESSAO = '44444444-4444-4444-4444-444444444444';
 beforeEach(() => {
   vi.clearAllMocks();
   logsDeleteResult = { error: null };
-  sessaoDeleteResult = { error: null };
+  sessaoDeleteResult = { data: [{ id: 'x' }], error: null };
   getSessionUserMock.mockResolvedValue(ALUNO);
 });
 
@@ -112,10 +118,17 @@ describe('cancelarSessao — abandono do treino', () => {
     expect(sessaoDeleteIsSpy).toHaveBeenCalledWith('finished_at', null);
   });
 
+  it('confirma o descarte efetivo via .select(id) no delete da sessão', async () => {
+    await cancelarSessao({ session_id: SESSAO });
+    // O delete da sessão pede as linhas removidas para detectar descarte real.
+    expect(sessaoDeleteSelectSpy).toHaveBeenCalledWith('id');
+  });
+
   it('idempotente: deletes casando zero linhas (sessão inexistente) → ok', async () => {
-    // Supabase não erra quando o delete casa zero linhas; a action só olha erro.
+    // Supabase não erra quando o delete casa zero linhas; mesmo sem linhas
+    // removidas o abandono é idempotente (cobre double-click / sem sessão).
     logsDeleteResult = { error: null };
-    sessaoDeleteResult = { error: null };
+    sessaoDeleteResult = { data: [], error: null };
 
     const r = await cancelarSessao({ session_id: SESSAO });
 
@@ -150,7 +163,7 @@ describe('cancelarSessao — abandono do treino', () => {
   });
 
   it('erro ao apagar a sessão → ok:false', async () => {
-    sessaoDeleteResult = { error: { message: 'falha sessao' } };
+    sessaoDeleteResult = { data: null, error: { message: 'falha sessao' } };
 
     const r = await cancelarSessao({ session_id: SESSAO });
 

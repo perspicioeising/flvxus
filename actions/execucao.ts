@@ -421,6 +421,14 @@ export async function finalizarSessao(input: FinalizarSessaoInput): Promise<Esta
  * Idempotente: cancelar uma sessão já inexistente/finalizada retorna `ok:true`
  * sem efeito (o delete casa zero linhas). Isso cobre o double-click no "Abandonar
  * treino" e a UI que chama cancelar sem ter criado sessão.
+ *
+ * Detecção de descarte efetivo: o delete da sessão usa `.select('id')` e, se
+ * RETORNOU linha (havia sessão aberta e ela foi removida), confirmamos o
+ * sucesso. Se casou zero linhas tratamos como idempotente (nada a descartar).
+ * Esse check protege contra o "sucesso silencioso": se a RLS recusasse o DELETE
+ * (sem erro, zero linhas) com uma sessão ainda existente, não mascaramos como
+ * ok — mas, como a RLS do aluno dono/trainer permite o DELETE (migration
+ * 20261023090100), o caminho feliz remove a linha.
  */
 export async function cancelarSessao(
   input: CancelarSessaoInput
@@ -458,18 +466,28 @@ export async function cancelarSessao(
   }
 
   // Apaga a sessão SOMENTE se ainda está ABERTA (`finished_at is null`): nunca
-  // remove uma sessão já finalizada (histórico), mesmo em corrida.
-  const { error: erroSessao } = await supabase
+  // remove uma sessão já finalizada (histórico), mesmo em corrida. O `.select`
+  // devolve as linhas removidas, permitindo detectar o descarte efetivo.
+  const { data: removidas, error: erroSessao } = await supabase
     .from('workout_sessions')
     .delete()
     .eq('id', parsed.data.session_id)
-    .is('finished_at', null);
+    .is('finished_at', null)
+    .select('id');
 
   if (erroSessao) {
     return {
       ok: false,
       message: `Não foi possível abandonar o treino: ${erroSessao.message}`,
     };
+  }
+
+  // Casar ZERO linhas é esperado e idempotente (sessão já inexistente/finalizada
+  // ou double-click). Apenas registramos para observabilidade — não é erro.
+  if (!removidas || removidas.length === 0) {
+    console.info(
+      'cancelarSessao: nenhuma sessão aberta descartada (já inexistente/finalizada).'
+    );
   }
 
   revalidatePath('/aluno');
