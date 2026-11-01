@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  SET_KINDS,
   clonarFichaSchema,
   criarFichaMultiModeloSchema,
   divisaoModeloSchema,
@@ -8,6 +9,7 @@ import {
   itemFichaSchema,
   itemModeloSchema,
   modeloSchema,
+  serieSchema,
   transicaoPermitida,
   transicaoStatusSchema,
 } from '@/schemas/treino';
@@ -188,6 +190,65 @@ function serieSchemaDefaultKind(): string {
   if (!r.success) throw new Error('esperava sucesso');
   return r.data.series?.[0].kind ?? 'erro';
 }
+
+describe('serieSchema — reps/descanso/carga por série', () => {
+  it('aceita rest_seconds positivo (número e string)', () => {
+    const numero = serieSchema.safeParse({ set_number: 1, rest_seconds: 90 });
+    expect(numero.success).toBe(true);
+    if (numero.success) {
+      expect(numero.data.rest_seconds).toBe(90);
+    }
+    const texto = serieSchema.safeParse({ set_number: 1, rest_seconds: '60' });
+    expect(texto.success).toBe(true);
+    if (texto.success) {
+      expect(texto.data.rest_seconds).toBe(60);
+    }
+  });
+
+  it('normaliza rest_seconds vazio para undefined (herda do item)', () => {
+    const r = serieSchema.safeParse({ set_number: 1, rest_seconds: '' });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.rest_seconds).toBeUndefined();
+    }
+  });
+
+  it('rejeita rest_seconds 0, negativo ou decimal', () => {
+    expect(serieSchema.safeParse({ set_number: 1, rest_seconds: 0 }).success).toBe(false);
+    expect(serieSchema.safeParse({ set_number: 1, rest_seconds: -30 }).success).toBe(false);
+    expect(serieSchema.safeParse({ set_number: 1, rest_seconds: 1.5 }).success).toBe(false);
+  });
+
+  it('aceita todos os 10 tipos de série (kind)', () => {
+    for (const kind of SET_KINDS) {
+      const r = serieSchema.safeParse({ set_number: 1, kind });
+      expect(r.success).toBe(true);
+      if (r.success) {
+        expect(r.data.kind).toBe(kind);
+      }
+    }
+  });
+
+  it('aceita os novos kinds dentro de series contíguas', () => {
+    const r = itemFichaSchema.safeParse({
+      exercise_id: EX_ID,
+      series: [
+        { set_number: 1, kind: 'dropset', rest_seconds: 45 },
+        { set_number: 2, kind: 'rest_pause' },
+        { set_number: 3, kind: 'failure' },
+      ],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.series?.[0].kind).toBe('dropset');
+      expect(r.data.series?.[0].rest_seconds).toBe(45);
+    }
+  });
+
+  it('rejeita kind fora do enum', () => {
+    expect(serieSchema.safeParse({ set_number: 1, kind: 'turbo' }).success).toBe(false);
+  });
+});
 
 describe('divisaoModeloSchema', () => {
   it('aceita um modelo com rótulo de divisão válido', () => {

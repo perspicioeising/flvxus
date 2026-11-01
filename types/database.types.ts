@@ -38,7 +38,17 @@ export type GoalType =
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 export type AssessmentProtocol = 'pollock_3' | 'pollock_7' | 'guedes' | 'durnin' | 'manual';
 export type PlanStatus = 'draft' | 'pending_review' | 'approved' | 'released' | 'archived';
-export type SetKind = 'warmup' | 'adaptation' | 'work';
+export type SetKind =
+  | 'warmup'
+  | 'adaptation'
+  | 'work'
+  | 'dropset'
+  | 'cluster_set'
+  | 'rest_pause'
+  | 'failure'
+  | 'isometric'
+  | 'pyramid'
+  | 'superset';
 export type AiJobType = 'generate_diet' | 'suggest_workout' | 'analyze_assessment' | 'weekly_adherence';
 export type AiJobStatus = 'pending' | 'succeeded' | 'failed' | 'rejected';
 export type AppointmentStatus = 'scheduled' | 'done' | 'canceled' | 'no_show';
@@ -293,6 +303,7 @@ export interface Database {
           kind: SetKind;
           note: string | null;
           target_reps: string | null;
+          rest_seconds: number | null;
           target_load: number | null;
           created_at: string;
         };
@@ -303,6 +314,7 @@ export interface Database {
           kind?: SetKind;
           note?: string | null;
           target_reps?: string | null;
+          rest_seconds?: number | null;
           target_load?: number | null;
           created_at?: string;
         };
@@ -313,6 +325,7 @@ export interface Database {
           kind?: SetKind;
           note?: string | null;
           target_reps?: string | null;
+          rest_seconds?: number | null;
           target_load?: number | null;
           created_at?: string;
         };
@@ -436,6 +449,7 @@ export interface Database {
           kind: SetKind;
           note: string | null;
           target_reps: string | null;
+          rest_seconds: number | null;
           target_load: number | null;
           created_at: string;
         };
@@ -446,6 +460,7 @@ export interface Database {
           kind?: SetKind;
           note?: string | null;
           target_reps?: string | null;
+          rest_seconds?: number | null;
           target_load?: number | null;
           created_at?: string;
         };
@@ -456,6 +471,7 @@ export interface Database {
           kind?: SetKind;
           note?: string | null;
           target_reps?: string | null;
+          rest_seconds?: number | null;
           target_load?: number | null;
           created_at?: string;
         };

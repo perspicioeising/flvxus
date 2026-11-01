@@ -73,7 +73,18 @@ const notaSerieOpcional = z.preprocess(
  * Tipos de série do domínio (enum nativo `public.set_kind`). Centralizados aqui
  * para o schema e a UI compartilharem a mesma fonte. `work` é o default.
  */
-export const SET_KINDS = ['warmup', 'adaptation', 'work'] as const;
+export const SET_KINDS = [
+  'warmup',
+  'adaptation',
+  'work',
+  'dropset',
+  'cluster_set',
+  'rest_pause',
+  'failure',
+  'isometric',
+  'pyramid',
+  'superset',
+] as const;
 
 /**
  * Uma SÉRIE detalhada de um item. Opcional por item: fichas/modelos sem séries
@@ -85,6 +96,7 @@ export const serieSchema = z.object({
   kind: z.enum(SET_KINDS).default('work'),
   note: notaSerieOpcional,
   target_reps: repsOpcional.optional(),
+  rest_seconds: inteiroPositivoOpcional,
   target_load: numeroPositivoOpcional,
 });
 

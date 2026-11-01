@@ -1,0 +1,13 @@
+-- =============================================================================
+-- ROLLBACK de 20261024090200_series_tipos_ampliados.sql
+--
+-- NO-OP documentado (nenhum DDL executado). O Postgres NÃO suporta
+-- `alter type ... drop value`, logo os valores adicionados ao enum set_kind
+-- (dropset, cluster_set, rest_pause, failure, isometric, pyramid, superset)
+-- permanecem no tipo. Revertê-los de fato exigiria recriar o tipo do zero e
+-- migrar todas as colunas que o referenciam (workout_plan_item_sets.kind,
+-- workout_exercise_sets.kind) — operação destrutiva e arriscada, por isso NÃO
+-- é executada aqui. Valores extras sem uso são inertes.
+-- =============================================================================
+
+-- (sem statements)

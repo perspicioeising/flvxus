@@ -10,6 +10,13 @@ export const SET_KIND_LABEL: Record<SetKind, string> = {
   warmup: 'Aquecimento',
   adaptation: 'Adaptação',
   work: 'Trabalho',
+  dropset: 'Dropset',
+  cluster_set: 'Cluster set',
+  rest_pause: 'Rest-pause',
+  failure: 'Falha',
+  isometric: 'Isometria',
+  pyramid: 'Pirâmide',
+  superset: 'Superset',
 };
 
 /** Variante visual do `Badge` por tipo de série. */
@@ -20,6 +27,13 @@ export const SET_KIND_VARIANTE: Record<
   warmup: 'secondary',
   adaptation: 'outline',
   work: 'default',
+  dropset: 'default',
+  failure: 'default',
+  cluster_set: 'outline',
+  rest_pause: 'outline',
+  isometric: 'outline',
+  pyramid: 'outline',
+  superset: 'outline',
 };
 
 /** Rótulo legível de cada status de ficha. */
