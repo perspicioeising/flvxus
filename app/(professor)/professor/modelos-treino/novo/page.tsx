@@ -6,8 +6,12 @@ import { ModeloForm } from '@/components/professor/treinos/modelo-form';
 import type { ExercicioDisponivel } from '@/components/professor/treinos/exercise-picker';
 
 /**
- * Criação de MODELO de treino. Carrega a biblioteca de exercícios (RLS entrega
- * catálogo global + do tenant) para o seletor do editor de itens.
+ * Criação de MODELO de treino. Carrega a biblioteca de exercícios para o
+ * seletor do editor de itens. A RLS libera catálogo global (tenant_id IS NULL)
+ * + do tenant, mas o seletor deve mostrar só os do tenant (`.not(tenant_id ...)`);
+ * os globais chegam pela ação "Importar da biblioteca" (separada). Sem o filtro,
+ * cada exercício importado apareceria 2x (global + cópia do tenant via
+ * source_exercise_id).
  */
 export default async function NovoModeloPage() {
   const supabase = await createClient();
@@ -15,6 +19,7 @@ export default async function NovoModeloPage() {
   const { data } = await supabase
     .from('exercises')
     .select('id, name, muscle_groups')
+    .not('tenant_id', 'is', null)
     .order('name', { ascending: true });
 
   const exercicios: ExercicioDisponivel[] = data ?? [];

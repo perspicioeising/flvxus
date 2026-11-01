@@ -29,7 +29,15 @@ export default async function NovaFichaPage({
       .select('user_id, full_name')
       .eq('role', 'student')
       .order('full_name', { ascending: true }),
-    supabase.from('exercises').select('id, name, muscle_groups').order('name', { ascending: true }),
+    // RLS libera catálogo global (tenant_id IS NULL) + do tenant. O seletor
+    // deve mostrar só os do tenant; os globais chegam pela ação "Importar da
+    // biblioteca" (separada). Sem o filtro, cada exercício importado apareceria
+    // 2x (global + cópia do tenant ligada por source_exercise_id).
+    supabase
+      .from('exercises')
+      .select('id, name, muscle_groups')
+      .not('tenant_id', 'is', null)
+      .order('name', { ascending: true }),
   ]);
 
   const alunos: AlunoOpcao[] = alunosData ?? [];
