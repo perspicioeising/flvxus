@@ -85,10 +85,18 @@ RLS: eventos/perfil do próprio usuário; rankings expõem só XP/posição/nome
 ### Onda G2 — Rankings global e anual (cross-tenant)
 - Ranking mensal GLOBAL (todos os usuários, independentemente de tenant) e ranking ANUAL (acumula temporadas).
 - RLS cuidadosa: cruza tenants expondo só XP/posição/nome público, sem vazar dados de uma assessoria para outra.
+- **Aluno autônomo (self_managed) ENTRA no ranking global** mensal e anual, competindo cross-tenant como
+  qualquer outro usuário (decisão confirmada pelo usuário). É o que dá competição real a quem não tem turma.
+  O mínimo de 5 participantes continua valendo SÓ para o ranking do tenant (que o autônomo, com tenant de 1,
+  nunca verá — comportamento correto, não bug).
 
 ### Onda G3 — Social + painel do personal
 - `gamification_friends` (amizades/solicitações), ranking de amigos.
 - Desafios individuais (desafiar amigo por 7/15/30 dias por mais XP; medalha ao vencedor) e coletivos.
+- **Aluno autônomo (self_managed) PODE ter amigos e participar de desafios** com usuários de outros tenants
+  (decisão confirmada pelo usuário). Modelagem: canal social **opt-in**, SEPARADO do isolamento B2B por RLS —
+  amizade/desafio só existe com consentimento mútuo e expõe apenas XP/posição/nome público, nunca treino/dieta
+  entre tenants. Exige review de segurança caprichado (cross-tenant intencional e controlado).
 - Painel de desafios do PERSONAL: criar desafio, definir período/alunos/metas/recompensas, acompanhar
   participação. Oportunidade de retenção/comercial.
 - Progressão automática / 1RM estimado com curva (regras linear/double/triple) — valioso pro professor;
