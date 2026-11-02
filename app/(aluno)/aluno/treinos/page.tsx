@@ -1,5 +1,6 @@
 import { Dumbbell } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
 import {
@@ -20,6 +21,13 @@ import {
  * Leitura via RSC sob RLS; o gate de papel é do layout da área.
  */
 export default async function AlunoTreinosPage() {
+  // Aluno autônomo (self_managed): os textos não devem pressupor um professor
+  // terceiro liberando fichas (ele cria e libera as próprias). O layout já
+  // gateia o acesso; o aluno VINCULADO (student) mantém os textos atuais, sem
+  // regressão.
+  const sessionUser = await getSessionUser();
+  const soloEu = sessionUser ? isSelfManaged(sessionUser) : false;
+
   const supabase = await createClient();
 
   const [
@@ -69,7 +77,7 @@ export default async function AlunoTreinosPage() {
         <PageHeader
           emphasis="caps"
           title="Treinos"
-          subtitle="Suas fichas liberadas pelo professor."
+          subtitle={soloEu ? 'Seus treinos.' : 'Suas fichas liberadas pelo professor.'}
         />
         <ErrorState
           title="Não foi possível carregar seus treinos"
@@ -134,14 +142,22 @@ export default async function AlunoTreinosPage() {
       <PageHeader
         emphasis="caps"
         title="Treinos"
-        subtitle="Suas fichas liberadas pelo professor. Toque para ver os exercícios ou começar o treino."
+        subtitle={
+          soloEu
+            ? 'Seus treinos. Toque para ver os exercícios ou começar o treino.'
+            : 'Suas fichas liberadas pelo professor. Toque para ver os exercícios ou começar o treino.'
+        }
       />
 
       {fichas.length === 0 ? (
         <EmptyState
           icon={Dumbbell}
-          title="Nenhum treino liberado ainda"
-          description="Quando seu professor liberar uma ficha, ela aparece aqui para você treinar."
+          title={soloEu ? 'Nenhum treino ainda' : 'Nenhum treino liberado ainda'}
+          description={
+            soloEu
+              ? 'Crie um treino e ele aparece aqui para você treinar.'
+              : 'Quando seu professor liberar uma ficha, ela aparece aqui para você treinar.'
+          }
           className="rounded-3xl"
         />
       ) : (

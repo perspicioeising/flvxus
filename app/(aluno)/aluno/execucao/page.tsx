@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Dumbbell, Play } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { EmptyState, ErrorState } from '@/components/patterns';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,13 @@ import {
  * EmptyState quando nenhuma ficha foi liberada.
  */
 export default async function AlunoExecucaoPage() {
+  // Aluno autônomo (self_managed): a cópia do empty-state não deve mencionar
+  // "seu professor" (ele não tem professor terceiro). O layout já gateia o
+  // acesso, então o usuário existe aqui; o aluno VINCULADO (student) mantém o
+  // texto atual, sem regressão.
+  const sessionUser = await getSessionUser();
+  const soloEu = sessionUser ? isSelfManaged(sessionUser) : false;
+
   const supabase = await createClient();
 
   const { data: planos, error } = await supabase
@@ -52,8 +60,12 @@ export default async function AlunoExecucaoPage() {
       {fichas.length === 0 ? (
         <EmptyState
           icon={Dumbbell}
-          title="Nenhum treino liberado ainda"
-          description="Quando seu professor liberar uma ficha, você poderá iniciar o treino por aqui."
+          title={soloEu ? 'Nenhum treino ainda' : 'Nenhum treino liberado ainda'}
+          description={
+            soloEu
+              ? 'Crie um treino para começar a treinar por aqui.'
+              : 'Quando seu professor liberar uma ficha, você poderá iniciar o treino por aqui.'
+          }
         />
       ) : (
         <div className="space-y-4">

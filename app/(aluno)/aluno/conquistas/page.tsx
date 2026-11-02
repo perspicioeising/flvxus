@@ -1,7 +1,7 @@
 import { Trophy } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
   agregarConquistas,
@@ -66,6 +66,11 @@ export default async function AlunoConquistasPage() {
   const obtidas: ConquistaObtida[] = obtidasRes.data ?? [];
   const agregado = agregarConquistas(disponiveis, obtidas);
 
+  // Aluno autônomo (self_managed): não há professor terceiro configurando as
+  // conquistas — a cópia do empty-state não deve mencionar "seu professor". O
+  // aluno VINCULADO (student) mantém o texto atual, sem regressão.
+  const soloEu = isSelfManaged(sessionUser);
+
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
       <PageHeader
@@ -85,7 +90,11 @@ export default async function AlunoConquistasPage() {
         <EmptyState
           icon={Trophy}
           title="Nenhuma conquista disponível"
-          description="Quando seu professor configurar as conquistas, elas aparecem aqui conforme você treina."
+          description={
+            soloEu
+              ? 'Suas conquistas aparecem aqui conforme você treina.'
+              : 'Quando seu professor configurar as conquistas, elas aparecem aqui conforme você treina.'
+          }
           className="rounded-3xl"
         />
       ) : (

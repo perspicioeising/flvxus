@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { signExerciseMedia } from '@/lib/storage';
 import type { SetKind } from '@/types/database.types';
@@ -89,6 +90,12 @@ export default async function AlunoExecucaoFichaPage({
   const { dia, divisao } = await searchParams;
   const divisaoPedida = parseDivisao(divisao);
   const diaPedido = parseDia(dia);
+
+  // Aluno autônomo (self_managed): o empty-state não deve pedir para "falar com
+  // seu professor" (ele não tem professor terceiro). O layout já gateia o
+  // acesso; o aluno VINCULADO (student) mantém o texto atual, sem regressão.
+  const sessionUser = await getSessionUser();
+  const soloEu = sessionUser ? isSelfManaged(sessionUser) : false;
 
   const supabase = await createClient();
 
@@ -231,7 +238,11 @@ export default async function AlunoExecucaoFichaPage({
           </Link>
           <EmptyState
             title="Nenhum exercício nesta ficha"
-            description="Esta ficha ainda não tem exercícios prescritos. Fale com seu professor."
+            description={
+              soloEu
+                ? 'Esta ficha ainda não tem exercícios prescritos.'
+                : 'Esta ficha ainda não tem exercícios prescritos. Fale com seu professor.'
+            }
           />
         </>
       ) : (
