@@ -83,6 +83,14 @@ export type SubscriptionStatus =
 export type AccountType = 'professional' | 'self_managed';
 export type BillingCycle = 'monthly' | 'yearly';
 
+// -----------------------------------------------------------------------------
+// Arena G3 — camada social (enums). Migrations 20261030090000..090400.
+// -----------------------------------------------------------------------------
+export type FriendStatus = 'pending' | 'accepted' | 'blocked';
+export type ChallengeKind = 'duel' | 'coach';
+export type ChallengeStatus = 'active' | 'finished' | 'cancelled';
+export type ChallengeMemberResult = 'pending' | 'won' | 'lost' | 'tie';
+
 export interface Database {
   public: {
     Tables: {
@@ -135,6 +143,7 @@ export interface Database {
           last_workout_date: string | null;
           is_tenant_master: boolean;
           account_type: AccountType;
+          social_handle: string | null;
           deactivated_at: string | null;
           created_at: string;
           updated_at: string;
@@ -158,6 +167,7 @@ export interface Database {
           last_workout_date?: string | null;
           is_tenant_master?: boolean;
           account_type?: AccountType;
+          social_handle?: string | null;
           deactivated_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -181,6 +191,7 @@ export interface Database {
           last_workout_date?: string | null;
           is_tenant_master?: boolean;
           account_type?: AccountType;
+          social_handle?: string | null;
           deactivated_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -1598,6 +1609,115 @@ export interface Database {
           description?: string | null;
         };
       };
+      // Arena G3 — camada social (migrations 20261030090000..090400).
+      gamification_friends: {
+        Row: {
+          id: string;
+          requester_id: string;
+          addressee_id: string;
+          status: FriendStatus;
+          blocked_by: string | null;
+          created_at: string;
+          updated_at: string;
+          responded_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          requester_id: string;
+          addressee_id: string;
+          status?: FriendStatus;
+          blocked_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          responded_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          requester_id?: string;
+          addressee_id?: string;
+          status?: FriendStatus;
+          blocked_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          responded_at?: string | null;
+        };
+      };
+      gamification_challenges: {
+        Row: {
+          id: string;
+          kind: ChallengeKind;
+          status: ChallengeStatus;
+          creator_id: string;
+          tenant_id: string | null;
+          title: string | null;
+          goal_text: string | null;
+          reward_text: string | null;
+          duration_days: number;
+          starts_on: string;
+          ends_on: string;
+          settled_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          kind: ChallengeKind;
+          status?: ChallengeStatus;
+          creator_id: string;
+          tenant_id?: string | null;
+          title?: string | null;
+          goal_text?: string | null;
+          reward_text?: string | null;
+          duration_days: number;
+          starts_on: string;
+          ends_on: string;
+          settled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          kind?: ChallengeKind;
+          status?: ChallengeStatus;
+          creator_id?: string;
+          tenant_id?: string | null;
+          title?: string | null;
+          goal_text?: string | null;
+          reward_text?: string | null;
+          duration_days?: number;
+          starts_on?: string;
+          ends_on?: string;
+          settled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      gamification_challenge_members: {
+        Row: {
+          challenge_id: string;
+          user_id: string;
+          accepted: boolean;
+          result: ChallengeMemberResult;
+          final_xp: number | null;
+          created_at: string;
+        };
+        Insert: {
+          challenge_id: string;
+          user_id: string;
+          accepted?: boolean;
+          result?: ChallengeMemberResult;
+          final_xp?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          challenge_id?: string;
+          user_id?: string;
+          accepted?: boolean;
+          result?: ChallengeMemberResult;
+          final_xp?: number | null;
+          created_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1658,6 +1778,50 @@ export interface Database {
         Args: { p_ts: string };
         Returns: string;
       };
+      // Arena G3: camada social (SECURITY DEFINER). Retornos jsonb — ver os
+      // tipos de apresentação (FriendsList, FriendsLeaderboard, ChallengeScoreboard).
+      gamification_friend_request_by_handle: {
+        Args: { p_handle: string };
+        Returns: Json;
+      };
+      gamification_respond_friend_request: {
+        Args: { p_request_id: string; p_action: string };
+        Returns: Json;
+      };
+      gamification_list_friends: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      gamification_friends_leaderboard: {
+        Args: { p_period?: 'monthly' | 'yearly'; p_season?: string | null };
+        Returns: Json;
+      };
+      gamification_create_duel: {
+        Args: { p_friend_id: string; p_duration_days: number };
+        Returns: Json;
+      };
+      gamification_respond_duel: {
+        Args: { p_challenge_id: string; p_accept: boolean };
+        Returns: Json;
+      };
+      gamification_create_coach_challenge: {
+        Args: {
+          p_member_ids: string[];
+          p_duration_days: number;
+          p_title: string | null;
+          p_goal_text: string | null;
+          p_reward_text: string | null;
+        };
+        Returns: Json;
+      };
+      gamification_challenge_scoreboard: {
+        Args: { p_challenge_id: string };
+        Returns: Json;
+      };
+      gamification_settle_challenge: {
+        Args: { p_challenge_id: string };
+        Returns: Json;
+      };
     };
     Enums: {
       user_role: UserRole;
@@ -1679,6 +1843,10 @@ export interface Database {
       subscription_status: SubscriptionStatus;
       account_type: AccountType;
       billing_cycle: BillingCycle;
+      friend_status: FriendStatus;
+      challenge_kind: ChallengeKind;
+      challenge_status: ChallengeStatus;
+      challenge_member_result: ChallengeMemberResult;
     };
     CompositeTypes: Record<string, never>;
   };
@@ -1758,4 +1926,61 @@ export type GamificationGlobalLeaderboard = {
   total: number;
   me: { posicao: number; points: number; user_id: string } | null;
   linhas: GamificationGlobalLeaderboardRow[];
+};
+
+// -----------------------------------------------------------------------------
+// Arena G3 — camada social: tipos de apresentação (contrato público de
+// competição, D3). Espelham os retornos jsonb das funções SECURITY DEFINER.
+// -----------------------------------------------------------------------------
+
+// Contrato público de um competidor (amigo/oponente/membro). NUNCA e-mail,
+// telefone, tenant, treino, dieta, avaliações, metas (D3).
+export type PublicCompetitor = {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  level: ArenaLevel;
+  // social_handle só vem quando já é amigo aceito (para exibir "@handle").
+  social_handle?: string | null;
+};
+
+// Retorno (jsonb) de gamification_list_friends: conexões agrupadas.
+// outgoing NÃO projeta dados do alvo; blocked só traz as que EU bloqueei.
+export type FriendsList = {
+  accepted: (PublicCompetitor & { friendship_id: string })[];
+  incoming: (PublicCompetitor & { request_id: string })[];
+  outgoing: { request_id: string; status: 'pending' }[];
+  blocked: { friendship_id: string }[];
+};
+
+// Retorno (jsonb) de gamification_friends_leaderboard: mesmo shape de G2
+// (conjunto fechado V = eu + amigos aceitos; sem gate/limite; inclui 0 XP).
+export type FriendsLeaderboard = GamificationGlobalLeaderboard;
+
+// Uma linha do placar de um desafio (gamification_challenge_scoreboard).
+// result/final_xp só são significativos quando challenge_status = 'finished'.
+export type ChallengeMemberLine = {
+  posicao: number;
+  points: number;
+  display_name: string;
+  avatar_url: string | null;
+  level: ArenaLevel;
+  user_id: string;
+  accepted: boolean;
+  result: ChallengeMemberResult;
+  final_xp: number | null;
+};
+
+// Retorno (jsonb) de gamification_challenge_scoreboard.
+export type ChallengeScoreboard = {
+  status: 'ok' | 'forbidden';
+  challenge_id: string;
+  kind: ChallengeKind;
+  challenge_status: ChallengeStatus;
+  starts_on: string;
+  ends_on: string;
+  title: string | null;
+  goal_text: string | null;
+  reward_text: string | null;
+  linhas: ChallengeMemberLine[];
 };
