@@ -11,6 +11,8 @@ import { LeaderboardArena } from '@/components/aluno/arena/leaderboard-arena';
 import { LeaderboardGlobal } from '@/components/aluno/arena/leaderboard-global';
 import { ListaMissoes } from '@/components/aluno/arena/lista-missoes';
 import { ListaConquistas } from '@/components/aluno/conquistas/lista-conquistas';
+import { ListaAmigos } from '@/components/aluno/arena/social/lista-amigos';
+import { ListaDesafios } from '@/components/aluno/arena/social/lista-desafios';
 
 /**
  * Arena do aluno (RSC): nível/XP com barra de progresso, sequência (streak),
@@ -48,6 +50,13 @@ export default async function AlunoArenaPage() {
         minhaAcademia={
           <LeaderboardArena ranking={dados.ranking} meuUserId={dados.meuUserId} />
         }
+        amigos={
+          <LeaderboardGlobal
+            ranking={dados.rankingAmigos}
+            meuUserId={dados.meuUserId}
+            titulo="Ranking de amigos"
+          />
+        }
         globalMensal={
           <LeaderboardGlobal
             ranking={dados.rankingGlobalMensal}
@@ -63,6 +72,14 @@ export default async function AlunoArenaPage() {
       />
 
       <ListaMissoes missoes={dados.missoes} />
+
+      <ListaAmigos amigos={dados.amigos} handleAtual={dados.meuHandle} />
+
+      <ListaDesafios
+        desafios={dados.desafios}
+        amigos={dados.amigos?.accepted ?? []}
+        meuUserId={dados.meuUserId}
+      />
 
       <div className="space-y-3">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">

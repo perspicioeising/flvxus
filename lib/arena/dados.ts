@@ -27,6 +27,9 @@ import {
 import type {
   GamificationLeaderboard,
   GamificationGlobalLeaderboard,
+  FriendsList,
+  FriendsLeaderboard,
+  ChallengeScoreboard,
 } from '@/types/database.types';
 
 /** Perfil derivado da Arena (zero-default quando não há linha do perfil). */
@@ -52,10 +55,18 @@ export interface DadosArena {
   rankingGlobalAnual: GamificationGlobalLeaderboard | null;
   /** `user_id` do próprio aluno — para destacar sua linha no ranking. */
   meuUserId: string;
+  /** `@handle` social do próprio aluno, ou `null` quando não definido/indisponível. */
+  meuHandle: string | null;
   /** Missões do dia/semana com estado resolvido. */
   missoes: Missao[];
   /** Conquistas do tenant com o estado de obtenção resolvido. */
   conquistas: AgregacaoConquistas;
+  /** Conexões sociais do atleta (ou `null` quando a leitura falhou/indisponível). */
+  amigos: FriendsList | null;
+  /** Ranking de amigos (conjunto fechado eu+amigos; `null` quando falhou). */
+  rankingAmigos: FriendsLeaderboard | null;
+  /** Placares dos duelos do atleta (ativos/recentes). Lista vazia quando falhou. */
+  desafios: ChallengeScoreboard[];
 }
 
 /** Perfil zero-default: aluno sem linha em `gamification_profiles` (lazy). */
@@ -226,13 +237,149 @@ export async function montarDadosArena(userId: string): Promise<DadosArena> {
     console.error('[montarDadosArena] conquistas (exceção):', e);
   }
 
+  // --- SOCIAL (G3): cada bloco é independente e degrada para estado neutro.
+
+  // Meu @handle (leitura barata da própria linha de profiles, sob RLS).
+  let meuHandle: string | null = null;
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('social_handle')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) {
+      console.error('[montarDadosArena] meu handle:', error.message);
+    } else if (data) {
+      meuHandle = data.social_handle;
+    }
+  } catch (e) {
+    console.error('[montarDadosArena] meu handle (exceção):', e);
+  }
+
+  // Amigos: conexões agrupadas (contrato público) via função SECURITY DEFINER.
+  let amigos: FriendsList | null = null;
+  try {
+    const { data, error } = await supabase.rpc('gamification_list_friends');
+    if (error) {
+      console.error('[montarDadosArena] amigos:', error.message);
+    } else if (data) {
+      amigos = data as unknown as FriendsList;
+    }
+  } catch (e) {
+    console.error('[montarDadosArena] amigos (exceção):', e);
+  }
+
+  // Ranking de amigos (conjunto fechado eu+amigos aceitos; mensal, sem gate).
+  let rankingAmigos: FriendsLeaderboard | null = null;
+  try {
+    const { data, error } = await supabase.rpc('gamification_friends_leaderboard', {
+      p_period: 'monthly',
+    });
+    if (error) {
+      console.error('[montarDadosArena] ranking de amigos:', error.message);
+    } else if (data) {
+      rankingAmigos = data as unknown as FriendsLeaderboard;
+    }
+  } catch (e) {
+    console.error('[montarDadosArena] ranking de amigos (exceção):', e);
+  }
+
+  // Desafios (duelos): descobre os duelos do atleta, liquida de forma
+  // oportunística os que já encerraram (idempotente), e monta o placar de cada
+  // um. Tudo protegido: falha aqui cai em lista vazia, nunca derruba a Arena.
+  let desafios: ChallengeScoreboard[] = [];
+  try {
+    const hoje = diaSP(new Date());
+
+    // IDs dos desafios em que sou membro (RLS libera só as minhas linhas).
+    const { data: membros, error: erroMembros } = await supabase
+      .from('gamification_challenge_members')
+      .select('challenge_id')
+      .eq('user_id', userId);
+    if (erroMembros) {
+      console.error('[montarDadosArena] desafios (membros):', erroMembros.message);
+    }
+
+    const ids = Array.from(
+      new Set((membros ?? []).map((m) => m.challenge_id))
+    );
+
+    if (ids.length > 0) {
+      // Metadados dos duelos (kind='duel') — status/ends_on para a liquidação.
+      const { data: duelos, error: erroDuelos } = await supabase
+        .from('gamification_challenges')
+        .select('id, status, ends_on, created_at')
+        .in('id', ids)
+        .eq('kind', 'duel')
+        .order('created_at', { ascending: false });
+      if (erroDuelos) {
+        console.error('[montarDadosArena] desafios (duelos):', erroDuelos.message);
+      }
+
+      const lista = duelos ?? [];
+
+      // Passo oportunístico: liquida (idempotente) cada duelo active já vencido.
+      // Protegido individualmente — uma liquidação que falhe não impede as demais
+      // nem a montagem dos placares.
+      if (hoje) {
+        for (const d of lista) {
+          if (d.status === 'active' && d.ends_on < hoje) {
+            try {
+              const { error: erroSettle } = await supabase.rpc(
+                'gamification_settle_challenge',
+                { p_challenge_id: d.id }
+              );
+              if (erroSettle) {
+                console.warn(
+                  '[montarDadosArena] liquidação de desafio:',
+                  erroSettle.message
+                );
+              }
+            } catch (e) {
+              console.warn('[montarDadosArena] liquidação de desafio (exceção):', e);
+            }
+          }
+        }
+      }
+
+      // Placar de cada duelo (recomputado do ledger pela função controlada).
+      const placares: ChallengeScoreboard[] = [];
+      for (const d of lista) {
+        try {
+          const { data: placar, error: erroPlacar } = await supabase.rpc(
+            'gamification_challenge_scoreboard',
+            { p_challenge_id: d.id }
+          );
+          if (erroPlacar) {
+            console.error('[montarDadosArena] placar de desafio:', erroPlacar.message);
+          } else if (placar) {
+            const sb = placar as unknown as ChallengeScoreboard;
+            if (sb.status === 'ok') {
+              placares.push(sb);
+            }
+          }
+        } catch (e) {
+          console.error('[montarDadosArena] placar de desafio (exceção):', e);
+        }
+      }
+      desafios = placares;
+    }
+  } catch (e) {
+    console.error('[montarDadosArena] desafios (exceção):', e);
+    desafios = [];
+  }
+
   return {
     perfil,
     ranking,
     rankingGlobalMensal,
     rankingGlobalAnual,
     meuUserId: userId,
+    meuHandle,
     missoes,
     conquistas,
+    amigos,
+    rankingAmigos,
+    desafios,
   };
 }
