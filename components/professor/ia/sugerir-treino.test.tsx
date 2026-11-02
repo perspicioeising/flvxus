@@ -20,6 +20,11 @@ describe('SugerirTreinoIa — habilitação do aluno autônomo', () => {
     expect(screen.queryByText('Aluno')).not.toBeInTheDocument();
     // Os demais campos seguem presentes.
     expect(screen.getByText('Objetivo')).toBeInTheDocument();
+    // Sem vocabulário de liberação ("liberar para o aluno") para o autônomo.
+    expect(screen.queryByText(/liberar para o aluno/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Gere um rascunho de treino. Você revisa e ajusta antes de salvar.'),
+    ).toBeInTheDocument();
   });
 
   it('sem alunoFixo e sem alunos (professional): botão desabilitado', () => {

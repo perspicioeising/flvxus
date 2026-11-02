@@ -124,7 +124,9 @@ export function SugerirTreinoIa({
         <DialogHeader>
           <DialogTitle>Sugerir treino com IA</DialogTitle>
           <DialogDescription>
-            Gere um rascunho de treino. Você revisa e aprova antes de liberar para o aluno.
+            {alunoFixo
+              ? 'Gere um rascunho de treino. Você revisa e ajusta antes de salvar.'
+              : 'Gere um rascunho de treino. Você revisa e aprova antes de liberar para o aluno.'}
           </DialogDescription>
         </DialogHeader>
 
