@@ -3,14 +3,20 @@ import {
   ArrowRight,
   BarChart3,
   CalendarClock,
+  Check,
   ClipboardList,
   Copy,
+  Droplets,
   Dumbbell,
+  Flame,
   HeartPulse,
   Mail,
+  Medal,
   PlayCircle,
   Smartphone,
   Sparkles,
+  Swords,
+  Target,
   Trophy,
   UserPlus,
   Users,
@@ -26,10 +32,11 @@ import { LandingFaq } from '@/components/marketing/landing-faq';
  * Landing pública do Flvxus (Server Component).
  *
  * O texto de recursos e do FAQ deriva do inventário real de funcionalidades
- * (.agents/tasks/doc-ajuda-plan.md §1) e da ajuda interna
- * (components/ajuda/conteudo-ajuda.tsx). Nada de feature, preço, depoimento ou
- * métrica inventados: depoimentos e preços são placeholders claramente marcados.
- * O FAQ interativo e a ilustração do hero vivem em components/marketing/.
+ * (ajuda interna em components/ajuda/conteudo-ajuda.tsx e docs/roadmap-reta-final.md).
+ * Nada de feature, depoimento ou métrica inventados: depoimentos são placeholder
+ * claramente marcado. Os valores dos planos vêm do roadmap §B2 e seguem sujeitos
+ * a confirmação comercial do usuário. O FAQ interativo e a ilustração do hero
+ * vivem em components/marketing/.
  */
 
 // Recursos reais confirmados no inventário, agrupados por categoria.
@@ -78,9 +85,21 @@ const recursos = [
   },
   {
     icon: Trophy,
-    titulo: 'Gamificação',
+    titulo: 'Flvxus Arena',
     descricao:
-      'Pontos acumulados, sequência (streak) de treinos e conquistas desbloqueadas para o aluno manter a constância.',
+      'Gamificação por consistência: XP, níveis permanentes, streak, missões, conquistas, rankings da academia e globais, amigos e desafios entre usuários.',
+  },
+  {
+    icon: Droplets,
+    titulo: 'Hábitos do dia a dia',
+    descricao:
+      'Hidratação com meta própria, aderência à dieta com o "cumpri hoje" em cada refeição e check-in diário para manter a rotina em dia.',
+  },
+  {
+    icon: Target,
+    titulo: 'Treinar por conta própria',
+    descricao:
+      'Quem não tem personal usa o plano Individual: cria os próprios treinos e dietas, acompanha a evolução e entra na Arena competindo com todo mundo.',
   },
   {
     icon: Smartphone,
@@ -90,31 +109,71 @@ const recursos = [
   },
 ];
 
+// Pilares da Flvxus Arena (gamificação), para a seção de destaque.
+const arenaPilares = [
+  {
+    icon: Sparkles,
+    titulo: 'XP por consistência',
+    descricao:
+      'Você ganha XP ao concluir treinos, cumprir a dieta do dia, bater a meta de água, registrar evolução, progredir carga e fazer check-in. Vale a frequência, não o excesso.',
+  },
+  {
+    icon: Trophy,
+    titulo: 'Níveis permanentes',
+    descricao:
+      'De Iniciante a Lenda: o XP acumulado nunca zera. Cada nível é uma conquista que fica com você.',
+  },
+  {
+    icon: Flame,
+    titulo: 'Streak e missões',
+    descricao:
+      'Mantenha a sequência (o descanso programado não quebra o streak) e cumpra missões diárias e semanais.',
+  },
+  {
+    icon: Medal,
+    titulo: 'Rankings e conquistas',
+    descricao:
+      'Dispute o ranking da sua academia e os rankings globais mensal e anual, e desbloqueie conquistas pelo caminho.',
+  },
+  {
+    icon: Users,
+    titulo: 'Amigos',
+    descricao:
+      'Adicione amigos pelo @handle e acompanhe quem está mais consistente na sua lista.',
+  },
+  {
+    icon: Swords,
+    titulo: 'Desafios entre amigos',
+    descricao:
+      'Desafie um amigo para um duelo de XP de 7, 15 ou 30 dias. Começa a valer quando os dois aceitam; quem somar mais XP no período leva a medalha "Campeão de desafio".',
+  },
+];
+
 // "Como funciona" em passos.
 const passos = [
   {
     icon: UserPlus,
-    titulo: 'Crie sua conta de professor',
+    titulo: 'Crie sua conta',
     descricao:
-      'Cadastre-se com nome, e-mail e senha. Sua conta já vem com um espaço de trabalho para seus alunos e conteúdos.',
+      'No cadastro, escolha "Sou personal" ou "Treino por conta própria". Sua conta já vem com o espaço certo para o seu uso.',
   },
   {
     icon: Mail,
-    titulo: 'Convide seus alunos por e-mail',
+    titulo: 'Convide alunos ou monte o seu',
     descricao:
-      'O aluno recebe um convite, define a própria senha e passa a ter a área dele dentro do seu espaço.',
+      'O personal convida alunos por e-mail e monta o conteúdo deles. Quem treina por conta própria cria os próprios treinos e dietas direto na sua área.',
   },
   {
     icon: Sparkles,
-    titulo: 'Monte avaliações e treinos e libere',
+    titulo: 'Avaliações, treinos e dieta',
     descricao:
-      'Crie avaliações e fichas (com modelos ou apoio da IA) e libere na hora ou agende. Liberar é o que entrega o conteúdo ao aluno.',
+      'Crie com modelos ou apoio da IA. No fluxo personal→aluno, liberar é o que entrega o conteúdo; quem treina sozinho já vê o que criou na hora.',
   },
   {
     icon: PlayCircle,
-    titulo: 'O aluno treina e acompanha a evolução',
+    titulo: 'Treine, acompanhe e jogue na Arena',
     descricao:
-      'No celular, o aluno executa o treino série por série e vê a própria evolução, dieta e conquistas.',
+      'No celular, execute o treino série por série, registre hábitos e acompanhe a evolução — ganhando XP e subindo na Flvxus Arena.',
   },
 ];
 
@@ -128,11 +187,66 @@ const paraProfessor = [
 ];
 
 const paraAluno = [
-  'Treino do dia na tela inicial, com atalhos para dieta, evolução e conquistas.',
+  'Treino do dia na tela inicial, com atalhos para dieta, evolução e Arena.',
   'Execução guiada: uma série por vez, timer de descanso e RPE ao finalizar.',
   'GIF/vídeo de demonstração e instruções em cada exercício.',
-  'Dieta liberada com metas, refeições e totais, somente leitura.',
-  'Evolução com gráficos e conquistas para manter a constância.',
+  'Dieta com metas, refeições e totais, e o "cumpri hoje" em cada refeição.',
+  'Hábitos de hidratação e check-in diário, com XP por consistência na Arena.',
+];
+
+// Para quem treina por conta própria (plano Individual / aluno autônomo).
+const paraAutonomo = [
+  'Crie seus próprios treinos, dietas e avaliações, que já nascem liberados para você.',
+  'Sem etapa de "liberar": o que você cria aparece na hora, na sua área.',
+  'Hábitos, evolução e metas de hidratação sob o seu controle.',
+  'Participe da Flvxus Arena e dos rankings globais, competindo com todo mundo.',
+  'Adicione amigos por @handle e dispute desafios de XP.',
+];
+
+// Os 3 planos (roadmap §B2). Valores confirmados pelo usuário para exibição.
+const planos = [
+  {
+    icon: Target,
+    nome: 'Individual',
+    publico: 'Para quem treina por conta própria',
+    preco: 'R$ 19,90',
+    periodo: '/mês',
+    anual: 'ou R$ 118,80/ano (~R$ 9,90/mês)',
+    destaque: false,
+    itens: [
+      'Crie seus próprios treinos e dietas',
+      'Hábitos, evolução e avaliações',
+      'Flvxus Arena, rankings globais e desafios',
+    ],
+  },
+  {
+    icon: Users,
+    nome: 'Personal',
+    publico: 'Para o personal trainer',
+    preco: 'R$ 129,90',
+    periodo: '/mês',
+    anual: 'ou R$ 1.188,00/ano (~R$ 99,00/mês)',
+    destaque: true,
+    itens: [
+      'Gestão de alunos, avaliações e treinos',
+      'Dieta e treino com apoio de IA',
+      'Painel de desafios da turma e Arena',
+    ],
+  },
+  {
+    icon: Trophy,
+    nome: 'Assessoria',
+    publico: 'Para equipes e academias',
+    preco: 'R$ 249,90',
+    periodo: '/mês',
+    anual: 'ou R$ 2.388,00/ano (~R$ 199,00/mês)',
+    destaque: false,
+    itens: [
+      'Vários profissionais no mesmo espaço',
+      'Tudo do plano Personal',
+      'Ranking da academia entre os alunos',
+    ],
+  },
 ];
 
 // PLACEHOLDER depoimentos — sem depoimentos reais ainda.
@@ -150,14 +264,14 @@ export default function MarketingHomePage() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div className="max-w-2xl space-y-6">
             <h1 className="text-4xl font-black leading-[0.95] tracking-tight text-foreground sm:text-5xl md:text-6xl">
-              Acompanhe seus alunos de ponta a ponta
+              Treine seus alunos ou treine por conta própria
               <span className="text-primary">.</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              O Flvxus reúne cadastro, avaliação física, montagem de treinos,
-              dieta e evolução em um só lugar. O professor monta e libera; o
-              aluno treina, registra e acompanha o próprio progresso — no
-              computador ou no celular.
+              O Flvxus reúne avaliação física, montagem de treinos, dieta com
+              IA, hábitos e evolução em um só lugar. O personal monta e libera
+              para seus alunos; quem treina sozinho cria o próprio plano. Todo
+              mundo joga na Flvxus Arena — no computador ou no celular.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button asChild size="xl">
@@ -259,12 +373,12 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      {/* ===================== PROFESSOR / ALUNO ===================== */}
+      {/* ===================== PROFESSOR / ALUNO / AUTÔNOMO ===================== */}
       <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
         <h2 className="mb-8 text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
-          Para cada lado do acompanhamento
+          Para cada jeito de treinar
         </h2>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -322,6 +436,75 @@ export default function MarketingHomePage() {
               </Link>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Target className="h-5 w-5 text-primary" aria-hidden="true" />
+                Para quem treina sozinho
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+                {paraAutonomo.map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <Check
+                      className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                      aria-hidden="true"
+                    />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/documentacao#para-o-aluno"
+                className="inline-flex min-h-11 items-center gap-1 rounded text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Ver documentação completa
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* ===================== FLVXUS ARENA ===================== */}
+      <section className="border-t border-border bg-muted/30">
+        <div className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
+          <div className="mb-8 max-w-2xl">
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+              <Trophy className="h-4 w-4" aria-hidden="true" />
+              Flvxus Arena
+            </span>
+            <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
+              Consistência que vira jogo
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              A gamificação do Flvxus premia quem mantém a rotina, não quem
+              exagera. Cada ação real vira XP, e a disputa acontece na sua
+              academia e no mundo todo.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {arenaPilares.map((pilar) => {
+              const Icon = pilar.icon;
+              return (
+                <Card key={pilar.titulo}>
+                  <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <CardTitle className="text-base">{pilar.titulo}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {pilar.descricao}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -355,25 +538,81 @@ export default function MarketingHomePage() {
       </section>
 
       {/* ===================== PREÇO / PLANOS ===================== */}
-      {/* PLACEHOLDER preços — não inventar valores */}
+      {/* Valores do roadmap §B2 — sujeitos a confirmação comercial do usuário. */}
       <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <h2 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
-              Planos em breve
-            </h2>
-            <p className="max-w-xl text-muted-foreground">
-              Os planos e valores ainda serão divulgados. Enquanto isso, você já
-              pode criar sua conta e conhecer o Flvxus.
-            </p>
-            <Button asChild size="xl" className="mt-2">
-              <Link href="/register" className="gap-2">
-                Começar agora
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="mb-8 max-w-2xl">
+          <h2 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
+            Planos para cada objetivo
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Comece com 14 dias de teste grátis, com acesso a todas as
+            funcionalidades. Sem compromisso.
+          </p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {planos.map((plano) => {
+            const Icon = plano.icon;
+            return (
+              <Card
+                key={plano.nome}
+                className={plano.destaque ? 'border-primary shadow-md' : undefined}
+              >
+                <CardHeader className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    {plano.destaque ? (
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                        Mais popular
+                      </span>
+                    ) : null}
+                  </div>
+                  <CardTitle className="text-lg">{plano.nome}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{plano.publico}</p>
+                  <div>
+                    <p className="text-foreground">
+                      <span className="text-3xl font-black tabular-nums">
+                        {plano.preco}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {plano.periodo}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {plano.anual}
+                    </p>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+                    {plano.itens.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <Check
+                          className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                          aria-hidden="true"
+                        />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant={plano.destaque ? 'default' : 'outline'}
+                    className="w-full"
+                  >
+                    <Link href="/register">Testar 14 dias grátis</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          No plano anual você economiza em relação ao mensal. Cada plano tem uma
+          franquia de uso dos recursos de IA.
+        </p>
       </section>
 
       {/* ===================== FAQ ===================== */}

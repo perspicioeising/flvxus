@@ -170,7 +170,11 @@ export default async function AlunoDietaPage() {
       <PageHeader
         emphasis="caps"
         title="Dieta"
-        subtitle="Sua dieta liberada pelo professor, com refeições e metas diárias."
+        subtitle={
+          podeCriar
+            ? 'Sua dieta, com refeições e metas diárias.'
+            : 'Sua dieta liberada pelo professor, com refeições e metas diárias.'
+        }
         actions={
           podeCriar ? (
             <Button asChild variant="outline" size="sm" className="min-h-11">

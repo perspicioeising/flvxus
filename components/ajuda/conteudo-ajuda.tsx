@@ -64,12 +64,12 @@ const SECOES: Secao[] = [
           {
             tipo: 'paragrafo',
             texto:
-              'O Flvxus é uma plataforma para personal trainers acompanharem seus alunos de ponta a ponta: cadastro, avaliação física, montagem de treinos, dieta e evolução. O professor monta e libera o conteúdo; o aluno treina, registra o que fez e acompanha o próprio progresso.',
+              'O Flvxus é uma plataforma de treino e acompanhamento que serve a dois públicos: o personal trainer que acompanha seus alunos de ponta a ponta (cadastro, avaliação física, montagem de treinos, dieta e evolução) e quem treina por conta própria, que cria o próprio plano. Em ambos os casos há hábitos do dia a dia e a Flvxus Arena, a gamificação por consistência.',
           },
           {
             tipo: 'paragrafo',
             texto:
-              'Cada pessoa usa uma área própria, de acordo com o seu papel. O professor tem a área de gestão (alunos, avaliações, exercícios, modelos, treinos e dietas). O aluno tem a área de uso (treino do dia, execução, dieta, evolução e conquistas).',
+              'Cada pessoa usa uma área própria, de acordo com o seu papel. O professor tem a área de gestão (alunos, avaliações, exercícios, modelos, treinos e dietas). O aluno tem a área de uso (treino do dia, execução, dieta, hábitos, evolução e Arena). Quem treina por conta própria usa a mesma área do aluno, mas cria o próprio conteúdo.',
           },
         ],
       },
@@ -649,22 +649,27 @@ const SECOES: Secao[] = [
   {
     id: 'aluno-dieta',
     titulo: 'Para o aluno: dieta',
-    descricao: 'Ver a dieta liberada pelo professor.',
+    descricao: 'Ver a sua dieta, com refeições e metas diárias.',
     papeis: ['student'],
     subsecoes: [
       {
         id: 'aluno-ver-dieta',
-        titulo: 'Ver a dieta liberada',
+        titulo: 'Ver a sua dieta',
         blocos: [
           {
             tipo: 'paragrafo',
             texto:
-              'Em Dieta você vê a dieta mais recente que o professor liberou, apenas para leitura. Ela traz as metas (calorias e macros), restrições, observações e as refeições com horário, alimentos e totais.',
+              'Em Dieta você vê a sua dieta mais recente. Ela traz as metas (calorias e macros), restrições, observações e as refeições com horário, alimentos e totais. Se você tem um professor, ele monta e libera a dieta; se você treina por conta própria, é você quem cria a sua.',
+          },
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Em cada refeição há o botão "cumpri hoje", para marcar que você seguiu a refeição do dia. Isso alimenta os seus hábitos e conta como consistência na Flvxus Arena.',
           },
           {
             tipo: 'nota',
             texto:
-              'Se ainda não há dieta, é porque o professor não liberou nenhuma. Ela aparece aqui assim que for liberada.',
+              'Se ainda não há dieta, ela aparece aqui assim que existir: quando o professor liberar (fluxo com personal) ou assim que você criar a sua (treino por conta própria).',
           },
         ],
       },
@@ -672,7 +677,7 @@ const SECOES: Secao[] = [
   },
   {
     id: 'aluno-progresso',
-    titulo: 'Para o aluno: evolução e conquistas',
+    titulo: 'Para o aluno: evolução e Arena',
     descricao: 'Acompanhar o próprio progresso e a gamificação.',
     papeis: ['student'],
     subsecoes: [
@@ -689,12 +694,12 @@ const SECOES: Secao[] = [
       },
       {
         id: 'aluno-conquistas',
-        titulo: 'Conquistas e pontos',
+        titulo: 'XP, níveis e conquistas',
         blocos: [
           {
             tipo: 'paragrafo',
             texto:
-              'A área de Conquistas resume a sua gamificação: pontos acumulados, sua sequência (streak) de treinos e as conquistas que você desbloqueou. Treinar com constância é o que faz esses números crescerem.',
+              'A sua gamificação fica na Flvxus Arena: o XP que você acumula, o seu nível, a sua sequência (streak) e as conquistas que desbloqueou. O que faz esses números crescerem é a consistência — treinar, cumprir a dieta, bater a meta de água e manter a rotina. Veja os detalhes na seção "Flvxus Arena".',
           },
         ],
       },
@@ -723,6 +728,312 @@ const SECOES: Secao[] = [
     ],
   },
 
+  // ===================== ALUNO AUTÔNOMO =====================
+  {
+    id: 'aluno-autonomo',
+    titulo: 'Treinar por conta própria',
+    descricao: 'Para quem usa o Flvxus sem um personal (plano Individual).',
+    papeis: ['student'],
+    subsecoes: [
+      {
+        id: 'autonomo-como-funciona',
+        titulo: 'Como funciona sem um professor',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Se você treina por conta própria, é você quem cria os seus treinos, dietas e avaliações. Você usa a mesma área do aluno para o dia a dia (treino do dia, execução, dieta, hábitos e evolução) e acessa a criação do conteúdo pelos atalhos de cada tela.',
+          },
+          {
+            tipo: 'nota',
+            texto:
+              'Não existe a etapa de "liberar". O treino ou a dieta que você cria já nasce disponível para você e aparece na hora, sem precisar aprovar ou liberar nada.',
+          },
+        ],
+      },
+      {
+        id: 'autonomo-arena',
+        titulo: 'Arena, rankings e desafios',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Você participa da Flvxus Arena como qualquer pessoa: ganha XP por consistência, sobe de nível, cumpre missões e desbloqueia conquistas. Também entra nos rankings globais (mensal e anual), competindo com usuários do mundo todo.',
+          },
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Dá para adicionar amigos pelo @handle e desafiá-los para duelos de XP. Como você não faz parte de uma academia, o ranking da academia não aparece para você — isso é esperado.',
+          },
+        ],
+      },
+    ],
+  },
+
+  // ===================== FLVXUS ARENA =====================
+  {
+    id: 'arena',
+    titulo: 'Flvxus Arena: gamificação',
+    descricao: 'XP, níveis, streak, missões, conquistas e rankings.',
+    papeis: ['trainer', 'student'],
+    subsecoes: [
+      {
+        id: 'arena-o-que-e',
+        titulo: 'O que é a Flvxus Arena',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'A Arena é a gamificação do Flvxus. Ela transforma a sua rotina em XP e níveis, com rankings, missões e conquistas. A filosofia é premiar a consistência: o que conta é manter o hábito ao longo do tempo, não o esforço absoluto de um único dia.',
+          },
+          {
+            tipo: 'nota',
+            texto:
+              'A Arena é antifraude por desenho: o XP só vem de registros reais, cada ação conta uma vez (o mesmo treino não pontua duas vezes) e há limites por categoria. Exagerar (água, treinos extras sem plano) não gera XP a mais.',
+          },
+        ],
+      },
+      {
+        id: 'arena-xp',
+        titulo: 'Como você ganha XP',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Você ganha XP quando registra ações reais do seu acompanhamento:',
+          },
+          {
+            tipo: 'lista',
+            itens: [
+              'Concluir o treino planejado do dia.',
+              'Cumprir a dieta do dia (marcar as refeições como "cumpri hoje").',
+              'Bater a sua meta de água.',
+              'Registrar evolução (avaliações e medidas).',
+              'Progredir carga de forma consistente no treino.',
+              'Fazer o check-in diário.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'arena-niveis-streak',
+        titulo: 'Níveis e streak',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Os níveis são permanentes: o XP acumulado nunca zera. Você evolui de Iniciante até Lenda conforme soma XP ao longo do tempo.',
+          },
+          {
+            tipo: 'paragrafo',
+            texto:
+              'A streak (sequência) mede a sua consistência e respeita o seu plano: um dia de descanso programado não quebra a sequência. Faltar a um dia de treino previsto, sim.',
+          },
+        ],
+      },
+      {
+        id: 'arena-missoes-conquistas',
+        titulo: 'Missões e conquistas',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'As missões são objetivos diários e semanais (por exemplo, concluir um treino, bater a meta de água, cumprir a dieta, somar alguns treinos na semana). As conquistas são marcos que você desbloqueia ao longo da jornada, como o primeiro treino, dias seguidos de hidratação ou de dieta e progressões no treino.',
+          },
+        ],
+      },
+      {
+        id: 'arena-rankings',
+        titulo: 'Rankings da academia e globais',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'O ranking da academia reúne os alunos do mesmo personal ou assessoria. Ele funciona como uma liga e fica ativo a partir de um número mínimo de participantes.',
+          },
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Os rankings globais reúnem usuários de todas as contas (cross-tenant), com uma disputa mensal e outra anual. Quem treina por conta própria também participa dos rankings globais, mas não vê ranking de academia (não faz parte de uma turma).',
+          },
+        ],
+      },
+    ],
+  },
+
+  // ===================== AMIGOS E DESAFIOS =====================
+  {
+    id: 'arena-social',
+    titulo: 'Amigos e desafios',
+    descricao: 'Adicionar amigos por @handle e disputar duelos de XP.',
+    papeis: ['trainer', 'student'],
+    subsecoes: [
+      {
+        id: 'social-amigos',
+        titulo: 'Adicionar amigos por @handle',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Cada pessoa tem um @handle (um identificador público). Para adicionar um amigo, procure pelo @handle dele e envie uma solicitação; a amizade só vale depois que o outro aceita. Com amigos, você compara XP e vê quem está mais consistente.',
+          },
+        ],
+      },
+      {
+        id: 'social-duelos',
+        titulo: 'Desafios entre amigos (duelos)',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Você pode desafiar um amigo para um duelo de XP de 7, 15 ou 30 dias. O duelo só começa a valer quando os dois aceitam. A partir daí, durante todo o período escolhido, conta o XP que cada um acumular no app. No fim, vence quem somar mais XP no período.',
+          },
+          {
+            tipo: 'nota',
+            texto:
+              'A recompensa é a medalha "Campeão de desafio". O duelo não dá XP de bônus: ele é reconhecimento, não um atalho para subir de nível. Enquanto o amigo ainda não aceitou, o duelo aparece como pendente ("aguardando aceite") e nada é contabilizado.',
+          },
+        ],
+      },
+    ],
+  },
+
+  // ===================== HÁBITOS =====================
+  {
+    id: 'habitos',
+    titulo: 'Hábitos do dia a dia',
+    descricao: 'Hidratação, aderência à dieta e check-in diário.',
+    papeis: ['trainer', 'student'],
+    subsecoes: [
+      {
+        id: 'habitos-agua',
+        titulo: 'Água e meta de hidratação',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'No card de hidratação você registra o consumo de água do dia com atalhos rápidos (por exemplo, +200, +250 ou +500 ml). A meta diária fica à vista e bater a meta conta como consistência na Arena.',
+          },
+          {
+            tipo: 'paragrafo',
+            texto:
+              'A meta de água pode ser editada pelo próprio aluno, pelo lápis no card de hidratação. No fluxo com personal, o professor também pode definir a meta de água do aluno pela ficha dele.',
+          },
+        ],
+      },
+      {
+        id: 'habitos-dieta',
+        titulo: 'Aderência à dieta ("cumpri hoje")',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Na tela da dieta, cada refeição tem o botão "cumpri hoje". Marque as refeições que você seguiu no dia para acompanhar a sua aderência e somar consistência na Arena.',
+          },
+        ],
+      },
+      {
+        id: 'habitos-checkin',
+        titulo: 'Check-in diário',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'O check-in diário é uma confirmação simples de presença no dia. É contabilizado uma vez por dia e ajuda a manter a sequência e o hábito de abrir o app todo dia.',
+          },
+        ],
+      },
+    ],
+  },
+
+  // ===================== PROF: DESAFIOS DA TURMA =====================
+  {
+    id: 'prof-desafios',
+    titulo: 'Para o professor: painel de desafios da turma',
+    descricao: 'Criar desafios de XP para os alunos e acompanhar o placar.',
+    papeis: ['trainer'],
+    subsecoes: [
+      {
+        id: 'prof-criar-desafio',
+        titulo: 'Criar um desafio para a turma',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'No painel de desafios você cria um desafio de XP para os seus alunos. Defina o título, a duração (7, 15 ou 30 dias), selecione quais alunos participam e descreva a meta e a recompensa em texto livre.',
+          },
+        ],
+      },
+      {
+        id: 'prof-placar-desafio',
+        titulo: 'Acompanhar o placar',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Durante o desafio, você acompanha o placar da turma: quem está somando mais XP no período. É uma forma de estimular a consistência e a retenção dos alunos.',
+          },
+        ],
+      },
+    ],
+  },
+
+  // ===================== PLANOS =====================
+  {
+    id: 'planos',
+    titulo: 'Planos, trial e uso de IA',
+    descricao: 'Os planos do Flvxus, o teste grátis e a franquia de IA.',
+    papeis: ['trainer', 'student'],
+    subsecoes: [
+      {
+        id: 'planos-tipos',
+        titulo: 'Os planos',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'O Flvxus tem três planos, cada um para um objetivo:',
+          },
+          {
+            tipo: 'lista',
+            itens: [
+              'Individual: para quem treina por conta própria — cria os próprios treinos e dietas, usa hábitos, evolução e a Flvxus Arena.',
+              'Personal: para o profissional — gestão de alunos, avaliações, treinos, dieta com IA, painel de desafios da turma e Arena.',
+              'Assessoria: para equipes e academias — vários profissionais no mesmo espaço, tudo do plano Personal e o ranking da academia entre os alunos.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'planos-trial',
+        titulo: 'Teste grátis de 14 dias',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Você começa com 14 dias de teste, com acesso a todas as funcionalidades, para conhecer o Flvxus antes de assinar.',
+          },
+        ],
+      },
+      {
+        id: 'planos-ia',
+        titulo: 'Franquia de uso de IA',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Os recursos de IA (gerar dieta, sugerir treino, analisar avaliação) têm uma franquia de uso por plano — um limite de uso no período. Ao se aproximar ou exceder esse limite, o app avisa; o restante das funcionalidades continua disponível normalmente.',
+          },
+          {
+            tipo: 'nota',
+            texto:
+              'Os valores dos planos são de referência e podem mudar. Confira os valores e condições atuais na página de planos.',
+          },
+        ],
+      },
+    ],
+  },
+
   // ===================== FAQ =====================
   {
     id: 'faq',
@@ -730,6 +1041,28 @@ const SECOES: Secao[] = [
     descricao: 'Respostas rápidas para as situações mais frequentes.',
     papeis: ['trainer', 'student'],
     subsecoes: [
+      {
+        id: 'faq-precisa-personal',
+        titulo: 'Preciso de um personal para usar o Flvxus?',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'Não. Com o plano Individual você treina por conta própria: cria seus próprios treinos e dietas, usa hábitos e evolução e participa da Flvxus Arena. Se tiver um personal, ele monta e libera o conteúdo para você.',
+          },
+        ],
+      },
+      {
+        id: 'faq-entrar-arena',
+        titulo: 'Como entro na Flvxus Arena?',
+        blocos: [
+          {
+            tipo: 'paragrafo',
+            texto:
+              'A Arena já está ativa para você: basta registrar as suas ações do dia a dia (treinos, dieta, água, check-in) para começar a somar XP. Veja os detalhes na seção "Flvxus Arena" e em "Amigos e desafios".',
+          },
+        ],
+      },
       {
         id: 'faq-convite',
         titulo: 'Não recebi o convite',

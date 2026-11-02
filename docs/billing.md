@@ -1,5 +1,13 @@
 # Billing (Stripe) + multi-trainer — Fase 3
 
+> **Atualização (reta final):** o modelo comercial atual é de três planos voltados ao público
+> final — **Individual**, **Personal** e **Assessoria** — com **trial de 14 dias** e **franquia de
+> uso de IA** por plano (ver `docs/roadmap-reta-final.md` §B2–B3 e `docs/visao-geral-funcionalidades.md`).
+> O naming interno `solo`/`team`/`gym` e o limite `max_affiliates` descritos abaixo seguem
+> descrevendo a **mecânica interna** introduzida na Fase 3 (por número de filiados) e a integração
+> com Stripe/webhook continua **válida**. Esta nota só esclarece o mapeamento comercial; a mecânica
+> de checkout/webhook/enforcement abaixo não muda.
+
 Este documento cobre a configuração de billing via Stripe (modo TEST/sandbox) e a hierarquia
 master/filiado introduzidas na Fase 3. Chaves de produção, preços comerciais e os produtos/preços
 reais no painel do Stripe **ficam a cargo do usuário** — o código entra pronto com placeholders.
