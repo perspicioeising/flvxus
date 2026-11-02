@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { signExerciseMedia } from '@/lib/storage';
 import type { SerieLog } from '@/lib/treino/progresso';
@@ -132,12 +132,17 @@ export async function iniciarSessao(
   }
 
   // Resolve o aluno-alvo e autoriza o fluxo. Sem `target_student_id` = fluxo do
-  // próprio aluno (exige role 'student', grava para si). Com `target_student_id`
-  // = fluxo do professor (exige role 'trainer'; grava em nome do aluno). A posse
-  // real é garantida pela RLS (trainer do tenant OU aluno dono).
+  // próprio aluno (grava para si): aceita 'student' E o trainer self_managed
+  // (aluno autônomo que treina a própria ficha pelas rotas /aluno). Com
+  // `target_student_id` = fluxo do professor presencial (exige role 'trainer';
+  // grava em nome do aluno). A posse real é garantida pela RLS (trainer do
+  // tenant OU aluno dono).
   let studentIdAlvo: string;
   if (parsed.data.target_student_id === undefined) {
-    if (usuario.role !== 'student') {
+    if (
+      usuario.role !== 'student' &&
+      !(usuario.role === 'trainer' && isSelfManaged(usuario))
+    ) {
       return { ok: false, message: 'Apenas o aluno pode iniciar um treino.' };
     }
     studentIdAlvo = usuario.userId;
@@ -155,6 +160,8 @@ export async function iniciarSessao(
 
   // RLS já limita a fichas que o chamador pode ver; aqui garantimos que está
   // liberada. No fluxo do professor, reconfirmamos que a ficha é DAQUELE aluno.
+  // Nota (FEAT-003): NÃO relaxamos o filtro status='released' — as fichas do
+  // aluno autônomo já nascem 'released' (FEAT-002), então a execução passa.
   let fichaQuery = supabase
     .from('workout_plans')
     .select('id, status')
@@ -264,10 +271,14 @@ export async function carregarSessaoAberta(
     };
   }
 
-  // Mesma resolução/autorização de papel de `iniciarSessao`.
+  // Mesma resolução/autorização de papel de `iniciarSessao` (inclui o trainer
+  // self_managed no ramo do próprio aluno — FEAT-003).
   let studentIdAlvo: string;
   if (parsed.data.target_student_id === undefined) {
-    if (usuario.role !== 'student') {
+    if (
+      usuario.role !== 'student' &&
+      !(usuario.role === 'trainer' && isSelfManaged(usuario))
+    ) {
       return { ok: false, message: 'Apenas o aluno pode iniciar um treino.' };
     }
     studentIdAlvo = usuario.userId;
@@ -360,10 +371,14 @@ export async function carregarUltimosRegistros(
     return { ok: false, message: 'Sessão expirada.' };
   }
 
-  // Mesma resolução/autorização de papel de `carregarSessaoAberta`.
+  // Mesma resolução/autorização de papel de `carregarSessaoAberta` (inclui o
+  // trainer self_managed no ramo do próprio aluno — FEAT-003).
   let studentIdAlvo: string;
   if (targetStudentId === undefined) {
-    if (usuario.role !== 'student') {
+    if (
+      usuario.role !== 'student' &&
+      !(usuario.role === 'trainer' && isSelfManaged(usuario))
+    ) {
       return { ok: false, message: 'Apenas o aluno pode iniciar um treino.' };
     }
     studentIdAlvo = usuario.userId;
@@ -770,10 +785,14 @@ export async function confirmarDescanso(
     return { ok: false, message: 'Sessão expirada.' };
   }
 
-  // Mesma resolução/autorização de papel de `iniciarSessao`.
+  // Mesma resolução/autorização de papel de `iniciarSessao` (inclui o trainer
+  // self_managed no ramo do próprio aluno — FEAT-003).
   let studentIdAlvo: string;
   if (targetStudentId === undefined) {
-    if (usuario.role !== 'student') {
+    if (
+      usuario.role !== 'student' &&
+      !(usuario.role === 'trainer' && isSelfManaged(usuario))
+    ) {
       return { ok: false, message: 'Apenas o aluno pode confirmar o descanso.' };
     }
     studentIdAlvo = usuario.userId;
