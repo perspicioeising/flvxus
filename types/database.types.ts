@@ -1643,6 +1643,13 @@ export interface Database {
         Args: { p_season?: string | null };
         Returns: Json;
       };
+      // Arena G2: ranking GLOBAL cross-tenant (SECURITY DEFINER, somente leitura).
+      // p_period 'monthly'/'yearly'; p_season 'YYYY-MM'/'YYYY' ou null (vigente).
+      // Retorno jsonb — ver GamificationGlobalLeaderboard.
+      gamification_global_leaderboard: {
+        Args: { p_period?: 'monthly' | 'yearly'; p_season?: string | null; p_limit?: number };
+        Returns: Json;
+      };
       gamification_level_for_xp: {
         Args: { p_xp: number };
         Returns: number;
@@ -1728,4 +1735,27 @@ export type GamificationLeaderboard = {
   participantes: number;
   minimo: number;
   linhas: GamificationLeaderboardRow[];
+};
+
+// -----------------------------------------------------------------------------
+// Arena G2 — ranking GLOBAL (cross-tenant), espelha gamification_global_leaderboard.
+// -----------------------------------------------------------------------------
+
+// Uma linha do ranking global retornado por gamification_global_leaderboard.
+export type GamificationGlobalLeaderboardRow = {
+  posicao: number;
+  points: number;
+  display_name: string;
+  avatar_url: string | null;
+  level: ArenaLevel;
+  user_id: string;
+};
+
+// Retorno (jsonb) de gamification_global_leaderboard: sem gate, cross-tenant.
+export type GamificationGlobalLeaderboard = {
+  period: 'monthly' | 'yearly';
+  period_key: string;
+  total: number;
+  me: { posicao: number; points: number; user_id: string } | null;
+  linhas: GamificationGlobalLeaderboardRow[];
 };

@@ -24,7 +24,10 @@ import {
   type ConquistaDisponivel,
   type ConquistaObtida,
 } from '@/lib/gamificacao/conquistas';
-import type { GamificationLeaderboard } from '@/types/database.types';
+import type {
+  GamificationLeaderboard,
+  GamificationGlobalLeaderboard,
+} from '@/types/database.types';
 
 /** Perfil derivado da Arena (zero-default quando não há linha do perfil). */
 export interface PerfilArena {
@@ -43,6 +46,10 @@ export interface DadosArena {
   perfil: PerfilArena;
   /** Ranking do tenant (ou `null` quando a leitura falhou/indisponível). */
   ranking: GamificationLeaderboard | null;
+  /** Ranking global mensal cross-tenant (ou `null` quando falhou/indisponível). */
+  rankingGlobalMensal: GamificationGlobalLeaderboard | null;
+  /** Ranking global anual cross-tenant (ou `null` quando falhou/indisponível). */
+  rankingGlobalAnual: GamificationGlobalLeaderboard | null;
   /** `user_id` do próprio aluno — para destacar sua linha no ranking. */
   meuUserId: string;
   /** Missões do dia/semana com estado resolvido. */
@@ -106,6 +113,36 @@ export async function montarDadosArena(userId: string): Promise<DadosArena> {
     }
   } catch (e) {
     console.error('[montarDadosArena] ranking (exceção):', e);
+  }
+
+  // --- Ranking global mensal (cross-tenant, sem gate; degrada para null).
+  let rankingGlobalMensal: GamificationGlobalLeaderboard | null = null;
+  try {
+    const { data, error } = await supabase.rpc('gamification_global_leaderboard', {
+      p_period: 'monthly',
+    });
+    if (error) {
+      console.error('[montarDadosArena] ranking global mensal:', error.code, error.message);
+    } else if (data) {
+      rankingGlobalMensal = data as unknown as GamificationGlobalLeaderboard;
+    }
+  } catch (e) {
+    console.error('[montarDadosArena] ranking global mensal (exceção):', e);
+  }
+
+  // --- Ranking global anual (cross-tenant, sem gate; degrada para null).
+  let rankingGlobalAnual: GamificationGlobalLeaderboard | null = null;
+  try {
+    const { data, error } = await supabase.rpc('gamification_global_leaderboard', {
+      p_period: 'yearly',
+    });
+    if (error) {
+      console.error('[montarDadosArena] ranking global anual:', error.code, error.message);
+    } else if (data) {
+      rankingGlobalAnual = data as unknown as GamificationGlobalLeaderboard;
+    }
+  } catch (e) {
+    console.error('[montarDadosArena] ranking global anual (exceção):', e);
   }
 
   // --- Missões do dia/semana: derivadas de eventos reais de aderência.
@@ -189,5 +226,13 @@ export async function montarDadosArena(userId: string): Promise<DadosArena> {
     console.error('[montarDadosArena] conquistas (exceção):', e);
   }
 
-  return { perfil, ranking, meuUserId: userId, missoes, conquistas };
+  return {
+    perfil,
+    ranking,
+    rankingGlobalMensal,
+    rankingGlobalAnual,
+    meuUserId: userId,
+    missoes,
+    conquistas,
+  };
 }
