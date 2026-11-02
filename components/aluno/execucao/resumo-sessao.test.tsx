@@ -21,6 +21,11 @@ function baseProps(overrides: Partial<ResumoSessaoProps> = {}): ResumoSessaoProp
     gruposMusculares: [],
     comparacao: { tipo: 'primeira' },
     conquistas: [],
+    xpGanho: 0,
+    nivelAntes: 0,
+    nivelDepois: 0,
+    streakAtual: null,
+    prs: [],
     href: '/aluno/treinos',
     ...overrides,
   };
@@ -155,5 +160,59 @@ describe('ResumoSessao', () => {
   it('omite o mapa muscular quando não há grupos', () => {
     render(<ResumoSessao {...baseProps({ gruposMusculares: [] })} />);
     expect(screen.queryByText('Músculos trabalhados')).not.toBeInTheDocument();
+  });
+
+  it('mostra o XP ganho e a sequência quando há ganho de XP', () => {
+    render(
+      <ResumoSessao {...baseProps({ xpGanho: 30, streakAtual: 5 })} />
+    );
+    expect(screen.getByText('Arena')).toBeInTheDocument();
+    expect(screen.getByText('+30')).toBeInTheDocument();
+    expect(screen.getByText('5 dias')).toBeInTheDocument();
+  });
+
+  it('mostra o aviso de subida de nível quando nivelDepois > nivelAntes', () => {
+    render(
+      <ResumoSessao
+        {...baseProps({ xpGanho: 500, nivelAntes: 0, nivelDepois: 1 })}
+      />
+    );
+    expect(screen.getByText(/subiu para o nível 1/i)).toBeInTheDocument();
+  });
+
+  it('não mostra subida de nível quando o nível não muda', () => {
+    render(
+      <ResumoSessao
+        {...baseProps({ xpGanho: 30, nivelAntes: 1, nivelDepois: 1 })}
+      />
+    );
+    expect(screen.queryByText(/subiu para o nível/i)).not.toBeInTheDocument();
+  });
+
+  it('omite o bloco Arena quando não há XP, nível nem streak', () => {
+    render(
+      <ResumoSessao
+        {...baseProps({ xpGanho: 0, streakAtual: null, nivelAntes: 0, nivelDepois: 0 })}
+      />
+    );
+    expect(screen.queryByText('Arena')).not.toBeInTheDocument();
+  });
+
+  it('mostra os recordes batidos quando há PRs', () => {
+    render(
+      <ResumoSessao
+        {...baseProps({
+          prs: [{ id: 'ex-1', exercicio: 'Agachamento', points: 10 }],
+        })}
+      />
+    );
+    expect(screen.getByText('Recordes batidos')).toBeInTheDocument();
+    expect(screen.getByText('Agachamento')).toBeInTheDocument();
+    expect(screen.getByText('+10')).toBeInTheDocument();
+  });
+
+  it('omite a seção de recordes quando não há PRs', () => {
+    render(<ResumoSessao {...baseProps({ prs: [] })} />);
+    expect(screen.queryByText('Recordes batidos')).not.toBeInTheDocument();
   });
 });

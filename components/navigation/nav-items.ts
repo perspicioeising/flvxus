@@ -55,7 +55,8 @@ const studentNav: NavItem[] = [
   { label: 'Dieta', href: '/aluno/dieta', icon: Utensils },
   { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
   { label: 'Avaliações', href: '/aluno/avaliacoes', icon: HeartPulse },
-    { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
+  { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
+  { label: 'Arena', href: '/aluno/arena', icon: Trophy },
   { label: 'Perfil', href: '/aluno/perfil', icon: Settings },
   { label: 'Ajuda', href: '/aluno/ajuda', icon: HelpCircle },
 ];

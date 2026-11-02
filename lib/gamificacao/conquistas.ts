@@ -87,6 +87,13 @@ function diaEmMs(valor: string | Date): number | null {
  *
  * Espelha a semântica do trigger `award_points_on_session_finish` (dias em UTC),
  * mas aqui é só para exibir "sequência atual" na tela do aluno.
+ *
+ * @deprecated A streak da Arena é calculada no fuso `America/Sao_Paulo` pelo
+ * motor (`gamification_recalc_streak`) e lida de
+ * `gamification_profiles.current_streak`. Esta versão legada (dias em UTC) NÃO
+ * é mais usada na UI — permanece apenas para o teste legado
+ * `tests/unit/gamificacao-conquistas.test.ts`. Para lógica pura e testável de
+ * streak, use `lib/arena/streak.ts::calcularStreakAderencia`.
  */
 export function calcularStreak(
   finishedAts: Array<string | null | undefined>,

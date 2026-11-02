@@ -18,6 +18,22 @@ describe('isMainScreen — telas principais por papel', () => {
       expect(isMainScreen('/aluno/historico', 'student')).toBe(true);
     });
 
+    it('inclui o item "Arena" logo antes de "Perfil", com href/label/ícone', () => {
+      const itens = getNavItems('student');
+      const arena = itens.find((i) => i.href === '/aluno/arena');
+      expect(arena).toBeDefined();
+      expect(arena?.label).toBe('Arena');
+      // Ordem: "Arena" imediatamente antes de "Perfil".
+      const idxArena = itens.findIndex((i) => i.href === '/aluno/arena');
+      const idxPerfil = itens.findIndex((i) => i.href === '/aluno/perfil');
+      expect(idxArena).toBeGreaterThanOrEqual(0);
+      expect(idxPerfil).toBe(idxArena + 1);
+    });
+
+    it('a tela "/aluno/arena" é principal', () => {
+      expect(isMainScreen('/aluno/arena', 'student')).toBe(true);
+    });
+
     it('subrotas (detalhe/execução) NÃO são telas principais', () => {
       expect(isMainScreen('/aluno/treinos/123', 'student')).toBe(false);
       expect(isMainScreen('/aluno/execucao', 'student')).toBe(false);

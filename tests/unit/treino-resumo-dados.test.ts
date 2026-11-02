@@ -24,6 +24,10 @@ interface Respostas {
   historicoCount: number; // count: 'exact'
   historicoError: unknown; // erro da listagem
   logsHistorico: unknown[]; // workout_set_logs do histórico
+  // Arena (gamificação da sessão):
+  eventos: unknown[]; // gamification_events (.or(reference_id ...))
+  perfilArena: unknown; // gamification_profiles .maybeSingle()
+  exerciciosPr: unknown[]; // exercises .in('id')
 }
 
 let r: Respostas;
@@ -67,6 +71,12 @@ function makeBuilder(tabela: string) {
     if (tabela === 'user_achievements') {
       return { data: r.conquistas, error: null };
     }
+    if (tabela === 'gamification_events') {
+      return { data: r.eventos, error: null };
+    }
+    if (tabela === 'exercises') {
+      return { data: r.exerciciosPr, error: null };
+    }
     return { data: [], error: null };
   };
 
@@ -92,6 +102,9 @@ function makeBuilder(tabela: string) {
   builder.is = chain();
   builder.not = chain();
   builder.neq = chain();
+  builder.gte = chain();
+  builder.lte = chain();
+  builder.or = chain();
   builder.order = chain();
   builder.limit = chain();
   builder.range = chain();
@@ -100,6 +113,9 @@ function makeBuilder(tabela: string) {
   builder.maybeSingle = () => {
     if (tabela === 'workout_plans') {
       return Promise.resolve({ data: r.ficha, error: null });
+    }
+    if (tabela === 'gamification_profiles') {
+      return Promise.resolve({ data: r.perfilArena, error: null });
     }
     // workout_sessions .eq('id').maybeSingle()
     return Promise.resolve({ data: r.sessao, error: null });
@@ -149,6 +165,9 @@ beforeEach(() => {
     historicoCount: 0,
     historicoError: null,
     logsHistorico: [],
+    eventos: [],
+    perfilArena: null,
+    exerciciosPr: [],
   };
 });
 
@@ -206,6 +225,45 @@ describe('montarResumoSessao', () => {
     expect(res.dados.fimISO).toBe('2024-01-01T11:00:00Z');
     expect(res.dados.studentId).toBe('aluno-1');
     expect(res.dados.fichaNome).toBe('Ficha X');
+    // Sem perfil/eventos de Arena → zero-default.
+    expect(res.dados.xpGanho).toBe(0);
+    expect(res.dados.nivelAntes).toBe(0);
+    expect(res.dados.nivelDepois).toBe(0);
+    expect(res.dados.streakAtual).toBeNull();
+    expect(res.dados.prs).toEqual([]);
+  });
+
+  it('ok: deriva XP ganho, PRs (com nome do exercício) e nível/streak da Arena', async () => {
+    r.logsSessao = [
+      {
+        set_number: 1,
+        reps_done: 10,
+        load_done: 20,
+        completed: true,
+        plan_item_id: 'item-1',
+        workout_plan_items: { order_index: 0, exercises: { name: 'Supino' } },
+      },
+    ];
+    // Eventos da sessão: +30 do treino e um PR do exercício ex-1.
+    r.eventos = [
+      { event_type: 'workout_completed', points: 30, reference_id: 'sess-1' },
+      { event_type: 'load_progression', points: 10, reference_id: 'sess-1:ex-1' },
+    ];
+    r.exerciciosPr = [{ id: 'ex-1', name: 'Agachamento' }];
+    // total_xp inclui o ganho da sessão (fecho síncrono): 500 → nível 1;
+    // antes (500-30=470) → nível 0, logo subiu de nível.
+    r.perfilArena = { total_xp: 500, current_streak: 4 };
+
+    const res = await montarResumoSessao('sess-1', 'plan-1');
+    if (res.tipo !== 'ok') throw new Error('esperava ok');
+
+    expect(res.dados.xpGanho).toBe(30);
+    expect(res.dados.streakAtual).toBe(4);
+    expect(res.dados.nivelDepois).toBe(1);
+    expect(res.dados.nivelAntes).toBe(0);
+    expect(res.dados.prs).toEqual([
+      { id: 'ex-1', exercicio: 'Agachamento', points: 10 },
+    ]);
   });
 
   it('ok: ordena exercícios por order_index asc e NÃO expõe `order`', async () => {

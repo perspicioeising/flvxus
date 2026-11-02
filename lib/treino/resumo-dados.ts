@@ -23,10 +23,12 @@ import {
   selecionarSessaoComparavel,
   type MetricasSessao,
 } from '@/lib/treino/resumo';
+import { nivelPorXp } from '@/lib/arena/niveis';
 import type {
   ComparacaoEstado,
   ConquistaResumo,
   ExercicioResumo,
+  PrResumo,
 } from '@/components/aluno/execucao/resumo-sessao';
 
 /** Teto de salvaguarda ao varrer sessões anteriores (documentado no design). */
@@ -107,6 +109,16 @@ export interface DadosResumo {
   gruposMusculares: string[];
   comparacao: ComparacaoEstado;
   conquistas: ConquistaResumo[];
+  /** XP ganho NESTA sessão (evento `workout_completed`). 0 quando não houver. */
+  xpGanho: number;
+  /** Nível (0..5) ANTES do XP desta sessão. */
+  nivelAntes: number;
+  /** Nível (0..5) DEPOIS do XP desta sessão. Maior que `nivelAntes` = subiu. */
+  nivelDepois: number;
+  /** Sequência atual (dias) do aluno após a sessão, ou `null` se indisponível. */
+  streakAtual: number | null;
+  /** Recordes (PRs) batidos nesta sessão, resolvidos por exercício. */
+  prs: PrResumo[];
   /** `student_id` da sessão — base do guard de posse na rota do professor. */
   studentId: string;
 }
@@ -308,12 +320,21 @@ export async function montarResumoSessao(
     comparacao = { tipo: selecao.tipo };
   }
 
-  // --- Conquistas desbloqueadas NESTA sessão: earned_at = finished_at (igualdade).
-  const { data: conquistasData } = await supabase
+  // --- Conquistas desbloqueadas NESTA sessão: janela started_at..finished_at.
+  // O fecho carimba `earned_at = finished_at`, mas PRs/streak são assíncronos e
+  // podem cair entre `started_at` e `finished_at`; a janela captura ambos sem
+  // duplicar catálogo (HIGH-1).
+  let conquistasQuery = supabase
     .from('user_achievements')
     .select('achievement_id, earned_at, achievements(name, description, icon, points)')
-    .eq('student_id', sessao.student_id)
-    .eq('earned_at', sessao.finished_at);
+    .eq('student_id', sessao.student_id);
+  if (sessao.started_at !== null) {
+    conquistasQuery = conquistasQuery.gte('earned_at', sessao.started_at);
+  }
+  if (sessao.finished_at !== null) {
+    conquistasQuery = conquistasQuery.lte('earned_at', sessao.finished_at);
+  }
+  const { data: conquistasData } = await conquistasQuery;
 
   const conquistas: ConquistaResumo[] = (conquistasData ?? []).map((c) => {
     const a = Array.isArray(c.achievements) ? c.achievements[0] : c.achievements;
@@ -332,6 +353,84 @@ export async function montarResumoSessao(
     };
   });
 
+  // --- Gamificação da sessão (Arena): XP ganho, subida de nível, PRs, streak.
+  // Eventos emitidos pelos triggers SECURITY DEFINER no fecho da sessão:
+  //   - workout_completed: reference_id = session_id (o +XP do treino);
+  //   - load_progression:  reference_id = 'session_id:exercise_id' (os PRs).
+  // Tudo lido sob RLS (só o próprio aluno). A ausência degrada para zero/null —
+  // nunca lança.
+  let xpGanho = 0;
+  const prs: PrResumo[] = [];
+  const { data: eventosData } = await supabase
+    .from('gamification_events')
+    .select('event_type, points, reference_id')
+    .eq('user_id', sessao.student_id)
+    .or(`reference_id.eq.${sessionId},reference_id.like.${sessionId}:%`);
+
+  for (const ev of (eventosData ?? []) as Array<{
+    event_type: string;
+    points: number | null;
+    reference_id: string;
+  }>) {
+    if (ev.event_type === 'workout_completed' && ev.reference_id === sessionId) {
+      xpGanho += ev.points ?? 0;
+    }
+  }
+
+  // PRs: resolve o nome do exercício a partir do sufixo do reference_id.
+  const prEventos = (eventosData ?? [])
+    .filter(
+      (ev) =>
+        (ev as { event_type: string }).event_type === 'load_progression' &&
+        (ev as { reference_id: string }).reference_id.startsWith(`${sessionId}:`)
+    )
+    .map((ev) => ({
+      exerciseId: (ev as { reference_id: string }).reference_id.slice(
+        sessionId.length + 1
+      ),
+      points: (ev as { points: number | null }).points ?? 0,
+    }));
+
+  if (prEventos.length > 0) {
+    const { data: exerciciosPr } = await supabase
+      .from('exercises')
+      .select('id, name')
+      .in(
+        'id',
+        prEventos.map((p) => p.exerciseId)
+      );
+    const nomePorId = new Map<string, string>();
+    for (const e of (exerciciosPr ?? []) as Array<{
+      id: string;
+      name: string | null;
+    }>) {
+      nomePorId.set(e.id, e.name?.trim() || 'Exercício');
+    }
+    for (const p of prEventos) {
+      prs.push({
+        id: p.exerciseId,
+        exercicio: nomePorId.get(p.exerciseId) ?? 'Exercício',
+        points: p.points,
+      });
+    }
+  }
+
+  // Nível antes/depois: `total_xp` já inclui o XP desta sessão (fecho síncrono).
+  // `nivelAntes` é derivado do XP sem o ganho desta sessão.
+  let streakAtual: number | null = null;
+  let xpTotal = 0;
+  const { data: perfilData } = await supabase
+    .from('gamification_profiles')
+    .select('total_xp, current_streak')
+    .eq('user_id', sessao.student_id)
+    .maybeSingle();
+  if (perfilData) {
+    xpTotal = perfilData.total_xp;
+    streakAtual = perfilData.current_streak;
+  }
+  const nivelDepois = nivelPorXp(xpTotal).nivel;
+  const nivelAntes = nivelPorXp(Math.max(0, xpTotal - xpGanho)).nivel;
+
   return {
     tipo: 'ok',
     dados: {
@@ -345,6 +444,11 @@ export async function montarResumoSessao(
       gruposMusculares,
       comparacao,
       conquistas,
+      xpGanho,
+      nivelAntes,
+      nivelDepois,
+      streakAtual,
+      prs,
       studentId: sessao.student_id,
     },
   };

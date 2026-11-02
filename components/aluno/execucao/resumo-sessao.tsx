@@ -8,6 +8,7 @@ import {
   Flame,
   ListChecks,
   Minus,
+  Sparkles,
   Star,
   TrendingDown,
   TrendingUp,
@@ -57,6 +58,16 @@ export interface ConquistaResumo {
   points: number;
 }
 
+/** Um recorde (PR) batido nesta sessão, por exercício. */
+export interface PrResumo {
+  /** Chave estável (exercise_id). */
+  id: string;
+  /** Nome do exercício em que o recorde foi batido. */
+  exercicio: string;
+  /** XP concedido por este PR (0 quando não aplicável). */
+  points: number;
+}
+
 /**
  * Estado da comparação com a última sessão comparável do mesmo treino/divisão.
  * - `primeira`        → não há nenhuma sessão anterior deste treino/divisão;
@@ -88,6 +99,16 @@ export interface ResumoSessaoProps {
   comparacao: ComparacaoEstado;
   /** Conquistas desbloqueadas nesta sessão (pode ser vazio). */
   conquistas: ConquistaResumo[];
+  /** XP ganho nesta sessão (Arena). */
+  xpGanho: number;
+  /** Nível (0..5) antes do XP desta sessão. */
+  nivelAntes: number;
+  /** Nível (0..5) depois do XP desta sessão (maior = subiu de nível). */
+  nivelDepois: number;
+  /** Sequência atual (dias) após a sessão, ou `null` quando indisponível. */
+  streakAtual: number | null;
+  /** Recordes (PRs) batidos nesta sessão (pode ser vazio). */
+  prs: PrResumo[];
   /** Destino do botão "Voltar aos treinos". */
   href: string;
 }
@@ -154,9 +175,15 @@ export function ResumoSessao({
   gruposMusculares,
   comparacao,
   conquistas,
+  xpGanho,
+  nivelAntes,
+  nivelDepois,
+  streakAtual,
+  prs,
   href,
 }: ResumoSessaoProps) {
   const duracao = formatarDuracao(inicioISO, fimISO);
+  const subiuDeNivel = nivelDepois > nivelAntes;
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -201,6 +228,39 @@ export function ResumoSessao({
           radius="2xl"
         />
       </div>
+
+      {/* Arena: XP ganho, (eventual) subida de nível e sequência. */}
+      {xpGanho > 0 || streakAtual !== null || subiuDeNivel ? (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            Arena
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <StatCard
+              label="XP ganho"
+              value={`+${xpGanho}`}
+              icon={Sparkles}
+              tone="emphasis"
+              radius="2xl"
+            />
+            {streakAtual !== null ? (
+              <StatCard
+                label="Sequência"
+                value={streakAtual === 1 ? '1 dia' : `${streakAtual} dias`}
+                icon={Flame}
+                radius="2xl"
+              />
+            ) : null}
+          </div>
+          {subiuDeNivel ? (
+            <p className="mt-3 flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-app-glow">
+              <TrendingUp className="h-5 w-5 shrink-0" aria-hidden="true" />
+              Você subiu para o nível {nivelDepois}!
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Mapa muscular dos grupos trabalhados na sessão. */}
       {gruposMusculares.length > 0 ? (
@@ -288,6 +348,41 @@ export function ResumoSessao({
           </ul>
         )}
       </div>
+
+      {/* Recordes batidos nesta sessão (omitido quando vazio). */}
+      {prs.length > 0 ? (
+        <div className="space-y-3">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
+            <TrendingUp className="h-4 w-4" aria-hidden="true" />
+            Recordes batidos
+          </p>
+          <ul className="space-y-3">
+            {prs.map((pr) => (
+              <li
+                key={pr.id}
+                className="flex items-start gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-app-glow"
+              >
+                <span className="mt-0.5 shrink-0 rounded-full bg-background/20 p-2">
+                  <TrendingUp className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-bold">{pr.exercicio}</span>
+                    {pr.points > 0 ? (
+                      <span className="shrink-0 text-sm font-bold">
+                        +{pr.points}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-0.5 text-xs opacity-90">
+                    Novo recorde pessoal neste exercício.
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {/* Conquistas desbloqueadas (omitido quando vazio). */}
       {conquistas.length > 0 ? (
