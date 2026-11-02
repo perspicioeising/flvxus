@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getNavItems, isMainScreen } from './nav-items';
+import { getNavItems, isMainScreen, isNavItemActive } from './nav-items';
 
 /**
  * Testes de `isMainScreen` (Ajuste 2): a logo no header mobile só aparece nas
@@ -90,6 +90,22 @@ describe('getNavItems — nav por account_type', () => {
     expect(hrefs).toContain('/professor/plano');
   });
 
+  it('autônomo alcança os hábitos (/aluno) e a visão de uso da dieta (/aluno/dieta)', () => {
+    const itens = getNavItems('trainer', true, 'self_managed');
+    const hrefs = itens.map((i) => i.href);
+
+    // "Início" (/aluno): onde ficam hidratação, check-in e editar meta de água.
+    expect(hrefs).toContain('/aluno');
+    expect(itens.find((i) => i.href === '/aluno')?.label).toBe('Início');
+    // "Minha dieta" (/aluno/dieta): ver dieta liberada + "cumpri hoje".
+    expect(hrefs).toContain('/aluno/dieta');
+    expect(itens.find((i) => i.href === '/aluno/dieta')?.label).toBe(
+      'Minha dieta',
+    );
+    // Criação de dieta (geração por IA) via /professor/dietas NÃO pode sumir.
+    expect(hrefs).toContain('/professor/dietas');
+  });
+
   it('professional (trainer) mantém o menu B2B atual', () => {
     const hrefs = getNavItems('trainer', true, 'professional').map((i) => i.href);
 
@@ -98,6 +114,20 @@ describe('getNavItems — nav por account_type', () => {
     expect(hrefs).not.toContain('/aluno/execucao');
     expect(hrefs).not.toContain('/aluno/evolucao');
     expect(hrefs).not.toContain('/aluno/conquistas');
+    // O professor B2B não tem área de aluno — não ganha "Início" nem "Minha
+    // dieta". "Dietas" (gestão) continua presente.
+    expect(hrefs).not.toContain('/aluno');
+    expect(hrefs).not.toContain('/aluno/dieta');
+    expect(hrefs).toContain('/professor/dietas');
+  });
+
+  it('o item "Início"=/aluno do autônomo só fica ativo em /aluno exato', () => {
+    const itens = getNavItems('trainer', true, 'self_managed');
+    const inicio = itens.find((i) => i.href === '/aluno')!;
+
+    // Na área /aluno o rootHref é "/aluno": raiz só casa exato (não /aluno/dieta).
+    expect(isNavItemActive(inicio, '/aluno', ['/aluno'])).toBe(true);
+    expect(isNavItemActive(inicio, '/aluno/dieta', ['/aluno'])).toBe(false);
   });
 
   it('student inclui a Arena entre Conquistas e Perfil', () => {

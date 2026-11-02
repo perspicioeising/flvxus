@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Dumbbell,
   LayoutList,
+  Home,
   Utensils,
   BarChart3,
   Calendar,
@@ -94,7 +95,13 @@ export function getNavItems(
     // do autônomo: o professor B2B não tem Arena própria (quem tem são os
     // alunos dele), por isso o item só entra aqui no ramo self_managed.
     const usoItems: NavItem[] = [
+      // "Início" (/aluno) é onde ficam os hábitos do dia (hidratação, check-in e
+      // editar meta de água). "Dietas" (=/professor/dietas) segue como gestão/
+      // criação (geração por IA); "Minha dieta" (=/aluno/dieta) é a visão de uso
+      // — ver a dieta liberada e marcar "cumpri hoje" (XP).
+      { label: 'Início', href: '/aluno', icon: Home },
       { label: 'Treinar', href: '/aluno/execucao', icon: Play },
+      { label: 'Minha dieta', href: '/aluno/dieta', icon: Utensils },
       { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
       { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
       { label: 'Arena', href: '/aluno/arena', icon: Sparkles },
