@@ -1,8 +1,9 @@
-import { Swords, Timer } from 'lucide-react';
+import { Hourglass, Swords, Timer } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { diasRestantes } from '@/lib/arena/social';
+import { ResultadoDesafio } from '@/components/aluno/arena/social/resultado-desafio';
 import type { ChallengeScoreboard } from '@/types/database.types';
 
 export interface PlacarDesafioProps {
@@ -22,13 +23,63 @@ function inicial(nome: string): string {
   return nome.trim().charAt(0).toUpperCase() || 'A';
 }
 
+/** Nome do oponente num duelo (a outra linha que não sou eu). */
+function nomeOponente(placar: ChallengeScoreboard, meuUserId: string): string {
+  const outro = placar.linhas.find((l) => l.user_id !== meuUserId);
+  return outro?.display_name ?? 'um amigo';
+}
+
+/** Formata uma data `YYYY-MM-DD` (dia-SP) como DD/MM em pt-BR. */
+function formatarDia(dia: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dia);
+  if (!m) {
+    return dia;
+  }
+  const data = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC',
+  }).format(data);
+}
+
 /**
- * Placar AO VIVO de um duelo: eu vs. amigo, com XP do período (recomputado do
- * ledger pela função controlada) e countdown de dias restantes via
- * `diasRestantes(ends_on, agora)`. Puramente apresentacional (RSC-safe).
+ * Sede ÚNICA de render de um duelo não-convite, ramificando por
+ * `placar.window_state`:
+ * - `pending`  → card "Aguardando [oponente] aceitar" (sem ranking/countdown);
+ * - `active`   → placar AO VIVO com período real (DD/MM a DD/MM), ranking das
+ *   linhas e countdown via `diasRestantes(ends_on, agora)`;
+ * - `finished` → compõe `ResultadoDesafio` (vencedor + medalha).
+ * Puramente apresentacional (RSC-safe).
  */
 export function PlacarDesafio({ placar, meuUserId }: PlacarDesafioProps) {
+  if (placar.window_state === 'finished') {
+    return <ResultadoDesafio placar={placar} meuUserId={meuUserId} />;
+  }
+
+  if (placar.window_state === 'pending') {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <p className="flex items-center gap-2 text-sm font-bold text-foreground">
+          <Hourglass className="h-4 w-4 text-primary" aria-hidden="true" />
+          Duelo
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Aguardando{' '}
+          <span className="font-semibold text-foreground">
+            {nomeOponente(placar, meuUserId)}
+          </span>{' '}
+          aceitar
+        </p>
+      </div>
+    );
+  }
+
   const dias = diasRestantes(placar.ends_on, new Date());
+  const periodo =
+    placar.starts_on && placar.ends_on
+      ? `Vale o XP de ${formatarDia(placar.starts_on)} a ${formatarDia(placar.ends_on)}`
+      : null;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
@@ -42,6 +93,10 @@ export function PlacarDesafio({ placar, meuUserId }: PlacarDesafioProps) {
           {dias > 0 ? `${dias} ${dias === 1 ? 'dia' : 'dias'} restantes` : 'Encerrando'}
         </p>
       </div>
+
+      {periodo ? (
+        <p className="mt-1 text-xs text-muted-foreground">{periodo}</p>
+      ) : null}
 
       <ul className="mt-3 divide-y divide-border">
         {placar.linhas.map((linha) => {
@@ -74,11 +129,6 @@ export function PlacarDesafio({ placar, meuUserId }: PlacarDesafioProps) {
                 {linha.display_name}
                 {ehEu ? (
                   <span className="ml-2 text-xs font-medium text-primary">você</span>
-                ) : null}
-                {!linha.accepted ? (
-                  <span className="ml-2 text-xs font-medium text-muted-foreground">
-                    aguardando aceite
-                  </span>
                 ) : null}
               </span>
               <span className="shrink-0 text-sm font-bold tabular-nums text-foreground">

@@ -323,7 +323,7 @@ export async function montarDadosArena(userId: string): Promise<DadosArena> {
       // nem a montagem dos placares.
       if (hoje) {
         for (const d of lista) {
-          if (d.status === 'active' && d.ends_on < hoje) {
+          if (d.status === 'active' && d.ends_on != null && d.ends_on < hoje) {
             try {
               const { error: erroSettle } = await supabase.rpc(
                 'gamification_settle_challenge',

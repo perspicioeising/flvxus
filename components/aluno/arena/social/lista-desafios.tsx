@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/patterns';
 import { responderDuelo } from '@/actions/arena-social';
 import { PlacarDesafio } from '@/components/aluno/arena/social/placar-desafio';
-import { ResultadoDesafio } from '@/components/aluno/arena/social/resultado-desafio';
 import { CriarDesafioDialog } from '@/components/aluno/arena/social/criar-desafio-dialog';
 import type {
   ChallengeScoreboard,
@@ -27,11 +26,11 @@ export interface ListaDesafiosProps {
 
 /** `true` quando o desafio é um convite pendente ao próprio atleta. */
 function ehConvitePendente(sb: ChallengeScoreboard, meuUserId: string): boolean {
-  if (sb.challenge_status !== 'active') {
+  if (sb.window_state !== 'pending') {
     return false;
   }
   const minhaLinha = sb.linhas.find((l) => l.user_id === meuUserId);
-  return minhaLinha ? !minhaLinha.accepted : false;
+  return minhaLinha ? minhaLinha.accepted === false : false;
 }
 
 /** Nome do oponente num duelo (a outra linha que não sou eu). */
@@ -41,20 +40,18 @@ function nomeOponente(sb: ChallengeScoreboard, meuUserId: string): string {
 }
 
 /**
- * Bloco "Desafios" da Arena: convites de duelo recebidos (aceitar/recusar),
- * duelos ativos com placar e countdown, resultados dos finalizados (vencedor +
- * medalha) e o botão "Desafiar amigo". Degrada sozinho — alimentado pelos
- * placares já montados no servidor (lista vazia em falha).
+ * Bloco "Desafios" da Arena: convites de duelo recebidos (aceitar/recusar) e
+ * o botão "Desafiar amigo". Todos os demais duelos (pending aceito/active/
+ * finished) são renderizados por `PlacarDesafio`, que ramifica internamente
+ * por `window_state`. Degrada sozinho — alimentado pelos placares já montados
+ * no servidor (lista vazia em falha).
  */
 export function ListaDesafios({ desafios, amigos, meuUserId }: ListaDesafiosProps) {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
 
   const convites = desafios.filter((d) => ehConvitePendente(d, meuUserId));
-  const ativos = desafios.filter(
-    (d) => d.challenge_status === 'active' && !ehConvitePendente(d, meuUserId)
-  );
-  const finalizados = desafios.filter((d) => d.challenge_status === 'finished');
+  const demais = desafios.filter((d) => !ehConvitePendente(d, meuUserId));
 
   function responder(challengeId: string, aceitar: boolean) {
     iniciar(async () => {
@@ -125,12 +122,8 @@ export function ListaDesafios({ desafios, amigos, meuUserId }: ListaDesafiosProp
         </div>
       ) : null}
 
-      {ativos.map((d) => (
+      {demais.map((d) => (
         <PlacarDesafio key={d.challenge_id} placar={d} meuUserId={meuUserId} />
-      ))}
-
-      {finalizados.map((d) => (
-        <ResultadoDesafio key={d.challenge_id} placar={d} meuUserId={meuUserId} />
       ))}
 
       {desafios.length === 0 ? (

@@ -68,6 +68,16 @@ describe('diasRestantes', () => {
     expect(diasRestantes('2024-03-15', '2024-03-15T02:30:00Z')).toBe(1);
   });
 
+  it('ends_on null (janela ainda não aberta) → 0', () => {
+    expect(diasRestantes(null, '2024-03-10T12:00:00Z')).toBe(0);
+  });
+
+  it('janela recém-aberta (hoje + duração 7) → 6 dias restantes', () => {
+    // starts_on = hoje (2024-03-10); ends_on = starts_on + (7 - 1) = 2024-03-16.
+    // dia-SP de 2024-03-10T12:00:00Z = 2024-03-10 => restam 6 dias.
+    expect(diasRestantes('2024-03-16', '2024-03-10T12:00:00Z')).toBe(6);
+  });
+
   it('degrada para 0 com entradas inválidas', () => {
     expect(diasRestantes('data-ruim', '2024-03-10T12:00:00Z')).toBe(0);
     expect(diasRestantes('2024-03-17', 'nope')).toBe(0);

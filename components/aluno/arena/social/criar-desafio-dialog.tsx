@@ -92,8 +92,9 @@ export function CriarDesafioDialog({ amigos }: CriarDesafioDialogProps) {
         <DialogHeader>
           <DialogTitle>Desafiar um amigo</DialogTitle>
           <DialogDescription>
-            Vence quem somar mais XP no período. Seu amigo precisa aceitar o
-            convite para o duelo valer.
+            Vence quem somar mais XP no período. O duelo começa a valer quando
+            os dois aceitam, e o período conta a partir daí. A recompensa é a
+            medalha Campeão de desafio — o duelo não concede XP.
           </DialogDescription>
         </DialogHeader>
 

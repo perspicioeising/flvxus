@@ -56,11 +56,15 @@ function diasDesdeEpoca(dia: string): number | null {
 
 /**
  * Dias restantes de um desafio até o seu `ends_on` (inclusive), medidos pelo
- * dia-SP de `agora`. `ends_on` é a data final do desafio (`YYYY-MM-DD`). Já
+ * dia-SP de `agora`. `ends_on` é a data final do desafio (`YYYY-MM-DD`), ou
+ * `null` quando a janela ainda não abriu (duelo sem aceite mútuo) → `0`. Já
  * encerrado (ou `ends_on` igual ao dia atual passado) → `0`; nunca negativo.
  * Retorna `0` para entradas inválidas (degradação segura na UI).
  */
-export function diasRestantes(endsOn: string, agora: Date | string): number {
+export function diasRestantes(endsOn: string | null, agora: Date | string): number {
+  if (endsOn === null) {
+    return 0;
+  }
   const diaAgora = diaSP(agora);
   if (!diaAgora) {
     return 0;

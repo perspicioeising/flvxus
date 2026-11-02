@@ -23,7 +23,7 @@ import type { ChallengeScoreboard } from '@/types/database.types';
 interface DesafioMeta {
   id: string;
   status: string;
-  ends_on: string;
+  ends_on: string | null;
   created_at: string;
 }
 
@@ -72,7 +72,7 @@ export async function montarPainelDesafios(): Promise<PainelDesafios> {
     // nem a montagem dos placares.
     if (hoje) {
       for (const d of desafiosMeta) {
-        if (d.status === 'active' && d.ends_on < hoje) {
+        if (d.status === 'active' && d.ends_on != null && d.ends_on < hoje) {
           try {
             const { error: erroSettle } = await supabase.rpc(
               'gamification_settle_challenge',
@@ -145,7 +145,7 @@ export async function montarPlacarDesafio(
       console.error('[montarPlacarDesafio] meta:', erroMeta.message);
     }
 
-    if (hoje && meta && meta.status === 'active' && meta.ends_on < hoje) {
+    if (hoje && meta && meta.status === 'active' && meta.ends_on != null && meta.ends_on < hoje) {
       try {
         const { error: erroSettle } = await supabase.rpc(
           'gamification_settle_challenge',
