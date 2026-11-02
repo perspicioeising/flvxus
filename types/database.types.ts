@@ -1367,6 +1367,132 @@ export interface Database {
           updated_at?: string;
         };
       };
+      // -----------------------------------------------------------------------
+      // Arena G1 (gamificação) — migrations 20261026090000 (core) e 090100
+      // (engine). Tipos À MÃO; refletem o schema das migrations.
+      // -----------------------------------------------------------------------
+      gamification_seasons: {
+        Row: {
+          id: string;
+          tenant_id: string | null;
+          scope: string;
+          period_key: string;
+          starts_at: string;
+          ends_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id?: string | null;
+          scope?: string;
+          period_key: string;
+          starts_at: string;
+          ends_at: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string | null;
+          scope?: string;
+          period_key?: string;
+          starts_at?: string;
+          ends_at?: string;
+          created_at?: string;
+        };
+      };
+      gamification_profiles: {
+        Row: {
+          user_id: string;
+          tenant_id: string;
+          total_xp: number;
+          level: number;
+          current_streak: number;
+          longest_streak: number;
+          last_adherence_date: string | null;
+          stats: Json;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          tenant_id: string;
+          total_xp?: number;
+          level?: number;
+          current_streak?: number;
+          longest_streak?: number;
+          last_adherence_date?: string | null;
+          stats?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          tenant_id?: string;
+          total_xp?: number;
+          level?: number;
+          current_streak?: number;
+          longest_streak?: number;
+          last_adherence_date?: string | null;
+          stats?: Json;
+          updated_at?: string;
+        };
+      };
+      gamification_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          tenant_id: string;
+          event_type: string;
+          points: number;
+          reference_id: string;
+          season_id: string | null;
+          occurred_on: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          event_type: string;
+          points?: number;
+          reference_id: string;
+          season_id?: string | null;
+          occurred_on: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tenant_id?: string;
+          event_type?: string;
+          points?: number;
+          reference_id?: string;
+          season_id?: string | null;
+          occurred_on?: string;
+          created_at?: string;
+        };
+      };
+      gamification_event_types: {
+        Row: {
+          event_type: string;
+          base_points: number;
+          daily_cap: number;
+          active: boolean;
+          description: string | null;
+        };
+        Insert: {
+          event_type: string;
+          base_points: number;
+          daily_cap?: number;
+          active?: boolean;
+          description?: string | null;
+        };
+        Update: {
+          event_type?: string;
+          base_points?: number;
+          daily_cap?: number;
+          active?: boolean;
+          description?: string | null;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1406,6 +1532,20 @@ export interface Database {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      // Arena G1: ranking do tenant (SECURITY DEFINER, somente leitura).
+      // p_season null => temporada vigente. Retorno jsonb — ver GamificationLeaderboard.
+      gamification_tenant_leaderboard: {
+        Args: { p_season?: string | null };
+        Returns: Json;
+      };
+      gamification_level_for_xp: {
+        Args: { p_xp: number };
+        Returns: number;
+      };
+      gamification_sp_date: {
+        Args: { p_ts: string };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: UserRole;
@@ -1441,3 +1581,44 @@ export type TablesUpdate<T extends keyof Database['public']['Tables']> =
   Database['public']['Tables'][T]['Update'];
 export type Enums<T extends keyof Database['public']['Enums']> =
   Database['public']['Enums'][T];
+
+// -----------------------------------------------------------------------------
+// Arena G1 — tipos auxiliares (espelham as migrations 20261026090000/090100).
+// -----------------------------------------------------------------------------
+
+// Nível permanente derivado do XP acumulado (gamification_level_for_xp).
+// Limiares: 0/500/1500/3000/6000/12000.
+export type ArenaLevel = 0 | 1 | 2 | 3 | 4 | 5;
+
+// Tipos de evento do catálogo gamification_event_types. Os três últimos são
+// ganchos inertes (active=false) na G1.
+export type GamificationEventType =
+  | 'workout_completed'
+  | 'load_progression'
+  | 'physical_evolution'
+  | 'diet_day'
+  | 'water_goal'
+  | 'daily_checkin';
+
+// Shape de gamification_profiles.stats (NIT-3): contadores por categoria.
+export type GamificationStats = {
+  workouts?: number;
+  prs?: number;
+  assessments?: number;
+};
+
+// Uma linha do ranking retornado por gamification_tenant_leaderboard.
+export type GamificationLeaderboardRow = {
+  posicao: number;
+  full_name: string | null;
+  season_xp: number;
+  user_id: string;
+};
+
+// Retorno (jsonb) de gamification_tenant_leaderboard: gate de 5 participantes.
+export type GamificationLeaderboard = {
+  active: boolean;
+  participantes: number;
+  minimo: number;
+  linhas: GamificationLeaderboardRow[];
+};
