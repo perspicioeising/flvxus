@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { requireEntitlement } from '@/lib/billing/guard';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -416,14 +416,23 @@ export async function criarFicha(entrada: FichaInput): Promise<EstadoAcao> {
 
   const supabase = await createClient();
 
+  // Aluno autônomo (self_managed): a ficha é SEMPRE para si (`student_id` =
+  // próprio userId, ignorando o enviado) e nasce JÁ LIBERADA (`released`) —
+  // curto-circuito do fluxo de liberação: ele não precisa "liberar para si".
+  // Para professional/B2B mantém o `student_id` do form e `draft`.
+  const soloEu = isSelfManaged(professor);
+  const studentId = soloEu ? professor.userId : parsed.data.student_id;
+  const statusInicial: PlanStatus = soloEu ? 'released' : 'draft';
+
   const { data: plan, error: erroPlan } = await supabase
     .from('workout_plans')
     .insert({
       tenant_id: professor.tenantId,
       trainer_id: professor.userId,
-      student_id: parsed.data.student_id,
+      student_id: studentId,
       name: parsed.data.name,
-      status: 'draft',
+      status: statusInicial,
+      released_at: soloEu ? new Date().toISOString() : null,
       source_workout_id: parsed.data.source_workout_id ?? null,
       // `null` = rotação automática (retrocompatibilidade). A sequência só é
       // persistida quando o professor configura descanso (schema já validou R1–R3).
@@ -502,10 +511,16 @@ export async function editarFicha(
 
   const supabase = await createClient();
 
+  // Aluno autônomo: força `student_id` = si mesmo (ignora o enviado). NÃO mexe
+  // em status/released_at aqui (isso é de `alterarStatusFicha`/`criarFicha`).
+  const studentId = isSelfManaged(professor)
+    ? professor.userId
+    : parsed.data.student_id;
+
   const { error: erroPlan } = await supabase
     .from('workout_plans')
     .update({
-      student_id: parsed.data.student_id,
+      student_id: studentId,
       name: parsed.data.name,
       source_workout_id: parsed.data.source_workout_id ?? null,
       // Persiste a sequência de rotação (ou `null` = automática). O schema já
@@ -637,14 +652,19 @@ export async function criarFichaDeModelo(
     return { ok: false, message: seriesPorItemOrigem.message };
   }
 
+  // Aluno autônomo: ficha para si, já liberada; professional mantém draft.
+  const soloEu = isSelfManaged(professor);
+  const studentIdFinal = soloEu ? professor.userId : studentId;
+
   const { data: plan, error: erroPlan } = await supabase
     .from('workout_plans')
     .insert({
       tenant_id: professor.tenantId,
       trainer_id: professor.userId,
-      student_id: studentId,
+      student_id: studentIdFinal,
       name: nome?.trim() || modelo.name,
-      status: 'draft',
+      status: soloEu ? 'released' : 'draft',
+      released_at: soloEu ? new Date().toISOString() : null,
       source_workout_id: sourceWorkoutId,
     })
     .select('id')
@@ -809,14 +829,18 @@ export async function criarFichaMultiModelo(
     return { ok: false, message: seriesPorItemOrigem.message };
   }
 
+  // Aluno autônomo: ficha para si, já liberada; professional mantém draft.
+  const soloEu = isSelfManaged(professor);
+
   const { data: plan, error: erroPlan } = await supabase
     .from('workout_plans')
     .insert({
       tenant_id: professor.tenantId,
       trainer_id: professor.userId,
-      student_id: parsed.data.student_id,
+      student_id: soloEu ? professor.userId : parsed.data.student_id,
       name: parsed.data.name,
-      status: 'draft',
+      status: soloEu ? 'released' : 'draft',
+      released_at: soloEu ? new Date().toISOString() : null,
       source_workout_id:
         parsed.data.modelos.length === 1
           ? parsed.data.modelos[0].source_workout_id
@@ -916,17 +940,24 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
     return { ok: false, message: 'Ficha de origem não encontrada.' };
   }
 
-  // Checagem defensiva do novo aluno: o RLS de `profiles` já limita ao tenant,
-  // então um profile inexistente/fora do tenant/`role != 'student'` é rejeitado
-  // com mensagem clara antes do insert.
-  const { data: aluno, error: erroAluno } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('user_id', parsed.data.student_id)
-    .single();
+  // Aluno autônomo: clona a ficha para SI mesmo (ignora o enviado) e já nasce
+  // liberada. Não passa pela checagem de `role='student'` (ele é trainer).
+  const soloEu = isSelfManaged(professor);
+  const studentIdFinal = soloEu ? professor.userId : parsed.data.student_id;
 
-  if (erroAluno || !aluno || aluno.role !== 'student') {
-    return { ok: false, message: 'Selecione um aluno válido.' };
+  // Checagem defensiva do novo aluno (só no caminho professional): o RLS de
+  // `profiles` já limita ao tenant, então um profile inexistente/fora do
+  // tenant/`role != 'student'` é rejeitado com mensagem clara antes do insert.
+  if (!soloEu) {
+    const { data: aluno, error: erroAluno } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', studentIdFinal)
+      .single();
+
+    if (erroAluno || !aluno || aluno.role !== 'student') {
+      return { ok: false, message: 'Selecione um aluno válido.' };
+    }
   }
 
   // Itens da ficha origem, na ordem. Lista vazia é permitida (ficha sem itens).
@@ -953,15 +984,18 @@ export async function clonarFicha(entrada: ClonarFichaInput): Promise<EstadoAcao
     return { ok: false, message: seriesPorItemOrigem.message };
   }
 
-  // Nova ficha: sempre rascunho, nunca herda released/released_at da origem.
+  // Para professional: a cópia nasce SEMPRE rascunho (nunca herda released da
+  // origem). Para o autônomo: a cópia é para si e já nasce liberada (curto-
+  // circuito de liberação — mesma regra de `criarFicha`).
   const { data: plan, error: erroPlan } = await supabase
     .from('workout_plans')
     .insert({
       tenant_id: professor.tenantId,
       trainer_id: professor.userId,
-      student_id: parsed.data.student_id,
+      student_id: studentIdFinal,
       name: parsed.data.name?.trim() || `${origem.name} (cópia)`,
-      status: 'draft',
+      status: soloEu ? 'released' : 'draft',
+      released_at: soloEu ? new Date().toISOString() : null,
       source_workout_id: origem.source_workout_id ?? null,
       // Copia a sequência de rotação da origem; as CONFIRMAÇÕES de descanso
       // (workout_plan_rest_completions) NUNCA são copiadas (novo aluno recomeça).

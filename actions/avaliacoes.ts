@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { requireEntitlement } from '@/lib/billing/guard';
 import { createClient } from '@/lib/supabase/server';
 import { uploadAssessmentPhoto, removeAssessmentPhoto } from '@/lib/storage';
@@ -153,6 +153,13 @@ export async function criarAvaliacao(
       message: 'Verifique os campos destacados.',
       fieldErrors: erroDeCampo(parsed.error.flatten()),
     };
+  }
+
+  // Aluno autônomo (self_managed): a avaliação é SEMPRE para si — força
+  // `student_id` = próprio userId (ignora o enviado). `linhaAvaliacao` usa
+  // `dados.student_id`. Professional mantém o aluno escolhido.
+  if (isSelfManaged(professor)) {
+    parsed.data.student_id = professor.userId;
   }
 
   const supabase = await createClient();

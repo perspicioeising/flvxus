@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { FichaForm, type AlunoOpcao } from '@/components/professor/treinos/ficha-form';
 import type { ExercicioDisponivel } from '@/components/professor/treinos/exercise-picker';
@@ -20,6 +21,10 @@ export default async function NovaFichaPage({
 }) {
   const sp = await searchParams;
   const alunoFixo = Array.isArray(sp.aluno) ? sp.aluno[0] : sp.aluno;
+
+  // Aluno autônomo (self_managed): a ficha é SEMPRE para si — sem seletor.
+  const user = await getSessionUser();
+  const soloEu = user ? isSelfManaged(user) : false;
 
   const supabase = await createClient();
 
@@ -56,10 +61,13 @@ export default async function NovaFichaPage({
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Nova ficha</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+          {soloEu ? 'Novo treino' : 'Nova ficha'}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Monte uma ficha de treino para um aluno. Ela nasce como rascunho e só fica
-          visível ao aluno quando você a libera.
+          {soloEu
+            ? 'Monte seu treino. Assim que salvar, ele já fica pronto para você treinar.'
+            : 'Monte uma ficha de treino para um aluno. Ela nasce como rascunho e só fica visível ao aluno quando você a libera.'}
         </p>
       </header>
 
@@ -68,8 +76,13 @@ export default async function NovaFichaPage({
         exercicios={exercicios}
         alunos={alunos}
         alunoInicial={
-          alunoFixo && alunos.some((a) => a.user_id === alunoFixo) ? alunoFixo : undefined
+          soloEu
+            ? user?.userId
+            : alunoFixo && alunos.some((a) => a.user_id === alunoFixo)
+              ? alunoFixo
+              : undefined
         }
+        ocultarSeletorAluno={soloEu}
       />
     </section>
   );

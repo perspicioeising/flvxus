@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { criarAvaliacao, uploadFotoAvaliacao, type EstadoAcao } from '@/actions/avaliacoes';
 import { AvaliacaoForm } from '@/components/professor/avaliacoes/avaliacao-form';
@@ -17,7 +18,13 @@ export default async function NovaAvaliacaoPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
-  const alunoFixo = Array.isArray(sp.aluno) ? sp.aluno[0] : sp.aluno;
+  const alunoParam = Array.isArray(sp.aluno) ? sp.aluno[0] : sp.aluno;
+
+  // Aluno autônomo: a avaliação é SEMPRE para si — o AvaliacaoForm esconde o
+  // Select quando `alunoFixo` está presente.
+  const user = await getSessionUser();
+  const soloEu = user ? isSelfManaged(user) : false;
+  const alunoFixo = soloEu ? user?.userId : alunoParam;
 
   const supabase = await createClient();
   const { data: alunos } = await supabase
@@ -52,9 +59,13 @@ export default async function NovaAvaliacaoPage({
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">Nova avaliação</h1>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground md:text-4xl">
+          {soloEu ? 'Nova avaliação' : 'Nova avaliação'}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Os cálculos de IMC, %gordura e massas são feitos no servidor conforme o protocolo.
+          {soloEu
+            ? 'Registre sua avaliação. Os cálculos de IMC, %gordura e massas são feitos no servidor conforme o protocolo.'
+            : 'Os cálculos de IMC, %gordura e massas são feitos no servidor conforme o protocolo.'}
         </p>
       </header>
 

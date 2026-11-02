@@ -43,6 +43,12 @@ export interface FichaFormProps {
   };
   /** Aluno pré-selecionado no modo criar (ex.: via `?aluno=` da ficha do aluno). */
   alunoInicial?: string;
+  /**
+   * Esconde o seletor de aluno e usa o `alunoInicial` como `student_id` fixo.
+   * Usado pelo aluno autônomo (self_managed), que grava a ficha para si mesmo
+   * sem escolher um terceiro.
+   */
+  ocultarSeletorAluno?: boolean;
 }
 
 /**
@@ -58,6 +64,7 @@ export function FichaForm({
   planId,
   valoresIniciais,
   alunoInicial,
+  ocultarSeletorAluno = false,
 }: FichaFormProps) {
   const router = useRouter();
   const [studentId, setStudentId] = React.useState(
@@ -157,29 +164,31 @@ export function FichaForm({
 
   return (
     <form onSubmit={enviar} className="space-y-6" noValidate>
-      <div className="space-y-1.5">
-        <Label htmlFor="ficha-aluno">Aluno</Label>
-        <Select value={studentId} onValueChange={setStudentId}>
-          <SelectTrigger id="ficha-aluno" aria-invalid={Boolean(erroAluno)}>
-            <SelectValue placeholder="Selecione o aluno" />
-          </SelectTrigger>
-          <SelectContent>
-            {alunos.map((aluno) => (
-              <SelectItem key={aluno.user_id} value={aluno.user_id}>
-                {aluno.full_name ?? 'Aluno sem nome'}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {erroAluno ? (
-          <p className="text-sm font-medium text-destructive">{erroAluno}</p>
-        ) : null}
-        {alunos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Você ainda não tem alunos. Convide um aluno antes de montar uma ficha.
-          </p>
-        ) : null}
-      </div>
+      {ocultarSeletorAluno ? null : (
+        <div className="space-y-1.5">
+          <Label htmlFor="ficha-aluno">Aluno</Label>
+          <Select value={studentId} onValueChange={setStudentId}>
+            <SelectTrigger id="ficha-aluno" aria-invalid={Boolean(erroAluno)}>
+              <SelectValue placeholder="Selecione o aluno" />
+            </SelectTrigger>
+            <SelectContent>
+              {alunos.map((aluno) => (
+                <SelectItem key={aluno.user_id} value={aluno.user_id}>
+                  {aluno.full_name ?? 'Aluno sem nome'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {erroAluno ? (
+            <p className="text-sm font-medium text-destructive">{erroAluno}</p>
+          ) : null}
+          {alunos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Você ainda não tem alunos. Convide um aluno antes de montar uma ficha.
+            </p>
+          ) : null}
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <Label htmlFor="ficha-name">Nome da ficha</Label>

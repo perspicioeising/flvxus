@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ClipboardList, Plus } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
   intervaloPagina,
@@ -51,6 +52,11 @@ export default async function TreinosPage({
   const page = normalizarPagina(umParam(sp.page));
   const pageSize = normalizarTamanho(umParam(sp.pageSize));
   const { from } = intervaloPagina(page, pageSize);
+
+  // Aluno autônomo (self_managed): a tela é do PRÓPRIO uso — não há gestão de
+  // terceiros (sem aviso de "cadastre um aluno", sem criar a partir de modelo).
+  const user = await getSessionUser();
+  const soloEu = user ? isSelfManaged(user) : false;
 
   const supabase = await createClient();
 
@@ -108,11 +114,15 @@ export default async function TreinosPage({
       <PageHeader
         emphasis="caps"
         title="Treinos"
-        subtitle="Fichas de treino por aluno. Só fichas liberadas ficam visíveis ao aluno."
+        subtitle={
+          soloEu
+            ? 'Seus treinos. Crie e comece a treinar quando quiser.'
+            : 'Fichas de treino por aluno. Só fichas liberadas ficam visíveis ao aluno.'
+        }
         actions={
           <>
             <SugerirTreinoIa alunos={alunos} />
-            <CriarDeModelo modelos={modelos} alunos={alunos} />
+            {soloEu ? null : <CriarDeModelo modelos={modelos} alunos={alunos} />}
             <Button asChild className="min-h-11">
               <Link href="/professor/treinos/nova">
                 <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -123,7 +133,7 @@ export default async function TreinosPage({
         }
       />
 
-      {alunos.length === 0 ? (
+      {soloEu ? null : alunos.length === 0 ? (
         <p className="rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
           Para montar uma ficha você precisa de um aluno.{' '}
           <Link href="/professor/alunos/novo" className="font-medium text-foreground underline">
@@ -149,7 +159,7 @@ export default async function TreinosPage({
           description="Ocorreu um erro ao buscar as fichas. Tente novamente."
         />
       ) : fichas.length === 0 ? (
-        <EmptyStateTreinos temFiltro={Boolean(q)} />
+        <EmptyStateTreinos temFiltro={Boolean(q)} soloEu={soloEu} />
       ) : (
         <>
           <ul className="space-y-3">
@@ -178,7 +188,13 @@ export default async function TreinosPage({
 }
 
 /** Estado vazio: distingue "sem fichas ainda" de "sem resultados para a busca". */
-function EmptyStateTreinos({ temFiltro }: { temFiltro: boolean }) {
+function EmptyStateTreinos({
+  temFiltro,
+  soloEu,
+}: {
+  temFiltro: boolean;
+  soloEu: boolean;
+}) {
   if (temFiltro) {
     return (
       <EmptyState
@@ -192,13 +208,17 @@ function EmptyStateTreinos({ temFiltro }: { temFiltro: boolean }) {
     <div className="flex flex-col items-center gap-4">
       <EmptyState
         icon={ClipboardList}
-        title="Nenhuma ficha ainda"
-        description="Crie a primeira ficha de treino para um aluno, do zero ou a partir de um modelo."
+        title={soloEu ? 'Nenhum treino ainda' : 'Nenhuma ficha ainda'}
+        description={
+          soloEu
+            ? 'Crie seu primeiro treino, do zero ou com a sugestão da IA.'
+            : 'Crie a primeira ficha de treino para um aluno, do zero ou a partir de um modelo.'
+        }
       />
       <Button asChild className="min-h-11">
         <Link href="/professor/treinos/nova">
           <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-          Nova ficha
+          {soloEu ? 'Novo treino' : 'Nova ficha'}
         </Link>
       </Button>
     </div>

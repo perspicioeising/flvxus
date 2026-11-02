@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { requireEntitlement } from '@/lib/billing/guard';
 import type { FeatureKey } from '@/lib/billing/entitlements';
 import { createClient } from '@/lib/supabase/server';
@@ -103,7 +103,8 @@ async function normalizarErroInvoke(error: unknown): Promise<EntradaErroIa> {
 
 /** Garante que quem chama é o professor; devolve o id/tenant quando ok. */
 async function exigirProfessor(): Promise<
-  { ok: true; userId: string; tenantId: string } | { ok: false; estado: EstadoAcao }
+  | { ok: true; userId: string; tenantId: string; selfManaged: boolean }
+  | { ok: false; estado: EstadoAcao }
 > {
   const user = await getSessionUser();
   if (!user) {
@@ -115,7 +116,12 @@ async function exigirProfessor(): Promise<
       estado: { ok: false, message: 'Apenas o professor pode usar os recursos de IA.' },
     };
   }
-  return { ok: true, userId: user.userId, tenantId: user.tenantId };
+  return {
+    ok: true,
+    userId: user.userId,
+    tenantId: user.tenantId,
+    selfManaged: isSelfManaged(user),
+  };
 }
 
 /**
@@ -176,7 +182,16 @@ export async function gerarDieta(input: unknown): Promise<EstadoGeracao> {
     };
   }
 
-  const resultado = await invocarFuncaoIa('generate-diet', parsed.data);
+  // Aluno autônomo (self_managed): a dieta é SEMPRE para si — força
+  // `student_id` = próprio userId (ignora o enviado). Como esse `input` é
+  // persistido em `ai_generations` e lido na aprovação (materializarDieta usa
+  // input.student_id), a dieta materializada também fica para si. Como ele é o
+  // professor do próprio tenant, consegue aprovar normalmente.
+  const corpo = guard.selfManaged
+    ? { ...parsed.data, student_id: guard.userId }
+    : parsed.data;
+
+  const resultado = await invocarFuncaoIa('generate-diet', corpo);
   if (resultado.ok) revalidatePath('/professor/dietas');
   return resultado;
 }

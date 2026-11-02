@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { diasDesde, dataVencida, formatarData } from '@/lib/datas';
 import { ErrorState, PageHeader, StatCard } from '@/components/patterns';
@@ -32,6 +33,12 @@ function nomeAluno(profiles: unknown): string {
 }
 
 export default async function ProfessorHomePage() {
+  // Aluno autônomo (self_managed): o painel não tem gestão de terceiros —
+  // esconde os contadores de alunos e o card "Fichas aguardando liberação"
+  // (suas fichas nascem já liberadas, então esse bloco ficaria vazio).
+  const user = await getSessionUser();
+  const soloEu = user ? isSelfManaged(user) : false;
+
   const supabase = await createClient();
 
   // Todas as leituras sob RLS (tenant/papel resolvidos pelas policies).
@@ -190,48 +197,58 @@ export default async function ProfessorHomePage() {
       <PageHeader
         emphasis="caps"
         title="Visão geral"
-        subtitle="Acompanhe seus alunos, avaliações vencidas e fichas aguardando liberação."
+        subtitle={
+          soloEu
+            ? 'Acompanhe seus treinos, avaliações e sua atividade recente.'
+            : 'Acompanhe seus alunos, avaliações vencidas e fichas aguardando liberação.'
+        }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Total de alunos" value={totalAlunos} icon={Users} tone="emphasis" radius="2xl" />
-        <StatCard label="Alunos ativos" value={ativos} icon={UserCheck} tone="emphasis" radius="2xl" />
-        <StatCard
-          label="Alunos inativos"
-          value={inativos}
-          icon={Users}
-          hint="Inativos e arquivados"
-          radius="2xl"
-        />
-        <StatCard
-          label="Avaliações vencidas"
-          value={totalVencidas}
-          icon={CalendarClock}
-          hint={`Sem avaliação há mais de ${DIAS_AVALIACAO_VENCIDA} dias`}
-          radius="2xl"
-        />
-      </div>
+      {soloEu ? null : (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <StatCard label="Total de alunos" value={totalAlunos} icon={Users} tone="emphasis" radius="2xl" />
+          <StatCard label="Alunos ativos" value={ativos} icon={UserCheck} tone="emphasis" radius="2xl" />
+          <StatCard
+            label="Alunos inativos"
+            value={inativos}
+            icon={Users}
+            hint="Inativos e arquivados"
+            radius="2xl"
+          />
+          <StatCard
+            label="Avaliações vencidas"
+            value={totalVencidas}
+            icon={CalendarClock}
+            hint={`Sem avaliação há mais de ${DIAS_AVALIACAO_VENCIDA} dias`}
+            radius="2xl"
+          />
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <PendenciasCard
-          titulo="Avaliações vencidas"
-          descricao={`Alunos ativos sem avaliação há mais de ${DIAS_AVALIACAO_VENCIDA} dias.`}
-          icon={CalendarClock}
-          itens={avaliacoesVencidas}
-          vazioTitulo="Nenhuma avaliação vencida"
-          vazioDescricao="Todos os alunos ativos estão com a avaliação em dia."
-          verTodos={{ label: 'Ver avaliações', href: '/professor/avaliacoes' }}
-        />
+        {soloEu ? null : (
+          <PendenciasCard
+            titulo="Avaliações vencidas"
+            descricao={`Alunos ativos sem avaliação há mais de ${DIAS_AVALIACAO_VENCIDA} dias.`}
+            icon={CalendarClock}
+            itens={avaliacoesVencidas}
+            vazioTitulo="Nenhuma avaliação vencida"
+            vazioDescricao="Todos os alunos ativos estão com a avaliação em dia."
+            verTodos={{ label: 'Ver avaliações', href: '/professor/avaliacoes' }}
+          />
+        )}
 
-        <PendenciasCard
-          titulo="Fichas aguardando liberação"
-          descricao="Fichas em rascunho, revisão ou aprovadas que o aluno ainda não vê."
-          icon={ClipboardCheck}
-          itens={fichasPendencias}
-          vazioTitulo="Nenhuma ficha pendente"
-          vazioDescricao="Não há fichas aguardando liberação no momento."
-          verTodos={{ label: 'Ver fichas', href: '/professor/treinos' }}
-        />
+        {soloEu ? null : (
+          <PendenciasCard
+            titulo="Fichas aguardando liberação"
+            descricao="Fichas em rascunho, revisão ou aprovadas que o aluno ainda não vê."
+            icon={ClipboardCheck}
+            itens={fichasPendencias}
+            vazioTitulo="Nenhuma ficha pendente"
+            vazioDescricao="Não há fichas aguardando liberação no momento."
+            verTodos={{ label: 'Ver fichas', href: '/professor/treinos' }}
+          />
+        )}
       </div>
 
       <AtividadeRecenteCard itens={atividades} />

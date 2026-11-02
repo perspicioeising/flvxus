@@ -31,8 +31,18 @@ export interface AlunoOpcao {
  * painel de revisão/edição/aprovação. Degrada com mensagem amigável quando a
  * função não está disponível (a action já mapeia o erro).
  */
-export function GerarDietaIa({ alunos }: { alunos: AlunoOpcao[] }) {
-  const [studentId, setStudentId] = React.useState('');
+export function GerarDietaIa({
+  alunos,
+  alunoFixo,
+}: {
+  alunos: AlunoOpcao[];
+  /**
+   * Quando presente (aluno autônomo), esconde o Select de aluno e usa este id
+   * como `student_id`; o bloco "cadastre um aluno" (semAlunos) não aparece.
+   */
+  alunoFixo?: string;
+}) {
+  const [studentId, setStudentId] = React.useState(alunoFixo ?? '');
   const [goal, setGoal] = React.useState('');
   const [restricoes, setRestricoes] = React.useState('');
   const [gerando, setGerando] = React.useState(false);
@@ -40,7 +50,8 @@ export function GerarDietaIa({ alunos }: { alunos: AlunoOpcao[] }) {
   const [generationId, setGenerationId] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState<GenerateDietOutput | null>(null);
 
-  const semAlunos = alunos.length === 0;
+  // Para o autônomo, nunca mostra "cadastre um aluno" (ele é o próprio aluno).
+  const semAlunos = !alunoFixo && alunos.length === 0;
   const desabilitado = !studentId || !goal.trim() || gerando;
 
   async function gerar() {
@@ -95,21 +106,23 @@ export function GerarDietaIa({ alunos }: { alunos: AlunoOpcao[] }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="dieta-aluno">Aluno</Label>
-              <Select value={studentId} onValueChange={setStudentId}>
-                <SelectTrigger id="dieta-aluno">
-                  <SelectValue placeholder="Selecione o aluno" />
-                </SelectTrigger>
-                <SelectContent>
-                  {alunos.map((a) => (
-                    <SelectItem key={a.user_id} value={a.user_id}>
-                      {a.full_name ?? 'Aluno sem nome'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {alunoFixo ? null : (
+              <div className="space-y-1.5">
+                <Label htmlFor="dieta-aluno">Aluno</Label>
+                <Select value={studentId} onValueChange={setStudentId}>
+                  <SelectTrigger id="dieta-aluno">
+                    <SelectValue placeholder="Selecione o aluno" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {alunos.map((a) => (
+                      <SelectItem key={a.user_id} value={a.user_id}>
+                        {a.full_name ?? 'Aluno sem nome'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="dieta-objetivo">Objetivo</Label>

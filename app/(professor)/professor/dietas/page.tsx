@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Utensils } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { EmptyState, ErrorState } from '@/components/patterns';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,11 @@ import type { PlanStatus } from '@/types/database.types';
  * tenant. Leitura via RSC sob RLS (só o tenant do professor).
  */
 export default async function ProfessorDietasPage() {
+  // Aluno autônomo (self_managed): dieta é SEMPRE para si — sem seletor de
+  // aluno e sem o rodapé "cadastre um aluno".
+  const user = await getSessionUser();
+  const soloEu = user ? isSelfManaged(user) : false;
+
   const supabase = await createClient();
 
   const [{ data: alunosData }, { data: dietasData, error }] = await Promise.all([
@@ -46,12 +52,13 @@ export default async function ProfessorDietasPage() {
       <header className="space-y-1">
         <h1 className="text-4xl font-black uppercase leading-[0.95] tracking-tight text-foreground md:text-5xl">Dietas</h1>
         <p className="text-sm text-muted-foreground">
-          Gere dietas com IA. Todo rascunho passa pela sua revisão e aprovação antes de
-          virar uma dieta do aluno.
+          {soloEu
+            ? 'Gere suas dietas com IA. Todo rascunho passa pela sua revisão antes de virar uma dieta.'
+            : 'Gere dietas com IA. Todo rascunho passa pela sua revisão e aprovação antes de virar uma dieta do aluno.'}
         </p>
       </header>
 
-      <GerarDietaIa alunos={alunos} />
+      <GerarDietaIa alunos={alunos} alunoFixo={soloEu ? user?.userId : undefined} />
 
       <div className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Dietas criadas</h2>
@@ -64,7 +71,11 @@ export default async function ProfessorDietasPage() {
           <EmptyState
             icon={Utensils}
             title="Nenhuma dieta ainda"
-            description="Use a geração com IA acima para criar a primeira dieta de um aluno."
+            description={
+              soloEu
+                ? 'Use a geração com IA acima para criar sua primeira dieta.'
+                : 'Use a geração com IA acima para criar a primeira dieta de um aluno.'
+            }
           />
         ) : (
           <ul className="space-y-3">
@@ -99,13 +110,15 @@ export default async function ProfessorDietasPage() {
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Precisa de um aluno?{' '}
-        <Link href="/professor/alunos/novo" className="font-medium text-foreground underline">
-          Cadastre um aluno
-        </Link>
-        .
-      </p>
+      {soloEu ? null : (
+        <p className="text-xs text-muted-foreground">
+          Precisa de um aluno?{' '}
+          <Link href="/professor/alunos/novo" className="font-medium text-foreground underline">
+            Cadastre um aluno
+          </Link>
+          .
+        </p>
+      )}
     </section>
   );
 }
