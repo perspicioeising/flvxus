@@ -57,7 +57,7 @@ const studentNav: NavItem[] = [
   { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
   { label: 'Avaliações', href: '/aluno/avaliacoes', icon: HeartPulse },
   { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
-  { label: 'Arena', href: '/aluno/arena', icon: Trophy },
+  { label: 'Arena', href: '/aluno/arena', icon: Sparkles },
   { label: 'Perfil', href: '/aluno/perfil', icon: Settings },
   { label: 'Ajuda', href: '/aluno/ajuda', icon: HelpCircle },
 ];
@@ -118,8 +118,19 @@ export function getNavItems(
   return items;
 }
 
-/** Rótulo humano do papel, em pt-BR. */
-export function roleLabel(role: UserRole): string {
+/**
+ * Rótulo humano do papel, em pt-BR.
+ *
+ * `accountType` (Fase B1, default 'professional'): o aluno autônomo
+ * (self_managed) é `role='trainer'` por baixo, mas se enxerga como ALUNO — não
+ * como professor. Por isso o rótulo dele é "Aluno", não "Professor". O trainer
+ * B2B segue "Professor"; o student segue "Aluno".
+ */
+export function roleLabel(
+  role: UserRole,
+  accountType: AccountType = 'professional',
+): string {
+  if (role === 'trainer' && accountType === 'self_managed') return 'Aluno';
   return role === 'trainer' ? 'Professor' : 'Aluno';
 }
 

@@ -100,7 +100,7 @@ describe('getNavItems — nav por account_type', () => {
     expect(hrefs).not.toContain('/aluno/conquistas');
   });
 
-  it('student permanece inalterado', () => {
+  it('student inclui a Arena entre Conquistas e Perfil', () => {
     const studentHrefs = getNavItems('student').map((i) => i.href);
 
     expect(studentHrefs).toEqual([
@@ -111,6 +111,7 @@ describe('getNavItems — nav por account_type', () => {
       '/aluno/evolucao',
       '/aluno/avaliacoes',
       '/aluno/conquistas',
+      '/aluno/arena',
       '/aluno/perfil',
       '/aluno/ajuda',
     ]);

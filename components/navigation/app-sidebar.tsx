@@ -67,7 +67,7 @@ export function AppSidebar({
           {!collapsed && (
             <span className="flex flex-col leading-tight">
               <Logo size="md" />
-              <span className="text-xs text-muted-foreground">{roleLabel(role)}</span>
+              <span className="text-xs text-muted-foreground">{roleLabel(role, accountType)}</span>
             </span>
           )}
         </Link>

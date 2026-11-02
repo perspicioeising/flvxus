@@ -103,7 +103,7 @@ export function BottomNav({
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-2xl">
               <SheetHeader>
-                <SheetTitle>Menu — {roleLabel(role)}</SheetTitle>
+                <SheetTitle>Menu — {roleLabel(role, accountType)}</SheetTitle>
               </SheetHeader>
               <ul className="mt-4 space-y-1">
                 {overflow.map((item) => {
