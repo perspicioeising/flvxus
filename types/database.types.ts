@@ -1653,8 +1653,8 @@ export interface Database {
           goal_text: string | null;
           reward_text: string | null;
           duration_days: number;
-          starts_on: string;
-          ends_on: string;
+          starts_on: string | null;
+          ends_on: string | null;
           settled_at: string | null;
           created_at: string;
           updated_at: string;
@@ -1669,8 +1669,8 @@ export interface Database {
           goal_text?: string | null;
           reward_text?: string | null;
           duration_days: number;
-          starts_on: string;
-          ends_on: string;
+          starts_on?: string | null;
+          ends_on?: string | null;
           settled_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -1685,8 +1685,8 @@ export interface Database {
           goal_text?: string | null;
           reward_text?: string | null;
           duration_days?: number;
-          starts_on?: string;
-          ends_on?: string;
+          starts_on?: string | null;
+          ends_on?: string | null;
           settled_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -1697,6 +1697,7 @@ export interface Database {
           challenge_id: string;
           user_id: string;
           accepted: boolean;
+          accepted_at: string | null;
           result: ChallengeMemberResult;
           final_xp: number | null;
           created_at: string;
@@ -1705,6 +1706,7 @@ export interface Database {
           challenge_id: string;
           user_id: string;
           accepted?: boolean;
+          accepted_at?: string | null;
           result?: ChallengeMemberResult;
           final_xp?: number | null;
           created_at?: string;
@@ -1713,6 +1715,7 @@ export interface Database {
           challenge_id?: string;
           user_id?: string;
           accepted?: boolean;
+          accepted_at?: string | null;
           result?: ChallengeMemberResult;
           final_xp?: number | null;
           created_at?: string;
@@ -1967,18 +1970,22 @@ export type ChallengeMemberLine = {
   level: ArenaLevel;
   user_id: string;
   accepted: boolean;
+  accepted_at: string | null;
   result: ChallengeMemberResult;
   final_xp: number | null;
 };
 
 // Retorno (jsonb) de gamification_challenge_scoreboard.
+// window_state é aditiva: 'pending' (duelo sem aceite mútuo, janela NULL),
+// 'active' (janela em curso) ou 'finished' (apurado).
 export type ChallengeScoreboard = {
   status: 'ok' | 'forbidden';
   challenge_id: string;
   kind: ChallengeKind;
   challenge_status: ChallengeStatus;
-  starts_on: string;
-  ends_on: string;
+  window_state: 'pending' | 'active' | 'finished';
+  starts_on: string | null;
+  ends_on: string | null;
   title: string | null;
   goal_text: string | null;
   reward_text: string | null;
