@@ -32,7 +32,7 @@ export function AbasRanking({
       <TabsList className="grid h-auto w-full grid-cols-4">
         <TabsTrigger value="academia">Academia</TabsTrigger>
         <TabsTrigger value="amigos">Amigos</TabsTrigger>
-        <TabsTrigger value="mensal">Global Mês</TabsTrigger>
+        <TabsTrigger value="mensal">Global mês</TabsTrigger>
         <TabsTrigger value="anual">Global anual</TabsTrigger>
       </TabsList>
       <TabsContent value="academia">{minhaAcademia}</TabsContent>
