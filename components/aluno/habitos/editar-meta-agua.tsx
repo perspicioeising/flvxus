@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil } from 'lucide-react';
 
 import { metaSugeridaMl } from '@/lib/habitos/meta-agua';
 import { toast } from '@/hooks/use-toast';
@@ -11,30 +10,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { definirMetaAgua } from '@/actions/habitos';
 
-export interface EditarMetaAguaProps {
+export interface EditarMetaAguaFormProps {
   /** Meta atual salva (ml) ou `null` quando ainda não há. */
   metaAtualMl: number | null;
   /** Peso (kg) da última avaliação, para a sugestão quando não há meta salva. */
   pesoKg: number | null;
+  /** Fecha o form (cancelar ou após salvar com sucesso). */
+  onFechar: () => void;
 }
 
 /**
- * Edição da PRÓPRIA meta de água pelo aluno (vinculado ou autônomo), no início
- * de /aluno, logo abaixo do card de hidratação. Chama
- * `definirMetaAgua(targetMl, source)` SEM `alvoUserId` — a action resolve o alvo
- * para `auth.uid()`, então o aluno só edita a própria meta (nunca a de outro).
- * O campo pré-preenche com a meta salva ou, na ausência, com
+ * Form INLINE de edição da PRÓPRIA meta de água pelo aluno (vinculado ou
+ * autônomo). Vive DENTRO do card de hidratação (`CardAgua`), que controla a
+ * abertura via o ícone discreto de lápis; por isso este componente não tem mais
+ * gatilho próprio — a abertura/fechamento é do pai (`onFechar`).
+ *
+ * Chama `definirMetaAgua(targetMl, source)` SEM `alvoUserId` — a action resolve
+ * o alvo para `auth.uid()`, então o aluno só edita a própria meta (nunca a de
+ * outro). O campo pré-preenche com a meta salva ou, na ausência, com
  * `metaSugeridaMl(peso)` — mesma UX do card do professor.
  *
  * `source` é best-effort: salvar o valor pré-preenchido SEM editar registra a
  * origem (`derived_weight` quando havia peso, `default` sem peso); qualquer
- * edição manual vira `manual`. Fica recolhido atrás de um botão "Editar meta"
- * para não poluir o card de registro de água no mobile.
+ * edição manual vira `manual`.
  */
-export function EditarMetaAgua({ metaAtualMl, pesoKg }: EditarMetaAguaProps) {
+export function EditarMetaAguaForm({ metaAtualMl, pesoKg, onFechar }: EditarMetaAguaFormProps) {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
-  const [aberto, setAberto] = React.useState(false);
 
   // Pré-preenchimento: meta salva prevalece; senão a sugestão pelo peso.
   const sugerida = metaSugeridaMl(pesoKg);
@@ -62,7 +64,7 @@ export function EditarMetaAgua({ metaAtualMl, pesoKg }: EditarMetaAguaProps) {
       const r = await definirMetaAgua(alvo, source);
       if (r.ok) {
         toast({ title: r.message ?? 'Meta salva.' });
-        setAberto(false);
+        onFechar();
         router.refresh();
       } else {
         toast({
@@ -73,25 +75,8 @@ export function EditarMetaAgua({ metaAtualMl, pesoKg }: EditarMetaAguaProps) {
     });
   }
 
-  if (!aberto) {
-    return (
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="min-h-11 text-muted-foreground"
-          onClick={() => setAberto(true)}
-        >
-          <Pencil className="mr-1 h-4 w-4" aria-hidden="true" />
-          Editar meta
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+    <div className="space-y-3 rounded-2xl border border-border bg-muted/30 p-3">
       <p className="text-sm text-muted-foreground">
         {metaAtualMl != null
           ? `Meta atual: ${metaAtualMl} ml por dia.`
@@ -127,7 +112,7 @@ export function EditarMetaAgua({ metaAtualMl, pesoKg }: EditarMetaAguaProps) {
           variant="ghost"
           size="sm"
           className="min-h-11 text-muted-foreground"
-          onClick={() => setAberto(false)}
+          onClick={onFechar}
           disabled={pendente}
         >
           Cancelar
