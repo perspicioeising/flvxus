@@ -47,7 +47,8 @@ export function CartaoNivel({ nivel }: CartaoNivelProps) {
       <div className="mt-4">
         <Progress
           value={percentual}
-          className="h-3 bg-background/25"
+          className="h-3 bg-primary-foreground/20"
+          indicatorClassName="bg-primary-foreground"
           aria-label={`Progresso de nível: ${percentual}%`}
         />
         <p className="mt-2 text-sm opacity-90">
