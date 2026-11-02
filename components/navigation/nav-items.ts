@@ -15,6 +15,7 @@ import {
   CreditCard,
   History,
   Play,
+  Sparkles,
   type LucideIcon,
   Trophy,
 } from 'lucide-react';
@@ -89,12 +90,14 @@ export function getNavItems(
         item.href !== '/professor/alunos' &&
         item.href !== '/professor/modelos-treino',
     );
-    // Itens de uso do autônomo. TODO (gamificação): quando a Arena existir,
-    // acrescentar aqui o item apontando para a rota dela (ainda inexistente).
+    // Itens de uso do autônomo (rotas /aluno reusadas). A "Arena" é exclusiva
+    // do autônomo: o professor B2B não tem Arena própria (quem tem são os
+    // alunos dele), por isso o item só entra aqui no ramo self_managed.
     const usoItems: NavItem[] = [
       { label: 'Treinar', href: '/aluno/execucao', icon: Play },
       { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
       { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
+      { label: 'Arena', href: '/aluno/arena', icon: Sparkles },
     ];
     const treinosIndex = semGestao.findIndex(
       (item) => item.href === '/professor/treinos',
