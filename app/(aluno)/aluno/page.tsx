@@ -18,6 +18,7 @@ import { CardTreinoHoje } from '@/components/aluno/inicio/card-treino-hoje';
 import { CardFichaSemTreino } from '@/components/aluno/inicio/card-ficha-sem-treino';
 import { DescansoResumoCard } from '@/components/aluno/treinos/descanso-resumo-card';
 import { CardAgua } from '@/components/aluno/habitos/card-agua';
+import { EditarMetaAgua } from '@/components/aluno/habitos/editar-meta-agua';
 import { BotaoCheckin } from '@/components/aluno/habitos/botao-checkin';
 
 /**
@@ -231,6 +232,13 @@ export default async function AlunoHomePage() {
           targetMl={progresso.targetMl}
           pct={progresso.pct}
           metaAtingida={progresso.metaAtingida}
+        />
+        {/* O aluno (vinculado ou autônomo) edita a PRÓPRIA meta — a action
+            resolve o alvo para auth.uid() (sem alvoUserId). A leitura de meta
+            salva degrada por bloco: erro vira "sem meta salva" (null). */}
+        <EditarMetaAgua
+          metaAtualMl={metaRes.error ? null : metaRes.data?.target_ml ?? null}
+          pesoKg={avaliacaoRes.data?.weight_kg ?? null}
         />
         <BotaoCheckin jaFezHoje={jaFezCheckin} />
       </div>
