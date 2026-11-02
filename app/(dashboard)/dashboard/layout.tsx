@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-import { getSessionUser } from '@/lib/auth';
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 
 /**
  * Rota legada da v1 (`/dashboard`). Na v2 as áreas são `/professor` e `/aluno`,
@@ -20,5 +20,8 @@ export default async function DashboardLayout() {
     redirect('/login');
   }
 
-  redirect(user.role === 'student' ? '/aluno' : '/professor');
+  // O aluno autônomo (trainer + self_managed) tem /aluno como painel — o gate
+  // `requireSelfOrStudent` dessa área já o admite. O professor B2B
+  // (trainer professional) segue para /professor.
+  redirect(user.role === 'student' || isSelfManaged(user) ? '/aluno' : '/professor');
 }

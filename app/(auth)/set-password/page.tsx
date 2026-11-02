@@ -118,7 +118,7 @@ export default function SetPasswordPage() {
       // Ativa o perfil do aluno (pending → active) e descobre o destino por papel.
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, status')
+        .select('role, status, account_type')
         .eq('user_id', data.user.id)
         .single();
 
@@ -151,7 +151,12 @@ export default function SetPasswordPage() {
         description: 'Bem-vindo à plataforma. Redirecionando...',
       });
 
-      const destino = profile?.role === 'student' ? '/aluno' : '/professor';
+      // O aluno autônomo (trainer + self_managed) tem /aluno como painel; o
+      // professor B2B segue para /professor.
+      const destino =
+        profile?.role === 'student' || profile?.account_type === 'self_managed'
+          ? '/aluno'
+          : '/professor';
       window.location.href = destino;
     } catch (err) {
       const mensagem =

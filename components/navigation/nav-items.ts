@@ -82,12 +82,15 @@ export function getNavItems(
   }
 
   // Aluno autônomo: não gerencia terceiros — remove "Alunos" e "Modelos de
-  // treino"; e adiciona as telas de USO (rotas /aluno, reusadas pela OPÇÃO a do
-  // design) logo após "Treinos".
+  // treino"; e também a "Visão geral" (=/professor), que é o dashboard de
+  // gestão de alunos (inútil para quem não tem alunos). O painel do autônomo é
+  // "Início" (=/aluno), que por isso entra como PRIMEIRO item do menu, seguido
+  // das demais telas de USO (rotas /aluno, reusadas pela OPÇÃO a do design).
   let base = trainerNav;
   if (accountType === 'self_managed') {
     const semGestao = trainerNav.filter(
       (item) =>
+        item.href !== '/professor' &&
         item.href !== '/professor/alunos' &&
         item.href !== '/professor/modelos-treino',
     );
@@ -106,12 +109,9 @@ export function getNavItems(
       { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
       { label: 'Arena', href: '/aluno/arena', icon: Sparkles },
     ];
-    const treinosIndex = semGestao.findIndex(
-      (item) => item.href === '/professor/treinos',
-    );
-    const insertAt = treinosIndex === -1 ? semGestao.length : treinosIndex + 1;
-    base = [...semGestao];
-    base.splice(insertAt, 0, ...usoItems);
+    // "Início" (=/aluno) é o painel do autônomo e deve ser o primeiro item do
+    // menu, antes de "Avaliações"/"Exercícios"/"Treinos".
+    base = [...usoItems, ...semGestao];
   }
 
   if (!isMaster) {

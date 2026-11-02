@@ -82,6 +82,9 @@ describe('getNavItems — nav por account_type', () => {
   it('autônomo (trainer, self_managed) oculta gestão e lista telas de uso', () => {
     const hrefs = getNavItems('trainer', true, 'self_managed').map((i) => i.href);
 
+    // "Visão geral" (=/professor) é o dashboard de gestão de alunos — inútil
+    // para o autônomo, por isso NÃO aparece no menu dele.
+    expect(hrefs).not.toContain('/professor');
     expect(hrefs).not.toContain('/professor/alunos');
     expect(hrefs).not.toContain('/professor/modelos-treino');
     expect(hrefs).toContain('/aluno/execucao');
@@ -95,7 +98,10 @@ describe('getNavItems — nav por account_type', () => {
     const hrefs = itens.map((i) => i.href);
 
     // "Início" (/aluno): onde ficam hidratação, check-in e editar meta de água.
+    // É o PAINEL do autônomo e, por isso, o PRIMEIRO item do menu.
     expect(hrefs).toContain('/aluno');
+    expect(hrefs[0]).toBe('/aluno');
+    expect(itens[0]?.label).toBe('Início');
     expect(itens.find((i) => i.href === '/aluno')?.label).toBe('Início');
     // "Minha dieta" (/aluno/dieta): ver dieta liberada + "cumpri hoje".
     expect(hrefs).toContain('/aluno/dieta');
@@ -109,6 +115,8 @@ describe('getNavItems — nav por account_type', () => {
   it('professional (trainer) mantém o menu B2B atual', () => {
     const hrefs = getNavItems('trainer', true, 'professional').map((i) => i.href);
 
+    // O professor B2B continua vendo "Visão geral" (=/professor).
+    expect(hrefs).toContain('/professor');
     expect(hrefs).toContain('/professor/alunos');
     expect(hrefs).toContain('/professor/modelos-treino');
     expect(hrefs).not.toContain('/aluno/execucao');
