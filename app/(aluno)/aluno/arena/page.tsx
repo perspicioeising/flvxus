@@ -6,7 +6,9 @@ import { montarDadosArena } from '@/lib/arena/dados';
 import { EmptyState, PageHeader } from '@/components/patterns';
 import { CartaoNivel } from '@/components/aluno/arena/cartao-nivel';
 import { ContadorStreak } from '@/components/aluno/arena/contador-streak';
+import { AbasRanking } from '@/components/aluno/arena/abas-ranking';
 import { LeaderboardArena } from '@/components/aluno/arena/leaderboard-arena';
+import { LeaderboardGlobal } from '@/components/aluno/arena/leaderboard-global';
 import { ListaMissoes } from '@/components/aluno/arena/lista-missoes';
 import { ListaConquistas } from '@/components/aluno/conquistas/lista-conquistas';
 
@@ -42,7 +44,23 @@ export default async function AlunoArenaPage() {
         recorde={dados.perfil.streakRecorde}
       />
 
-      <LeaderboardArena ranking={dados.ranking} meuUserId={dados.meuUserId} />
+      <AbasRanking
+        minhaAcademia={
+          <LeaderboardArena ranking={dados.ranking} meuUserId={dados.meuUserId} />
+        }
+        globalMensal={
+          <LeaderboardGlobal
+            ranking={dados.rankingGlobalMensal}
+            meuUserId={dados.meuUserId}
+          />
+        }
+        globalAnual={
+          <LeaderboardGlobal
+            ranking={dados.rankingGlobalAnual}
+            meuUserId={dados.meuUserId}
+          />
+        }
+      />
 
       <ListaMissoes missoes={dados.missoes} />
 
