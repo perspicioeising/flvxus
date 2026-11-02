@@ -101,7 +101,7 @@ export default async function ProfessorDietasPage() {
                     >
                       Ver detalhes
                     </Link>
-                    <DietaStatusControl dietId={d.id} statusAtual={d.status} />
+                    {soloEu ? null : <DietaStatusControl dietId={d.id} statusAtual={d.status} />}
                   </CardContent>
                 </Card>
               </li>

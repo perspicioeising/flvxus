@@ -213,7 +213,16 @@ export async function sugerirTreino(input: unknown): Promise<EstadoGeracao> {
     };
   }
 
-  const resultado = await invocarFuncaoIa('suggest-workout', parsed.data);
+  // Aluno autônomo (self_managed): o treino é SEMPRE para si — força
+  // `student_id` = próprio userId (ignora o enviado). Como esse `input` é
+  // persistido em `ai_generations` e lido na aprovação (materializarTreino usa
+  // input.student_id), a ficha materializada também fica para si. Espelha o
+  // mesmo padrão de `gerarDieta`.
+  const corpo = guard.selfManaged
+    ? { ...parsed.data, student_id: guard.userId }
+    : parsed.data;
+
+  const resultado = await invocarFuncaoIa('suggest-workout', corpo);
   if (resultado.ok) revalidatePath('/professor/treinos');
   return resultado;
 }
@@ -389,6 +398,7 @@ export async function aprovarGeracao(generationId: string): Promise<EstadoAcao> 
         assessmentId: typeof input.assessment_id === 'string' ? input.assessment_id : null,
         goal: input.goal,
         restrictions: input.restrictions,
+        selfManaged: guard.selfManaged,
         draft: validado.draft as GenerateDietOutput,
       });
       targetTable = 'diets';
@@ -398,6 +408,7 @@ export async function aprovarGeracao(generationId: string): Promise<EstadoAcao> 
         tenantId: gen.tenant_id,
         trainerId: guard.userId,
         studentId,
+        selfManaged: guard.selfManaged,
         draft: validado.draft as SuggestWorkoutOutput,
       });
       targetTable = 'workout_plans';
@@ -504,6 +515,7 @@ async function materializarDieta(
     assessmentId: string | null;
     goal: unknown;
     restrictions: unknown;
+    selfManaged: boolean;
     draft: GenerateDietOutput;
   }
 ): Promise<string> {
@@ -521,7 +533,10 @@ async function materializarDieta(
       tenant_id: args.tenantId,
       student_id: args.studentId,
       trainer_id: args.trainerId,
-      status: 'draft',
+      // Aluno autônomo (self_managed): nasce JÁ LIBERADA para si; professional
+      // (B2B) segue o fluxo rascunho→revisão→liberação.
+      status: args.selfManaged ? 'released' : 'draft',
+      released_at: args.selfManaged ? new Date().toISOString() : null,
       goal,
       restrictions,
       target_kcal: diet.target_kcal,
@@ -588,6 +603,7 @@ async function materializarTreino(
     tenantId: string;
     trainerId: string;
     studentId: string;
+    selfManaged: boolean;
     draft: SuggestWorkoutOutput;
   }
 ): Promise<string> {
@@ -606,7 +622,10 @@ async function materializarTreino(
       student_id: args.studentId,
       trainer_id: args.trainerId,
       name: 'Treino sugerido por IA',
-      status: 'draft',
+      // Aluno autônomo (self_managed): nasce JÁ LIBERADA para si; professional
+      // (B2B) segue o fluxo rascunho→revisão→liberação.
+      status: args.selfManaged ? 'released' : 'draft',
+      released_at: args.selfManaged ? new Date().toISOString() : null,
     })
     .select('id')
     .single();

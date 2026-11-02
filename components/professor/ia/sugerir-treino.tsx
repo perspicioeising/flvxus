@@ -44,9 +44,19 @@ const NIVEIS = [
  * (aprovar materializa em `workout_plans` como rascunho). Degrada com mensagem
  * amigável quando a função não está disponível.
  */
-export function SugerirTreinoIa({ alunos }: { alunos: AlunoOpcao[] }) {
+export function SugerirTreinoIa({
+  alunos,
+  alunoFixo,
+}: {
+  alunos: AlunoOpcao[];
+  /**
+   * Quando presente (aluno autônomo), esconde o Select de aluno e usa este id
+   * como `student_id`; o bloqueio "cadastre um aluno" (semAlunos) não aplica.
+   */
+  alunoFixo?: string;
+}) {
   const [aberto, setAberto] = React.useState(false);
-  const [studentId, setStudentId] = React.useState('');
+  const [studentId, setStudentId] = React.useState(alunoFixo ?? '');
   const [goal, setGoal] = React.useState('');
   const [nivel, setNivel] = React.useState('');
   const [dias, setDias] = React.useState('3');
@@ -55,7 +65,8 @@ export function SugerirTreinoIa({ alunos }: { alunos: AlunoOpcao[] }) {
   const [generationId, setGenerationId] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState<SuggestWorkoutOutput | null>(null);
 
-  const semAlunos = alunos.length === 0;
+  // Para o autônomo, nunca bloqueia por "sem alunos" (ele é o próprio aluno).
+  const semAlunos = !alunoFixo && alunos.length === 0;
   const diasNum = Number.parseInt(dias, 10);
   const desabilitado =
     !studentId || !goal.trim() || !nivel || !Number.isFinite(diasNum) || gerando;
@@ -128,21 +139,23 @@ export function SugerirTreinoIa({ alunos }: { alunos: AlunoOpcao[] }) {
           </RevisaoRascunho>
         ) : (
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="treino-aluno">Aluno</Label>
-              <Select value={studentId} onValueChange={setStudentId}>
-                <SelectTrigger id="treino-aluno">
-                  <SelectValue placeholder="Selecione o aluno" />
-                </SelectTrigger>
-                <SelectContent>
-                  {alunos.map((a) => (
-                    <SelectItem key={a.user_id} value={a.user_id}>
-                      {a.full_name ?? 'Aluno sem nome'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {alunoFixo ? null : (
+              <div className="space-y-1.5">
+                <Label htmlFor="treino-aluno">Aluno</Label>
+                <Select value={studentId} onValueChange={setStudentId}>
+                  <SelectTrigger id="treino-aluno">
+                    <SelectValue placeholder="Selecione o aluno" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {alunos.map((a) => (
+                      <SelectItem key={a.user_id} value={a.user_id}>
+                        {a.full_name ?? 'Aluno sem nome'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="treino-objetivo">Objetivo</Label>

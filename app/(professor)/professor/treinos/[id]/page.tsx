@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { Separator } from '@/components/ui/separator';
 import { FichaForm, type AlunoOpcao } from '@/components/professor/treinos/ficha-form';
@@ -61,6 +62,11 @@ export default async function FichaDetalhePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+
+  // Aluno autônomo (self_managed): a ficha é a própria; esconde o controle de
+  // liberação e o agendamento (ele é o aluno, não precisa "liberar").
+  const user = await getSessionUser();
+  const soloEu = user ? isSelfManaged(user) : false;
 
   const { data: ficha } = await supabase
     .from('workout_plans')
@@ -155,15 +161,17 @@ export default async function FichaDetalhePage({
         </p>
       </header>
 
-      <div className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">Status</h2>
-        <StatusControl planId={ficha.id} statusAtual={ficha.status as PlanStatus} />
-        <AgendarLiberacao
-          planId={ficha.id}
-          statusAtual={ficha.status as PlanStatus}
-          scheduledReleaseAt={ficha.scheduled_release_at}
-        />
-      </div>
+      {soloEu ? null : (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold text-foreground">Status</h2>
+          <StatusControl planId={ficha.id} statusAtual={ficha.status as PlanStatus} />
+          <AgendarLiberacao
+            planId={ficha.id}
+            statusAtual={ficha.status as PlanStatus}
+            scheduledReleaseAt={ficha.scheduled_release_at}
+          />
+        </div>
+      )}
 
       <Separator />
 

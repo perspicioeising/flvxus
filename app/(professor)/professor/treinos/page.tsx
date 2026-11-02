@@ -121,7 +121,7 @@ export default async function TreinosPage({
         }
         actions={
           <>
-            <SugerirTreinoIa alunos={alunos} />
+            <SugerirTreinoIa alunos={alunos} alunoFixo={soloEu ? user?.userId : undefined} />
             {soloEu ? null : <CriarDeModelo modelos={modelos} alunos={alunos} />}
             <Button asChild className="min-h-11">
               <Link href="/professor/treinos/nova">

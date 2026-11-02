@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Utensils } from 'lucide-react';
 
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { totaisDieta, totaisRefeicao } from '@/lib/dieta/totais';
 import { GOAL_LABEL } from '@/components/aluno/labels';
@@ -38,6 +39,11 @@ export default async function ProfessorDietaDetalhePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+
+  // Aluno autônomo (self_managed): a dieta é a própria; esconde o controle de
+  // liberação (ele é o aluno, não precisa "liberar para o aluno").
+  const user = await getSessionUser();
+  const soloEu = user ? isSelfManaged(user) : false;
 
   const { data: dieta } = await supabase
     .from('diets')
@@ -154,10 +160,12 @@ export default async function ProfessorDietaDetalhePage({
       )}
 
       {/* Controle de liberação */}
-      <div className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">Status</h2>
-        <DietaStatusControl dietId={id} statusAtual={status} />
-      </div>
+      {soloEu ? null : (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold text-foreground">Status</h2>
+          <DietaStatusControl dietId={id} statusAtual={status} />
+        </div>
+      )}
     </section>
   );
 }
