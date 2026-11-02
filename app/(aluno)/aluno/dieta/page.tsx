@@ -1,6 +1,7 @@
 import { Info, Utensils } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
+import { diaSP } from '@/lib/arena/datas';
 import { totaisDieta, totaisRefeicao } from '@/lib/dieta/totais';
 import { GOAL_LABEL } from '@/components/aluno/labels';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -12,6 +13,7 @@ import {
   RefeicaoLinha,
   type RefeicaoResumo,
 } from '@/components/aluno/dieta/refeicao-card';
+import { ToggleCumprimento } from '@/components/aluno/dieta/toggle-cumprimento';
 import type { GoalType } from '@/types/database.types';
 
 /** Formata um número com no máximo 1 casa decimal. */
@@ -69,8 +71,12 @@ export default async function AlunoDietaPage() {
        )`
     )
     .eq('status', 'released')
+    // Ordenação TOTAL determinística (casa a cláusula da action e de
+    // `gamification_sync_diet`): released_at desc nulls last, created_at desc,
+    // id desc. O `.order('id')` final desempata dietas com timestamps iguais.
     .order('released_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -112,6 +118,28 @@ export default async function AlunoDietaPage() {
 
   const totalDieta = totaisDieta(refeicoes.map((r) => totaisRefeicao(r.alimentos)));
   const restricoes = dieta.restrictions ?? [];
+
+  // --- Cumprimento das refeições do dia-SP (G2) ------------------------------
+  // Degradação por bloco: uma falha aqui não derruba a dieta (os toggles apenas
+  // começam desmarcados). As marcações cujo `diet_id` != dieta vigente são de
+  // uma dieta DESPROMOVIDA no meio do dia e aparecem no bloco de desmarcar.
+  const hoje = diaSP(new Date()) ?? '';
+  const { data: completionsData } = await supabase
+    .from('diet_meal_completions')
+    .select('id, meal_id, diet_id')
+    .eq('occurred_on', hoje);
+  const completions = completionsData ?? [];
+
+  // Refeições da dieta VIGENTE marcadas hoje (para o estado inicial do toggle).
+  const marcadasVigente = new Set(
+    completions.filter((c) => c.diet_id === dieta.id).map((c) => c.meal_id)
+  );
+
+  // Marcações de OUTRA dieta (despromovida): só permitem desmarcar. Mapeia a
+  // refeição ao nome, se ela ainda existir no catálogo da dieta vigente; senão
+  // mostra um rótulo genérico (a refeição pode ter sumido na troca de dieta).
+  const nomePorMeal = new Map(refeicoes.map((r) => [r.id, r.name]));
+  const marcadasDespromovidas = completions.filter((c) => c.diet_id !== dieta.id);
 
   return (
     <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -188,11 +216,51 @@ export default async function AlunoDietaPage() {
           </div>
           <Accordion type="multiple" className="space-y-3">
             {refeicoes.map((refeicao) => (
-              <RefeicaoLinha key={refeicao.id} refeicao={refeicao} />
+              <RefeicaoLinha
+                key={refeicao.id}
+                refeicao={refeicao}
+                dietId={dieta.id}
+                marcada={marcadasVigente.has(refeicao.id)}
+              />
             ))}
           </Accordion>
         </div>
       )}
+
+      {/* Marcações de uma dieta DESPROMOVIDA no meio do dia (só desmarcar). */}
+      {marcadasDespromovidas.length > 0 ? (
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
+              Refeições marcadas hoje
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Estas marcações são de uma dieta anterior de hoje. Você pode
+              desmarcá-las.
+            </p>
+          </div>
+          <ul className="space-y-2">
+            {marcadasDespromovidas.map((c) => (
+              <li
+                key={c.id}
+                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3"
+              >
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                  {nomePorMeal.get(c.meal_id) ?? 'Refeição'}
+                </span>
+                <div className="w-36 shrink-0">
+                  <ToggleCumprimento
+                    mealId={c.meal_id}
+                    dietId={c.diet_id}
+                    marcada
+                    somenteDesmarcar
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }

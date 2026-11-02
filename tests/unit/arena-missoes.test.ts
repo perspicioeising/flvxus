@@ -17,12 +17,65 @@ function estadoDe(missoes: ReturnType<typeof montarMissoes>, id: MissaoId): Esta
   return missoes.find((m) => m.id === id)?.estado;
 }
 
-describe('montarMissoes — missões sem fonte ficam bloqueadas (RF8.5)', () => {
-  it('água, dieta e refeições são sempre bloqueadas', () => {
+describe('montarMissoes — hábitos ausentes ficam bloqueados (retrocompat G1)', () => {
+  it('sem `habitos`, água/dieta/refeições são bloqueadas', () => {
     const missoes = montarMissoes({ treinos: [], descansos: [] }, REFERENCIA);
     expect(estadoDe(missoes, 'agua_dia')).toBe('bloqueada');
     expect(estadoDe(missoes, 'dieta_dia')).toBe('bloqueada');
     expect(estadoDe(missoes, 'refeicoes_dia')).toBe('bloqueada');
+  });
+});
+
+describe('montarMissoes — hábitos presentes resolvem concluída/pendente (G2)', () => {
+  it('flags true marcam as três missões como concluídas', () => {
+    const missoes = montarMissoes(
+      {
+        treinos: [],
+        descansos: [],
+        habitos: {
+          aguaMetaAtingida: true,
+          dietaCumprida: true,
+          refeicoesRegistradas: true,
+        },
+      },
+      REFERENCIA
+    );
+    expect(estadoDe(missoes, 'agua_dia')).toBe('concluida');
+    expect(estadoDe(missoes, 'dieta_dia')).toBe('concluida');
+    expect(estadoDe(missoes, 'refeicoes_dia')).toBe('concluida');
+  });
+
+  it('`habitos` presente com flags ausentes/false → pendente (não bloqueada)', () => {
+    const missoes = montarMissoes(
+      { treinos: [], descansos: [], habitos: {} },
+      REFERENCIA
+    );
+    expect(estadoDe(missoes, 'agua_dia')).toBe('pendente');
+    expect(estadoDe(missoes, 'dieta_dia')).toBe('pendente');
+    expect(estadoDe(missoes, 'refeicoes_dia')).toBe('pendente');
+  });
+
+  it('resolve cada missão de hábito pelo seu próprio flag', () => {
+    const missoes = montarMissoes(
+      {
+        treinos: [],
+        descansos: [],
+        habitos: { aguaMetaAtingida: true, refeicoesRegistradas: true },
+      },
+      REFERENCIA
+    );
+    expect(estadoDe(missoes, 'agua_dia')).toBe('concluida');
+    expect(estadoDe(missoes, 'refeicoes_dia')).toBe('concluida');
+    expect(estadoDe(missoes, 'dieta_dia')).toBe('pendente');
+  });
+});
+
+describe('montarMissoes — rótulo de refeicoes_dia (G2)', () => {
+  it('o título de refeicoes_dia é "Registrar uma refeição"', () => {
+    const missoes = montarMissoes({ treinos: [], descansos: [] }, REFERENCIA);
+    expect(missoes.find((m) => m.id === 'refeicoes_dia')?.titulo).toBe(
+      'Registrar uma refeição'
+    );
   });
 });
 

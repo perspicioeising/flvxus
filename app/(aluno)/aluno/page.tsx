@@ -6,6 +6,9 @@ import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { diasDesde } from '@/lib/datas';
 import { weekdayAtual, WEEKDAY_LABEL } from '@/lib/semana';
+import { diaSP } from '@/lib/arena/datas';
+import { progressoAgua } from '@/lib/habitos/agua';
+import { metaSugeridaMl } from '@/lib/habitos/meta-agua';
 import {
   proximoTreinoDaFicha,
   type FichaInicio,
@@ -14,6 +17,8 @@ import { EmptyState, ErrorState } from '@/components/patterns';
 import { CardTreinoHoje } from '@/components/aluno/inicio/card-treino-hoje';
 import { CardFichaSemTreino } from '@/components/aluno/inicio/card-ficha-sem-treino';
 import { DescansoResumoCard } from '@/components/aluno/treinos/descanso-resumo-card';
+import { CardAgua } from '@/components/aluno/habitos/card-agua';
+import { BotaoCheckin } from '@/components/aluno/habitos/botao-checkin';
 
 /**
  * Tela de início do aluno. Lê TODAS as fichas liberadas (o aluno Bruno tem
@@ -31,8 +36,17 @@ export default async function AlunoHomePage() {
 
   const supabase = await createClient();
   const weekday = weekdayAtual();
+  const hoje = diaSP(new Date()) ?? '';
 
-  const [fichasRes, avaliacaoRes, sessoesRes, descansosRes] = await Promise.all([
+  const [
+    fichasRes,
+    avaliacaoRes,
+    sessoesRes,
+    descansosRes,
+    aguaRes,
+    checkinRes,
+    metaRes,
+  ] = await Promise.all([
     // TODAS as fichas liberadas do aluno + itens (RLS garante posse e released).
     // Desempate determinístico: released_at desc, id desc (nunca some ficha).
     supabase
@@ -43,10 +57,11 @@ export default async function AlunoHomePage() {
       .eq('status', 'released')
       .order('released_at', { ascending: false, nullsFirst: false })
       .order('id', { ascending: false }),
-    // Última avaliação física (para o resumo "há N dias"). Mantida no Promise.all.
+    // Última avaliação física (para o resumo "há N dias" e a meta de água
+    // sugerida pelo peso quando não há meta salva). Mantida no Promise.all.
     supabase
       .from('physical_assessments')
-      .select('assessed_at')
+      .select('assessed_at, weight_kg')
       .order('assessed_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -65,8 +80,25 @@ export default async function AlunoHomePage() {
       .from('workout_plan_rest_completions')
       .select('plan_id, rest_step_index, completed_at')
       .order('completed_at', { ascending: false }),
+    // Hábitos G2 — registros de água do dia-SP (RLS: só os próprios).
+    supabase
+      .from('water_intake_logs')
+      .select('amount_ml, occurred_on')
+      .eq('occurred_on', hoje),
+    // Hábitos G2 — check-in do dia-SP (único por aluno/dia).
+    supabase
+      .from('daily_checkins')
+      .select('id')
+      .eq('occurred_on', hoje)
+      .maybeSingle(),
+    // Hábitos G2 — meta de água salva (1 linha/aluno). Sem linha → derivamos do
+    // peso da última avaliação (ou default) via `metaSugeridaMl`.
+    supabase.from('water_goals').select('target_ml').maybeSingle(),
   ]);
 
+  // Os hábitos degradam POR BLOCO: um erro aqui não derruba o início (o bloco de
+  // hábitos cai no seu estado zero/não-feito); o caminho de erro geral cobre só
+  // as leituras essenciais de treino/avaliação.
   if (fichasRes.error || avaliacaoRes.error || sessoesRes.error || descansosRes.error) {
     return (
       <section className="mx-auto w-full max-w-2xl space-y-6">
@@ -81,6 +113,15 @@ export default async function AlunoHomePage() {
 
   const fichas = (fichasRes.data ?? []) as FichaInicio[];
   const diasUltimaAvaliacao = diasDesde(avaliacaoRes.data?.assessed_at ?? null);
+
+  // --- Hábitos do dia (degradação por bloco) ---------------------------------
+  // Meta: a salva em `water_goals` prevalece; senão sugerimos pela última
+  // avaliação (`metaSugeridaMl` já cobre o default quando não há peso).
+  const metaAguaMl =
+    metaRes.data?.target_ml ?? metaSugeridaMl(avaliacaoRes.data?.weight_kg ?? null);
+  const aguaLogs = aguaRes.error ? [] : aguaRes.data ?? [];
+  const progresso = progressoAgua(aguaLogs, metaAguaMl, hoje);
+  const jaFezCheckin = !checkinRes.error && checkinRes.data != null;
 
   // Mapa plan_id → última divisão CONCLUÍDA (ordenado por finished_at desc, id
   // desc). Como as sessões já vêm da mais recente para a mais antiga, a PRIMEIRA
@@ -182,6 +223,17 @@ export default async function AlunoHomePage() {
           })}
         </div>
       )}
+
+      {/* Hábitos do dia: hidratação + check-in (G2). */}
+      <div className="space-y-3">
+        <CardAgua
+          consumidoMl={progresso.consumidoMl}
+          targetMl={progresso.targetMl}
+          pct={progresso.pct}
+          metaAtingida={progresso.metaAtingida}
+        />
+        <BotaoCheckin jaFezHoje={jaFezCheckin} />
+      </div>
 
       <nav aria-label="Atalhos" className="grid grid-cols-2 gap-3">
         <Link

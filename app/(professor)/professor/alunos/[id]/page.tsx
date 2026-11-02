@@ -43,6 +43,7 @@ import { ResendInviteButton } from '@/components/professor/alunos/resend-invite-
 import { SecaoEvolucao } from '@/components/professor/alunos/secao-evolucao';
 import { SecaoHistorico } from '@/components/professor/alunos/secao-historico';
 import { AtalhosAluno } from '@/components/professor/alunos/atalhos-aluno';
+import { MetaAguaAluno } from '@/components/professor/alunos/meta-agua-aluno';
 import type {
   ExperienceLevel,
   GoalType,
@@ -120,7 +121,7 @@ export default async function FichaAlunoPage({
   }
 
   // Seções da ficha 360 — consultas via RLS (paralelas).
-  const [avaliacaoRes, treinosRes, dietasRes] = await Promise.all([
+  const [avaliacaoRes, treinosRes, dietasRes, metaAguaRes] = await Promise.all([
     supabase
       .from('physical_assessments')
       .select('id, assessed_at, weight_kg, bmi, body_fat_pct')
@@ -141,11 +142,15 @@ export default async function FichaAlunoPage({
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // Meta de água do aluno-alvo (G2). Sob RLS do trainer: o ramo trainer da
+    // policy de `water_goals` só devolve a linha de um student do mesmo tenant.
+    supabase.from('water_goals').select('target_ml').eq('user_id', id).maybeSingle(),
   ]);
 
   const avaliacao = avaliacaoRes.data;
   const treinos = treinosRes.data ?? [];
   const dieta = dietasRes.data;
+  const metaAguaMl = metaAguaRes.data?.target_ml ?? null;
   const nome = aluno.full_name ?? 'Aluno sem nome';
   const dias = diasDesde(avaliacao?.assessed_at);
 
@@ -345,13 +350,21 @@ export default async function FichaAlunoPage({
                         }
                       />
                     </dl>
+                    <MetaAguaAluno
+                      alunoId={id}
+                      metaAtualMl={metaAguaMl}
+                      pesoKg={avaliacao.weight_kg}
+                    />
                   </div>
                 ) : (
-                  <EmptyState
-                    icon={HeartPulse}
-                    title="Sem avaliações ainda"
-                    description="As avaliações físicas deste aluno aparecerão aqui."
-                  />
+                  <div className="space-y-3">
+                    <EmptyState
+                      icon={HeartPulse}
+                      title="Sem avaliações ainda"
+                      description="As avaliações físicas deste aluno aparecerão aqui."
+                    />
+                    <MetaAguaAluno alunoId={id} metaAtualMl={metaAguaMl} pesoKg={null} />
+                  </div>
                 )}
               </AccordionContent>
             </AccordionItem>

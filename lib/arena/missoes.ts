@@ -40,6 +40,21 @@ export interface Missao {
   estado: EstadoMissao;
 }
 
+/**
+ * Estado real dos hábitos do dia-SP (G2). Cada flag vem da PRESENÇA do evento
+ * de hábito correspondente no dia (`water_goal`/`meal_logged`/`diet_day`).
+ * Quando `habitos` está AUSENTE em `EntradaMissoes`, as três missões de hábito
+ * seguem bloqueadas (retrocompat com a G1, que não tinha fonte).
+ */
+export interface EstadoHabitos {
+  /** Meta de água atingida hoje (evento `water_goal`). */
+  aguaMetaAtingida?: boolean;
+  /** Pelo menos uma refeição registrada hoje (evento `meal_logged`). */
+  refeicoesRegistradas?: boolean;
+  /** Dieta do dia cumprida (evento `diet_day`). */
+  dietaCumprida?: boolean;
+}
+
 /** Eventos reais usados para derivar a conclusão das missões. */
 export interface EntradaMissoes {
   /**
@@ -51,6 +66,12 @@ export interface EntradaMissoes {
   descansos: Array<Date | string>;
   /** `true` quando hoje-SP é um dia de descanso programado (RF8.3). */
   diaDeDescanso?: boolean;
+  /**
+   * Estado real dos hábitos do dia-SP (G2). AUSENTE = sem fonte (as três
+   * missões de hábito ficam `bloqueada`, como na G1). PRESENTE = cada missão
+   * resolve `concluida`/`pendente` pelo flag correspondente.
+   */
+  habitos?: EstadoHabitos;
 }
 
 /** Converte instantes/dias em um conjunto de dias-SP válidos. */
@@ -109,11 +130,35 @@ export function montarMissoes(
           hoje !== null && diasTreino.has(hoje) ? 'concluida' : 'pendente',
       };
 
-  // --- Missões diárias sem fonte na G1 (RF8.5): sempre bloqueadas ---
-  const bloqueadasDiarias: Missao[] = [
-    { id: 'agua_dia', titulo: 'Atingir a meta de água', xp: 10, periodo: 'diaria', estado: 'bloqueada' },
-    { id: 'dieta_dia', titulo: 'Cumprir a dieta do dia', xp: 20, periodo: 'diaria', estado: 'bloqueada' },
-    { id: 'refeicoes_dia', titulo: 'Registrar todas as refeições', xp: 10, periodo: 'diaria', estado: 'bloqueada' },
+  // --- Missões diárias de hábito (G2) ---
+  // Sem `habitos` (G1/sem fonte), cada uma fica `bloqueada` (RF8.5). Com
+  // `habitos`, resolve `concluida`/`pendente` pela presença do evento do dia.
+  const { habitos } = entrada;
+  const estadoHabito = (flag: boolean | undefined): EstadoMissao =>
+    habitos === undefined ? 'bloqueada' : flag ? 'concluida' : 'pendente';
+
+  const habitosDiarios: Missao[] = [
+    {
+      id: 'agua_dia',
+      titulo: 'Atingir a meta de água',
+      xp: 10,
+      periodo: 'diaria',
+      estado: estadoHabito(habitos?.aguaMetaAtingida),
+    },
+    {
+      id: 'dieta_dia',
+      titulo: 'Cumprir a dieta do dia',
+      xp: 20,
+      periodo: 'diaria',
+      estado: estadoHabito(habitos?.dietaCumprida),
+    },
+    {
+      id: 'refeicoes_dia',
+      titulo: 'Registrar uma refeição',
+      xp: 10,
+      periodo: 'diaria',
+      estado: estadoHabito(habitos?.refeicoesRegistradas),
+    },
   ];
 
   // --- Missões semanais (derivadas de eventos reais da semana-SP) ---
@@ -155,5 +200,5 @@ export function montarMissoes(
     },
   ];
 
-  return [missaoDoDia, ...bloqueadasDiarias, ...missoesSemanais];
+  return [missaoDoDia, ...habitosDiarios, ...missoesSemanais];
 }

@@ -12,6 +12,7 @@
  * `cookies()`).
  */
 import { createClient } from '@/lib/supabase/server';
+import { diaSP } from '@/lib/arena/datas';
 import { nivelPorXp, type NivelArena } from '@/lib/arena/niveis';
 import {
   montarMissoes,
@@ -112,7 +113,8 @@ export async function montarDadosArena(userId: string): Promise<DadosArena> {
   // `descansos`= dias-SP de descansos programados cumpridos.
   let missoes: Missao[] = [];
   try {
-    const [eventosRes, descansosRes] = await Promise.all([
+    const hoje = diaSP(new Date());
+    const [eventosRes, descansosRes, habitosRes] = await Promise.all([
       supabase
         .from('gamification_events')
         .select('occurred_on')
@@ -122,6 +124,15 @@ export async function montarDadosArena(userId: string): Promise<DadosArena> {
         .from('workout_plan_rest_completions')
         .select('completed_at')
         .eq('student_id', userId),
+      // Eventos de HÁBITO do dia-SP (G2): a presença de cada tipo conclui a
+      // missão diária correspondente. `hoje` null (data inválida) degrada para
+      // uma query que não casa nada → flags false.
+      supabase
+        .from('gamification_events')
+        .select('event_type')
+        .eq('user_id', userId)
+        .in('event_type', ['water_goal', 'meal_logged', 'diet_day'])
+        .eq('occurred_on', hoje ?? '0001-01-01'),
     ]);
     if (eventosRes.error) {
       console.error('[montarDadosArena] missões (eventos):', eventosRes.error.message);
@@ -131,7 +142,22 @@ export async function montarDadosArena(userId: string): Promise<DadosArena> {
     }
     const treinos = (eventosRes.data ?? []).map((e) => e.occurred_on);
     const descansos = (descansosRes.data ?? []).map((d) => d.completed_at);
-    missoes = montarMissoes({ treinos, descansos });
+
+    // Degradação por bloco: se a query de hábitos falhar, os três flags caem
+    // para false (missões pendentes), apenas logado.
+    let habitos = { aguaMetaAtingida: false, refeicoesRegistradas: false, dietaCumprida: false };
+    if (habitosRes.error) {
+      console.error('[montarDadosArena] missões (hábitos):', habitosRes.error.message);
+    } else {
+      const tipos = new Set((habitosRes.data ?? []).map((h) => h.event_type));
+      habitos = {
+        aguaMetaAtingida: tipos.has('water_goal'),
+        refeicoesRegistradas: tipos.has('meal_logged'),
+        dietaCumprida: tipos.has('diet_day'),
+      };
+    }
+
+    missoes = montarMissoes({ treinos, descansos, habitos });
   } catch (e) {
     console.error('[montarDadosArena] missões (exceção):', e);
     missoes = montarMissoes({ treinos: [], descansos: [] });

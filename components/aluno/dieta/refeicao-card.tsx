@@ -1,6 +1,7 @@
 import { Clock } from 'lucide-react';
 
 import { totaisRefeicao, type TotaisRefeicao } from '@/lib/dieta/totais';
+import { ToggleCumprimento } from '@/components/aluno/dieta/toggle-cumprimento';
 import {
   Card,
   CardContent,
@@ -116,9 +117,21 @@ export function RefeicaoCard({ refeicao }: { refeicao: RefeicaoResumo }) {
 
 /**
  * Refeição da dieta como item de accordion: horário em destaque + kcal/macros
- * no cabeçalho; os alimentos aparecem ao expandir. Somente leitura.
+ * no cabeçalho; os alimentos aparecem ao expandir. Quando `dietId` é informado
+ * (G2), renderiza o toggle "cumpri hoje" ao final do conteúdo — `marcada`
+ * reflete o estado do dia resolvido no servidor.
  */
-export function RefeicaoLinha({ refeicao }: { refeicao: RefeicaoResumo }) {
+export function RefeicaoLinha({
+  refeicao,
+  dietId,
+  marcada = false,
+}: {
+  refeicao: RefeicaoResumo;
+  /** Dieta vigente — habilita o toggle de cumprimento quando informado. */
+  dietId?: string;
+  /** Estado inicial do toggle (refeição cumprida hoje). */
+  marcada?: boolean;
+}) {
   const totais: TotaisRefeicao = totaisRefeicao(refeicao.alimentos);
   const hora = formatarHora(refeicao.time);
 
@@ -173,6 +186,15 @@ export function RefeicaoLinha({ refeicao }: { refeicao: RefeicaoResumo }) {
             })}
           </ul>
         )}
+        {dietId ? (
+          <div className="mt-3 border-t border-border pt-3">
+            <ToggleCumprimento
+              mealId={refeicao.id}
+              dietId={dietId}
+              marcada={marcada}
+            />
+          </div>
+        ) : null}
       </AccordionContent>
     </AccordionItem>
   );
