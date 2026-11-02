@@ -57,15 +57,20 @@ export default function LoginPage() {
         return;
       }
 
-      // Redireciona por papel lendo profiles.role (trainer → /professor,
-      // student → /aluno). O gate definitivo é server-side nos layouts.
+      // Redireciona por papel lendo profiles. O aluno vinculado (student) e o
+      // aluno autônomo (trainer + self_managed) vão para /aluno — este é o
+      // painel deles. O professor B2B (trainer professional) vai para
+      // /professor. O gate definitivo é server-side nos layouts.
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, account_type")
         .eq("user_id", data.user.id)
         .single();
 
-      const destino = profile?.role === "student" ? "/aluno" : "/professor";
+      const destino =
+        profile?.role === "student" || profile?.account_type === "self_managed"
+          ? "/aluno"
+          : "/professor";
 
       toast({
         title: "Login bem-sucedido! 🎉",
