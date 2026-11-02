@@ -38,6 +38,7 @@ const trainerNav: NavItem[] = [
   { label: 'Modelos de treino', href: '/professor/modelos-treino', icon: LayoutList },
   { label: 'Treinos', href: '/professor/treinos', icon: ClipboardList },
   { label: 'Dietas', href: '/professor/dietas', icon: Utensils },
+  { label: 'Desafios', href: '/professor/desafios', icon: Trophy },
   // { label: 'Agenda', href: '/professor/agenda', icon: Calendar },
   { label: 'Configurações', href: '/professor/configuracoes', icon: Settings },
   { label: 'Ajuda', href: '/professor/ajuda', icon: HelpCircle },
@@ -92,7 +93,11 @@ export function getNavItems(
       (item) =>
         item.href !== '/professor' &&
         item.href !== '/professor/alunos' &&
-        item.href !== '/professor/modelos-treino',
+        item.href !== '/professor/modelos-treino' &&
+        // "Desafios" é o painel do personal B2B (intra-tenant); o autônomo não
+        // gerencia turma, então o item não entra no menu dele (o gate de rota
+        // em desafios/layout.tsx é a fronteira real).
+        item.href !== '/professor/desafios',
     );
     // Itens de uso do autônomo (rotas /aluno reusadas). A "Arena" é exclusiva
     // do autônomo: o professor B2B não tem Arena própria (quem tem são os
