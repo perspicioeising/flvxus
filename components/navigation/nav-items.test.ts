@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isMainScreen } from './nav-items';
+import { getNavItems, isMainScreen } from './nav-items';
 
 /**
  * Testes de `isMainScreen` (Ajuste 2): a logo no header mobile só aparece nas
@@ -48,5 +48,55 @@ describe('isMainScreen — telas principais por papel', () => {
       expect(isMainScreen('/professor/plano', 'trainer', false)).toBe(false);
       expect(isMainScreen('/professor/plano', 'trainer', true)).toBe(true);
     });
+
+    it('aba de uso do autônomo é principal (self_managed)', () => {
+      expect(isMainScreen('/aluno/evolucao', 'trainer', true, 'self_managed')).toBe(
+        true,
+      );
+    });
+  });
+});
+
+/**
+ * Testes de `getNavItems`: a nav do aluno autônomo (trainer + self_managed)
+ * oculta a gestão de terceiros e adiciona as telas de USO (rotas /aluno),
+ * enquanto a nav do professional e a do student permanecem inalteradas.
+ */
+describe('getNavItems — nav por account_type', () => {
+  it('autônomo (trainer, self_managed) oculta gestão e lista telas de uso', () => {
+    const hrefs = getNavItems('trainer', true, 'self_managed').map((i) => i.href);
+
+    expect(hrefs).not.toContain('/professor/alunos');
+    expect(hrefs).not.toContain('/professor/modelos-treino');
+    expect(hrefs).toContain('/aluno/execucao');
+    expect(hrefs).toContain('/aluno/evolucao');
+    expect(hrefs).toContain('/aluno/conquistas');
+    expect(hrefs).toContain('/professor/plano');
+  });
+
+  it('professional (trainer) mantém o menu B2B atual', () => {
+    const hrefs = getNavItems('trainer', true, 'professional').map((i) => i.href);
+
+    expect(hrefs).toContain('/professor/alunos');
+    expect(hrefs).toContain('/professor/modelos-treino');
+    expect(hrefs).not.toContain('/aluno/execucao');
+    expect(hrefs).not.toContain('/aluno/evolucao');
+    expect(hrefs).not.toContain('/aluno/conquistas');
+  });
+
+  it('student permanece inalterado', () => {
+    const studentHrefs = getNavItems('student').map((i) => i.href);
+
+    expect(studentHrefs).toEqual([
+      '/aluno',
+      '/aluno/treinos',
+      '/aluno/historico',
+      '/aluno/dieta',
+      '/aluno/evolucao',
+      '/aluno/avaliacoes',
+      '/aluno/conquistas',
+      '/aluno/perfil',
+      '/aluno/ajuda',
+    ]);
   });
 });

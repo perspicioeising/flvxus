@@ -41,6 +41,15 @@ const HOME_BY_ROLE: Record<UserRole, string> = {
 };
 
 /**
+ * TRUE quando a conta é a do aluno autônomo (self_managed) — o personal que
+ * treina por conta própria, sem gerenciar alunos. Centraliza a ramificação
+ * usada pela UX do autônomo (nav, gates, telas de uso).
+ */
+export function isSelfManaged(u: { accountType: AccountType }): boolean {
+  return u.accountType === 'self_managed';
+}
+
+/**
  * Retorna o usuário autenticado com seu perfil (papel/tenant) ou `null` quando
  * não há sessão válida. Não redireciona — use `requireRole` para proteger áreas.
  */
@@ -104,6 +113,32 @@ export async function requireRole(role: UserRole): Promise<SessionUser> {
   }
 
   return sessionUser;
+}
+
+/**
+ * Gate server-side da ÁREA DO ALUNO que também admite o aluno autônomo
+ * (trainer + self_managed). As rotas /aluno (execução/evolução/conquistas) leem
+ * por RLS/auth.uid() e não gateiam papel na própria página — reusá-las para o
+ * autônomo (OPÇÃO a do design) exige apenas abrir o gate do layout.
+ * - Sem sessão → `/login`.
+ * - `student` OU (`trainer` + self_managed) → devolve o `SessionUser`.
+ * - Demais (ex.: trainer professional) → `HOME_BY_ROLE[role]` (/professor).
+ */
+export async function requireSelfOrStudent(): Promise<SessionUser> {
+  const sessionUser = await getSessionUser();
+
+  if (!sessionUser) {
+    redirect('/login');
+  }
+
+  if (
+    sessionUser.role === 'student' ||
+    (sessionUser.role === 'trainer' && isSelfManaged(sessionUser))
+  ) {
+    return sessionUser;
+  }
+
+  redirect(HOME_BY_ROLE[sessionUser.role]);
 }
 
 /**

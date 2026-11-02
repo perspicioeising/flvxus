@@ -14,6 +14,7 @@ import {
   HelpCircle,
   CreditCard,
   History,
+  Play,
   type LucideIcon,
   Trophy,
 } from 'lucide-react';
@@ -77,11 +78,30 @@ export function getNavItems(
     return studentNav;
   }
 
-  // Aluno autônomo: sem gestão de alunos, remove o item "Alunos" do menu.
-  const base =
-    accountType === 'self_managed'
-      ? trainerNav.filter((item) => item.href !== '/professor/alunos')
-      : trainerNav;
+  // Aluno autônomo: não gerencia terceiros — remove "Alunos" e "Modelos de
+  // treino"; e adiciona as telas de USO (rotas /aluno, reusadas pela OPÇÃO a do
+  // design) logo após "Treinos".
+  let base = trainerNav;
+  if (accountType === 'self_managed') {
+    const semGestao = trainerNav.filter(
+      (item) =>
+        item.href !== '/professor/alunos' &&
+        item.href !== '/professor/modelos-treino',
+    );
+    // Itens de uso do autônomo. TODO (gamificação): quando a Arena existir,
+    // acrescentar aqui o item apontando para a rota dela (ainda inexistente).
+    const usoItems: NavItem[] = [
+      { label: 'Treinar', href: '/aluno/execucao', icon: Play },
+      { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
+      { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
+    ];
+    const treinosIndex = semGestao.findIndex(
+      (item) => item.href === '/professor/treinos',
+    );
+    const insertAt = treinosIndex === -1 ? semGestao.length : treinosIndex + 1;
+    base = [...semGestao];
+    base.splice(insertAt, 0, ...usoItems);
+  }
 
   if (!isMaster) {
     return base;

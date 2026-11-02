@@ -1,21 +1,28 @@
 import type { ReactNode } from 'react';
 
-import { requireRole } from '@/lib/auth';
+import { requireSelfOrStudent } from '@/lib/auth';
 import { AppShell } from '@/components/navigation/app-shell';
 
 /**
  * Gate server-side da ÁREA DO ALUNO (architecture.md §5.2). Lê `profiles.role`
  * via createServerClient; sem sessão → /login, papel divergente → área correta.
+ * Admite também o aluno autônomo (trainer + self_managed) via
+ * `requireSelfOrStudent`, que reusa as rotas /aluno (OPÇÃO a do design).
  */
 export default async function AlunoLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const user = await requireRole('student');
+  const user = await requireSelfOrStudent();
 
   return (
-    <AppShell role={user.role} rootHref="/aluno">
+    <AppShell
+      role={user.role}
+      rootHref="/aluno"
+      isMaster={user.isMaster}
+      accountType={user.accountType}
+    >
       {children}
     </AppShell>
   );
