@@ -408,6 +408,111 @@ export interface Database {
           completed_at?: string;
         };
       };
+      // Hábitos G2 (20261027090100): meta de hidratação por aluno (1 linha/aluno).
+      water_goals: {
+        Row: {
+          user_id: string;
+          tenant_id: string;
+          target_ml: number;
+          source: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          tenant_id: string;
+          target_ml: number;
+          source?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          tenant_id?: string;
+          target_ml?: number;
+          source?: string;
+          updated_at?: string;
+        };
+      };
+      // Hábitos G2 (20261027090100): registros de ingestão de água do dia-SP.
+      water_intake_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          tenant_id: string;
+          amount_ml: number;
+          occurred_on: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          amount_ml: number;
+          occurred_on?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tenant_id?: string;
+          amount_ml?: number;
+          occurred_on?: string;
+          created_at?: string;
+        };
+      };
+      // Hábitos G2 (20261027090200): marcação de refeição cumprida pelo aluno.
+      diet_meal_completions: {
+        Row: {
+          id: string;
+          user_id: string;
+          tenant_id: string;
+          diet_id: string;
+          meal_id: string;
+          occurred_on: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          diet_id: string;
+          meal_id: string;
+          occurred_on?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tenant_id?: string;
+          diet_id?: string;
+          meal_id?: string;
+          occurred_on?: string;
+          created_at?: string;
+        };
+      };
+      // Hábitos G2 (20261027090300): check-in diário (único por aluno/dia-SP).
+      daily_checkins: {
+        Row: {
+          id: string;
+          user_id: string;
+          tenant_id: string;
+          occurred_on: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tenant_id: string;
+          occurred_on?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tenant_id?: string;
+          occurred_on?: string;
+          created_at?: string;
+        };
+      };
       workout_plan_items: {
         Row: {
           id: string;
@@ -1590,15 +1695,17 @@ export type Enums<T extends keyof Database['public']['Enums']> =
 // Limiares: 0/500/1500/3000/6000/12000.
 export type ArenaLevel = 0 | 1 | 2 | 3 | 4 | 5;
 
-// Tipos de evento do catálogo gamification_event_types. Os três últimos são
-// ganchos inertes (active=false) na G1.
+// Tipos de evento do catálogo gamification_event_types. Em G2 (hábitos) os
+// ganchos diet_day/water_goal/daily_checkin foram ativados e meal_logged foi
+// acrescentado (migration 20261027090000).
 export type GamificationEventType =
   | 'workout_completed'
   | 'load_progression'
   | 'physical_evolution'
   | 'diet_day'
   | 'water_goal'
-  | 'daily_checkin';
+  | 'daily_checkin'
+  | 'meal_logged';
 
 // Shape de gamification_profiles.stats (NIT-3): contadores por categoria.
 export type GamificationStats = {
