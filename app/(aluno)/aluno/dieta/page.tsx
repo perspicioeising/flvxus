@@ -1,11 +1,15 @@
-import { Info, Utensils } from 'lucide-react';
+import Link from 'next/link';
 
+import { Info, Plus, Utensils } from 'lucide-react';
+
+import { getSessionUser, isSelfManaged } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { diaSP } from '@/lib/arena/datas';
 import { totaisDieta, totaisRefeicao } from '@/lib/dieta/totais';
 import { GOAL_LABEL } from '@/components/aluno/labels';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Accordion } from '@/components/ui/accordion';
 import { EmptyState, ErrorState, PageHeader } from '@/components/patterns';
@@ -58,6 +62,14 @@ function BarraMacro({
  * é sempre visível.
  */
 export default async function AlunoDietaPage() {
+  // Aluno autônomo (self_managed) cria a própria dieta: ganha um atalho que
+  // apenas NAVEGA para /professor/dietas (onde o fluxo de IA já trata o
+  // autônomo com `alunoFixo` = ele mesmo e auto-libera). O aluno VINCULADO
+  // (student) NÃO cria dieta (quem cria é o professor dele), então não vê o
+  // botão e mantém os textos atuais, sem regressão. O layout já gateia o acesso.
+  const sessionUser = await getSessionUser();
+  const podeCriar = sessionUser ? isSelfManaged(sessionUser) : false;
+
   const supabase = await createClient();
 
   const { data: dieta, error } = await supabase
@@ -99,10 +111,22 @@ export default async function AlunoDietaPage() {
         <AvisoMedico />
         <EmptyState
           icon={Utensils}
-          title="Nenhuma dieta liberada ainda"
-          description="Quando seu professor liberar uma dieta, ela aparece aqui com refeições e metas."
+          title={podeCriar ? 'Nenhuma dieta ainda' : 'Nenhuma dieta liberada ainda'}
+          description={
+            podeCriar
+              ? 'Crie sua dieta para começar a acompanhar refeições e metas.'
+              : 'Quando seu professor liberar uma dieta, ela aparece aqui com refeições e metas.'
+          }
           className="rounded-3xl"
         />
+        {podeCriar ? (
+          <Button asChild className="min-h-11 w-full">
+            <Link href="/professor/dietas">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Criar minha dieta
+            </Link>
+          </Button>
+        ) : null}
       </section>
     );
   }
@@ -147,6 +171,16 @@ export default async function AlunoDietaPage() {
         emphasis="caps"
         title="Dieta"
         subtitle="Sua dieta liberada pelo professor, com refeições e metas diárias."
+        actions={
+          podeCriar ? (
+            <Button asChild variant="outline" size="sm" className="min-h-11">
+              <Link href="/professor/dietas">
+                <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                Gerar nova dieta
+              </Link>
+            </Button>
+          ) : undefined
+        }
       />
       <AvisoMedico />
 
