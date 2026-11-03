@@ -87,8 +87,21 @@ describe('cadastroProfessorSchema', () => {
     const r = cadastroProfessorSchema.safeParse({
       ...semEmpresa,
       accountType: 'self_managed',
+      socialHandle: 'bruno_santos',
     });
     expect(r.success).toBe(true);
+  });
+
+  it('exige o nome de usuário quando accountType é "self_managed"', () => {
+    const { businessName: _businessName, ...semEmpresa } = cadastroValido;
+    const r = cadastroProfessorSchema.safeParse({
+      ...semEmpresa,
+      accountType: 'self_managed',
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path.includes('socialHandle'))).toBe(true);
+    }
   });
 
   it('exige nome da empresa quando accountType é "professional"', () => {
