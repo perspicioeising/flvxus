@@ -4,6 +4,7 @@ import { atualizarPerfilProfessor } from '@/actions/perfil';
 import { canAddAffiliate } from '@/lib/billing/entitlement';
 import { ErrorState } from '@/components/patterns';
 import { PerfilProfessorForm } from '@/components/professor/perfil/perfil-professor-form';
+import { FotoPerfil } from '@/components/aluno/perfil/foto-perfil';
 import { VisibilidadeSection } from '@/components/professor/configuracoes/visibilidade-section';
 import {
   FiliadosSection,
@@ -49,7 +50,7 @@ export default async function ProfessorConfiguracoesPage() {
     await Promise.all([
       supabase
         .from('profiles')
-        .select('full_name, email, phone')
+        .select('full_name, email, phone, avatar_url')
         .eq('user_id', user.userId)
         .single(),
       supabase.from('tenants').select('name').eq('id', user.tenantId).single(),
@@ -144,7 +145,8 @@ export default async function ProfessorConfiguracoesPage() {
             {perfil.email ? `Conta: ${perfil.email}` : 'Mantenha seus dados atualizados.'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4">
+        <CardContent className="space-y-4 p-4">
+          <FotoPerfil fotoAtual={perfil.avatar_url} nomeExibicao={perfil.full_name} />
           <PerfilProfessorForm
             email={perfil.email ?? ''}
             valoresIniciais={{

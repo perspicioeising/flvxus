@@ -3,14 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ErrorState, PageHeader } from '@/components/patterns';
 import { PerfilForm } from '@/components/aluno/perfil/perfil-form';
 import { MeuHandle } from '@/components/aluno/perfil/meu-handle';
-
-/** Iniciais do nome para o avatar. */
-function iniciais(nome: string | null | undefined): string {
-  const partes = (nome ?? '').trim().split(/\s+/).filter(Boolean);
-  if (partes.length === 0) return '–';
-  if (partes.length === 1) return partes[0][0]?.toUpperCase() ?? '–';
-  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
-}
+import { FotoPerfil } from '@/components/aluno/perfil/foto-perfil';
 
 /**
  * Perfil do aluno. Leitura via RSC sob RLS: o aluno vê apenas o próprio
@@ -37,7 +30,7 @@ export default async function AlunoPerfilPage() {
 
   const { data: perfil, error: erroPerfil } = await supabase
     .from('profiles')
-    .select('full_name, email, phone, birth_date, gender, height_cm, social_handle')
+    .select('full_name, email, phone, birth_date, gender, height_cm, social_handle, avatar_url')
     .eq('user_id', aluno.userId)
     .single();
 
@@ -58,9 +51,7 @@ export default async function AlunoPerfilPage() {
       <PageHeader emphasis="caps" title="Perfil" />
 
       <div className="flex flex-col items-center gap-3 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-soft text-2xl font-black text-primary-soft-foreground">
-          {iniciais(perfil.full_name)}
-        </span>
+        <FotoPerfil fotoAtual={perfil.avatar_url} nomeExibicao={perfil.full_name} />
         <div>
           <p className="text-lg font-bold text-foreground">
             {perfil.full_name ?? 'Aluno'}

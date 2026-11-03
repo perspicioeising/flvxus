@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { editarPerfilProfessorSchema, editarPerfilSchema } from '@/schemas/perfil';
+import { MAX_AVATAR_BYTES } from '@/lib/image/crop-quadrado';
+import { removeAvatar, uploadAvatar } from '@/lib/storage/avatar';
 
 /**
  * Server Actions do PERFIL do aluno (architecture.md §6.2).
@@ -144,4 +146,94 @@ export async function atualizarPerfilProfessor(
   revalidatePath('/professor/configuracoes');
 
   return { ok: true, message: 'Dados atualizados.' };
+}
+
+/** Revalida as telas de perfil (aluno e professor) após mexer no avatar. */
+function revalidarTelasDePerfil() {
+  revalidatePath('/aluno/perfil');
+  revalidatePath('/professor/configuracoes');
+}
+
+/**
+ * Define a FOTO DE PERFIL do próprio usuário (aluno vinculado, aluno autônomo
+ * self_managed ou professor). Qualquer usuário autenticado opera SÓ o próprio
+ * `profiles` — a foto é dado de perfil de qualquer um, então não gateamos papel.
+ *
+ * O arquivo chega já cropado (~512×512, webp/jpeg) do cliente. Aqui revalidamos
+ * tamanho (≤ 2 MB) e formato REAL por magic bytes (em `uploadAvatar`), subimos
+ * ao bucket público `avatars` sob RLS (path `{user_id}.<ext>`) e gravamos a
+ * PUBLIC URL em `profiles.avatar_url where user_id = auth.uid()`. Nunca
+ * service_role.
+ */
+export async function definirFotoPerfil(formData: FormData): Promise<EstadoAcao> {
+  const user = await getSessionUser();
+  if (!user) {
+    return { ok: false, message: 'Sessão expirada. Entre novamente.' };
+  }
+
+  const arquivo = formData.get('file');
+  if (!(arquivo instanceof Blob) || arquivo.size === 0) {
+    return { ok: false, message: 'Selecione uma imagem para enviar.' };
+  }
+  if (arquivo.size > MAX_AVATAR_BYTES) {
+    return { ok: false, message: 'A imagem excede o limite de 2 MB.' };
+  }
+
+  let publicUrl: string;
+  try {
+    const resultado = await uploadAvatar({ userId: user.userId, file: arquivo });
+    publicUrl = resultado.publicUrl;
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : 'Não foi possível enviar a foto.',
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: publicUrl })
+    .eq('user_id', user.userId);
+
+  if (error) {
+    return { ok: false, message: `Não foi possível salvar a foto: ${error.message}` };
+  }
+
+  revalidarTelasDePerfil();
+
+  return { ok: true, message: 'Foto atualizada.' };
+}
+
+/**
+ * Remove a foto de perfil do próprio usuário: zera `profiles.avatar_url` (volta
+ * ao placeholder de iniciais) e apaga o arquivo do Storage. Opera só o próprio
+ * `profiles` sob RLS. A remoção do Storage é idempotente.
+ */
+export async function removerFotoPerfil(): Promise<EstadoAcao> {
+  const user = await getSessionUser();
+  if (!user) {
+    return { ok: false, message: 'Sessão expirada. Entre novamente.' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: null })
+    .eq('user_id', user.userId);
+
+  if (error) {
+    return { ok: false, message: `Não foi possível remover a foto: ${error.message}` };
+  }
+
+  try {
+    await removeAvatar(user.userId);
+  } catch {
+    // A URL já foi zerada no perfil; falha ao apagar o arquivo órfão não deve
+    // bloquear o usuário. O upsert do próximo upload sobrescreve o arquivo.
+  }
+
+  revalidarTelasDePerfil();
+
+  return { ok: true, message: 'Foto removida.' };
 }
