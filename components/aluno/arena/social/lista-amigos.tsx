@@ -7,6 +7,13 @@ import { Check, Users, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { EmptyState } from '@/components/patterns';
 import { responderSolicitacao } from '@/actions/arena-social';
 import { AdicionarAmigoDialog } from '@/components/aluno/arena/social/adicionar-amigo-dialog';
@@ -51,24 +58,53 @@ export function ListaAmigos({ amigos }: ListaAmigosProps) {
     });
   }
 
+  const totalSolicitacoes = amigos?.incoming.length ?? 0;
+  const totalAmigos = amigos?.accepted.length ?? 0;
+  const temSolicitacoes = totalSolicitacoes > 0;
+  // Fechado por padrão para uma tela mais limpa; abre automaticamente quando há
+  // solicitações pendentes, para o usuário não perder pedidos que precisam de ação.
+  const valorPadrao = temSolicitacoes ? 'amigos' : undefined;
+
   return (
-    <div className="space-y-4">
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
-        <Users className="h-4 w-4" aria-hidden="true" />
-        Amigos
-      </p>
+    <Accordion type="single" collapsible defaultValue={valorPadrao}>
+      <AccordionItem
+        value="amigos"
+        className="rounded-2xl border border-border bg-card px-4"
+      >
+        <AccordionTrigger className="min-h-11 hover:no-underline">
+          <span className="flex min-w-0 flex-1 items-center gap-2 text-left">
+            <Users
+              className="h-4 w-4 shrink-0 text-primary"
+              aria-hidden="true"
+            />
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">
+              Amigos
+            </span>
+            {totalAmigos > 0 ? (
+              <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground">
+                ({totalAmigos})
+              </span>
+            ) : null}
+            {temSolicitacoes ? (
+              <Badge className="ml-auto mr-2 shrink-0">
+                {totalSolicitacoes}{' '}
+                {totalSolicitacoes === 1 ? 'solicitação' : 'solicitações'}
+              </Badge>
+            ) : null}
+          </span>
+        </AccordionTrigger>
+        <AccordionContent className="space-y-4">
+          <div className="flex justify-end">
+            <AdicionarAmigoDialog />
+          </div>
 
-      <div className="flex justify-end">
-        <AdicionarAmigoDialog />
-      </div>
-
-      {amigos === null ? (
-        <p className="text-sm text-muted-foreground">
-          Não foi possível carregar seus amigos agora.
-        </p>
-      ) : (
-        <>
-          {amigos.incoming.length > 0 ? (
+          {amigos === null ? (
+            <p className="text-sm text-muted-foreground">
+              Não foi possível carregar seus amigos agora.
+            </p>
+          ) : (
+            <>
+              {amigos.incoming.length > 0 ? (
             <div className="space-y-2">
               <p className="text-sm font-semibold text-foreground">
                 Solicitações recebidas
@@ -162,8 +198,10 @@ export function ListaAmigos({ amigos }: ListaAmigosProps) {
               ))}
             </ul>
           )}
-        </>
-      )}
-    </div>
+            </>
+          )}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
