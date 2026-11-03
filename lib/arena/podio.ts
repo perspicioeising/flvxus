@@ -21,15 +21,21 @@ export function metalDaPosicao(posicao: number): MetalPodio | null {
   return null;
 }
 
-/** Classes do ANEL ao redor do avatar na cor do metal (ring + offset do card). */
+/**
+ * Classes do ANEL ao redor do avatar na cor do metal (ring + offset do card).
+ * Cores escolhidas para alto contraste sobre `bg-card` escuro (~#111): ouro
+ * âmbar vivo, prata bem clara (slate-200) e bronze laranja-terroso saturado
+ * (amber-600) — distintos entre si. Um leve glow (`shadow`) reforça a prata e o
+ * bronze, que tendiam a sumir no escuro.
+ */
 export function ringMetal(metal: MetalPodio): string {
   switch (metal) {
     case 'ouro':
-      return 'ring-2 ring-amber-400 ring-offset-2 ring-offset-card';
+      return 'ring-2 ring-amber-400 ring-offset-2 ring-offset-card shadow-[0_0_0_1px_rgba(251,191,36,0.35)]';
     case 'prata':
-      return 'ring-2 ring-slate-300 ring-offset-2 ring-offset-card';
+      return 'ring-2 ring-slate-200 ring-offset-2 ring-offset-card shadow-[0_0_8px_1px_rgba(226,232,240,0.35)]';
     case 'bronze':
-      return 'ring-2 ring-orange-400 ring-offset-2 ring-offset-card';
+      return 'ring-2 ring-amber-600 ring-offset-2 ring-offset-card shadow-[0_0_8px_1px_rgba(217,119,6,0.4)]';
   }
 }
 
@@ -39,20 +45,20 @@ export function badgeMetal(metal: MetalPodio): string {
     case 'ouro':
       return 'bg-amber-400 text-amber-950';
     case 'prata':
-      return 'bg-slate-300 text-slate-900';
+      return 'bg-slate-200 text-slate-900';
     case 'bronze':
-      return 'bg-orange-400 text-orange-950';
+      return 'bg-amber-600 text-amber-950';
   }
 }
 
-/** Classe de TEXTO (XP dos primeiros) na cor do metal. */
+/** Classe de TEXTO (XP dos primeiros) na cor do metal, legível no escuro. */
 export function textoMetal(metal: MetalPodio): string {
   switch (metal) {
     case 'ouro':
       return 'text-amber-400';
     case 'prata':
-      return 'text-slate-300';
+      return 'text-slate-200';
     case 'bronze':
-      return 'text-orange-400';
+      return 'text-amber-500';
   }
 }

@@ -104,4 +104,35 @@ describe('LeaderboardGlobal', () => {
     expect(screen.getByText('Sem XP nesta temporada ainda')).toBeInTheDocument();
     expect(screen.getByText('Ana Líder')).toBeInTheDocument();
   });
+
+  it('#1 que é o próprio usuário: pódio de ouro (coroa + badge) E marcação "você" juntos', () => {
+    // EU na primeira posição: o pódio sempre colore o top 3, inclusive quando
+    // é o próprio usuário, então ouro e "você" devem conviver.
+    const ranking = rankingBase({
+      me: { posicao: 1, points: 2500, user_id: EU },
+      linhas: [
+        {
+          posicao: 1,
+          points: 2500,
+          display_name: 'Eu Mesmo',
+          avatar_url: null,
+          level: 3,
+          user_id: EU,
+        },
+        {
+          posicao: 2,
+          points: 1200,
+          display_name: 'Ana Líder',
+          avatar_url: null,
+          level: 2,
+          user_id: 'user-ana',
+        },
+      ],
+    });
+    render(<LeaderboardGlobal ranking={ranking} meuUserId={EU} />);
+    // Marcação "você" segue presente.
+    expect(screen.getByText('você')).toBeInTheDocument();
+    // Coroa do #1 (metal ouro) presente mesmo sendo o próprio usuário.
+    expect(screen.getByLabelText('Primeiro lugar')).toBeInTheDocument();
+  });
 });

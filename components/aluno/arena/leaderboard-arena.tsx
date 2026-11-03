@@ -24,9 +24,10 @@ function formatarXp(xp: number): string {
  *
  * Pódio (top 3): como este ranking não projeta `avatar_url`, o ouro/prata/
  * bronze aparece no badge da posição e no XP (sem anel de avatar), com coroa no
- * #1 — coerente com o ranking global, sem exigir mudança de dados. A linha do
- * próprio usuário mantém o verde da marca. Só apresentação: a ordenação vem da
- * função SQL.
+ * #1 — coerente com o ranking global, sem exigir mudança de dados. O pódio
+ * SEMPRE colore o top 3, inclusive quando é o próprio usuário: metal (badge +
+ * coroa) e marcação "você" (fundo verde + sufixo "você") convivem. Só
+ * apresentação: a ordenação vem da função SQL.
  */
 export function LeaderboardArena({ ranking, meuUserId }: LeaderboardArenaProps) {
   return (
@@ -60,9 +61,9 @@ export function LeaderboardArena({ ranking, meuUserId }: LeaderboardArenaProps) 
         <ul className="mt-3 divide-y divide-border">
           {ranking.linhas.map((linha) => {
             const ehEu = linha.user_id === meuUserId;
-            // Pódio só colore quem NÃO é o próprio usuário (a linha "você"
-            // mantém prioridade no verde da marca).
-            const metal = ehEu ? null : metalDaPosicao(linha.posicao);
+            // Pódio SEMPRE colore o top 3, inclusive quando é o próprio
+            // usuário: metal e marcação "você" convivem.
+            const metal = metalDaPosicao(linha.posicao);
             return (
               <li
                 key={linha.user_id}
@@ -75,10 +76,10 @@ export function LeaderboardArena({ ranking, meuUserId }: LeaderboardArenaProps) 
                   <span
                     className={cn(
                       'flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold tabular-nums',
-                      ehEu
-                        ? 'bg-primary text-primary-foreground'
-                        : metal
-                          ? badgeMetal(metal)
+                      metal
+                        ? badgeMetal(metal)
+                        : ehEu
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-muted-foreground'
                     )}
                   >
