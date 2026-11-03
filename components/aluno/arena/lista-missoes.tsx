@@ -1,6 +1,7 @@
 import { CheckCircle2, Circle, Lock, Target } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 import type { Missao } from '@/lib/arena/missoes';
 
 export interface ListaMissoesProps {
@@ -32,6 +33,12 @@ export function ListaMissoes({ missoes }: ListaMissoesProps) {
               : m.estado === 'bloqueada'
                 ? Lock
                 : Circle;
+          // Missões de meta múltipla (ex.: 3 treinos / 7 dias) expõem X/Y e
+          // barra de progresso; binárias mantêm só o ícone de estado.
+          const temProgresso = m.atual != null && m.meta != null;
+          const valorProgresso = temProgresso
+            ? Math.min(100, Math.round((m.atual! / m.meta!) * 100))
+            : 0;
           return (
             <li
               key={m.id}
@@ -54,13 +61,34 @@ export function ListaMissoes({ missoes }: ListaMissoesProps) {
                 aria-hidden="true"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-foreground">
-                  {m.titulo}
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate font-semibold text-foreground">
+                    {m.titulo}
+                  </p>
+                  {temProgresso ? (
+                    <span
+                      className={cn(
+                        'shrink-0 text-xs font-bold tabular-nums',
+                        m.estado === 'concluida'
+                          ? 'text-primary'
+                          : 'text-muted-foreground'
+                      )}
+                    >
+                      {m.atual}/{m.meta}
+                    </span>
+                  ) : null}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {rotuloPeriodo(m.periodo)}
                   {m.estado === 'bloqueada' ? ' · em breve' : ''}
                 </p>
+                {temProgresso ? (
+                  <Progress
+                    value={valorProgresso}
+                    className="mt-2 h-2"
+                    aria-label={`Progresso: ${m.atual} de ${m.meta}`}
+                  />
+                ) : null}
               </div>
               <span
                 className={cn(

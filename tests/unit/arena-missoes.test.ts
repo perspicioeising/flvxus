@@ -164,3 +164,112 @@ describe('montarMissoes — semanais por período SP (RF8.2)', () => {
     expect(estadoDe(missoes, 'consistencia_semana')).toBe('concluida');
   });
 });
+
+describe('montarMissoes — borda de fuso: occurred_on dia-SP cru (Parte 1)', () => {
+  it('treino com occurred_on dia-SP cru de hoje marca concluída (regressão −1 dia)', () => {
+    // `occurred_on` chega do banco como dia-SP cru (`YYYY-MM-DD`), já carimbado
+    // por `gamification_sp_date`. Antes do fix, `diaSP("2024-03-20")` voltava um
+    // dia ("2024-03-19") e a missão nunca batia com `hoje`.
+    const missoes = montarMissoes(
+      { treinos: ['2024-03-20'], descansos: [] },
+      '2024-03-20'
+    );
+    expect(estadoDe(missoes, 'treino_dia')).toBe('concluida');
+  });
+
+  it('treino às 23h30-SP (servidor-UTC já no dia seguinte) marca concluída no dia-SP', () => {
+    // Treino do dia-SP 20/03 (occurred_on cru), com o "agora" do servidor em UTC
+    // já em 21/03 02:30Z — que é 23h30-SP de 20/03. Mesmo dia-SP → concluída.
+    const refServidorUtc = new Date('2024-03-21T02:30:00Z');
+    const missoes = montarMissoes(
+      { treinos: ['2024-03-20'], descansos: [] },
+      refServidorUtc
+    );
+    expect(estadoDe(missoes, 'treino_dia')).toBe('concluida');
+  });
+
+  it('treino de ontem-SP não marca a missão do dia de hoje', () => {
+    const missoes = montarMissoes(
+      { treinos: ['2024-03-19'], descansos: [] },
+      '2024-03-20'
+    );
+    expect(estadoDe(missoes, 'treino_dia')).toBe('pendente');
+  });
+
+  it('descanso com occurred_on dia-SP cru de hoje marca concluída', () => {
+    const missoes = montarMissoes(
+      { treinos: [], descansos: ['2024-03-20'], diaDeDescanso: true },
+      '2024-03-20'
+    );
+    expect(estadoDe(missoes, 'descanso_dia')).toBe('concluida');
+  });
+
+  it('descanso de ontem-SP não cumpre o descanso de hoje', () => {
+    const missoes = montarMissoes(
+      { treinos: [], descansos: ['2024-03-19'], diaDeDescanso: true },
+      '2024-03-20'
+    );
+    expect(estadoDe(missoes, 'descanso_dia')).toBe('pendente');
+  });
+});
+
+describe('montarMissoes — progresso X/Y nas metas múltiplas (Parte 2)', () => {
+  function missaoDe(missoes: ReturnType<typeof montarMissoes>, id: MissaoId) {
+    return missoes.find((m) => m.id === id);
+  }
+
+  it('treinos_semana expõe atual/meta e fica pendente com 2 de 3', () => {
+    const missoes = montarMissoes(
+      { treinos: [diaUtc('2024-03-18'), diaUtc('2024-03-19')], descansos: [] },
+      REFERENCIA
+    );
+    const m = missaoDe(missoes, 'treinos_semana');
+    expect(m?.atual).toBe(2);
+    expect(m?.meta).toBe(3);
+    expect(m?.estado).toBe('pendente');
+  });
+
+  it('treinos_semana conclui com 3 treinos (atual: 3, meta: 3)', () => {
+    const missoes = montarMissoes(
+      {
+        treinos: [diaUtc('2024-03-18'), diaUtc('2024-03-19'), diaUtc('2024-03-20')],
+        descansos: [],
+      },
+      REFERENCIA
+    );
+    const m = missaoDe(missoes, 'treinos_semana');
+    expect(m?.atual).toBe(3);
+    expect(m?.meta).toBe(3);
+    expect(m?.estado).toBe('concluida');
+  });
+
+  it('consistencia_semana expõe atual (nº de dias de aderência) e meta 7', () => {
+    const missoes = montarMissoes(
+      {
+        treinos: [diaUtc('2024-03-18'), diaUtc('2024-03-19')],
+        descansos: [diaUtc('2024-03-20')],
+      },
+      REFERENCIA
+    );
+    const m = missaoDe(missoes, 'consistencia_semana');
+    expect(m?.atual).toBe(3);
+    expect(m?.meta).toBe(7);
+    expect(m?.estado).toBe('pendente');
+  });
+
+  it('missões binárias não expõem atual/meta', () => {
+    const missoes = montarMissoes(
+      {
+        treinos: [],
+        descansos: [],
+        habitos: {},
+      },
+      REFERENCIA
+    );
+    for (const id of ['treino_dia', 'agua_dia', 'dieta_dia', 'refeicoes_dia'] as const) {
+      const m = missaoDe(missoes, id);
+      expect(m?.atual).toBeUndefined();
+      expect(m?.meta).toBeUndefined();
+    }
+  });
+});

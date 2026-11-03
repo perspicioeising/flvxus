@@ -205,7 +205,10 @@ export async function montarDadosArena(userId: string): Promise<DadosArena> {
       };
     }
 
-    missoes = montarMissoes({ treinos, descansos, habitos });
+    // Fonte única de "hoje-SP": o mesmo `hoje` usado na query de hábitos
+    // alimenta a derivação das missões, evitando o descasamento de fuso que
+    // deixava a missão do treino do dia sem marcar logo após a meia-noite-SP.
+    missoes = montarMissoes({ treinos, descansos, habitos }, hoje ?? new Date());
   } catch (e) {
     console.error('[montarDadosArena] missões (exceção):', e);
     missoes = montarMissoes({ treinos: [], descansos: [] });

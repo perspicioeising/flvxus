@@ -13,7 +13,7 @@
  *    concluída ao cumprir o descanso; não se cobra treino (RF8.3).
  */
 
-import { diaSP, periodoSP } from '@/lib/arena/datas';
+import { diaSP, diaSPdeDiaOuInstante, periodoSP } from '@/lib/arena/datas';
 
 /** Identificadores fixos das missões G1. */
 export type MissaoId =
@@ -38,6 +38,13 @@ export interface Missao {
   xp: number;
   periodo: PeriodoMissao;
   estado: EstadoMissao;
+  /**
+   * Progresso atual rumo à meta, SÓ para missões de meta múltipla
+   * (`treinos_semana`, `consistencia_semana`). Ausente nas missões binárias.
+   */
+  atual?: number;
+  /** Meta da missão de progresso. Ausente nas missões binárias. */
+  meta?: number;
 }
 
 /**
@@ -78,7 +85,10 @@ export interface EntradaMissoes {
 function diasSP(valores: Array<Date | string>): Set<string> {
   const dias = new Set<string>();
   for (const v of valores) {
-    const dia = diaSP(v);
+    // `occurred_on` já vem do banco como dia-SP cru (`YYYY-MM-DD`): normalizamos
+    // sem reconverter por fuso (que deslocaria −1 dia). Instantes continuam
+    // resolvidos pelo fuso SP.
+    const dia = diaSPdeDiaOuInstante(v);
     if (dia !== null) {
       dias.add(dia);
     }
@@ -105,8 +115,11 @@ export function montarMissoes(
   entrada: EntradaMissoes,
   referencia: Date | string = new Date()
 ): Missao[] {
-  const hoje = diaSP(referencia);
-  const periodoAtual = periodoSP(referencia);
+  // `referencia` pode ser um instante (`Date`/ISO) OU já um dia-SP cru
+  // (`YYYY-MM-DD`, a fonte única de "hoje-SP" vinda de `dados.ts`). Normalizamos
+  // sem reconverter por fuso quando já é dia-SP cru.
+  const hoje = diaSPdeDiaOuInstante(referencia);
+  const periodoAtual = hoje !== null ? hoje.slice(0, 7) : null;
 
   const diasTreino = diasSP(entrada.treinos);
   const diasDescanso = diasSP(entrada.descansos);
@@ -189,6 +202,8 @@ export function montarMissoes(
       titulo: '3 treinos na semana',
       xp: 50,
       periodo: 'semanal',
+      atual: treinosNaSemana,
+      meta: 3,
       estado: treinosNaSemana >= 3 ? 'concluida' : 'pendente',
     },
     {
@@ -196,6 +211,8 @@ export function montarMissoes(
       titulo: '7 dias de consistência',
       xp: 100,
       periodo: 'semanal',
+      atual: diasAderenciaPeriodo.size,
+      meta: 7,
       estado: diasAderenciaPeriodo.size >= 7 ? 'concluida' : 'pendente',
     },
   ];

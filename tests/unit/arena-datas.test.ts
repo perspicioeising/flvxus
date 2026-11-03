@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { diaSP, periodoSP } from '@/lib/arena/datas';
+import { diaSP, diaSPdeDiaOuInstante, periodoSP } from '@/lib/arena/datas';
 
 describe('diaSP', () => {
   it('converte um instante UTC para o dia no fuso America/Sao_Paulo', () => {
@@ -34,5 +34,33 @@ describe('periodoSP', () => {
 
   it('retorna null para datas inválidas', () => {
     expect(periodoSP('nope')).toBeNull();
+  });
+});
+
+describe('diaSPdeDiaOuInstante', () => {
+  it('dia-SP cru (YYYY-MM-DD) é devolvido como está, sem reconverter por fuso', () => {
+    // `diaSP("2024-03-20")` voltaria "2024-03-19" (meia-noite UTC → UTC-3). O
+    // normalizador preserva o dia-SP já carimbado pelo banco.
+    expect(diaSPdeDiaOuInstante('2024-03-20')).toBe('2024-03-20');
+    expect(diaSP('2024-03-20')).toBe('2024-03-19');
+  });
+
+  it('instante ISO com horário continua resolvido pelo fuso SP', () => {
+    // 21/03 02:30Z = 23h30-SP de 20/03.
+    expect(diaSPdeDiaOuInstante('2024-03-21T02:30:00Z')).toBe('2024-03-20');
+  });
+
+  it('aceita instância Date (instante) via caminho de fuso', () => {
+    expect(diaSPdeDiaOuInstante(new Date('2024-07-01T15:00:00Z'))).toBe('2024-07-01');
+  });
+
+  it('rejeita dia-SP cru inválido (mês/dia fora de faixa)', () => {
+    expect(diaSPdeDiaOuInstante('2024-13-01')).toBeNull();
+    expect(diaSPdeDiaOuInstante('2024-02-30')).toBeNull();
+  });
+
+  it('29/02 é válido em ano bissexto e inválido fora dele', () => {
+    expect(diaSPdeDiaOuInstante('2024-02-29')).toBe('2024-02-29');
+    expect(diaSPdeDiaOuInstante('2023-02-29')).toBeNull();
   });
 });
