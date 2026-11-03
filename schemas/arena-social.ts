@@ -35,7 +35,7 @@ export const enviarSolicitacaoSchema = z.object({
     .trim()
     .transform((v) => v.replace(/^@/, '').toLowerCase())
     .refine((v) => HANDLE_REGEX.test(v), {
-      message: 'Handle inválido.',
+      message: 'Nome de usuário inválido.',
     }),
 });
 

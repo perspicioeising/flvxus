@@ -45,12 +45,12 @@ export function AdicionarAmigoDialog() {
         router.refresh();
       } else if (r.status === 'not_found') {
         toast({
-          title: 'Não encontramos esse @handle.',
+          title: 'Não encontramos esse nome de usuário.',
           variant: 'destructive',
         });
       } else if (r.status === 'handle_invalido') {
         toast({
-          title: 'Handle inválido. Use 3 a 30 caracteres (a-z, 0-9, _).',
+          title: 'Nome de usuário inválido. Use 3 a 30 caracteres (a-z, 0-9, _).',
           variant: 'destructive',
         });
       } else {
@@ -67,19 +67,19 @@ export function AdicionarAmigoDialog() {
       <DialogTrigger asChild>
         <Button type="button" variant="outline" size="sm" className="min-h-11">
           <UserPlus className="mr-1 h-4 w-4" aria-hidden="true" />
-          Adicionar por @handle
+          Adicionar por nome de usuário
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Adicionar amigo</DialogTitle>
           <DialogDescription>
-            Digite o @handle exato de quem você quer adicionar. Peça o handle
-            diretamente à pessoa — não há busca por nome.
+            Digite o nome de usuário exato de quem você quer adicionar. Peça o
+            nome de usuário diretamente à pessoa — não há busca por nome.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1">
-          <Label htmlFor="adicionar-handle">@handle</Label>
+          <Label htmlFor="adicionar-handle">Nome de usuário</Label>
           <Input
             id="adicionar-handle"
             value={handle}

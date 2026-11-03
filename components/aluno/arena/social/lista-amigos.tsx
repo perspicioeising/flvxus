@@ -123,7 +123,7 @@ export function ListaAmigos({ amigos }: ListaAmigosProps) {
             <EmptyState
               icon={Users}
               title="Sem amigos ainda"
-              description="Compartilhe seu @handle ou adicione alguém pelo handle para competir junto."
+              description="Compartilhe seu nome de usuário ou adicione alguém pelo nome de usuário para competir junto."
               className="rounded-3xl"
             />
           ) : (

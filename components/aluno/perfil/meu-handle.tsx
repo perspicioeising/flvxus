@@ -32,7 +32,7 @@ export function MeuHandle({ handleAtual }: MeuHandleProps) {
     iniciar(async () => {
       const r = await definirHandle(valor);
       if (r.ok) {
-        toast({ title: 'Handle salvo.' });
+        toast({ title: 'Nome de usuário salvo.' });
         setAberto(false);
         router.refresh();
       } else {
@@ -40,8 +40,8 @@ export function MeuHandle({ handleAtual }: MeuHandleProps) {
           title:
             r.message ??
             (r.status === 'em_uso'
-              ? 'Esse @handle já está em uso.'
-              : 'Não foi possível salvar o handle.'),
+              ? 'Esse nome de usuário já está em uso.'
+              : 'Não foi possível salvar o nome de usuário.'),
           variant: 'destructive',
         });
       }
@@ -59,7 +59,7 @@ export function MeuHandle({ handleAtual }: MeuHandleProps) {
             </span>
           ) : (
             <span className="text-sm text-muted-foreground">
-              Defina seu @handle para receber solicitações.
+              Defina seu nome de usuário para receber solicitações.
             </span>
           )}
         </div>
@@ -70,7 +70,7 @@ export function MeuHandle({ handleAtual }: MeuHandleProps) {
           className="min-h-11 shrink-0"
           onClick={() => setAberto(true)}
         >
-          {handleAtual ? 'Alterar' : 'Definir @handle'}
+          {handleAtual ? 'Alterar' : 'Definir nome de usuário'}
         </Button>
       </div>
     );
@@ -79,7 +79,7 @@ export function MeuHandle({ handleAtual }: MeuHandleProps) {
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
       <div className="space-y-1">
-        <Label htmlFor="meu-handle">Seu @handle</Label>
+        <Label htmlFor="meu-handle">Seu nome de usuário</Label>
         <Input
           id="meu-handle"
           value={valor}

@@ -77,13 +77,13 @@ export async function definirHandle(handle: string): Promise<EstadoSocial> {
     return {
       ok: false,
       status: 'forbidden',
-      message: 'Apenas o atleta pode definir o próprio handle.',
+      message: 'Apenas o atleta pode definir o próprio nome de usuário.',
     };
   }
 
   const parsed = definirHandleSchema.safeParse({ handle });
   if (!parsed.success) {
-    return { ok: false, status: 'handle_invalido', message: 'Handle inválido.' };
+    return { ok: false, status: 'handle_invalido', message: 'Nome de usuário inválido.' };
   }
 
   const supabase = await createClient();
@@ -96,16 +96,16 @@ export async function definirHandle(handle: string): Promise<EstadoSocial> {
     if (error) {
       // 23505 = unique_violation: o handle já pertence a outro atleta.
       if (error.code === '23505') {
-        return { ok: false, status: 'em_uso', message: 'Esse @handle já está em uso.' };
+        return { ok: false, status: 'em_uso', message: 'Esse nome de usuário já está em uso.' };
       }
       console.error('[arena-social] definirHandle:', error.message);
-      return { ok: false, status: 'erro', message: 'Não foi possível salvar o handle.' };
+      return { ok: false, status: 'erro', message: 'Não foi possível salvar o nome de usuário.' };
     }
     revalidatePath('/aluno/arena');
     return { ok: true, status: 'saved' };
   } catch (e) {
     console.error('[arena-social] definirHandle (exceção):', e);
-    return { ok: false, status: 'erro', message: 'Não foi possível salvar o handle.' };
+    return { ok: false, status: 'erro', message: 'Não foi possível salvar o nome de usuário.' };
   }
 }
 
@@ -164,7 +164,7 @@ export async function enviarSolicitacaoPorHandle(handle: string): Promise<Estado
 
   const parsed = enviarSolicitacaoSchema.safeParse({ p_handle: handle });
   if (!parsed.success) {
-    return { ok: false, status: 'handle_invalido', message: 'Handle inválido.' };
+    return { ok: false, status: 'handle_invalido', message: 'Nome de usuário inválido.' };
   }
 
   const supabase = await createClient();
