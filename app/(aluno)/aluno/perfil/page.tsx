@@ -2,6 +2,7 @@ import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { ErrorState, PageHeader } from '@/components/patterns';
 import { PerfilForm } from '@/components/aluno/perfil/perfil-form';
+import { MeuHandle } from '@/components/aluno/perfil/meu-handle';
 
 /** Iniciais do nome para o avatar. */
 function iniciais(nome: string | null | undefined): string {
@@ -36,7 +37,7 @@ export default async function AlunoPerfilPage() {
 
   const { data: perfil, error: erroPerfil } = await supabase
     .from('profiles')
-    .select('full_name, email, phone, birth_date, gender, height_cm')
+    .select('full_name, email, phone, birth_date, gender, height_cm, social_handle')
     .eq('user_id', aluno.userId)
     .single();
 
@@ -81,6 +82,8 @@ export default async function AlunoPerfilPage() {
           }}
         />
       </div>
+
+      <MeuHandle handleAtual={perfil.social_handle} />
     </section>
   );
 }

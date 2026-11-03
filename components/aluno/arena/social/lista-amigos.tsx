@@ -9,15 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/patterns';
 import { responderSolicitacao } from '@/actions/arena-social';
-import { MeuHandle } from '@/components/aluno/arena/social/meu-handle';
 import { AdicionarAmigoDialog } from '@/components/aluno/arena/social/adicionar-amigo-dialog';
 import type { FriendsList } from '@/types/database.types';
 
 export interface ListaAmigosProps {
   /** Conexões sociais (contrato público), ou `null` quando a leitura falhou. */
   amigos: FriendsList | null;
-  /** `@handle` atual do atleta, ou `null` quando ainda não definiu. */
-  handleAtual: string | null;
 }
 
 /** Inicial do nome para o fallback do avatar. */
@@ -31,7 +28,7 @@ function inicial(nome: string): string {
  * (contrato público — nome, avatar, nível e @handle). Toda ação chama
  * `responderSolicitacao` e revalida a Arena no servidor.
  */
-export function ListaAmigos({ amigos, handleAtual }: ListaAmigosProps) {
+export function ListaAmigos({ amigos }: ListaAmigosProps) {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
 
@@ -60,8 +57,6 @@ export function ListaAmigos({ amigos, handleAtual }: ListaAmigosProps) {
         <Users className="h-4 w-4" aria-hidden="true" />
         Amigos
       </p>
-
-      <MeuHandle handleAtual={handleAtual} />
 
       <div className="flex justify-end">
         <AdicionarAmigoDialog />

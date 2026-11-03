@@ -73,7 +73,7 @@ export default async function AlunoArenaPage() {
 
       <ListaMissoes missoes={dados.missoes} />
 
-      <ListaAmigos amigos={dados.amigos} handleAtual={dados.meuHandle} />
+      <ListaAmigos amigos={dados.amigos} />
 
       <ListaDesafios
         desafios={dados.desafios}
