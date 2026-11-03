@@ -38,6 +38,48 @@ export function handleValido(input: string | null | undefined): boolean {
 }
 
 /**
+ * Sugere um `username` (handle) a partir do nome do atleta, caindo para a
+ * parte local do e-mail (antes do `@`) quando o nome não produz nada usável.
+ * Remove acentos (`NFD` + faixa de diacríticos), passa para minúsculas, troca
+ * qualquer caractere fora de `[a-z0-9_]` (inclusive espaços) por `_`, colapsa
+ * `_` consecutivos e apara `_` das bordas. Garante o formato
+ * `^[a-z0-9_]{3,30}$`: completa com `0` quando curto demais, corta em 30 quando
+ * longo demais, e devolve `'atleta'` quando nada sobra. PURA (sem I/O) — a
+ * disponibilidade do handle sugerido é checada à parte.
+ */
+export function sugerirUsername(
+  nome: string | null | undefined,
+  email?: string | null
+): string {
+  const slug = (origem: string): string =>
+    origem
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+  let base = typeof nome === 'string' ? slug(nome) : '';
+  if (base === '') {
+    const localPart = typeof email === 'string' ? email.split('@')[0] ?? '' : '';
+    base = slug(localPart);
+  }
+  if (base === '') {
+    base = 'atleta';
+  }
+
+  if (base.length > 30) {
+    base = base.slice(0, 30);
+  }
+  while (base.length < 3) {
+    base += '0';
+  }
+
+  return base;
+}
+
+/**
  * Converte um dia-SP (`YYYY-MM-DD`) em um número de dias desde a época (UTC),
  * para subtração segura sem fuso. Retorna `null` quando a string não é uma data
  * válida no formato esperado.

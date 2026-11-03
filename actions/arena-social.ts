@@ -110,6 +110,40 @@ export async function definirHandle(handle: string): Promise<EstadoSocial> {
 }
 
 /**
+ * Checa (fail-closed) se um `@handle` está DISPONÍVEL, para UX de onboarding.
+ * Normaliza/valida na borda; input inválido → `{ disponivel: false }`. Caso
+ * válido, chama o RPC anti-enumeração `gamification_social_handle_available`
+ * (responde só true/false para o valor exato). Erro de RPC → `{ disponivel:
+ * false }` (fail-closed) + `console.error`. A unicidade real continua sendo
+ * imposta pelo índice único de `profiles.social_handle` no `definirHandle`.
+ */
+export async function verificarDisponibilidadeHandle(
+  handle: string
+): Promise<{ disponivel: boolean }> {
+  const parsed = definirHandleSchema.safeParse({ handle });
+  if (!parsed.success) {
+    return { disponivel: false };
+  }
+
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase.rpc(
+      'gamification_social_handle_available',
+      { p_handle: parsed.data.handle }
+    );
+    if (error) {
+      console.error('[arena-social] verificarDisponibilidadeHandle:', error.message);
+      return { disponivel: false };
+    }
+    return { disponivel: Boolean(data) };
+  } catch (e) {
+    console.error('[arena-social] verificarDisponibilidadeHandle (exceção):', e);
+    return { disponivel: false };
+  }
+}
+
+/**
  * Envia uma solicitação de amizade resolvendo o alvo por `@handle`. A função do
  * banco resolve o handle SOMENTE entre atletas sociais e devolve
  * `{status:'sent'|'already'|'not_found'}` — o handle inexistente/não-adicionável

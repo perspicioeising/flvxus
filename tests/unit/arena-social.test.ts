@@ -5,6 +5,7 @@ import {
   handleValido,
   normalizarHandle,
   rotuloResultado,
+  sugerirUsername,
 } from '@/lib/arena/social';
 
 describe('normalizarHandle', () => {
@@ -45,6 +46,58 @@ describe('handleValido', () => {
     expect(handleValido('ab')).toBe(false);
     expect(handleValido('joão')).toBe(false);
     expect(handleValido(null)).toBe(false);
+  });
+});
+
+describe('sugerirUsername', () => {
+  it('remove acentos e mantém só [a-z0-9_]', () => {
+    const sugestao = sugerirUsername('João Fôbá');
+    expect(sugestao).toMatch(/^[a-z0-9_]+$/);
+    expect(sugestao).toBe('joao_foba');
+  });
+
+  it('troca espaços por _ (sem colapsar em sequência)', () => {
+    expect(sugerirUsername('Maria  Silva')).toBe('maria_silva');
+  });
+
+  it('completa para o mínimo de 3 caracteres', () => {
+    const sugestao = sugerirUsername('Jo');
+    expect(sugestao.length).toBeGreaterThanOrEqual(3);
+    expect(handleValido(sugestao)).toBe(true);
+  });
+
+  it('corta nomes longos para no máximo 30 caracteres', () => {
+    const sugestao = sugerirUsername('a'.repeat(50));
+    expect(sugestao.length).toBeLessThanOrEqual(30);
+    expect(sugestao).toBe('a'.repeat(30));
+  });
+
+  it('usa a parte local do e-mail quando o nome é vazio/espaços', () => {
+    expect(sugerirUsername('   ', 'joao.fit@example.com')).toBe('joao_fit');
+    expect(sugerirUsername(null, 'maria@example.com')).toBe('maria');
+  });
+
+  it('cai no padrão seguro quando nada é usável', () => {
+    expect(sugerirUsername('', '')).toBe('atleta');
+    expect(sugerirUsername(null, null)).toBe('atleta');
+    expect(sugerirUsername('@@@', '###@dominio.com')).toBe('atleta');
+  });
+
+  it('sempre produz um handle válido', () => {
+    const entradas: Array<[string | null | undefined, string | null | undefined]> = [
+      ['João Fôbá', undefined],
+      ['Jo', undefined],
+      ['a'.repeat(50), undefined],
+      ['   ', 'joao.fit@example.com'],
+      [null, 'maria@example.com'],
+      ['', ''],
+      [null, null],
+      ['@@@', '###@dominio.com'],
+      ['!!!', undefined],
+    ];
+    for (const [nome, email] of entradas) {
+      expect(handleValido(sugerirUsername(nome, email))).toBe(true);
+    }
   });
 });
 
