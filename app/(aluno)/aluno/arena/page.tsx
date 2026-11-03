@@ -5,7 +5,7 @@ import { getSessionUser } from '@/lib/auth';
 import { montarDadosArena } from '@/lib/arena/dados';
 import { EmptyState, PageHeader } from '@/components/patterns';
 import { CartaoNivel } from '@/components/aluno/arena/cartao-nivel';
-import { ContadorStreak } from '@/components/aluno/arena/contador-streak';
+import { MiniCardsArena } from '@/components/aluno/arena/mini-cards-arena';
 import { AbasRanking } from '@/components/aluno/arena/abas-ranking';
 import { LeaderboardArena } from '@/components/aluno/arena/leaderboard-arena';
 import { LeaderboardGlobal } from '@/components/aluno/arena/leaderboard-global';
@@ -41,9 +41,11 @@ export default async function AlunoArenaPage() {
 
       <CartaoNivel nivel={dados.perfil.nivel} />
 
-      <ContadorStreak
-        atual={dados.perfil.streakAtual}
-        recorde={dados.perfil.streakRecorde}
+      <MiniCardsArena
+        streakAtual={dados.perfil.streakAtual}
+        streakRecorde={dados.perfil.streakRecorde}
+        conquistasObtidas={dados.conquistas.obtidas}
+        conquistasTotal={dados.conquistas.total}
       />
 
       <AbasRanking

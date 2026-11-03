@@ -15,6 +15,14 @@ export interface AbasRankingProps {
   globalAnual: ReactNode;
 }
 
+// Estilo DISCRETO das abas (OPÇÃO A): faixa escura; a aba ativa ganha um leve
+// realce de fundo e um SUBLINHADO FINO VERDE embaixo; inativas ficam só texto
+// cinza. Menos chamativo que o verde chapado anterior. O sublinhado usa uma
+// borda inferior transparente nas inativas para não deslocar o layout.
+const TRIGGER_CLASSES =
+  'rounded-none border-b-2 border-transparent bg-transparent px-2 py-2.5 text-sm font-semibold text-muted-foreground shadow-none transition-colors ' +
+  'data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-foreground data-[state=active]:shadow-none';
+
 /**
  * Seletor de abas do ranking da Arena. Apenas alterna entre os rankings já
  * renderizados no servidor — não faz fetch próprio. Mobile-first: a lista de
@@ -29,11 +37,19 @@ export function AbasRanking({
 }: AbasRankingProps) {
   return (
     <Tabs defaultValue="academia" className="w-full">
-      <TabsList className="grid h-auto w-full grid-cols-4">
-        <TabsTrigger value="academia">Academia</TabsTrigger>
-        <TabsTrigger value="amigos">Amigos</TabsTrigger>
-        <TabsTrigger value="mensal">Global mês</TabsTrigger>
-        <TabsTrigger value="anual">Global anual</TabsTrigger>
+      <TabsList className="grid h-auto w-full grid-cols-4 gap-1 rounded-none border-b border-border bg-transparent p-0">
+        <TabsTrigger value="academia" className={TRIGGER_CLASSES}>
+          Academia
+        </TabsTrigger>
+        <TabsTrigger value="amigos" className={TRIGGER_CLASSES}>
+          Amigos
+        </TabsTrigger>
+        <TabsTrigger value="mensal" className={TRIGGER_CLASSES}>
+          Global mês
+        </TabsTrigger>
+        <TabsTrigger value="anual" className={TRIGGER_CLASSES}>
+          Global anual
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="academia">{minhaAcademia}</TabsContent>
       <TabsContent value="amigos">{amigos}</TabsContent>

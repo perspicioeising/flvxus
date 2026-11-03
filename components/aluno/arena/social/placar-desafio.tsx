@@ -81,6 +81,18 @@ export function PlacarDesafio({ placar, meuUserId }: PlacarDesafioProps) {
       ? `Vale o XP de ${formatarDia(placar.starts_on)} a ${formatarDia(placar.ends_on)}`
       : null;
 
+  // Placar VIVO: barra proporcional entre os dois duelistas (eu à esquerda).
+  // Puramente visual — a ordenação/pontuação já vem pronta no `placar`.
+  const minhaLinha = placar.linhas.find((l) => l.user_id === meuUserId);
+  const outraLinha = placar.linhas.find((l) => l.user_id !== meuUserId);
+  const meusPontos = minhaLinha?.points ?? 0;
+  const outrosPontos = outraLinha?.points ?? 0;
+  const somaPontos = meusPontos + outrosPontos;
+  const minhaFatia =
+    somaPontos > 0 ? Math.round((meusPontos / somaPontos) * 100) : 50;
+  const euLidero = meusPontos > outrosPontos;
+  const empatado = meusPontos === outrosPontos;
+
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-2">
@@ -97,6 +109,37 @@ export function PlacarDesafio({ placar, meuUserId }: PlacarDesafioProps) {
       {periodo ? (
         <p className="mt-1 text-xs text-muted-foreground">{periodo}</p>
       ) : null}
+
+      {/* Barra viva do placar: minha fatia (verde) vs. a do oponente (neutra). */}
+      <div className="mt-3">
+        <div
+          className="flex h-2.5 overflow-hidden rounded-full bg-muted"
+          role="img"
+          aria-label={
+            empatado
+              ? 'Duelo empatado'
+              : euLidero
+                ? 'Você está na frente'
+                : 'Oponente na frente'
+          }
+        >
+          <div
+            className="h-full bg-primary transition-[width] duration-500"
+            style={{ width: `${minhaFatia}%` }}
+          />
+        </div>
+        <p className="mt-1.5 text-xs font-semibold">
+          {empatado ? (
+            <span className="text-muted-foreground">Placar empatado</span>
+          ) : euLidero ? (
+            <span className="text-primary">Você está na frente</span>
+          ) : (
+            <span className="text-muted-foreground">
+              {outraLinha?.display_name ?? 'Oponente'} está na frente
+            </span>
+          )}
+        </p>
+      </div>
 
       <ul className="mt-3 divide-y divide-border">
         {placar.linhas.map((linha) => {

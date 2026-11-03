@@ -43,23 +43,24 @@ export function ListaMissoes({ missoes }: ListaMissoesProps) {
             <li
               key={m.id}
               className={cn(
-                'flex items-center gap-3 rounded-xl border p-3',
+                'flex items-center gap-3 rounded-xl border p-3 transition-colors',
                 m.estado === 'concluida'
                   ? 'border-primary/40 bg-primary-soft'
                   : m.estado === 'bloqueada'
                     ? 'border-border bg-muted/40 opacity-70'
-                    : 'border-border bg-card'
+                    : 'border-border bg-muted/20'
               )}
             >
-              <Icon
+              <span
                 className={cn(
-                  'h-5 w-5 shrink-0',
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
                   m.estado === 'concluida'
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
+                    ? 'bg-primary/15 text-primary'
+                    : 'bg-muted text-muted-foreground'
                 )}
-                aria-hidden="true"
-              />
+              >
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate font-semibold text-foreground">

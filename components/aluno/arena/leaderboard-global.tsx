@@ -1,7 +1,13 @@
-import { Trophy } from 'lucide-react';
+import { Crown, Trophy } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  badgeMetal,
+  metalDaPosicao,
+  ringMetal,
+  textoMetal,
+} from '@/lib/arena/podio';
 import type { GamificationGlobalLeaderboard } from '@/types/database.types';
 
 export interface LeaderboardGlobalProps {
@@ -28,6 +34,11 @@ function inicial(nome: string): string {
  * apresentacional (RSC-safe), mobile-first. Destaca a posição do próprio
  * usuário no cabeçalho e realça sua linha na lista. Não reaplica fallback de
  * nome: usa `display_name` direto (já resolvido pela função SQL).
+ *
+ * Pódio (top 3): ouro/prata/bronze no anel do avatar, no badge da posição e no
+ * XP; o #1 ganha um ícone de coroa. A linha do PRÓPRIO usuário continua no verde
+ * da marca (tem prioridade sobre o metal). Da 4ª posição em diante, estilo
+ * neutro. Só apresentação — a ordenação vem da função SQL.
  */
 export function LeaderboardGlobal({
   ranking,
@@ -62,6 +73,9 @@ export function LeaderboardGlobal({
             <ul className="mt-3 divide-y divide-border">
               {ranking.linhas.map((linha) => {
                 const ehEu = linha.user_id === meuUserId;
+                // Pódio só colore quem NÃO é o próprio usuário (a linha "você"
+                // mantém prioridade no verde da marca).
+                const metal = ehEu ? null : metalDaPosicao(linha.posicao);
                 return (
                   <li
                     key={linha.user_id}
@@ -75,17 +89,32 @@ export function LeaderboardGlobal({
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums',
                         ehEu
                           ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
+                          : metal
+                            ? badgeMetal(metal)
+                            : 'bg-muted text-muted-foreground'
                       )}
                     >
                       {linha.posicao}
                     </span>
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={linha.avatar_url ?? undefined} alt="" />
-                      <AvatarFallback className="text-xs font-bold">
-                        {inicial(linha.display_name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative shrink-0">
+                      <Avatar
+                        className={cn('h-8 w-8', metal && ringMetal(metal))}
+                      >
+                        <AvatarImage
+                          src={linha.avatar_url ?? undefined}
+                          alt=""
+                        />
+                        <AvatarFallback className="text-xs font-bold">
+                          {inicial(linha.display_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {metal === 'ouro' ? (
+                        <Crown
+                          className="absolute -right-1.5 -top-2 h-4 w-4 text-amber-400"
+                          aria-label="Primeiro lugar"
+                        />
+                      ) : null}
+                    </div>
                     <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
                       {linha.display_name}
                       {ehEu ? (
@@ -94,7 +123,12 @@ export function LeaderboardGlobal({
                         </span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 text-sm font-bold tabular-nums text-foreground">
+                    <span
+                      className={cn(
+                        'shrink-0 text-sm font-bold tabular-nums',
+                        metal ? textoMetal(metal) : 'text-foreground'
+                      )}
+                    >
                       {formatarXp(linha.points)} XP
                     </span>
                   </li>
