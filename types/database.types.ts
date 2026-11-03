@@ -1896,6 +1896,9 @@ export type GamificationStats = {
 export type GamificationLeaderboardRow = {
   posicao: number;
   full_name: string | null;
+  // avatar_url é projetado a partir de 20261103090000_tenant_leaderboard_avatar
+  // (dado público de competição, igual aos rankings globais). null no fallback.
+  avatar_url: string | null;
   season_xp: number;
   user_id: string;
 };

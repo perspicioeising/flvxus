@@ -1,13 +1,8 @@
-import { Crown, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  badgeMetal,
-  metalDaPosicao,
-  ringMetal,
-  textoMetal,
-} from '@/lib/arena/podio';
+import { PodioTop3, type PodioEntrada } from '@/components/aluno/arena/podio-top3';
 import type { GamificationGlobalLeaderboard } from '@/types/database.types';
 
 export interface LeaderboardGlobalProps {
@@ -30,23 +25,34 @@ function inicial(nome: string): string {
 }
 
 /**
- * Ranking global (cross-tenant) da temporada mensal ou anual. Puramente
- * apresentacional (RSC-safe), mobile-first. Destaca a posição do próprio
- * usuário no cabeçalho e realça sua linha na lista. Não reaplica fallback de
- * nome: usa `display_name` direto (já resolvido pela função SQL).
+ * Ranking global (cross-tenant) da temporada mensal ou anual — também usado
+ * pelo ranking de amigos (mesmo shape). Puramente apresentacional (RSC-safe),
+ * mobile-first. Destaca a posição do próprio usuário no cabeçalho.
  *
- * Pódio (top 3): ouro/prata/bronze no anel do avatar, no badge da posição e no
- * XP; o #1 ganha um ícone de coroa. O pódio SEMPRE colore o top 3, inclusive
- * quando a linha é o próprio usuário — nesse caso convivem o metal (anel + badge
- * + coroa) e a marcação "você" (fundo levemente verde + sufixo "você"). Da 4ª
- * posição em diante, estilo neutro. Só apresentação — a ordenação vem da função
- * SQL.
+ * Top 3: pódio fiel ao mock SVG (card único 2-1-3, #1 central maior+elevado com
+ * coroa, anéis metálicos, avatares com foto e inicial no fallback) — via
+ * `PodioTop3`, compartilhado com o ranking do tenant. Da 4ª posição em diante,
+ * lista neutra (badge + avatar + nome + XP), com a linha do próprio usuário
+ * realçada em verde. Só apresentação — a ordenação vem da função SQL.
  */
 export function LeaderboardGlobal({
   ranking,
   meuUserId,
   titulo = 'Ranking global',
 }: LeaderboardGlobalProps) {
+  // Top 3 (pódio) e 4º+ (lista neutra), preservando a ordem da função SQL.
+  const top3: PodioEntrada[] =
+    ranking?.linhas
+      .filter((linha) => linha.posicao <= 3)
+      .map((linha) => ({
+        posicao: linha.posicao,
+        user_id: linha.user_id,
+        nome: linha.display_name,
+        xp: linha.points,
+        avatarUrl: linha.avatar_url,
+      })) ?? [];
+  const resto = ranking?.linhas.filter((linha) => linha.posicao > 3) ?? [];
+
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
@@ -72,71 +78,59 @@ export function LeaderboardGlobal({
               aparecer aqui.
             </p>
           ) : (
-            <ul className="mt-3 divide-y divide-border">
-              {ranking.linhas.map((linha) => {
-                const ehEu = linha.user_id === meuUserId;
-                // Pódio SEMPRE colore o top 3, inclusive quando é o próprio
-                // usuário: metal e marcação "você" convivem.
-                const metal = metalDaPosicao(linha.posicao);
-                return (
-                  <li
-                    key={linha.user_id}
-                    className={cn(
-                      'flex items-center gap-3 py-2.5',
-                      ehEu && '-mx-2 rounded-xl bg-primary-soft px-2'
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums',
-                        metal
-                          ? badgeMetal(metal)
-                          : ehEu
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground'
-                      )}
-                    >
-                      {linha.posicao}
-                    </span>
-                    <div className="relative shrink-0">
-                      <Avatar
-                        className={cn('h-8 w-8', metal && ringMetal(metal))}
+            <>
+              {top3.length > 0 ? (
+                <PodioTop3 entradas={top3} meuUserId={meuUserId} />
+              ) : null}
+
+              {resto.length > 0 ? (
+                <ul className="mt-3 divide-y divide-border">
+                  {resto.map((linha) => {
+                    const ehEu = linha.user_id === meuUserId;
+                    return (
+                      <li
+                        key={linha.user_id}
+                        className={cn(
+                          'flex items-center gap-3 py-2.5',
+                          ehEu && '-mx-2 rounded-xl bg-primary-soft px-2'
+                        )}
                       >
-                        <AvatarImage
-                          src={linha.avatar_url ?? undefined}
-                          alt=""
-                        />
-                        <AvatarFallback className="text-xs font-bold">
-                          {inicial(linha.display_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      {metal === 'ouro' ? (
-                        <Crown
-                          className="absolute -right-1.5 -top-2 h-4 w-4 text-amber-400"
-                          aria-label="Primeiro lugar"
-                        />
-                      ) : null}
-                    </div>
-                    <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
-                      {linha.display_name}
-                      {ehEu ? (
-                        <span className="ml-2 text-xs font-medium text-primary">
-                          você
+                        <span
+                          className={cn(
+                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums',
+                            ehEu
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground'
+                          )}
+                        >
+                          {linha.posicao}
                         </span>
-                      ) : null}
-                    </span>
-                    <span
-                      className={cn(
-                        'shrink-0 text-sm font-bold tabular-nums',
-                        metal ? textoMetal(metal) : 'text-foreground'
-                      )}
-                    >
-                      {formatarXp(linha.points)} XP
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+                        <Avatar className="h-8 w-8 shrink-0">
+                          <AvatarImage
+                            src={linha.avatar_url ?? undefined}
+                            alt=""
+                          />
+                          <AvatarFallback className="text-xs font-bold">
+                            {inicial(linha.display_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
+                          {linha.display_name}
+                          {ehEu ? (
+                            <span className="ml-2 text-xs font-medium text-primary">
+                              você
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="shrink-0 text-sm font-bold tabular-nums text-foreground">
+                          {formatarXp(linha.points)} XP
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+            </>
           )}
         </>
       )}
