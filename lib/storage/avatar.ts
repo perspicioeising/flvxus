@@ -84,6 +84,11 @@ export function detectarFormatoRaster(bytes: Uint8Array): ExtensaoAvatar | null 
 export interface UploadAvatarArgs {
   userId: string;
   file: Blob;
+  /**
+   * Versão para CACHE-BUSTING da public URL (parâmetro `?v=`). Default
+   * `Date.now()`. Injetável só para tornar o teste determinístico.
+   */
+  versao?: number;
 }
 
 export interface UploadAvatarResultado {
@@ -98,10 +103,19 @@ export interface UploadAvatarResultado {
  * e FORMATO real por magic bytes antes de enviar. Grava com `upsert: true`
  * (substitui a foto anterior do mesmo formato) e retorna a PUBLIC URL + o path.
  * Lança `Error` em pt-BR em caso de falha, espelhando `lib/storage/index.ts`.
+ *
+ * CACHE-BUSTING: o path (e, portanto, a public URL crua) é DETERMINÍSTICO
+ * (`{user_id}.<ext>`), então o Supabase Storage/CDN e o navegador serviriam a
+ * versão ANTIGA em cache após um novo upload do mesmo formato — a URL não muda.
+ * Para forçar a busca da versão nova, a public URL retornada recebe um parâmetro
+ * de QUERY único por upload (`?v=${versao}`). Como `profiles.avatar_url` guarda
+ * essa URL versionada, ela muda a cada upload e os componentes de exibição
+ * (que consomem a string crua) buscam a imagem nova sem precisar mudar.
  */
 export async function uploadAvatar({
   userId,
   file,
+  versao = Date.now(),
 }: UploadAvatarArgs): Promise<UploadAvatarResultado> {
   if (file.size > MAX_AVATAR_BYTES) {
     throw new Error('A imagem excede o limite de 2 MB.');
@@ -127,7 +141,10 @@ export async function uploadAvatar({
 
   const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
 
-  return { publicUrl: data.publicUrl, path };
+  const separador = data.publicUrl.includes('?') ? '&' : '?';
+  const publicUrl = `${data.publicUrl}${separador}v=${versao}`;
+
+  return { publicUrl, path };
 }
 
 /**
