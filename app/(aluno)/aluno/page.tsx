@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowUpRight, BarChart3, Dumbbell, Trophy } from 'lucide-react';
+import { ArrowUpRight, BarChart3, Dumbbell, Sparkles } from 'lucide-react';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -254,15 +254,15 @@ export default async function AlunoHomePage() {
           </span>
         </Link>
         <Link
-          href="/aluno/conquistas"
+          href="/aluno/arena"
           className="flex min-h-11 flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <div className="flex items-center justify-between">
-            <Trophy className="h-5 w-5 text-primary" aria-hidden="true" />
+            <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           </div>
           <span className="mt-6 text-sm font-bold uppercase tracking-wide">
-            Conquistas
+            Arena
           </span>
         </Link>
       </nav>
