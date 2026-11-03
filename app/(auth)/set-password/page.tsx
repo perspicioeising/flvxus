@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/browser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Mail, User, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, CheckCircle, AlertCircle, Loader2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { senhaSchema } from '@/schemas/auth';
+import { definirHandle, verificarDisponibilidadeHandle } from '@/actions/arena-social';
+import { sugerirUsername } from '@/lib/arena/social';
 import { AuthScreen } from '@/components/auth/auth-screen';
 import { AceiteLegalCheckbox } from '@/components/legal/aceite-legal-checkbox';
 import { registrarAceiteLegal } from '@/actions/legal';
@@ -41,6 +43,11 @@ export default function SetPasswordPage() {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [socialHandle, setSocialHandle] = useState('');
+  const [disponibilidade, setDisponibilidade] = useState<
+    'idle' | 'checking' | 'available' | 'taken'
+  >('idle');
+  const usernameEditadoRef = useRef(false);
   const [aceiteLegal, setAceiteLegal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -84,8 +91,44 @@ export default function SetPasswordPage() {
     carregarSessao();
   }, [supabase]);
 
+  // Pré-preenche uma sugestão de nome de usuário assim que o perfil carrega,
+  // enquanto o usuário não editou o campo manualmente.
+  useEffect(() => {
+    if (!userInfo || usernameEditadoRef.current) return;
+    setSocialHandle(sugerirUsername(userInfo.name, userInfo.email));
+  }, [userInfo]);
+
   const senhaValida = senhaSchema.safeParse(password).success;
   const senhasConferem = password === confirmPassword;
+
+  const socialHandleNormalizado = socialHandle
+    .trim()
+    .replace(/^@/, '')
+    .toLowerCase();
+  const formatoUsernameValido = /^[a-z0-9_]{3,30}$/.test(socialHandleNormalizado);
+
+  // Checagem de disponibilidade com debounce ANTES de concluir.
+  useEffect(() => {
+    if (!formatoUsernameValido) {
+      setDisponibilidade('idle');
+      return;
+    }
+    let cancelado = false;
+    setDisponibilidade('checking');
+    const timer = setTimeout(async () => {
+      const { disponivel } = await verificarDisponibilidadeHandle(
+        socialHandleNormalizado,
+      );
+      if (cancelado) return;
+      setDisponibilidade(disponivel ? 'available' : 'taken');
+    }, 400);
+    return () => {
+      cancelado = true;
+      clearTimeout(timer);
+    };
+  }, [formatoUsernameValido, socialHandleNormalizado]);
+
+  const usernameBloqueia = !formatoUsernameValido || disponibilidade !== 'available';
 
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +145,11 @@ export default function SetPasswordPage() {
 
     if (!aceiteLegal) {
       setError('É necessário aceitar os Termos e a Política de Privacidade.');
+      return;
+    }
+
+    if (usernameBloqueia) {
+      setError('Escolha um nome de usuário válido e disponível.');
       return;
     }
 
@@ -144,6 +192,16 @@ export default function SetPasswordPage() {
         throw new Error(
           aceite.message ?? 'Não foi possível registrar o aceite. Tente novamente.',
         );
+      }
+
+      // Grava o nome de usuário escolhido. Em corrida de unicidade ('em_uso'),
+      // bloqueamos a conclusão com a mensagem pt-BR e deixamos escolher outro.
+      const handleResultado = await definirHandle(socialHandle);
+      if (handleResultado.status === 'em_uso') {
+        setDisponibilidade('taken');
+        setError('Esse nome de usuário já está em uso.');
+        setIsLoading(false);
+        return;
       }
 
       toast({
@@ -222,7 +280,13 @@ export default function SetPasswordPage() {
           type="submit"
           size="xl"
           className="w-full"
-          disabled={!senhaValida || !senhasConferem || !aceiteLegal || isLoading}
+          disabled={
+            !senhaValida ||
+            !senhasConferem ||
+            !aceiteLegal ||
+            usernameBloqueia ||
+            isLoading
+          }
         >
           {isLoading ? (
             <>
@@ -252,6 +316,57 @@ export default function SetPasswordPage() {
           )}
         </div>
       )}
+
+      <div className="space-y-2">
+        <Label htmlFor="socialHandle">Nome de usuário</Label>
+        <div className="relative">
+          <span
+            className="pointer-events-none absolute inset-y-0 left-0 flex w-9 items-center justify-center text-muted-foreground"
+            aria-hidden="true"
+          >
+            @
+          </span>
+          <Input
+            id="socialHandle"
+            value={socialHandle}
+            onChange={(e) => {
+              usernameEditadoRef.current = true;
+              setSocialHandle(e.target.value);
+            }}
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            className="min-h-11 pl-9 text-base md:text-sm"
+            placeholder="seu_usuario"
+            required
+          />
+        </div>
+        {!formatoUsernameValido && socialHandle.length > 0 && (
+          <p className="flex items-center gap-1 text-xs text-destructive">
+            <AlertCircle className="h-3 w-3" aria-hidden="true" />
+            Use 3 a 30 caracteres: letras minúsculas, números ou _.
+          </p>
+        )}
+        {formatoUsernameValido && disponibilidade === 'checking' && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+            Verificando disponibilidade...
+          </p>
+        )}
+        {formatoUsernameValido && disponibilidade === 'available' && (
+          <p className="flex items-center gap-1 text-xs text-primary">
+            <CheckCircle className="h-3 w-3" aria-hidden="true" />
+            @{socialHandleNormalizado} está disponível
+          </p>
+        )}
+        {formatoUsernameValido && disponibilidade === 'taken' && (
+          <p className="flex items-center gap-1 text-xs text-destructive">
+            <XCircle className="h-3 w-3" aria-hidden="true" />
+            Esse nome de usuário já está em uso.
+          </p>
+        )}
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="password">Nova senha</Label>

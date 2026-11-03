@@ -73,12 +73,33 @@ export async function GET(request: NextRequest) {
   // conforme o papel. Sem perfil/erro volta ao login.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, social_handle')
     .eq('user_id', userId)
     .single();
 
   if (!profile) {
     return NextResponse.redirect(`${origin}/login?error=no_profile`);
+  }
+
+  // Confirmação de e-mail do cadastro de aluno autônomo: o signUp carregou o
+  // nome de usuário escolhido em user_metadata.social_handle. Se o perfil ainda
+  // não tem social_handle, fazemos uma gravação best-effort sob RLS (user_id =
+  // auth.uid()) e ignoramos uma colisão de unicidade (23505) — o usuário pode
+  // definir depois em Perfil. Mantido mínimo, sem alterar o fluxo de redirect.
+  if (!profile.social_handle) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const metaHandle = user?.user_metadata?.social_handle;
+    if (typeof metaHandle === 'string' && metaHandle.length > 0) {
+      const { error: handleError } = await supabase
+        .from('profiles')
+        .update({ social_handle: metaHandle })
+        .eq('user_id', userId);
+      if (handleError && handleError.code !== '23505') {
+        console.error('[callback] social_handle self-write:', handleError.message);
+      }
+    }
   }
 
   const destino = profile.role === 'student' ? '/aluno' : '/professor';

@@ -1,11 +1,11 @@
 'use client';
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { Eye, EyeOff, Loader2, MailCheck } from "lucide-react";
+import { CheckCircle, Eye, EyeOff, Loader2, MailCheck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,6 +24,8 @@ import { cadastroProfessorSchema } from "@/schemas/auth";
 import { AuthScreen } from "@/components/auth/auth-screen";
 import { AceiteLegalCheckbox } from "@/components/legal/aceite-legal-checkbox";
 import { registrarAceiteLegal } from "@/actions/legal";
+import { definirHandle, verificarDisponibilidadeHandle } from "@/actions/arena-social";
+import { sugerirUsername } from "@/lib/arena/social";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal/versions";
 
 type FormValues = z.infer<typeof cadastroProfessorSchema>;
@@ -43,6 +45,7 @@ function RegisterContent() {
       name: "",
       accountType: "professional",
       businessName: "",
+      socialHandle: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -55,6 +58,57 @@ function RegisterContent() {
   const aceiteLegal = form.watch("aceiteLegal");
   const accountType = form.watch("accountType");
   const isSelfManaged = accountType === "self_managed";
+
+  // UX do nome de usuário (apenas self_managed). Pré-preenchemos uma sugestão a
+  // partir do nome/e-mail ENQUANTO o usuário não editou o campo manualmente;
+  // depois do primeiro toque, paramos de semear para não sobrescrever a escolha.
+  const name = form.watch("name");
+  const email = form.watch("email");
+  const socialHandle = form.watch("socialHandle") ?? "";
+  const usernameEditadoRef = useRef(false);
+  const [disponibilidade, setDisponibilidade] = useState<
+    "idle" | "checking" | "available" | "taken"
+  >("idle");
+
+  useEffect(() => {
+    if (!isSelfManaged || usernameEditadoRef.current) return;
+    const sugestao = sugerirUsername(name, email);
+    form.setValue("socialHandle", sugestao, { shouldValidate: false });
+  }, [isSelfManaged, name, email, form]);
+
+  // Checagem de disponibilidade com debounce ANTES do submit. Só roda quando o
+  // valor normalizado tem formato válido; caso contrário o hint fica 'idle' e o
+  // FormMessage do zod cobre o erro de formato.
+  const socialHandleNormalizado = socialHandle
+    .trim()
+    .replace(/^@/, "")
+    .toLowerCase();
+  const formatoUsernameValido = /^[a-z0-9_]{3,30}$/.test(socialHandleNormalizado);
+
+  useEffect(() => {
+    if (!isSelfManaged || !formatoUsernameValido) {
+      setDisponibilidade("idle");
+      return;
+    }
+    let cancelado = false;
+    setDisponibilidade("checking");
+    const timer = setTimeout(async () => {
+      const { disponivel } = await verificarDisponibilidadeHandle(
+        socialHandleNormalizado,
+      );
+      if (cancelado) return;
+      setDisponibilidade(disponivel ? "available" : "taken");
+    }, 400);
+    return () => {
+      cancelado = true;
+      clearTimeout(timer);
+    };
+  }, [isSelfManaged, formatoUsernameValido, socialHandleNormalizado]);
+
+  // Bloqueia o submit do aluno autônomo enquanto o username não for válido e
+  // disponível (o 'professional' não tem esse campo, então não bloqueia).
+  const usernameBloqueia =
+    isSelfManaged && (!formatoUsernameValido || disponibilidade !== "available");
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
@@ -74,6 +128,12 @@ function RegisterContent() {
               ? { business_name: values.businessName }
               : {}),
             account_type: values.accountType,
+            // Carrega o nome de usuário escolhido nos metadados para que o
+            // caminho de confirmação por e-mail (/callback) possa concluir a
+            // gravação em profiles.social_handle depois, quando a sessão surgir.
+            ...(values.accountType === "self_managed" && values.socialHandle
+              ? { social_handle: values.socialHandle }
+              : {}),
           },
           emailRedirectTo:
             typeof window !== "undefined"
@@ -136,11 +196,30 @@ function RegisterContent() {
         });
       }
 
+      // Aluno autônomo com sessão imediata: grava o nome de usuário já. Em caso
+      // de corrida de unicidade ('em_uso'), avisamos em pt-BR e mantemos o
+      // usuário no formulário para escolher outro (não seguimos com redirect).
+      if (values.accountType === "self_managed" && values.socialHandle) {
+        const resultado = await definirHandle(values.socialHandle);
+        if (resultado.status === "em_uso") {
+          setDisponibilidade("taken");
+          form.setError("socialHandle", {
+            message: "Esse nome de usuário já está em uso.",
+          });
+          toast({
+            variant: "destructive",
+            title: "Nome de usuário indisponível",
+            description: "Esse nome de usuário já está em uso.",
+          });
+          return;
+        }
+      }
+
       toast({
         title: "Conta criada com sucesso! 🎉",
         description: "Redirecionando para o seu painel...",
       });
-      router.push("/professor");
+      router.push(values.accountType === "self_managed" ? "/aluno" : "/professor");
       router.refresh();
     } catch (error: any) {
       toast({
@@ -206,7 +285,7 @@ function RegisterContent() {
             type="submit"
             size="xl"
             className="w-full"
-            disabled={isLoading || !aceiteLegal}
+            disabled={isLoading || !aceiteLegal || usernameBloqueia}
           >
             {isLoading ? (
               <>
@@ -333,6 +412,62 @@ function RegisterContent() {
                     value={field.value ?? ""}
                   />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ) : null}
+
+        {isSelfManaged ? (
+          <FormField
+            control={form.control}
+            name="socialHandle"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome de usuário</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span
+                      className="pointer-events-none absolute inset-y-0 left-0 flex w-9 items-center justify-center text-muted-foreground"
+                      aria-hidden="true"
+                    >
+                      @
+                    </span>
+                    <Input
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      enterKeyHint="next"
+                      placeholder="seu_usuario"
+                      className="min-h-11 pl-9 text-base md:text-sm"
+                      {...field}
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        usernameEditadoRef.current = true;
+                        field.onChange(e);
+                      }}
+                    />
+                  </div>
+                </FormControl>
+                {formatoUsernameValido && disponibilidade === "checking" && (
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                    Verificando disponibilidade...
+                  </p>
+                )}
+                {formatoUsernameValido && disponibilidade === "available" && (
+                  <p className="flex items-center gap-1 text-xs text-primary">
+                    <CheckCircle className="h-3 w-3" aria-hidden="true" />
+                    @{socialHandleNormalizado} está disponível
+                  </p>
+                )}
+                {formatoUsernameValido && disponibilidade === "taken" && (
+                  <p className="flex items-center gap-1 text-xs text-destructive">
+                    <XCircle className="h-3 w-3" aria-hidden="true" />
+                    Esse nome de usuário já está em uso.
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )}

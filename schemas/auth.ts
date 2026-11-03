@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/** Formato canônico do nome de usuário — mesma regex da constraint do banco. */
+const HANDLE_REGEX = /^[a-z0-9_]{3,30}$/;
+
 /**
  * Schemas Zod do fluxo de autenticação (architecture.md §5).
  *
@@ -46,6 +49,18 @@ export const cadastroProfessorSchema = z
       .string()
       .trim()
       .optional(),
+    // Nome de usuário social (coluna profiles.social_handle). Opcional no shape
+    // base: só é EXIGIDO para 'self_managed' (validado no superRefine abaixo).
+    // O transform normaliza (trim, remove '@' inicial, lower) ANTES do refine,
+    // espelhando definirHandleSchema; para 'professional' o campo é dispensado.
+    socialHandle: z
+      .string()
+      .trim()
+      .transform((v) => v.replace(/^@/, '').toLowerCase())
+      .refine((v) => v === '' || HANDLE_REGEX.test(v), {
+        message: 'Use 3 a 30 caracteres: letras minúsculas, números ou _.',
+      })
+      .optional(),
     email: z
       .string({ required_error: 'Informe o e-mail.' })
       .trim()
@@ -77,6 +92,20 @@ export const cadastroProfessorSchema = z
         code: z.ZodIssueCode.custom,
         message: 'O nome da empresa deve ter pelo menos 2 caracteres.',
         path: ['businessName'],
+      });
+    }
+  })
+  // 'self_managed' (aluno autônomo) PRECISA informar o nome de usuário; o
+  // 'professional' não é atleta social, então o campo é dispensado. O valor já
+  // chega normalizado (ver transform acima): aqui só exigimos presença/formato.
+  .superRefine((dados, ctx) => {
+    if (dados.accountType !== 'self_managed') return;
+    const username = dados.socialHandle ?? '';
+    if (!HANDLE_REGEX.test(username)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Use 3 a 30 caracteres: letras minúsculas, números ou _.',
+        path: ['socialHandle'],
       });
     }
   });
