@@ -31,14 +31,13 @@ import { aiFailure, aiForbidden, aiQuotaExceeded, badRequest, errorResponse, jso
 import { recordUsage } from '../_shared/logging.ts';
 import { statusComDireito } from '../_shared/quota-policy.ts';
 import { checkRateLimit, DEFAULT_WINDOW } from '../_shared/rate-limit.ts';
-import { buildTool, parseToolOutput } from '../_shared/structured-output.ts';
+import { parseStructuredOutput } from '../_shared/structured-output.ts';
 import { GENERATE_DIET_SYSTEM, buildGenerateDietUserMessage } from '../_prompts/generate-diet.ts';
 import {
   JOB_TYPE,
   JSON_SCHEMAS,
   MAX_OUTPUT_TOKENS,
   TIMEOUT_MS,
-  TOOL_NAMES,
   buildRuntime,
   readRequestBody,
 } from '../_shared/handler.ts';
@@ -132,24 +131,18 @@ Deno.serve(async (req) => {
     const startedAt = Date.now();
     // 7. chama a Anthropic com dados do aluno como DADOS (anti-injection).
     const client = new AnthropicClient({ timeoutMs: TIMEOUT_MS });
-    const tool = buildTool(
-      TOOL_NAMES.generate_diet,
-      'Retorna o rascunho estruturado da dieta.',
-      JSON_SCHEMAS.generate_diet,
-    );
 
     try {
       const result = await client.createMessage({
         system: GENERATE_DIET_SYSTEM,
         userContent: buildGenerateDietUserMessage(JSON.stringify(input)),
-        tool,
+        schema: JSON_SCHEMAS.generate_diet,
         maxTokens: MAX_OUTPUT_TOKENS,
       });
 
       // 8. valida a saída com Zod antes de gravar qualquer coisa.
-      const parsedOutput = parseToolOutput(
+      const parsedOutput = parseStructuredOutput(
         result.response,
-        TOOL_NAMES.generate_diet,
         generateDietOutputSchema,
       );
       if (!parsedOutput.ok) {

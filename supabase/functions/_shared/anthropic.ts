@@ -5,7 +5,8 @@
  * - `fetch` é INJETÁVEL (default: `globalThis.fetch`) para testar a lógica sem rede.
  * - Lê `ANTHROPIC_API_KEY` e `ANTHROPIC_MODEL` do ambiente; NUNCA loga a chave e
  *   NUNCA usa string de modelo fixa.
- * - Tool-use forçada via `tool_choice` (saída estruturada padrão).
+ * - Saída estruturada via `output_config.format` (json_schema). O modelo de
+ *   produção (claude-sonnet-5-5) não aceita `tool_choice` forçado.
  * - SEMPRE passa o `signal` do AbortController ao `fetch` (corrige o bug da v1,
  *   que não passava o signal e o timeout não cancelava a requisição).
  * - Retry limitado (2 tentativas extras) com backoff e fallback amigável.
@@ -14,7 +15,7 @@
  */
 
 import { aiFailure } from './errors.ts';
-import type { AnthropicMessageResponse, AnthropicTool } from './structured-output.ts';
+import type { AnthropicMessageResponse, JsonSchema } from './structured-output.ts';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -44,7 +45,8 @@ export interface AnthropicClientOptions {
 export interface MessagesRequest {
   system: string;
   userContent: string;
-  tool: AnthropicTool;
+  /** JSON Schema que força o formato da saída (`output_config.format`). */
+  schema: JsonSchema;
   /** Teto de tokens de saída (guarda-corpo de custo). */
   maxTokens: number;
 }
@@ -94,8 +96,9 @@ export class AnthropicClient {
   }
 
   /**
-   * Chama a Messages API com tool-use forçada. SEMPRE passa o signal do
-   * AbortController. Retry limitado + fallback amigável. NUNCA loga a chave.
+   * Chama a Messages API com saída estruturada via `output_config.format`.
+   * SEMPRE passa o signal do AbortController. Retry limitado + fallback
+   * amigável. NUNCA loga a chave.
    */
   async createMessage(req: MessagesRequest): Promise<MessagesResult> {
     const model = this.#model();
@@ -107,9 +110,9 @@ export class AnthropicClient {
       system: req.system,
       // Dados do aluno entram como DADOS numa mensagem de user (anti-injection).
       messages: [{ role: 'user', content: req.userContent }],
-      tools: [req.tool],
-      // Força a saída estruturada pela tool.
-      tool_choice: { type: 'tool', name: req.tool.name },
+      // Força o formato da saída (json_schema) — compatível com o modelo de
+      // produção, que não aceita `tool_choice` forçado.
+      output_config: { format: { type: 'json_schema', schema: req.schema } },
     });
 
     let lastError: unknown;

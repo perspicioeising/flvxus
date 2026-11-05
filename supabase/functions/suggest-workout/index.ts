@@ -22,14 +22,13 @@ import { aiFailure, aiForbidden, aiQuotaExceeded, badRequest, errorResponse, jso
 import { recordUsage } from '../_shared/logging.ts';
 import { statusComDireito } from '../_shared/quota-policy.ts';
 import { checkRateLimit, DEFAULT_WINDOW } from '../_shared/rate-limit.ts';
-import { buildTool, parseToolOutput } from '../_shared/structured-output.ts';
+import { parseStructuredOutput } from '../_shared/structured-output.ts';
 import { SUGGEST_WORKOUT_SYSTEM, buildSuggestWorkoutUserMessage } from '../_prompts/suggest-workout.ts';
 import {
   JOB_TYPE,
   JSON_SCHEMAS,
   MAX_OUTPUT_TOKENS,
   TIMEOUT_MS,
-  TOOL_NAMES,
   buildRuntime,
   readRequestBody,
 } from '../_shared/handler.ts';
@@ -124,23 +123,17 @@ Deno.serve(async (req) => {
 
     const startedAt = Date.now();
     const client = new AnthropicClient({ timeoutMs: TIMEOUT_MS });
-    const tool = buildTool(
-      TOOL_NAMES.suggest_workout,
-      'Retorna o rascunho estruturado do plano de treino.',
-      JSON_SCHEMAS.suggest_workout,
-    );
 
     try {
       const result = await client.createMessage({
         system: SUGGEST_WORKOUT_SYSTEM,
         userContent: buildSuggestWorkoutUserMessage(JSON.stringify(input)),
-        tool,
+        schema: JSON_SCHEMAS.suggest_workout,
         maxTokens: MAX_OUTPUT_TOKENS,
       });
 
-      const parsedOutput = parseToolOutput(
+      const parsedOutput = parseStructuredOutput(
         result.response,
-        TOOL_NAMES.suggest_workout,
         suggestWorkoutOutputSchema,
       );
       if (!parsedOutput.ok) {

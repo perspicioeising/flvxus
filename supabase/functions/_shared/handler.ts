@@ -43,23 +43,18 @@ export const JOB_TYPE = {
   analyze_assessment: 'analyze_assessment',
 } as const satisfies Record<string, AiJobType>;
 
-/** Nome da tool por função (canal da saída estruturada forçada). */
-export const TOOL_NAMES = {
-  generate_diet: 'generate_diet',
-  suggest_workout: 'suggest_workout',
-  analyze_assessment: 'analyze_assessment',
-} as const;
-
 /** Teto de tokens de saída (guarda-corpo de custo, ADR 0001 §5). */
-export const MAX_OUTPUT_TOKENS = 4096;
+export const MAX_OUTPUT_TOKENS = 8192;
 
 /** Timeout real por requisição à Anthropic, em ms. */
 export const TIMEOUT_MS = 60_000;
 
 /**
- * JSON Schemas das tools (refletem os schemas Zod de `schemas/ia/`). São usados
- * para FORÇAR o formato na Anthropic; a validação de verdade é sempre o Zod no
- * servidor (`parseToolOutput`) — ADR 0001 §4.
+ * JSON Schemas de saída (refletem os schemas Zod de `schemas/ia/`). São usados
+ * para FORÇAR o formato na Anthropic via `output_config.format`; a validação de
+ * verdade é sempre o Zod no servidor (`parseStructuredOutput`) — ADR 0001 §4.
+ * Limites finos (minItems/minimum/maximum/exclusiveMinimum) NÃO entram aqui
+ * (incompatíveis com `output_config.format`); vivem só no Zod de saída.
  */
 export const JSON_SCHEMAS: Record<'generate_diet' | 'suggest_workout' | 'analyze_assessment', JsonSchema> = {
   generate_diet: {
@@ -69,7 +64,6 @@ export const JSON_SCHEMAS: Record<'generate_diet' | 'suggest_workout' | 'analyze
     properties: {
       meals: {
         type: 'array',
-        minItems: 1,
         items: {
           type: 'object',
           additionalProperties: false,
@@ -77,22 +71,21 @@ export const JSON_SCHEMAS: Record<'generate_diet' | 'suggest_workout' | 'analyze
           properties: {
             name: { type: 'string' },
             time: { type: 'string' },
-            order_index: { type: 'integer', minimum: 0 },
+            order_index: { type: 'integer' },
             foods: {
               type: 'array',
-              minItems: 1,
               items: {
                 type: 'object',
                 additionalProperties: false,
                 required: ['food_name', 'quantity', 'unit', 'kcal', 'protein_g', 'carbs_g', 'fat_g'],
                 properties: {
                   food_name: { type: 'string' },
-                  quantity: { type: 'number', exclusiveMinimum: 0 },
+                  quantity: { type: 'number' },
                   unit: { type: 'string' },
-                  kcal: { type: 'number', minimum: 0 },
-                  protein_g: { type: 'number', minimum: 0 },
-                  carbs_g: { type: 'number', minimum: 0 },
-                  fat_g: { type: 'number', minimum: 0 },
+                  kcal: { type: 'number' },
+                  protein_g: { type: 'number' },
+                  carbs_g: { type: 'number' },
+                  fat_g: { type: 'number' },
                 },
               },
             },
@@ -104,13 +97,13 @@ export const JSON_SCHEMAS: Record<'generate_diet' | 'suggest_workout' | 'analyze
         additionalProperties: false,
         required: ['target_kcal', 'protein_g', 'carbs_g', 'fat_g'],
         properties: {
-          target_kcal: { type: 'number', minimum: 0 },
-          protein_g: { type: 'number', minimum: 0 },
-          carbs_g: { type: 'number', minimum: 0 },
-          fat_g: { type: 'number', minimum: 0 },
+          target_kcal: { type: 'number' },
+          protein_g: { type: 'number' },
+          carbs_g: { type: 'number' },
+          fat_g: { type: 'number' },
         },
       },
-      shopping_list: { type: 'array', minItems: 1, items: { type: 'string' } },
+      shopping_list: { type: 'array', items: { type: 'string' } },
       disclaimer: { type: 'string' },
     },
   },
@@ -121,26 +114,24 @@ export const JSON_SCHEMAS: Record<'generate_diet' | 'suggest_workout' | 'analyze
     properties: {
       days: {
         type: 'array',
-        minItems: 1,
         items: {
           type: 'object',
           additionalProperties: false,
           required: ['weekday', 'exercises'],
           properties: {
-            weekday: { type: 'integer', minimum: 0, maximum: 6 },
+            weekday: { type: 'integer' },
             label: { type: ['string', 'null'] },
             exercises: {
               type: 'array',
-              minItems: 1,
               items: {
                 type: 'object',
                 additionalProperties: false,
                 required: ['name', 'sets', 'reps', 'rest_seconds'],
                 properties: {
                   name: { type: 'string' },
-                  sets: { type: 'integer', exclusiveMinimum: 0 },
+                  sets: { type: 'integer' },
                   reps: { type: 'string' },
-                  rest_seconds: { type: 'integer', minimum: 0 },
+                  rest_seconds: { type: 'integer' },
                   notes: { type: ['string', 'null'] },
                 },
               },
@@ -159,7 +150,6 @@ export const JSON_SCHEMAS: Record<'generate_diet' | 'suggest_workout' | 'analyze
       analysis: { type: 'string' },
       recommendations: {
         type: 'array',
-        minItems: 1,
         items: {
           type: 'object',
           additionalProperties: false,
