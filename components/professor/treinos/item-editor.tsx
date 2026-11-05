@@ -98,6 +98,54 @@ export function novoItem(exercicio: ExercicioDisponivel): ItemEditavel {
   };
 }
 
+/**
+ * COBERTURA MUSCULAR de uma ficha/modelo: união ordenada (pt-BR de inserção)
+ * dos grupos musculares de todos os itens recebidos. Pura e reutilizável — o
+ * `ItemEditor` e o wrapper por divisão (`ItemEditorPorDivisao`) consomem a
+ * MESMA regra, evitando divergência.
+ */
+export function gruposCoberturaDe(itens: ItemEditavel[]): string[] {
+  const vistos = new Set<string>();
+  const ordenados: string[] = [];
+  for (const item of itens) {
+    for (const g of item.muscle_groups ?? []) {
+      const t = g.trim();
+      if (t.length === 0 || vistos.has(t)) continue;
+      vistos.add(t);
+      ordenados.push(t);
+    }
+  }
+  return ordenados;
+}
+
+/**
+ * Card de apresentação "Cobertura muscular" — ÚNICA cópia do markup, consumida
+ * pelo `ItemEditor` (quando `!semCobertura`) e pelo `ItemEditorPorDivisao`.
+ * Assume `grupos.length > 0`; o chamador controla quando renderizar.
+ */
+export function CoberturaMuscular({ grupos }: { grupos: string[] }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-xs font-bold uppercase tracking-widest text-primary">
+        Cobertura muscular
+      </p>
+      <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <MuscleMap grupos={grupos} size="md" className="shrink-0" />
+        <ul className="flex flex-wrap gap-2">
+          {grupos.map((g) => (
+            <li
+              key={g}
+              className="rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-primary-soft-foreground"
+            >
+              {g}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 /** Converte o campo `sets` (string) num inteiro >= 0, ou `null` se não numérico. */
 function quantidadeSeries(sets: string): number | null {
   if (sets.trim() === '') return null;
@@ -151,12 +199,20 @@ export function ItemEditor({
   exercicios,
   comDiaSemana = false,
   comDivisao = false,
+  semCobertura = false,
 }: {
   itens: ItemEditavel[];
   onChange: (itens: ItemEditavel[]) => void;
   exercicios: ExercicioDisponivel[];
   comDiaSemana?: boolean;
   comDivisao?: boolean;
+  /**
+   * Suprime o card "Cobertura muscular" interno. Usado pelo
+   * `ItemEditorPorDivisao`, que reergue UM único card no nível do wrapper
+   * (derivado de todos os itens), evitando N cards fragmentados por divisão.
+   * Default `false` — o caminho de `modelo-form.tsx` segue idêntico.
+   */
+  semCobertura?: boolean;
 }) {
   function adicionar(exercicios: ExercicioDisponivel[]) {
     onChange([...itens, ...exercicios.map(novoItem)]);
@@ -251,41 +307,12 @@ export function ItemEditor({
   // COBERTURA MUSCULAR da ficha/modelo sendo montada: união dos grupos de todos
   // os itens adicionados, reativa (recalcula a cada add/remove). Ajuda o
   // professor a enxergar os grupos ainda não cobertos.
-  const gruposCobertura = React.useMemo(() => {
-    const vistos = new Set<string>();
-    const ordenados: string[] = [];
-    for (const item of itens) {
-      for (const g of item.muscle_groups ?? []) {
-        const t = g.trim();
-        if (t.length === 0 || vistos.has(t)) continue;
-        vistos.add(t);
-        ordenados.push(t);
-      }
-    }
-    return ordenados;
-  }, [itens]);
+  const gruposCobertura = React.useMemo(() => gruposCoberturaDe(itens), [itens]);
 
   return (
     <div className="space-y-4">
-      {gruposCobertura.length > 0 ? (
-        <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">
-            Cobertura muscular
-          </p>
-          <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <MuscleMap grupos={gruposCobertura} size="md" className="shrink-0" />
-            <ul className="flex flex-wrap gap-2">
-              {gruposCobertura.map((g) => (
-                <li
-                  key={g}
-                  className="rounded-full bg-primary-soft px-3 py-1 text-sm font-medium text-primary-soft-foreground"
-                >
-                  {g}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+      {!semCobertura && gruposCobertura.length > 0 ? (
+        <CoberturaMuscular grupos={gruposCobertura} />
       ) : null}
 
       {itens.length === 0 ? (

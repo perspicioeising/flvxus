@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/select';
 import { fichaSchema, type RotationStepInput } from '@/schemas/treino';
 import { criarFicha, editarFicha, type EstadoAcao } from '@/actions/treinos';
-import { ItemEditor, type ItemEditavel } from './item-editor';
+import type { ItemEditavel } from './item-editor';
+import { ItemEditorPorDivisao } from './item-editor-por-divisao';
 import { RotationEditor } from './rotation-editor';
 import type { ExercicioDisponivel } from './exercise-picker';
 import { itensEditaveisParaInput } from './form-helpers';
@@ -224,12 +225,10 @@ export function FichaForm({
 
       <div className="space-y-2">
         <h2 className="text-base font-semibold text-foreground">Exercícios</h2>
-        <ItemEditor
+        <ItemEditorPorDivisao
           itens={itens}
           onChange={setItens}
           exercicios={exercicios}
-          comDiaSemana
-          comDivisao
         />
       </div>
 
@@ -249,7 +248,7 @@ export function FichaForm({
         </div>
       ) : null}
 
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <div className="sticky bottom-0 z-10 flex flex-col-reverse gap-3 border-t border-border bg-background py-4 sm:flex-row sm:justify-end">
         <Button
           type="button"
           variant="outline"

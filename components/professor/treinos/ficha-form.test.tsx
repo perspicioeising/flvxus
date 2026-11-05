@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { FichaForm } from './ficha-form';
 import { toast } from '@/hooks/use-toast';
 import { criarFicha } from '@/actions/treinos';
+import type { ItemEditavel } from './item-editor';
 
 // Dependências externas do form que não interessam ao teste de render.
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
@@ -97,5 +98,73 @@ describe('FichaForm — erro de divisão vai para toast pt-BR (não cru em ingl�
 
     // Nenhuma string crua do Zod em inglês vaza para a tela.
     expect(container.textContent ?? '').not.toContain('String must contain');
+  });
+});
+
+/** Item editável completo e válido numa divisão. */
+function itemValido(key: string, division: string): ItemEditavel {
+  return {
+    key,
+    exercise_id: EX_ID,
+    exercise_name: `Exercício ${key}`,
+    sets: '3',
+    reps: '10',
+    rest_seconds: '60',
+    target_load: '40',
+    notes: '',
+    weekday: null,
+    division,
+  };
+}
+
+describe('FichaForm — agrupamento é só apresentação (ordem preservada no submit)', () => {
+  it('submeter ficha entrelaçada sem interação preserva o order_index de entrada', async () => {
+    const criarMock = vi.mocked(criarFicha);
+    criarMock.mockResolvedValue({ ok: true, id: 'ficha-1' });
+
+    // Itens entrelaçados: A, B, A, C — a ordem global deve ser preservada.
+    const itens = [
+      itemValido('a1', 'A'),
+      itemValido('b1', 'B'),
+      itemValido('a2', 'A'),
+      itemValido('c1', 'C'),
+    ];
+
+    const { container } = render(
+      <FichaForm
+        modo="criar"
+        exercicios={[]}
+        alunos={ALUNOS}
+        valoresIniciais={{
+          student_id: '22222222-2222-2222-2222-222222222222',
+          name: 'Ficha',
+          source_workout_id: null,
+          itens,
+        }}
+      />
+    );
+
+    const form = container.querySelector('form');
+    fireEvent.submit(form as HTMLFormElement);
+
+    // Aguarda a resolução do submit assíncrono.
+    await vi.waitFor(() => expect(criarMock).toHaveBeenCalledTimes(1));
+
+    const payload = criarMock.mock.calls[0][0] as {
+      itens: Array<{ exercise_id: string; order_index: number; division?: string }>;
+    };
+    // order_index sequencial e na ordem de entrada; divisões intactas.
+    expect(payload.itens.map((i) => i.order_index)).toEqual([0, 1, 2, 3]);
+    expect(payload.itens.map((i) => i.division)).toEqual(['A', 'B', 'A', 'C']);
+  });
+
+  it('a barra de ações usa sticky bottom-0 para ficar sempre visível', () => {
+    const { container } = render(
+      <FichaForm modo="criar" exercicios={[]} alunos={ALUNOS} />
+    );
+    const barra = container.querySelector('.sticky.bottom-0');
+    expect(barra).not.toBeNull();
+    // Contém o submit (Criar ficha).
+    expect(barra?.textContent ?? '').toContain('Criar ficha');
   });
 });
