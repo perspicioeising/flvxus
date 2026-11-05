@@ -68,3 +68,19 @@ export function valoresDaSerie(
     cargaAlvo: serie.targetLoad ?? defaults.cargaAlvo,
   };
 }
+
+/**
+ * Número de séries a executar para um item: a CONTAGEM das séries individuais
+ * quando existirem (uma linha por `setNumber`), senão deriva do `sets` geral do
+ * item com piso 1. NUNCA colapsa para 1 havendo séries individuais, mesmo que o
+ * `sets` geral esteja NULL/0 — a montagem da ficha grava uma linha por série, e
+ * o geral é só um resumo que pode estar defasado/placeholder. A contagem é o
+ * número de LINHAS (não `max(setsGeral, series.length)`).
+ */
+export function contarSeries(
+  setsGeral: number | null,
+  series: { setNumber: number }[] | undefined
+): number {
+  if (series && series.length > 0) return series.length;
+  return setsGeral && setsGeral > 0 ? setsGeral : 1;
+}

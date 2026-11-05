@@ -14,6 +14,7 @@ import {
   type ItemExecucao,
 } from '@/components/aluno/execucao/sessao-execucao';
 import type { ExercicioDisponivel } from '@/components/professor/treinos/exercise-picker';
+import { contarSeries } from '@/lib/treino/series';
 
 /** Shape do join `exercises` que precisamos (array ou objeto, conforme o join). */
 interface ExercicioJoin {
@@ -144,14 +145,18 @@ export default async function AlunoExecucaoFichaPage({
         ex?.thumbnail_url ? signExerciseMedia(ex.thumbnail_url) : Promise.resolve(null),
       ]);
 
+      const series = seriesDoJoin(item.workout_plan_item_sets);
+
       return {
         id: item.id,
         exerciseId: item.exercise_id,
         nome: ex?.name?.trim() || 'Exercício',
         weekday: item.weekday,
         division: item.division,
-        // Sem séries prescritas, assumimos 1 para que haja ao menos uma linha.
-        sets: item.sets && item.sets > 0 ? item.sets : 1,
+        // Conta as séries individuais quando existirem (uma por set_number);
+        // sem elas, deriva do `sets` geral com piso 1. Nunca colapsa para 1
+        // havendo séries individuais, mesmo com o geral NULL/vazio.
+        sets: contarSeries(item.sets, series),
         reps: item.reps,
         cargaAlvo: item.target_load,
         descansoSegundos: item.rest_seconds,
@@ -163,7 +168,7 @@ export default async function AlunoExecucaoFichaPage({
         equipamento: ex?.equipment ?? [],
         videoUrl,
         thumbnailUrl,
-        series: seriesDoJoin(item.workout_plan_item_sets),
+        series,
       } satisfies ItemExecucao;
     })
   );
