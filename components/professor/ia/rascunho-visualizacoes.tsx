@@ -3,8 +3,9 @@
 import type { GenerateDietOutput, DietMeal, DietMealFood } from '@/schemas/ia/generate-diet';
 import type {
   SuggestWorkoutOutput,
-  WorkoutDay,
-  WorkoutExercise,
+  WorkoutDivision,
+  WorkoutExerciseV2,
+  WorkoutSeries,
 } from '@/schemas/ia/suggest-workout';
 import type {
   AnalyzeAssessmentOutput,
@@ -58,31 +59,83 @@ export function RascunhoDieta({ draft }: { draft: GenerateDietOutput }) {
   );
 }
 
+/** Rótulo pt-BR do tipo de série (warmup/adaptation/work são as únicas saídas da IA). */
+const KIND_LABEL: Record<string, string> = {
+  warmup: 'Aquecimento',
+  adaptation: 'Adaptação',
+  work: 'Trabalho',
+};
+
+/** Descreve a prescrição de uma série individual, pulando os campos vazios. */
+function descricaoSerie(serie: WorkoutSeries): string {
+  const partes: string[] = [];
+  partes.push(KIND_LABEL[serie.kind] ?? serie.kind);
+  if (serie.target_reps) partes.push(`${serie.target_reps} reps`);
+  if (serie.target_load !== null) partes.push(`${serie.target_load} kg`);
+  if (serie.rest_seconds !== null) partes.push(`descanso ${serie.rest_seconds}s`);
+  if (serie.note) partes.push(serie.note);
+  return partes.join(' · ');
+}
+
 export function RascunhoTreino({ draft }: { draft: SuggestWorkoutOutput }) {
+  // Dias de descanso: usa `rest_days` quando informado; senão, no modo POR DIA
+  // (todas as divisões com weekday), deriva os 0..6 não cobertos por divisão.
+  const diasComTreino = new Set(
+    draft.divisions
+      .map((d) => d.weekday)
+      .filter((w): w is number => w !== null)
+  );
+  const porDia = draft.divisions.length > 0 && draft.divisions.every((d) => d.weekday !== null);
+  const diasDescanso =
+    draft.rest_days && draft.rest_days.length > 0
+      ? [...new Set(draft.rest_days)].sort((a, b) => a - b)
+      : porDia
+        ? [0, 1, 2, 3, 4, 5, 6].filter((w) => !diasComTreino.has(w))
+        : [];
+
   return (
     <div className="space-y-3">
       <ul className="space-y-3">
-        {draft.days.map((dia: WorkoutDay, i: number) => (
-          <li key={`${dia.weekday}-${i}`} className="rounded-xl border border-border p-3">
+        {draft.divisions.map((divisao: WorkoutDivision, i: number) => (
+          <li key={`${divisao.label}-${i}`} className="rounded-xl border border-border p-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-foreground">
-                {dia.label ?? WEEKDAY_LABEL[dia.weekday] ?? 'Dia'}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {WEEKDAY_LABEL[dia.weekday] ?? ''}
-              </span>
+              <span className="text-sm font-semibold text-foreground">{divisao.label}</span>
+              {divisao.weekday !== null ? (
+                <span className="text-xs text-muted-foreground">
+                  {WEEKDAY_LABEL[divisao.weekday] ?? ''}
+                </span>
+              ) : null}
             </div>
-            <ul className="mt-2 space-y-1">
-              {dia.exercises.map((ex: WorkoutExercise, j: number) => (
-                <li key={`${ex.name}-${j}`} className="text-sm text-muted-foreground">
-                  {ex.name} — {ex.sets}x{ex.reps} · descanso {ex.rest_seconds}s
-                  {ex.notes ? ` · ${ex.notes}` : ''}
+            <ul className="mt-2 space-y-2">
+              {divisao.exercises.map((ex: WorkoutExerciseV2, j: number) => (
+                <li key={`${ex.exercise_id}-${j}`} className="text-sm">
+                  <span className="font-medium text-foreground">
+                    {ex.exercise_name ?? ex.exercise_id}
+                  </span>
+                  <ol className="mt-1 space-y-0.5 pl-4">
+                    {ex.series.map((serie: WorkoutSeries) => (
+                      <li
+                        key={serie.set_number}
+                        className="list-decimal text-xs text-muted-foreground"
+                      >
+                        Série {serie.set_number} — {descricaoSerie(serie)}
+                      </li>
+                    ))}
+                  </ol>
                 </li>
               ))}
             </ul>
           </li>
         ))}
       </ul>
+
+      {diasDescanso.length > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Dias de descanso:</span>{' '}
+          {diasDescanso.map((w) => WEEKDAY_LABEL[w]).join(', ')}
+        </p>
+      ) : null}
+
       <p className="text-xs italic text-muted-foreground">{draft.disclaimer}</p>
     </div>
   );

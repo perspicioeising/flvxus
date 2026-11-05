@@ -60,6 +60,8 @@ export function SugerirTreinoIa({
   const [goal, setGoal] = React.useState('');
   const [nivel, setNivel] = React.useState('');
   const [dias, setDias] = React.useState('3');
+  const [equipamentos, setEquipamentos] = React.useState('');
+  const [foco, setFoco] = React.useState('');
   const [gerando, setGerando] = React.useState(false);
 
   const [generationId, setGenerationId] = React.useState<string | null>(null);
@@ -75,11 +77,19 @@ export function SugerirTreinoIa({
     if (desabilitado) return;
     setGerando(true);
     try {
+      // Campos opcionais: só enviam quando preenchidos (vazios = sem efeito).
+      const equipamentosLista = equipamentos
+        .split(',')
+        .map((e) => e.trim())
+        .filter((e) => e.length > 0);
+      const focoLimpo = foco.trim();
       const r = await sugerirTreino({
         student_id: studentId,
         goal: goal.trim(),
         experience_level: nivel,
         days_per_week: diasNum,
+        ...(equipamentosLista.length > 0 ? { available_equipment: equipamentosLista } : {}),
+        ...(focoLimpo ? { focus: focoLimpo } : {}),
       });
       if (r.ok && r.generationId) {
         setGenerationId(r.generationId);
@@ -98,6 +108,8 @@ export function SugerirTreinoIa({
   function resetar() {
     setGenerationId(null);
     setDraft(null);
+    setEquipamentos('');
+    setFoco('');
   }
 
   return (
@@ -197,6 +209,26 @@ export function SugerirTreinoIa({
                   onChange={(e) => setDias(e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="treino-equipamentos">Equipamentos disponíveis (opcional)</Label>
+              <Input
+                id="treino-equipamentos"
+                value={equipamentos}
+                onChange={(e) => setEquipamentos(e.target.value)}
+                placeholder="Ex.: halteres, barra, elástico (separe por vírgula)"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="treino-foco">Foco / divisão desejada (opcional)</Label>
+              <Input
+                id="treino-foco"
+                value={foco}
+                onChange={(e) => setFoco(e.target.value)}
+                placeholder="Ex.: ABC, push/pull/legs, ênfase em superiores"
+              />
             </div>
 
             <Button type="button" className="min-h-11" onClick={gerar} disabled={desabilitado}>
