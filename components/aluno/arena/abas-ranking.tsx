@@ -45,10 +45,10 @@ export function AbasRanking({
           Amigos
         </TabsTrigger>
         <TabsTrigger value="mensal" className={TRIGGER_CLASSES}>
-          Global mês
+          Mensal
         </TabsTrigger>
         <TabsTrigger value="anual" className={TRIGGER_CLASSES}>
-          Global anual
+          Anual
         </TabsTrigger>
       </TabsList>
       <TabsContent value="academia">{minhaAcademia}</TabsContent>
