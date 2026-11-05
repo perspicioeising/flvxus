@@ -89,7 +89,7 @@ export function StatusControl({
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Esta ficha está arquivada e não tem mais transições disponíveis.
+          Nenhuma ação de status disponível.
         </p>
       )}
     </div>

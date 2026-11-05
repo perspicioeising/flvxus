@@ -1145,6 +1145,11 @@ export async function reordenarItensFicha(
  * (`schemas/treino.ts`). Quando entra em `released`, carimba `released_at`; ao
  * sair de `released` (ex.: arquivar), mantém o histórico de liberação.
  *
+ * Ao DESARQUIVAR (`archived → draft`), zera `scheduled_release_at`: assim a
+ * ficha volta "limpa" como rascunho e um agendamento antigo e já vencido não
+ * faz o cron `liberar-treinos` (service_role, fora da máquina de transições)
+ * re-liberá-la ao aluno sem decisão explícita do professor.
+ *
  * A invariante "aluno só vê `released`" é do RLS — aqui apenas controlamos o
  * fluxo de trabalho do professor.
  */
@@ -1179,9 +1184,17 @@ export async function alterarStatusFicha(
     return { ok: false, message: 'Transição de status inválida.' };
   }
 
-  const patch: { status: PlanStatus; released_at?: string } = { status: novoStatus };
+  const patch: {
+    status: PlanStatus;
+    released_at?: string;
+    scheduled_release_at?: string | null;
+  } = { status: novoStatus };
   if (novoStatus === 'released') {
     patch.released_at = new Date().toISOString();
+  }
+  // Desarquivar: limpa um agendamento antigo para o cron não re-liberar sozinho.
+  if (atual === 'archived') {
+    patch.scheduled_release_at = null;
   }
 
   const { error } = await supabase.from('workout_plans').update(patch).eq('id', planId);

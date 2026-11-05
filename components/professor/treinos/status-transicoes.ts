@@ -19,6 +19,18 @@ const ROTULO_ACAO: Record<PlanStatus, string> = {
   archived: 'Arquivar',
 };
 
+/**
+ * Override pontual de rótulo por PAR (de → para), consultado antes do fallback
+ * por destino `ROTULO_ACAO[para]`. Necessário para `archived → draft` sair como
+ * "Desarquivar" (a ação que o professor tem em mente), e não "Voltar para
+ * rascunho" (o rótulo por-destino de `draft`, usado por outras origens).
+ */
+const ROTULO_ACAO_POR_PAR: Partial<
+  Record<PlanStatus, Partial<Record<PlanStatus, string>>>
+> = {
+  archived: { draft: 'Desarquivar' },
+};
+
 /** Qual destino é o avanço principal a partir de cada estado. */
 const AVANCO_PRINCIPAL: Partial<Record<PlanStatus, PlanStatus>> = {
   draft: 'pending_review',
@@ -37,7 +49,7 @@ export const TRANSICOES_STATUS_INFO: Record<PlanStatus, TransicaoInfo[]> =
       de,
       TRANSICOES_STATUS[de].map((para) => ({
         para,
-        rotulo: ROTULO_ACAO[para],
+        rotulo: ROTULO_ACAO_POR_PAR[de]?.[para] ?? ROTULO_ACAO[para],
         principal: AVANCO_PRINCIPAL[de] === para,
       })),
     ])

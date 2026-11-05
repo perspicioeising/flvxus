@@ -365,16 +365,18 @@ export type ClonarFichaInput = z.infer<typeof clonarFichaSchema>;
 /**
  * Transições válidas de `plan_status`. O fluxo normal avança
  * draft → pending_review → approved → released; qualquer estado (menos o
- * próprio arquivado) pode ir para `archived`. A invariante "aluno só vê
- * `released`" é garantida por RLS (não reimplementada no cliente); aqui apenas
- * impedimos saltos/voltas sem sentido no controle do professor.
+ * próprio arquivado) pode ir para `archived`; e `archived` sai só para `draft`
+ * (desarquivar — devolve a ficha ao fluxo do professor como rascunho, sem
+ * reexpô-la ao aluno). A invariante "aluno só vê `released`" é garantida por
+ * RLS (não reimplementada no cliente); aqui apenas impedimos saltos/voltas sem
+ * sentido no controle do professor.
  */
 export const TRANSICOES_STATUS: Record<PlanStatus, PlanStatus[]> = {
   draft: ['pending_review', 'archived'],
   pending_review: ['approved', 'draft', 'archived'],
   approved: ['released', 'pending_review', 'archived'],
   released: ['archived'],
-  archived: [],
+  archived: ['draft'],
 };
 
 const STATUS_VALIDOS = [

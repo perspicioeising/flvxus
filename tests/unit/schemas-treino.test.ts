@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import type { PlanStatus } from '@/types/database.types';
+import { TRANSICOES_STATUS_INFO } from '@/components/professor/treinos/status-transicoes';
 import {
   SET_KINDS,
   clonarFichaSchema,
@@ -597,8 +599,14 @@ describe('transicaoStatusSchema', () => {
     expect(transicaoStatusSchema.safeParse({ de: 'released', para: 'draft' }).success).toBe(false);
   });
 
-  it('rejeita transicao a partir de archived', () => {
-    expect(transicaoStatusSchema.safeParse({ de: 'archived', para: 'draft' }).success).toBe(false);
+  it('aceita desarquivar (archived -> draft)', () => {
+    expect(transicaoStatusSchema.safeParse({ de: 'archived', para: 'draft' }).success).toBe(true);
+  });
+
+  it('rejeita qualquer saída de archived que não seja draft', () => {
+    for (const para of ['pending_review', 'approved', 'released'] as const) {
+      expect(transicaoStatusSchema.safeParse({ de: 'archived', para }).success).toBe(false);
+    }
   });
 
   it('rejeita status fora do enum', () => {
@@ -608,5 +616,32 @@ describe('transicaoStatusSchema', () => {
   it('transicaoPermitida reflete a mesma tabela', () => {
     expect(transicaoPermitida('approved', 'released')).toBe(true);
     expect(transicaoPermitida('draft', 'released')).toBe(false);
+  });
+});
+
+describe('transicaoPermitida — saída de archived (desarquivar)', () => {
+  /** Todos os valores do enum `plan_status`. */
+  const TODOS: PlanStatus[] = [
+    'draft',
+    'pending_review',
+    'approved',
+    'released',
+    'archived',
+  ];
+
+  it('archived sai apenas para draft (cardinalidade 1)', () => {
+    // Para todo x do enum: transicaoPermitida('archived', x) === (x === 'draft').
+    for (const x of TODOS) {
+      expect(transicaoPermitida('archived', x)).toBe(x === 'draft');
+    }
+  });
+
+  it('derivação da UI: archived oferece "Desarquivar" para draft', () => {
+    const transicoes = TRANSICOES_STATUS_INFO.archived;
+    expect(transicoes).toHaveLength(1);
+    expect(transicoes[0].para).toBe('draft');
+    expect(transicoes[0].rotulo).toBe('Desarquivar');
+    // Não é avanço do fluxo normal → botão secundário.
+    expect(transicoes[0].principal).toBe(false);
   });
 });
