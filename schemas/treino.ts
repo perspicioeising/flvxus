@@ -172,7 +172,12 @@ const weekdayOpcional = z.preprocess((valor) => {
  */
 const divisaoOpcional = z.preprocess(
   (valor) => (valor === '' || valor === null ? undefined : valor),
-  z.string().trim().min(1).max(40).optional()
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(120, 'O rótulo da divisão deve ter no máximo 120 caracteres.')
+    .optional()
 );
 
 /** Item de uma FICHA (`workout_plan_items`) — acrescenta `weekday` e `division`. */
@@ -312,7 +317,11 @@ export type FichaInput = z.infer<typeof fichaSchema>;
  */
 export const divisaoModeloSchema = z.object({
   source_workout_id: z.string().uuid('Modelo inválido.'),
-  division: z.string().trim().min(1, 'Informe o rótulo da divisão.').max(40),
+  division: z
+    .string()
+    .trim()
+    .min(1, 'Informe o rótulo da divisão.')
+    .max(120, 'O rótulo da divisão deve ter no máximo 120 caracteres.'),
 });
 
 /**

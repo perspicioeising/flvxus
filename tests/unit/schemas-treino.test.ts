@@ -114,6 +114,19 @@ describe('itemFichaSchema', () => {
       expect(vazio.data.division).toBeUndefined();
     }
   });
+
+  it('aceita division no novo limite (120) e rejeita acima com mensagem pt-BR', () => {
+    expect(
+      itemFichaSchema.safeParse({ exercise_id: EX_ID, division: 'x'.repeat(120) }).success
+    ).toBe(true);
+    const acima = itemFichaSchema.safeParse({ exercise_id: EX_ID, division: 'x'.repeat(121) });
+    expect(acima.success).toBe(false);
+    if (!acima.success) {
+      expect(
+        acima.error.issues.some((i) => i.message.includes('no máximo 120 caracteres'))
+      ).toBe(true);
+    }
+  });
 });
 
 describe('séries detalhadas (tipo + observação por série)', () => {
@@ -392,15 +405,30 @@ describe('divisaoModeloSchema', () => {
     ).toBe(false);
   });
 
-  it('rejeita division acima de 40 caracteres (max 40)', () => {
+  it('aceita division no novo limite (120) e rejeita acima com mensagem pt-BR', () => {
     expect(
-      divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: 'x'.repeat(41) })
-        .success
-    ).toBe(false);
-    expect(
-      divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: 'x'.repeat(40) })
+      divisaoModeloSchema.safeParse({ source_workout_id: MODELO_ID, division: 'x'.repeat(120) })
         .success
     ).toBe(true);
+    // Um rótulo descritivo >40 (como o gerado pela IA v2) agora passa.
+    expect(
+      divisaoModeloSchema.safeParse({
+        source_workout_id: MODELO_ID,
+        division: 'Treino A — Peito, Tríceps e Ombros (ênfase em força)',
+      }).success
+    ).toBe(true);
+    const acima = divisaoModeloSchema.safeParse({
+      source_workout_id: MODELO_ID,
+      division: 'x'.repeat(121),
+    });
+    expect(acima.success).toBe(false);
+    if (!acima.success) {
+      expect(
+        acima.error.issues.some((i) =>
+          i.message.includes('no máximo 120 caracteres')
+        )
+      ).toBe(true);
+    }
   });
 
   it('rejeita source_workout_id inválido', () => {

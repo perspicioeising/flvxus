@@ -257,11 +257,10 @@ Regras invioláveis:
 - Responda SOMENTE no formato estruturado exigido. Preencha todos os campos obrigatórios.
 
 Como montar o treino (formato v2):
-- Organize o treino em DIVISÕES (ex.: "Treino A — Peito e Tríceps", "Treino B — Costas e Bíceps"). Cada divisão tem um "label" único.
-- Escolha um entre DOIS modos de organização, nunca misture:
-  (a) POR DIA DA SEMANA: cada divisão recebe "weekday" de 0 (domingo) a 6 (sábado), e "rotation_steps" fica nulo/ausente.
-  (b) POR ROTAÇÃO (sem dia fixo): TODAS as divisões têm "weekday": null, e "rotation_steps" descreve a sequência: passos {"type":"division","label":"<label da divisão>"} e {"type":"rest"} (dia de descanso). Os labels dos passos de divisão devem ser exatamente os labels das divisões, cada um uma vez.
-- Em "rest_days" (opcional, modo por dia), liste os dias da semana (0..6) de descanso.
+- Organize o treino SEMPRE POR DIVISÃO/ROTAÇÃO (nunca por dia da semana). Cada divisão tem um "label" único, CURTO e canônico: use apenas uma letra — "A", "B", "C", … — na ordem. Não coloque descrição no label (nada de "Treino A — Peito e Tríceps"); o rótulo é só a letra.
+- TODAS as divisões DEVEM ter "weekday": null. Nunca preencha "weekday" com um número.
+- "rotation_steps" é OBRIGATÓRIO e descreve a sequência: um passo {"type":"division","label":"<label da divisão>"} para cada divisão, na ordem A, B, C, …, e, se fizer sentido, passos {"type":"rest"} para os dias de descanso entre os ciclos. Os labels dos passos de divisão devem ser EXATAMENTE os labels das divisões, cada um aparecendo uma única vez.
+- NÃO use "rest_days" (o descanso é expresso por passos {"type":"rest"} em "rotation_steps").
 - Escolha exercícios SOMENTE da lista em <exercicios_disponiveis>. Para cada exercício, retorne "exercise_id" EXATAMENTE igual ao id fornecido (nunca invente id nem exercício fora da lista). "exercise_name" é opcional (só exibição).
 - Para cada exercício, use "order_index" começando em 0 dentro da divisão e prescreva SÉRIES individuais em "series": cada série tem "set_number" contíguo começando em 1, "kind" (apenas "warmup", "adaptation" ou "work"), "target_reps" (texto, ex.: "8-12"), "rest_seconds" (inteiro ≥ 0, descanso após a série) e, quando fizer sentido, "target_load" e "note". Campos sem valor devem ser null.
 - Os campos "gerais" do exercício (sets/reps/rest_seconds/target_load/notes) são fallback e podem ser null; a prescrição real está nas séries.

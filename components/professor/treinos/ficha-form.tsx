@@ -104,7 +104,6 @@ export function FichaForm({
 
   const [erroAluno, setErroAluno] = React.useState<string | null>(null);
   const [erroNome, setErroNome] = React.useState<string | null>(null);
-  const [erroItens, setErroItens] = React.useState<string | null>(null);
   const [erroRotacao, setErroRotacao] = React.useState<string | null>(null);
   const [enviando, setEnviando] = React.useState(false);
 
@@ -112,7 +111,6 @@ export function FichaForm({
     e.preventDefault();
     setErroAluno(null);
     setErroNome(null);
-    setErroItens(null);
     setErroRotacao(null);
 
     const entrada = {
@@ -130,11 +128,11 @@ export function FichaForm({
       const fe = parsed.error.flatten().fieldErrors;
       if (fe.student_id?.[0]) setErroAluno(fe.student_id[0]);
       if (fe.name?.[0]) setErroNome(fe.name[0]);
-      if (fe.itens?.[0]) setErroItens(fe.itens[0]);
       if (fe.rotation_steps?.[0]) setErroRotacao(fe.rotation_steps[0]);
       // Roteia a primeira mensagem de validação (já em pt-BR) para o toast —
       // o mesmo canal de feedback do resto do fluxo — em vez de deixar o
-      // usuário caçar o motivo entre os campos. Ex.: carga negativa.
+      // usuário caçar o motivo entre os campos. Ex.: carga negativa ou o
+      // rótulo de divisão fora do limite.
       const motivo =
         fe.itens?.[0] ??
         fe.rotation_steps?.[0] ??
@@ -226,9 +224,6 @@ export function FichaForm({
 
       <div className="space-y-2">
         <h2 className="text-base font-semibold text-foreground">Exercícios</h2>
-        {erroItens ? (
-          <p className="text-sm font-medium text-destructive">{erroItens}</p>
-        ) : null}
         <ItemEditor
           itens={itens}
           onChange={setItens}
