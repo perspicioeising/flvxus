@@ -18,12 +18,17 @@ const {
   insertMock,
   invokeMock,
   aiGenerationRef,
+  exercisesFoundRef,
 } = vi.hoisted(() => ({
   getSessionUserMock: vi.fn(),
   isSelfManagedMock: vi.fn(),
   insertMock: vi.fn(),
   invokeMock: vi.fn(),
   aiGenerationRef: { current: null as Record<string, unknown> | null },
+  // `null` ⇒ o mock de `exercises.select('id').in('id', ids)` devolve todos os
+  // ids pedidos (caso feliz). Um array ⇒ devolve exatamente esses ids (para
+  // simular exercício fora de escopo / id inválido).
+  exercisesFoundRef: { current: null as string[] | null },
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -56,8 +61,13 @@ vi.mock('@/lib/supabase/server', () => ({
               maybeSingle: async () => ({ data: aiGenerationRef.current, error: null }),
               single: async () => ({ data: aiGenerationRef.current, error: null }),
             }),
-            // exercises.select('id, name').in('name', [...])
-            in: async () => ({ data: [], error: null }),
+            // exercises.select('id').in('id', idsUnicos): devolve os ids
+            // "encontrados" (todos por padrão, ou o subconjunto do ref).
+            in: async (_coluna: string, ids: string[]) => {
+              const encontrados =
+                exercisesFoundRef.current ?? ids;
+              return { data: encontrados.map((id) => ({ id })), error: null };
+            },
           };
         },
         insert(payload: unknown) {
@@ -137,12 +147,35 @@ const DRAFT_DIETA = {
   disclaimer: 'Rascunho gerado por IA.',
 };
 
-/** Draft de treino mínimo válido (suggestWorkoutOutputSchema). */
+/** Exercícios do catálogo usados no draft v2. */
+const EX_1 = '00000000-0000-4000-8000-0000000000e1';
+const EX_2 = '00000000-0000-4000-8000-0000000000e2';
+
+/** Draft de treino mínimo válido (suggestWorkoutOutputSchema v2, POR DIA). */
 const DRAFT_TREINO = {
-  days: [
+  divisions: [
     {
+      label: 'Treino A',
       weekday: 1,
-      exercises: [{ name: 'Agachamento', sets: 3, reps: '8-12', rest_seconds: 60 }],
+      exercises: [
+        {
+          exercise_id: EX_1,
+          order_index: 0,
+          sets: 3,
+          reps: '8-12',
+          rest_seconds: 60,
+          series: [
+            { set_number: 1, kind: 'work', target_reps: '8-12', rest_seconds: 60, target_load: null, note: null },
+          ],
+        },
+        {
+          exercise_id: EX_2,
+          order_index: 1,
+          series: [
+            { set_number: 1, kind: 'work', target_reps: '10', rest_seconds: 45, target_load: null, note: null },
+          ],
+        },
+      ],
     },
   ],
   disclaimer: 'Rascunho gerado por IA.',
@@ -157,6 +190,7 @@ function ultimoInsert(tabela: string): Record<string, unknown> {
 beforeEach(() => {
   vi.clearAllMocks();
   aiGenerationRef.current = null;
+  exercisesFoundRef.current = null;
   getSessionUserMock.mockResolvedValue(PROFESSIONAL);
   isSelfManagedMock.mockImplementation(
     (u: { accountType?: string }) => u?.accountType === 'self_managed'
@@ -242,6 +276,26 @@ describe('aprovarGeracao — treino por IA (materializarTreino)', () => {
     const plano = ultimoInsert('workout_plans');
     expect(plano.status).toBe('draft');
     expect(plano.released_at).toBeNull();
+  });
+
+  it('exercise_id fora de escopo: retorna { ok:false } e NÃO insere workout_plans', async () => {
+    // Só EX_1 é encontrado no catálogo; EX_2 fica faltante ⇒ rejeita antes de gravar.
+    exercisesFoundRef.current = [EX_1];
+    aiGenerationRef.current = {
+      id: 'gen-5',
+      tenant_id: TENANT,
+      job_type: 'suggest_workout',
+      status: 'draft',
+      input: { student_id: OUTRO_ALUNO },
+      output: DRAFT_TREINO,
+      target_id: null,
+    };
+
+    const r = await aprovarGeracao('gen-5');
+    expect(r.ok).toBe(false);
+
+    const inseriuPlano = insertMock.mock.calls.some((c) => c[0] === 'workout_plans');
+    expect(inseriuPlano).toBe(false);
   });
 });
 

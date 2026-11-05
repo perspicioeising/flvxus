@@ -14,9 +14,9 @@ import {
 } from '@/lib/ia/erros';
 import {
   mapearDietaParaLinhas,
-  mapearTreinoParaItens,
+  mapearTreinoV2ParaLinhas,
   mapearAnaliseParaAvaliacao,
-  nomesDeExerciciosDoTreino,
+  idsFaltantes,
   normalizarGoalRestrictions,
 } from '@/lib/ia/materializacao';
 import {
@@ -596,7 +596,14 @@ async function materializarDieta(
   return dietId;
 }
 
-/** Insere `workout_plans` + itens, resolvendo/criando exercícios. Devolve o id do plano. */
+/**
+ * Insere `workout_plans` (draft) + `workout_plan_items` + `workout_plan_item_sets`,
+ * espelhando `criarFicha` (ver `actions/treinos.ts`). A IA escolhe exercícios SÓ
+ * do catálogo e devolve `exercise_id` real; aqui VALIDAMOS que todo id existe no
+ * escopo do professor (RLS) ANTES de gravar qualquer linha — lista vazia ou id
+ * fora de escopo lança sem criar o plano. Nenhum exercício é criado por nome.
+ * Devolve o id do plano.
+ */
 async function materializarTreino(
   supabase: Supabase,
   args: {
@@ -607,14 +614,32 @@ async function materializarTreino(
     draft: SuggestWorkoutOutput;
   }
 ): Promise<string> {
-  // 1. Resolve cada nome de exercício para um id (tenant + catálogo global),
-  //    criando no tenant os que não existirem.
-  const nomes = nomesDeExerciciosDoTreino(args.draft);
-  const mapa = await resolverOuCriarExercicios(supabase, args.tenantId, nomes);
+  // 1. Mapeia o draft v2 em linhas puras (itens + séries) e resolve o modo.
+  const { modo, rotation_steps, itens } = mapearTreinoV2ParaLinhas(args.draft);
 
-  const itens = mapearTreinoParaItens(args.draft, (nome) => mapa.get(nome.trim().toLowerCase()) ?? null);
+  // 2. Coleta o conjunto de exercise_id únicos exigidos pelo rascunho.
+  const idsUnicos = [...new Set(itens.map((it) => it.item.exercise_id))];
+  if (idsUnicos.length === 0) {
+    throw new Error('O rascunho de treino não tem exercícios.');
+  }
 
-  // 2. Cria o plano como rascunho.
+  // 3. Valida que TODOS os ids existem no escopo do professor (RLS ativo:
+  //    catálogo global `tenant_id is null` + exercícios do tenant).
+  const { data: encontrados, error: erroExercicios } = await supabase
+    .from('exercises')
+    .select('id')
+    .in('id', idsUnicos);
+  if (erroExercicios) throw new Error(erroExercicios.message);
+
+  const faltantes = idsFaltantes(
+    idsUnicos,
+    (encontrados ?? []).map((e) => e.id)
+  );
+  if (faltantes.length > 0) {
+    throw new Error(`Exercício inválido no rascunho: ${faltantes[0]}`);
+  }
+
+  // 4. SÓ ENTÃO cria o plano. POR DIVISÃO grava rotation_steps; POR DIA grava null.
   const { data: plano, error: erroPlano } = await supabase
     .from('workout_plans')
     .insert({
@@ -626,6 +651,7 @@ async function materializarTreino(
       // (B2B) segue o fluxo rascunho→revisão→liberação.
       status: args.selfManaged ? 'released' : 'draft',
       released_at: args.selfManaged ? new Date().toISOString() : null,
+      rotation_steps: (modo === 'por_divisao' ? rotation_steps : null) as never,
     })
     .select('id')
     .single();
@@ -634,66 +660,46 @@ async function materializarTreino(
     throw new Error(erroPlano?.message ?? 'falha ao criar o plano de treino');
   }
 
-  // 3. Insere os itens.
-  if (itens.length > 0) {
-    const { error: erroItens } = await supabase.from('workout_plan_items').insert(
-      itens.map((it) => ({
-        plan_id: plano.id,
-        exercise_id: it.exercise_id,
-        weekday: it.weekday,
-        order_index: it.order_index,
-        sets: it.sets,
-        reps: it.reps,
-        rest_seconds: it.rest_seconds,
-        notes: it.notes,
-      }))
-    );
-    if (erroItens) throw new Error(erroItens.message);
+  // 5. Insere os itens com ids pré-gerados (para ligar as séries via FK).
+  const itensComId = itens.map((it) => ({ id: crypto.randomUUID(), ...it }));
+
+  const { error: erroItens } = await supabase.from('workout_plan_items').insert(
+    itensComId.map(({ id, item }) => ({
+      id,
+      plan_id: plano.id,
+      exercise_id: item.exercise_id,
+      weekday: item.weekday,
+      division: item.division,
+      order_index: item.order_index,
+      sets: item.sets,
+      reps: item.reps,
+      rest_seconds: item.rest_seconds,
+      target_load: item.target_load,
+      notes: item.notes,
+    }))
+  );
+  if (erroItens) throw new Error(erroItens.message);
+
+  // 6. Insere as séries achatadas, carimbando a FK do item pai.
+  const linhasSeries = itensComId.flatMap(({ id, series }) =>
+    series.map((serie) => ({
+      plan_item_id: id,
+      set_number: serie.set_number,
+      kind: serie.kind,
+      note: serie.note,
+      target_reps: serie.target_reps,
+      rest_seconds: serie.rest_seconds,
+      target_load: serie.target_load,
+    }))
+  );
+  if (linhasSeries.length > 0) {
+    const { error: erroSeries } = await supabase
+      .from('workout_plan_item_sets')
+      .insert(linhasSeries as never);
+    if (erroSeries) throw new Error(erroSeries.message);
   }
 
   return plano.id;
-}
-
-/**
- * Resolve nomes de exercício para ids. Busca entre os exercícios visíveis
- * (catálogo global `tenant_id is null` + tenant via RLS); cria no tenant os que
- * não existirem. Devolve um Map `nome_minúsculo -> id`.
- */
-async function resolverOuCriarExercicios(
-  supabase: Supabase,
-  tenantId: string,
-  nomes: string[]
-): Promise<Map<string, string>> {
-  const mapa = new Map<string, string>();
-  if (nomes.length === 0) return mapa;
-
-  const { data: existentes, error } = await supabase
-    .from('exercises')
-    .select('id, name')
-    .in('name', nomes);
-
-  if (error) throw new Error(error.message);
-
-  for (const ex of existentes ?? []) {
-    mapa.set(ex.name.trim().toLowerCase(), ex.id);
-  }
-
-  const faltantes = nomes.filter((n) => !mapa.has(n.trim().toLowerCase()));
-  if (faltantes.length > 0) {
-    const { data: criados, error: erroCriar } = await supabase
-      .from('exercises')
-      .insert(faltantes.map((name) => ({ tenant_id: tenantId, name })))
-      .select('id, name');
-
-    if (erroCriar || !criados) {
-      throw new Error(erroCriar?.message ?? 'falha ao criar exercícios da sugestão');
-    }
-    for (const ex of criados) {
-      mapa.set(ex.name.trim().toLowerCase(), ex.id);
-    }
-  }
-
-  return mapa;
 }
 
 /** Atualiza `physical_assessments.ai_analysis/ai_recommendations`. Devolve o id da avaliação. */

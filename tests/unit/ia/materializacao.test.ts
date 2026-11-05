@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   mapearDietaParaLinhas,
-  mapearTreinoParaItens,
+  mapearTreinoV2ParaLinhas,
   mapearAnaliseParaAvaliacao,
-  nomesDeExerciciosDoTreino,
+  idsFaltantes,
   normalizarGoalRestrictions,
 } from '@/lib/ia/materializacao';
 import type { GenerateDietOutput } from '@/schemas/ia/generate-diet';
@@ -54,57 +54,153 @@ describe('mapearDietaParaLinhas', () => {
   });
 });
 
-const treinoDraft: SuggestWorkoutOutput = {
-  days: [
+const EX_A = '00000000-0000-4000-8000-0000000000a1';
+const EX_B = '00000000-0000-4000-8000-0000000000b2';
+
+/** Draft v2 POR DIA (divisões com weekday, sem rotation_steps). */
+const treinoPorDia: SuggestWorkoutOutput = {
+  divisions: [
     {
-      weekday: 3,
-      label: 'Treino B',
+      label: 'Treino A',
+      weekday: 1,
       exercises: [
-        { name: 'Agachamento', sets: 4, reps: '8-12', rest_seconds: 90, notes: null },
+        {
+          exercise_id: EX_A,
+          order_index: 0,
+          sets: 3,
+          reps: '10',
+          rest_seconds: 60,
+          target_load: 40,
+          notes: 'cadência lenta',
+          series: [
+            { set_number: 1, kind: 'work', target_reps: '10', rest_seconds: 60, target_load: 40, note: null },
+            { set_number: 2, kind: 'work', target_reps: '8', rest_seconds: null, target_load: null, note: 'última' },
+          ],
+        },
       ],
     },
     {
-      weekday: 1,
-      label: 'Treino A',
+      label: 'Treino B',
+      weekday: 3,
       exercises: [
-        { name: 'Supino', sets: 3, reps: '10', rest_seconds: 60, notes: 'cadência lenta' },
-        { name: 'Supino', sets: 2, reps: '12', rest_seconds: 45, notes: null },
+        {
+          // Gerais ausentes ⇒ herdam null nas linhas do item.
+          exercise_id: EX_B,
+          order_index: 0,
+          series: [
+            { set_number: 1, kind: 'warmup', target_reps: '12', rest_seconds: 90, target_load: null, note: null },
+          ],
+        },
       ],
     },
   ],
   disclaimer: 'Rascunho gerado por IA.',
 };
 
-describe('nomesDeExerciciosDoTreino', () => {
-  it('retorna nomes únicos (case-insensitive, 1ª grafia)', () => {
-    expect(nomesDeExerciciosDoTreino(treinoDraft)).toEqual(['Agachamento', 'Supino']);
+/** Draft v2 POR DIVISÃO (weekday null + rotation_steps). */
+const treinoPorDivisao: SuggestWorkoutOutput = {
+  divisions: [
+    {
+      label: 'A',
+      weekday: null,
+      exercises: [
+        {
+          exercise_id: EX_A,
+          order_index: 0,
+          series: [{ set_number: 1, kind: 'work', target_reps: '10', rest_seconds: 60, target_load: null, note: null }],
+        },
+      ],
+    },
+    {
+      label: 'B',
+      weekday: null,
+      exercises: [
+        {
+          exercise_id: EX_B,
+          order_index: 0,
+          series: [{ set_number: 1, kind: 'work', target_reps: '10', rest_seconds: 60, target_load: null, note: null }],
+        },
+      ],
+    },
+  ],
+  rotation_steps: [
+    { type: 'division', label: 'A' },
+    { type: 'division', label: 'B' },
+    { type: 'rest' },
+  ],
+  disclaimer: 'Rascunho gerado por IA.',
+};
+
+describe('mapearTreinoV2ParaLinhas — modo POR DIA', () => {
+  it('resolve modo por_dia: weekday nos itens e rotation_steps null', () => {
+    const r = mapearTreinoV2ParaLinhas(treinoPorDia);
+    expect(r.modo).toBe('por_dia');
+    expect(r.rotation_steps).toBeNull();
+    expect(r.itens.map((i) => i.item.weekday)).toEqual([1, 3]);
+  });
+
+  it('numera order_index global e contíguo na ordem (divisão, exercício)', () => {
+    const r = mapearTreinoV2ParaLinhas(treinoPorDia);
+    expect(r.itens.map((i) => i.item.order_index)).toEqual([0, 1]);
+  });
+
+  it('grava division=label e target_load do item', () => {
+    const r = mapearTreinoV2ParaLinhas(treinoPorDia);
+    expect(r.itens[0].item.division).toBe('Treino A');
+    expect(r.itens[0].item.target_load).toBe(40);
+    expect(r.itens[1].item.division).toBe('Treino B');
+  });
+
+  it('herda null nos gerais ausentes do item', () => {
+    const r = mapearTreinoV2ParaLinhas(treinoPorDia);
+    expect(r.itens[1].item).toMatchObject({
+      sets: null,
+      reps: null,
+      rest_seconds: null,
+      target_load: null,
+      notes: null,
+    });
+  });
+
+  it('achata as séries preservando set_number/kind/note/target_reps/rest/target_load', () => {
+    const r = mapearTreinoV2ParaLinhas(treinoPorDia);
+    expect(r.itens[0].series).toEqual([
+      { set_number: 1, kind: 'work', note: null, target_reps: '10', rest_seconds: 60, target_load: 40 },
+      { set_number: 2, kind: 'work', note: 'última', target_reps: '8', rest_seconds: null, target_load: null },
+    ]);
   });
 });
 
-describe('mapearTreinoParaItens', () => {
-  const resolver = (nome: string) =>
-    ({ agachamento: 'ex-agacha', supino: 'ex-supino' })[nome.trim().toLowerCase()] ?? null;
-
-  it('ordena por weekday e numera order_index globalmente', () => {
-    const itens = mapearTreinoParaItens(treinoDraft, resolver);
-    expect(itens.map((i) => i.weekday)).toEqual([1, 1, 3]);
-    expect(itens.map((i) => i.order_index)).toEqual([0, 1, 2]);
+describe('mapearTreinoV2ParaLinhas — modo POR DIVISÃO', () => {
+  it('resolve modo por_divisao: weekday null nos itens e rotation_steps preservado', () => {
+    const r = mapearTreinoV2ParaLinhas(treinoPorDivisao);
+    expect(r.modo).toBe('por_divisao');
+    expect(r.itens.map((i) => i.item.weekday)).toEqual([null, null]);
+    expect(r.rotation_steps).toEqual([
+      { type: 'division', label: 'A' },
+      { type: 'division', label: 'B' },
+      { type: 'rest' },
+    ]);
   });
 
-  it('resolve o exercise_id pelo nome', () => {
-    const itens = mapearTreinoParaItens(treinoDraft, resolver);
-    expect(itens[0].exercise_id).toBe('ex-supino');
-    expect(itens[2].exercise_id).toBe('ex-agacha');
+  it('division=label contínuo em ordem', () => {
+    const r = mapearTreinoV2ParaLinhas(treinoPorDivisao);
+    expect(r.itens.map((i) => i.item.division)).toEqual(['A', 'B']);
+    expect(r.itens.map((i) => i.item.order_index)).toEqual([0, 1]);
+  });
+});
+
+describe('idsFaltantes', () => {
+  it('não acusa faltantes quando todos os ids foram encontrados', () => {
+    expect(idsFaltantes([EX_A, EX_B], [EX_A, EX_B])).toEqual([]);
   });
 
-  it('copia sets/reps/rest/notes', () => {
-    const itens = mapearTreinoParaItens(treinoDraft, resolver);
-    expect(itens[0]).toMatchObject({ sets: 3, reps: '10', rest_seconds: 60, notes: 'cadência lenta' });
-    expect(itens[1].notes).toBeNull();
+  it('deduplica: id repetido em 2 divisões conta uma vez', () => {
+    expect(idsFaltantes([EX_A, EX_A], [EX_A])).toEqual([]);
   });
 
-  it('lança quando um nome não resolve', () => {
-    expect(() => mapearTreinoParaItens(treinoDraft, () => null)).toThrow(/não resolvido/i);
+  it('acusa 1 faltante quando um id não foi encontrado', () => {
+    expect(idsFaltantes([EX_A, EX_B], [EX_A])).toEqual([EX_B]);
   });
 });
 
