@@ -23,7 +23,11 @@ import { recordUsage } from '../_shared/logging.ts';
 import { statusComDireito } from '../_shared/quota-policy.ts';
 import { checkRateLimit, DEFAULT_WINDOW } from '../_shared/rate-limit.ts';
 import { parseStructuredOutput } from '../_shared/structured-output.ts';
-import { SUGGEST_WORKOUT_SYSTEM, buildSuggestWorkoutUserMessage } from '../_prompts/suggest-workout.ts';
+import {
+  SUGGEST_WORKOUT_SYSTEM,
+  buildSuggestWorkoutUserMessage,
+  formatExerciseCatalog,
+} from '../_prompts/suggest-workout.ts';
 import {
   JOB_TYPE,
   JSON_SCHEMAS,
@@ -46,6 +50,9 @@ const inputSchema = z.object({
     .min(1, 'days_per_week mínimo é 1.')
     .max(7, 'days_per_week máximo é 7.'),
   assessment_id: z.string().uuid('assessment_id deve ser um UUID.').optional(),
+  // Equipamentos disponíveis (opcional) e foco do treino (opcional) — dados.
+  available_equipment: z.array(z.string().min(1)).optional(),
+  focus: z.string().trim().min(1).optional(),
 });
 
 Deno.serve(async (req) => {
@@ -114,6 +121,14 @@ Deno.serve(async (req) => {
       throw aiQuotaExceeded();
     }
 
+    // Carrega o catálogo de exercícios visíveis (tenant + global) como DADOS do
+    // prompt. Sem catálogo não há como escolher exercise_id reais: falha claro.
+    const catalogo = await runtime.listExercises(ctx.tenantId);
+    if (catalogo.length === 0) {
+      throw aiFailure('Catálogo de exercícios vazio — cadastre exercícios antes de gerar.');
+    }
+    const nomePorId = new Map(catalogo.map((ex) => [ex.id, ex.name]));
+
     const generationId = await runtime.insertPendingGeneration({
       tenant_id: ctx.tenantId,
       created_by: ctx.userId,
@@ -127,7 +142,10 @@ Deno.serve(async (req) => {
     try {
       const result = await client.createMessage({
         system: SUGGEST_WORKOUT_SYSTEM,
-        userContent: buildSuggestWorkoutUserMessage(JSON.stringify(input)),
+        userContent: buildSuggestWorkoutUserMessage(
+          JSON.stringify(input),
+          formatExerciseCatalog(catalogo),
+        ),
         schema: JSON_SCHEMAS.suggest_workout,
         maxTokens: MAX_OUTPUT_TOKENS,
       });
@@ -138,6 +156,18 @@ Deno.serve(async (req) => {
       );
       if (!parsedOutput.ok) {
         throw aiFailure();
+      }
+
+      // Carimba o exercise_name AUTORITATIVO do catálogo (quando o id existe);
+      // ids desconhecidos mantêm o eco que a IA retornou.
+      const draft = parsedOutput.data;
+      for (const division of draft.divisions) {
+        for (const exercise of division.exercises) {
+          const nome = nomePorId.get(exercise.exercise_id);
+          if (nome) {
+            exercise.exercise_name = nome;
+          }
+        }
       }
 
       await recordUsage(runtime.writeUsageLog, {
@@ -153,13 +183,13 @@ Deno.serve(async (req) => {
       });
       await runtime.finishGeneration(generationId, {
         status: 'succeeded',
-        output: parsedOutput.data,
+        output: draft,
       });
 
       // Incrementa a franquia APÓS o sucesso do Anthropic (FR-B3).
       await runtime.incrementAiUsed(ctx.tenantId, quota.periodStart);
 
-      return jsonResponse({ generation_id: generationId, status: 'succeeded', draft: parsedOutput.data });
+      return jsonResponse({ generation_id: generationId, status: 'succeeded', draft });
     } catch (aiErr) {
       await recordUsage(runtime.writeUsageLog, {
         tenant_id: ctx.tenantId,

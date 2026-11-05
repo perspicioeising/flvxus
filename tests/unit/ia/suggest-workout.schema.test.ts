@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { suggestWorkoutOutputSchema } from '@/schemas/ia';
+import {
+  parseStructuredOutput,
+  type AnthropicMessageResponse,
+} from '@/supabase/functions/_shared/structured-output';
 
 const UUID_A = '11111111-1111-1111-1111-111111111111';
 const UUID_B = '22222222-2222-2222-2222-222222222222';
@@ -184,6 +188,37 @@ describe('suggestWorkoutOutputSchema (v2)', () => {
   it('rejeita labels de divisão repetidos', () => {
     const plano = planoPorDia();
     plano.divisions[1].label = plano.divisions[0].label;
+    expect(suggestWorkoutOutputSchema.safeParse(plano).success).toBe(false);
+  });
+});
+
+/**
+ * Paridade de TRANSPORTE inline <-> canônica: a mesma resposta FAKE da Anthropic
+ * (JSON v2 em bloco de texto, como `output_config.format` devolve) deve ser
+ * aceita/rejeitada do mesmo jeito ao passar por `parseStructuredOutput` +
+ * `suggestWorkoutOutputSchema` (o caminho canônico) e pelo `safeParse` direto
+ * sobre o objeto (o caminho inline usa o MESMO Zod embutido, cópia literal).
+ */
+function fakeResponse(input: unknown): AnthropicMessageResponse {
+  return { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify(input) }] };
+}
+
+describe('suggest-workout: paridade de transporte (parseStructuredOutput v2)', () => {
+  it('aceita a MESMA resposta FAKE v2 que o safeParse direto aceita', () => {
+    const plano = planoPorDivisao();
+    const viaTransporte = parseStructuredOutput(fakeResponse(plano), suggestWorkoutOutputSchema);
+    expect(viaTransporte.ok).toBe(true);
+    expect(suggestWorkoutOutputSchema.safeParse(plano).success).toBe(true);
+    if (viaTransporte.ok) {
+      expect(viaTransporte.data.divisions[0].exercises[0].exercise_id).toBe(UUID_A);
+    }
+  });
+
+  it('rejeita a MESMA resposta FAKE v2 inválida que o safeParse direto rejeita', () => {
+    const plano = planoPorDia();
+    (plano.divisions[0].exercises[0] as { exercise_id: string }).exercise_id = 'nao-e-uuid';
+    const viaTransporte = parseStructuredOutput(fakeResponse(plano), suggestWorkoutOutputSchema);
+    expect(viaTransporte.ok).toBe(false);
     expect(suggestWorkoutOutputSchema.safeParse(plano).success).toBe(false);
   });
 });

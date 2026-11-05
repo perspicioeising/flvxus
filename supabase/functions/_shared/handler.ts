@@ -46,6 +46,12 @@ export const JOB_TYPE = {
 /** Teto de tokens de saída (guarda-corpo de custo, ADR 0001 §5). */
 export const MAX_OUTPUT_TOKENS = 8192;
 
+/**
+ * Teto de exercícios do catálogo carregados no prompt (guarda-corpo de custo:
+ * limita o tamanho do bloco <exercicios_disponiveis> enviado à Anthropic).
+ */
+export const EXERCISE_CATALOG_LIMIT = 300;
+
 /** Timeout real por requisição à Anthropic, em ms. */
 export const TIMEOUT_MS = 60_000;
 
@@ -107,35 +113,71 @@ export const JSON_SCHEMAS: Record<'generate_diet' | 'suggest_workout' | 'analyze
       disclaimer: { type: 'string' },
     },
   },
+  // Formato v2: treino por DIVISÕES (A/B/C) com dias de descanso, rotação e
+  // SÉRIES individuais; a IA escolhe `exercise_id` reais do catálogo. Sem
+  // limites finos (minItems/minimum/...): incompatíveis com output_config.format;
+  // vivem só no Zod de saída (schemas/ia/suggest-workout.ts).
   suggest_workout: {
     type: 'object',
     additionalProperties: false,
-    required: ['days', 'disclaimer'],
+    required: ['divisions', 'disclaimer'],
     properties: {
-      days: {
+      divisions: {
         type: 'array',
         items: {
           type: 'object',
           additionalProperties: false,
-          required: ['weekday', 'exercises'],
+          required: ['label', 'weekday', 'exercises'],
           properties: {
-            weekday: { type: 'integer' },
-            label: { type: ['string', 'null'] },
+            label: { type: 'string' },
+            weekday: { type: ['integer', 'null'] },
             exercises: {
               type: 'array',
               items: {
                 type: 'object',
                 additionalProperties: false,
-                required: ['name', 'sets', 'reps', 'rest_seconds'],
+                required: ['exercise_id', 'order_index', 'series'],
                 properties: {
-                  name: { type: 'string' },
-                  sets: { type: 'integer' },
-                  reps: { type: 'string' },
-                  rest_seconds: { type: 'integer' },
+                  exercise_id: { type: 'string' },
+                  exercise_name: { type: ['string', 'null'] },
+                  order_index: { type: 'integer' },
+                  sets: { type: ['integer', 'null'] },
+                  reps: { type: ['string', 'null'] },
+                  rest_seconds: { type: ['integer', 'null'] },
+                  target_load: { type: ['number', 'null'] },
                   notes: { type: ['string', 'null'] },
+                  series: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      additionalProperties: false,
+                      required: ['set_number', 'kind', 'target_reps', 'rest_seconds', 'target_load', 'note'],
+                      properties: {
+                        set_number: { type: 'integer' },
+                        kind: { type: 'string', enum: ['warmup', 'adaptation', 'work'] },
+                        target_reps: { type: ['string', 'null'] },
+                        rest_seconds: { type: ['integer', 'null'] },
+                        target_load: { type: ['number', 'null'] },
+                        note: { type: ['string', 'null'] },
+                      },
+                    },
+                  },
                 },
               },
             },
+          },
+        },
+      },
+      rest_days: { type: 'array', items: { type: 'integer' } },
+      rotation_steps: {
+        type: ['array', 'null'],
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['type'],
+          properties: {
+            type: { type: 'string', enum: ['division', 'rest'] },
+            label: { type: ['string', 'null'] },
           },
         },
       },
@@ -205,10 +247,24 @@ export interface AiQuota {
   periodStart: string;
 }
 
+/** Exercício do catálogo (tenant + global) como DADO do prompt. */
+export interface ExerciseCatalogItem {
+  id: string;
+  name: string;
+  muscle_groups: string[];
+  equipment: string[];
+}
+
 /** Superfície de efeitos que cada `index.ts` consome. */
 export interface Runtime {
   verifyJwt: (authorizationHeader: string | null) => Promise<AuthenticatedUser | null>;
   resolveProfile: (userId: string) => Promise<ProfileContext | null>;
+  /**
+   * Catálogo de exercícios visíveis ao tenant (próprios + biblioteca global
+   * `tenant_id IS NULL`), ordenado por nome, limitado a `EXERCISE_CATALOG_LIMIT`.
+   * service_role, usado SÓ após o auth-guard.
+   */
+  listExercises: (tenantId: string) => Promise<ExerciseCatalogItem[]>;
   countRecentCalls: (tenantId: string, userId: string, sinceIso: string) => Promise<number>;
   insertPendingGeneration: (input: PendingGenerationInput) => Promise<string>;
   finishGeneration: (id: string, result: GenerationResult) => Promise<void>;
@@ -298,6 +354,26 @@ export function buildRuntime(env: EnvReader = defaultEnvReader): Runtime {
         .maybeSingle();
       if (error || !data) return null;
       return { tenantId: data.tenant_id as string, role: data.role as UserRole };
+    },
+
+    async listExercises(tenantId) {
+      // Exercícios do tenant + biblioteca global (tenant_id IS NULL). O filtro
+      // de tenant é carimbado explicitamente no `or` (architecture §4.4).
+      const { data, error } = await admin
+        .from('exercises')
+        .select('id, name, muscle_groups, equipment')
+        .or(`tenant_id.eq.${tenantId},tenant_id.is.null`)
+        .order('name', { ascending: true })
+        .limit(EXERCISE_CATALOG_LIMIT);
+      if (error || !data) return [];
+      return (data as Array<{ id: string; name: string; muscle_groups: string[] | null; equipment: string[] | null }>).map(
+        (row) => ({
+          id: row.id,
+          name: row.name,
+          muscle_groups: row.muscle_groups ?? [],
+          equipment: row.equipment ?? [],
+        }),
+      );
     },
 
     // consentimento removido por decisão de escopo; reintroduzir se LGPD voltar
