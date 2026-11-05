@@ -657,6 +657,7 @@ export interface Database {
           load_done: number | null;
           completed: boolean;
           substitute_exercise_id: string | null;
+          exercise_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -668,6 +669,7 @@ export interface Database {
           load_done?: number | null;
           completed?: boolean;
           substitute_exercise_id?: string | null;
+          exercise_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -679,6 +681,7 @@ export interface Database {
           load_done?: number | null;
           completed?: boolean;
           substitute_exercise_id?: string | null;
+          exercise_id?: string | null;
           created_at?: string;
         };
       };

@@ -36,15 +36,22 @@ import {
  * Components que recebem apenas props serializáveis montadas aqui.
  */
 
-/** Shape do JOIN aninhado workout_plan_items → exercises (PostgREST). */
+/**
+ * Shape do JOIN do log: o exercício é resolvido primeiro pela FK DURÁVEL
+ * `exercise_id` (resiliente à recriação de itens de ficha) e, como fallback
+ * transitório (log com plan_item_id ainda vivo mas exercise_id não backfillado),
+ * pelo join legado workout_plan_items → exercises.
+ */
 interface LogRow {
   session_id: string;
   plan_item_id: string | null;
+  exercise_id: string | null;
   set_number: number;
   reps_done: number | null;
   load_done: number | null;
   completed: boolean;
-  workout_plan_items: { exercises: { name: string } | null } | null;
+  exercise: { name: string } | null;
+  workout_plan_items: { exercise_id: string | null; exercises: { name: string } | null } | null;
 }
 
 export async function SecaoEvolucao({ studentId }: { studentId: string }) {
@@ -105,7 +112,7 @@ export async function SecaoEvolucao({ studentId }: { studentId: string }) {
   const logsRes = await supabase
     .from('workout_set_logs')
     .select(
-      'session_id, plan_item_id, set_number, reps_done, load_done, completed, workout_plan_items ( exercises ( name ) )'
+      'session_id, plan_item_id, exercise_id, set_number, reps_done, load_done, completed, exercise:exercises!workout_set_logs_exercise_id_fkey ( name ), workout_plan_items ( exercise_id, exercises ( name ) )'
     )
     .in('session_id', idsSessoes);
 
@@ -121,7 +128,12 @@ export async function SecaoEvolucao({ studentId }: { studentId: string }) {
   const logs: LogCarga[] = logsRaw.map((l) => ({
     session_id: l.session_id,
     plan_item_id: l.plan_item_id,
-    exercicioNome: l.workout_plan_items?.exercises?.name ?? null,
+    // Identidade estável: exercise_id durável quando presente; senão o
+    // exercise_id do item prescrito ainda vivo (fallback transitório antes do
+    // backfill). Órfão irrecuperável → null (ignorado em montarSerieCarga).
+    exercicioId: l.exercise_id ?? l.workout_plan_items?.exercise_id ?? null,
+    // Rótulo: nome via FK durável; senão via join legado do item prescrito.
+    exercicioNome: l.exercise?.name ?? l.workout_plan_items?.exercises?.name ?? null,
     set_number: l.set_number,
     reps_done: l.reps_done,
     load_done: l.load_done,

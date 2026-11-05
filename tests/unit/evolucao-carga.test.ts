@@ -10,9 +10,19 @@ import {
 } from '@/lib/treino/evolucao-carga';
 
 function log(parcial: Partial<LogCarga> & { session_id: string }): LogCarga {
+  // Por padrão, o exercicioId deriva do nome (um id estável por nome) para que
+  // os testes legados — que só variam o nome — continuem agrupando como antes.
+  const exercicioNome = parcial.exercicioNome !== undefined ? parcial.exercicioNome : 'Supino';
+  const exercicioId =
+    parcial.exercicioId !== undefined
+      ? parcial.exercicioId
+      : exercicioNome == null
+        ? null
+        : `ex-${exercicioNome}`;
   return {
     plan_item_id: 'item-1',
-    exercicioNome: 'Supino',
+    exercicioId,
+    exercicioNome,
     set_number: 1,
     reps_done: 10,
     load_done: 50,
@@ -92,16 +102,60 @@ describe('montarSerieCarga', () => {
     expect(supino.pontos[0].seriesTotais).toBe(3);
   });
 
-  it('ignora logs órfãos (exercicioNome null)', () => {
+  it('ignora logs órfãos irrecuperáveis (exercicioId null)', () => {
     const sessoes = [sessao({ id: 's1', started_at: '2024-03-03T10:00:00Z' })];
     const logs = [
-      log({ session_id: 's1', exercicioNome: 'Supino', load_done: 50 }),
-      log({ session_id: 's1', exercicioNome: null, load_done: 99 }),
+      log({ session_id: 's1', exercicioId: 'ex-supino', exercicioNome: 'Supino', load_done: 50 }),
+      log({ session_id: 's1', exercicioId: null, exercicioNome: null, load_done: 99 }),
     ];
     const series = montarSerieCarga(logs, sessoes);
     expect(series).toHaveLength(1);
     expect(series[0].exercicio).toBe('Supino');
     expect(series[0].pontos[0].cargaMax).toBe(50);
+  });
+
+  it('sobrevive à recriação de itens: agrupa por exercicioId mesmo com plan_item_id null', () => {
+    // Cenário real: a ficha foi editada → editarFicha recriou os itens →
+    // on delete set null zerou plan_item_id dos logs antigos. O exercicioId
+    // (gravado no log) persiste, então a série de evolução não some.
+    const sessoes = [
+      sessao({ id: 's1', started_at: '2024-03-03T10:00:00Z' }),
+      sessao({ id: 's2', started_at: '2024-03-10T10:00:00Z' }),
+    ];
+    const logs = [
+      log({ session_id: 's1', plan_item_id: null, exercicioId: 'ex-supino', load_done: 50 }),
+      log({ session_id: 's2', plan_item_id: null, exercicioId: 'ex-supino', load_done: 55 }),
+    ];
+    const series = montarSerieCarga(logs, sessoes);
+    expect(series).toHaveLength(1);
+    expect(series[0].pontos.map((p) => p.cargaMax)).toEqual([50, 55]);
+    expect(temSerieCarga(series[0])).toBe(true);
+  });
+
+  it('agrupa por id, não por nome: rename entre sessões não fragmenta a série', () => {
+    const sessoes = [
+      sessao({ id: 's1', started_at: '2024-03-03T10:00:00Z' }),
+      sessao({ id: 's2', started_at: '2024-03-10T10:00:00Z' }),
+    ];
+    // Mesmo exercicioId, nome divergente (exercício renomeado entre sessões).
+    const logs = [
+      log({ session_id: 's1', exercicioId: 'ex-1', exercicioNome: 'Supino reto', load_done: 50 }),
+      log({ session_id: 's2', exercicioId: 'ex-1', exercicioNome: 'Supino', load_done: 55 }),
+    ];
+    const series = montarSerieCarga(logs, sessoes);
+    expect(series).toHaveLength(1);
+    expect(series[0].pontos.map((p) => p.cargaMax)).toEqual([50, 55]);
+  });
+
+  it('homônimos com ids distintos não colidem', () => {
+    const sessoes = [sessao({ id: 's1', started_at: '2024-03-03T10:00:00Z' })];
+    const logs = [
+      log({ session_id: 's1', exercicioId: 'ex-a', exercicioNome: 'Rosca', load_done: 10 }),
+      log({ session_id: 's1', exercicioId: 'ex-b', exercicioNome: 'Rosca', load_done: 20 }),
+    ];
+    const series = montarSerieCarga(logs, sessoes);
+    expect(series).toHaveLength(2);
+    expect(series.map((s) => s.pontos[0].cargaMax).sort()).toEqual([10, 20]);
   });
 
   it('desambigua duas sessões do mesmo dia com a hora', () => {

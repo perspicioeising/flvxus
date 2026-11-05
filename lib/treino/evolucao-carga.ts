@@ -22,7 +22,14 @@ import { resumoAderencia } from './aderencia';
 export interface LogCarga {
   session_id: string;
   plan_item_id: string | null;
-  /** null = log órfão (item prescrito apagado); ignorado na série por exercício. */
+  /**
+   * Identidade DURÁVEL do exercício do log (chave de agrupamento da série).
+   * Vem de `workout_set_logs.exercise_id`, resiliente à recriação de
+   * `plan_item_id`. null = órfão irrecuperável (item e substituto apagados antes
+   * do backfill); ignorado na série por exercício.
+   */
+  exercicioId: string | null;
+  /** Rótulo humano do exercício (nome resolvido à parte). Pode ser null. */
   exercicioNome: string | null;
   set_number: number;
   reps_done: number | null;
@@ -112,10 +119,14 @@ function inicioSemanaUTC(iso: string): Date {
  * Converte logs (com nome do exercício) + sessões numa lista de séries de carga,
  * uma por exercício nomeado, com pontos ordenados por `started_at` asc.
  *
- * - Agrupa por `exercicioNome`; logs órfãos (`exercicioNome == null`) são
+ * - Agrupa por `exercicioId` (UUID estável, durável à recriação de itens de
+ *   ficha), não por nome: homônimos não colidem e renomear o exercício não
+ *   fragmenta a série histórica. Logs órfãos (`exercicioId == null`) são
  *   IGNORADOS (decisão registrada no plano: um bucket "sem exercício" não ajuda a
  *   leitura de progressão e polui o seletor). Esses logs ainda somam volume/
  *   conclusão da sessão quando o volume é computado diretamente das sessões.
+ *   O rótulo de cada série (`SerieCarga.exercicio`) é o primeiro `exercicioNome`
+ *   não-nulo do grupo.
  * - Tolera `null` em load_done/reps_done: `cargaMax`/`cargaMedia` ficam `null`
  *   quando nenhuma série tem carga; `volume` soma 0 para nulos.
  * - Sessões sem `started_at` válido (ou cujo id não aparece nas sessões) são
@@ -135,15 +146,20 @@ export function montarSerieCarga(
     }
   }
 
-  // Agrupa: exercício → (session_id → logs daquela sessão).
+  // Agrupa por exercicioId (chave estável) → (session_id → logs daquela sessão).
   const porExercicio = new Map<string, Map<string, LogCarga[]>>();
+  // Rótulo de cada grupo: primeiro nome não-nulo visto para aquele exercicioId.
+  const nomePorExercicio = new Map<string, string>();
   for (const log of logs) {
-    if (log.exercicioNome == null) continue; // órfão: ignorado
+    if (log.exercicioId == null) continue; // órfão irrecuperável: ignorado
     if (!inicioPorSessao.has(log.session_id)) continue; // sessão inválida/desconhecida
-    let porSessao = porExercicio.get(log.exercicioNome);
+    let porSessao = porExercicio.get(log.exercicioId);
     if (!porSessao) {
       porSessao = new Map<string, LogCarga[]>();
-      porExercicio.set(log.exercicioNome, porSessao);
+      porExercicio.set(log.exercicioId, porSessao);
+    }
+    if (log.exercicioNome != null && !nomePorExercicio.has(log.exercicioId)) {
+      nomePorExercicio.set(log.exercicioId, log.exercicioNome);
     }
     const bucket = porSessao.get(log.session_id);
     if (bucket) {
@@ -155,11 +171,19 @@ export function montarSerieCarga(
 
   const series: SerieCarga[] = [];
 
-  // Exercícios ordenados por nome asc.
-  const nomes = [...porExercicio.keys()].sort((a, b) => a.localeCompare(b));
+  // Rótulo neutro quando o grupo não tem nenhum nome (não ocorre na prática:
+  // um exercicioId vivo sempre resolve nome na leitura).
+  const rotuloDe = (id: string) => nomePorExercicio.get(id) ?? 'Exercício';
 
-  for (const exercicio of nomes) {
-    const porSessao = porExercicio.get(exercicio)!;
+  // Exercícios ordenados por nome resolvido asc; empate por id para estabilidade.
+  const ids = [...porExercicio.keys()].sort((a, b) => {
+    const cmp = rotuloDe(a).localeCompare(rotuloDe(b));
+    return cmp !== 0 ? cmp : a.localeCompare(b);
+  });
+
+  for (const exercicioId of ids) {
+    const porSessao = porExercicio.get(exercicioId)!;
+    const exercicio = rotuloDe(exercicioId);
 
     // Um ponto por sessão, ordenado por started_at asc.
     const pontosBrutos = [...porSessao.entries()]

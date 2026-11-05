@@ -581,6 +581,26 @@ export async function registrarSerie(input: RegistrarSerieEntrada): Promise<Esta
   const dados = parsed.data;
   const supabase = await createClient();
 
+  // Identidade DURÁVEL do exercício efetivamente executado (`exercise_id`),
+  // gravada no próprio log para sobreviver à recriação do `plan_item_id` (o
+  // `editarFicha` apaga e recria os itens com UUIDs novos; o `on delete set
+  // null` zera o `plan_item_id` dos logs antigos). Precedência:
+  //   1. troca ad-hoc → `substitute_exercise_id`;
+  //   2. senão → `exercise_id` do item PRESCRITO, resolvido aqui sob RLS,
+  //      enquanto o item ainda está vivo.
+  // Leitura auxiliar: se falhar ou não casar linha (corrida rara em que o item
+  // já sumiu), degrada para `null` (o estado órfão legado) — NUNCA aborta o
+  // registro da série por causa de uma denormalização auxiliar.
+  let exerciseId: string | null = dados.substitute_exercise_id ?? null;
+  if (exerciseId == null) {
+    const { data: item } = await supabase
+      .from('workout_plan_items')
+      .select('exercise_id')
+      .eq('id', dados.plan_item_id)
+      .maybeSingle();
+    exerciseId = item?.exercise_id ?? null;
+  }
+
   const { data: registrada, error: erroUpsert } = await supabase
     .from('workout_set_logs')
     .upsert(
@@ -596,6 +616,8 @@ export async function registrarSerie(input: RegistrarSerieEntrada): Promise<Esta
         load_done: dados.load_done ?? null,
         completed: dados.completed,
         substitute_exercise_id: dados.substitute_exercise_id ?? null,
+        // Identidade durável do exercício executado (ver bloco acima).
+        exercise_id: exerciseId,
       },
       { onConflict: 'session_id,plan_item_id,set_number' }
     )

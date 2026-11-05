@@ -98,7 +98,7 @@ Nota de layout: as áreas **vivas** são `app/(professor)/`, `app/(aluno)/`, `ap
 
 ## 4. Mapa de migrations (`supabase/migrations/`, ordem por timestamp)
 
-**MAIOR timestamp atual: `20261103090000`** (`_tenant_leaderboard_avatar`). **Qualquer migration nova DEVE usar timestamp estritamente maior e único.**
+**MAIOR timestamp atual: `20261104090000`** (`_workout_set_logs_exercise_id`). **Qualquer migration nova DEVE usar timestamp estritamente maior e único.**
 
 Rollback pareado (`_rollback.sql`) existe a partir de `20261021110300`. As 11 primeiras (base v2, `20261020*`–`20261021120000`, exceto source_link) **não** têm rollback pareado.
 
@@ -118,6 +118,10 @@ Fase 3 (RLS condicional, master/filiado, billing) — todas com rollback:
 Séries v2 / execução (todas com rollback):
 - `20261024090000_series_tipo_observacao` · `090100_ficha_rotation_steps_descanso` · `090200_series_tipos_ampliados` (enum `set_kind` += dropset/cluster_set/rest_pause...) · `090300_series_reps_descanso_carga`.
 - `20261025090000_workout_set_logs_substitute_exercise` (troca de exercício).
+
+Evolução de carga resiliente (com rollback):
+- `20261104090000_workout_set_logs_exercise_id` — coluna `workout_set_logs.exercise_id` (FK `exercises`, `on delete set null`, índice): identidade DURÁVEL do exercício executado, gravada no registro (`registrarSerie`: `substitute_exercise_id` senão o `exercise_id` do item prescrito). Sobrevive à recriação de `plan_item_id` pelo `editarFicha`. Backfill idempotente por `coalesce` (recupera só o derivável; órfãos irrecuperáveis ficam NULL — Opção A). Leitura de evolução (`secao-evolucao.tsx` → `montarSerieCarga`) agrupa por `exercise_id`.
+- **Frente de execução por série individual já estava no `main`** (commit `feat: resolver reps/descanso/carga por série na execução`): o merge "série vence; item é fallback" vive em `lib/treino/series.ts` (`valoresDaSerie`), consumido por aluno e professor via `SessaoExecucao`. Testes em `tests/unit/series-valores.test.ts`.
 
 Billing Fase B + aluno autônomo (todas com rollback):
 - `20261025090050_account_type` + `_handle_new_user_account_type` · `090100_plan_tier_values` (individual/personal/assessoria) · `090200_plans_billing_fase_b` (SD) · `090300_subscriptions_billing_cycle` · `090400_ai_usage_counters` (franquia IA).
@@ -185,7 +189,7 @@ Arena: `gamification_event_types`, `gamification_events` (ledger), `gamification
 - **Supabase clients**: `lib/supabase/{server,browser,middleware,admin}.ts`. `admin.ts` (service_role) só nas exceções, sempre filtrando `tenant_id`.
 
 ## 7. Armadilhas / lições aprendidas (crítico — não repetir)
-- **(a) Colisão de timestamp de migration já derrubou o app.** Regra: antes de criar, cheque o maior em `supabase/migrations/` (hoje `20261103090000`) e use estritamente maior e único. Idempotência + rollback pareado obrigatórios.
+- **(a) Colisão de timestamp de migration já derrubou o app.** Regra: antes de criar, cheque o maior em `supabase/migrations/` (hoje `20261104090000`) e use estritamente maior e único. Idempotência + rollback pareado obrigatórios.
 - **(b) Bug de fuso dia-SP.** Sintoma: dia deslocado -1. Causa: reconverter `occurred_on` (dia-SP cru `YYYY-MM-DD`) com `new Date()` → meia-noite UTC → volta um dia. Correção: `diaSPdeDiaOuInstante` em `lib/arena/datas.ts` devolve a string crua após validação, sem reconverter; instantes passam por `Intl.DateTimeFormat` no fuso SP.
 - **(c) Recursão mútua de RLS (Postgres 42P17).** Sintoma: convite de duelo some; "Nenhum desafio" para o professor. Causa: policy de `gamification_challenges` referenciava `_challenge_members` e vice-versa (ciclo). Correção (`20261031090000`): mover as subconsultas cruzadas para helpers SECURITY DEFINER (`gamification_is_challenge_member`/`_creator`, `search_path=''`) — mesmo escopo, sem ciclo. **Padrão a reusar para qualquer policy que leia outra tabela sob RLS.**
 - **(d) Cache de avatar.** Sintoma: foto antiga persistia após troca (path determinístico `{user_id}.<ext>`). Correção: cache-busting `?v=${Date.now()}` na public URL gravada em `profiles.avatar_url` (`lib/storage/avatar.ts`).
