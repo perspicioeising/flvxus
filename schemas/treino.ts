@@ -124,7 +124,7 @@ const camposPrescricao = {
  * passam direto — não comparamos com `sets`. Reutilizado pelo item de modelo e
  * de ficha.
  */
-function validarSeriesContiguas(
+export function validarSeriesContiguas(
   item: { series?: Array<{ set_number: number }> },
   ctx: z.RefinementCtx
 ): void {

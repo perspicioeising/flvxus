@@ -37,6 +37,10 @@ export const sugerirTreinoInputSchema = z.object({
     .min(1, 'Mínimo de 1 dia por semana.')
     .max(7, 'Máximo de 7 dias por semana.'),
   assessment_id: z.string().uuid().optional(),
+  // Equipamentos disponíveis para a IA considerar (opcional; ausente = sem efeito).
+  available_equipment: z.array(z.string().min(1)).optional(),
+  // Foco/ênfase do treino em texto livre (opcional; ausente = sem efeito).
+  focus: z.string().trim().min(1).optional(),
 });
 
 /** Entrada de `analyze-assessment`. */
