@@ -80,8 +80,21 @@ export const workoutExerciseV2Schema = z
     notes: z.string().min(1).nullable().optional(),
     series: z.array(workoutSeriesSchema).min(1, 'O exercício precisa de ao menos uma série.'),
   })
-  // Séries numeradas 1..N sem buraco nem repetição (mesma regra da ficha).
-  .superRefine(validarSeriesContiguas);
+  .superRefine((item, ctx) => {
+    // Séries numeradas 1..N sem buraco nem repetição (mesma regra da ficha).
+    validarSeriesContiguas(item, ctx);
+
+    // Coerência: quando a IA declara `sets`, ele deve bater com o nº de séries
+    // detalhadas. `sets` ausente/null não dispara (exercícios de série única
+    // — core, alongamento, finisher — seguem válidos).
+    if (typeof item.sets === 'number' && item.sets !== item.series.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'O campo "sets" deve ser igual ao número de séries detalhadas.',
+        path: ['series'],
+      });
+    }
+  });
 
 /** Uma DIVISÃO do treino (ex.: "Treino A — Peito e Tríceps"). */
 export const workoutDivisionSchema = z.object({

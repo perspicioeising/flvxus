@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { suggestWorkoutOutputSchema } from '@/schemas/ia';
+import { SUGGEST_WORKOUT_SYSTEM } from '@/supabase/functions/_prompts/suggest-workout';
 import {
   parseStructuredOutput,
   type AnthropicMessageResponse,
@@ -135,6 +139,34 @@ describe('suggestWorkoutOutputSchema (v2)', () => {
     expect(suggestWorkoutOutputSchema.safeParse(plano).success).toBe(false);
   });
 
+  it('aceita exercício com N séries individuais (4) e set_number 1..4 contíguo', () => {
+    const plano = planoPorDia();
+    plano.divisions[0].exercises = [exercicio(UUID_A, 0, 4)];
+    const parsed = suggestWorkoutOutputSchema.safeParse(plano);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      const series = parsed.data.divisions[0].exercises[0].series;
+      expect(series).toHaveLength(4);
+      expect(series.map((s) => s.set_number)).toEqual([1, 2, 3, 4]);
+    }
+  });
+
+  it('coerência sets↔series: rejeita sets:4 com 1 série (o bug reproduzido)', () => {
+    const ex = exercicio(UUID_A, 0, 1); // sets:1, series.length:1
+    ex.sets = 4; // agora sets:4 ≠ series.length:1
+    const plano = planoPorDia();
+    plano.divisions[0].exercises = [ex];
+    expect(suggestWorkoutOutputSchema.safeParse(plano).success).toBe(false);
+  });
+
+  it('coerência sets↔series: aceita série única quando sets ausente/null', () => {
+    const ex = exercicio(UUID_A, 0, 1); // sets:1, series.length:1
+    delete (ex as { sets?: unknown }).sets; // ramo typeof sets !== 'number'
+    const plano = planoPorDia();
+    plano.divisions[0].exercises = [ex];
+    expect(suggestWorkoutOutputSchema.safeParse(plano).success).toBe(true);
+  });
+
   it('rejeita plano sem divisões', () => {
     const plano = planoPorDia();
     plano.divisions = [];
@@ -220,5 +252,42 @@ describe('suggest-workout: paridade de transporte (parseStructuredOutput v2)', (
     const viaTransporte = parseStructuredOutput(fakeResponse(plano), suggestWorkoutOutputSchema);
     expect(viaTransporte.ok).toBe(false);
     expect(suggestWorkoutOutputSchema.safeParse(plano).success).toBe(false);
+  });
+
+  it('aceita via transporte uma resposta FAKE com 4 séries coerentes', () => {
+    const plano = planoPorDivisao();
+    plano.divisions[0].exercises = [exercicio(UUID_A, 0, 4)];
+    const viaTransporte = parseStructuredOutput(fakeResponse(plano), suggestWorkoutOutputSchema);
+    expect(viaTransporte.ok).toBe(true);
+    if (viaTransporte.ok) {
+      expect(viaTransporte.data.divisions[0].exercises[0].series).toHaveLength(4);
+    }
+  });
+});
+
+/**
+ * Prova de EQUIVALÊNCIA do prompt canônico (.ts) ↔ inline (.txt). Como chamar a
+ * Anthropic real é impossível aqui, esta é a garantia determinística de que a
+ * instrução corrigida existe e que os dois blocos de prompt não divergiram.
+ */
+describe('suggest-workout: paridade do system prompt (canônico ↔ inline)', () => {
+  const inlineTxt = readFileSync(
+    path.resolve(__dirname, '../../../supabase/functions-inline/suggest-workout.txt'),
+    'utf8',
+  );
+
+  it('o corpo de SYSTEM_PROMPT (inline) é idêntico a SUGGEST_WORKOUT_SYSTEM (canônico)', () => {
+    const match = inlineTxt.match(/const SYSTEM_PROMPT = `([\s\S]*?)`;/);
+    expect(match).not.toBeNull();
+    // Normaliza fim de linha (CRLF/LF): a diferença só reflete o artefato de
+    // checkout no Windows, não o conteúdo do prompt.
+    const normalizar = (s: string) => s.replace(/\r\n/g, '\n');
+    const systemPromptInline = normalizar(match![1]);
+    expect(systemPromptInline).toBe(normalizar(SUGGEST_WORKOUT_SYSTEM));
+  });
+
+  it('o prompt exige N séries individuais (um objeto por série) e ancora 3–4 de trabalho', () => {
+    expect(SUGGEST_WORKOUT_SYSTEM).toMatch(/um objeto para CADA série/i);
+    expect(SUGGEST_WORKOUT_SYSTEM).toMatch(/3 a 4 séries de trabalho/i);
   });
 });

@@ -166,6 +166,8 @@ const DRAFT_TREINO = {
           rest_seconds: 60,
           series: [
             { set_number: 1, kind: 'work', target_reps: '8-12', rest_seconds: 60, target_load: null, note: null },
+            { set_number: 2, kind: 'work', target_reps: '8-12', rest_seconds: 60, target_load: null, note: null },
+            { set_number: 3, kind: 'work', target_reps: '8-12', rest_seconds: 60, target_load: null, note: null },
           ],
         },
         {
