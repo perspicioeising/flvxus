@@ -15,6 +15,7 @@ import {
   transicaoPermitida,
   transicaoStatusSchema,
 } from '@/schemas/treino';
+import { valoresDaSerie } from '@/lib/treino/series';
 
 const EX_ID = '11111111-1111-1111-1111-111111111111';
 const ALUNO_ID = '22222222-2222-2222-2222-222222222222';
@@ -249,6 +250,122 @@ describe('serieSchema — reps/descanso/carga por série', () => {
 
   it('rejeita kind fora do enum', () => {
     expect(serieSchema.safeParse({ set_number: 1, kind: 'turbo' }).success).toBe(false);
+  });
+});
+
+describe('carga 0 na montagem da ficha (peso corporal / sem carga)', () => {
+  it('itemModeloSchema aceita target_load = 0 (número e string)', () => {
+    const numero = itemModeloSchema.safeParse({ exercise_id: EX_ID, target_load: 0 });
+    expect(numero.success).toBe(true);
+    if (numero.success) {
+      expect(numero.data.target_load).toBe(0);
+    }
+    const texto = itemModeloSchema.safeParse({ exercise_id: EX_ID, target_load: '0' });
+    expect(texto.success).toBe(true);
+    if (texto.success) {
+      expect(texto.data.target_load).toBe(0);
+    }
+  });
+
+  it('itemFichaSchema aceita target_load = 0', () => {
+    const r = itemFichaSchema.safeParse({ exercise_id: EX_ID, target_load: '0' });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.target_load).toBe(0);
+    }
+  });
+
+  it('serieSchema aceita target_load = 0 na série individual', () => {
+    const r = serieSchema.safeParse({ set_number: 1, target_load: 0 });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.target_load).toBe(0);
+    }
+  });
+
+  it('fichaSchema aceita ficha com carga 0 no item e na série (ponta a ponta)', () => {
+    const r = fichaSchema.safeParse({
+      student_id: ALUNO_ID,
+      name: 'Ficha peso corporal',
+      itens: [
+        {
+          exercise_id: EX_ID,
+          order_index: 0,
+          sets: '3',
+          target_load: '0',
+          series: [
+            { set_number: 1, kind: 'work', target_load: 0 },
+            { set_number: 2, kind: 'work', target_load: '0' },
+            { set_number: 3, kind: 'work' },
+          ],
+        },
+      ],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.itens[0].target_load).toBe(0);
+      expect(r.data.itens[0].series?.[0].target_load).toBe(0);
+    }
+  });
+
+  it('rejeita carga NEGATIVA com mensagem em pt-BR (não a crua do Zod)', () => {
+    const item = itemModeloSchema.safeParse({ exercise_id: EX_ID, target_load: '-5' });
+    expect(item.success).toBe(false);
+    if (!item.success) {
+      const msgs = item.error.issues.map((i) => i.message);
+      expect(msgs).toContain('A carga não pode ser negativa.');
+      expect(msgs.some((m) => /greater than|must be/i.test(m))).toBe(false);
+    }
+
+    // No fichaSchema, o erro aninhado borbulha para `fieldErrors.itens`
+    // (é dali que o form roteia a mensagem para o toast em pt-BR).
+    const ficha = fichaSchema.safeParse({
+      student_id: ALUNO_ID,
+      name: 'Ficha inválida',
+      itens: [{ exercise_id: EX_ID, order_index: 0, target_load: -1 }],
+    });
+    expect(ficha.success).toBe(false);
+    if (!ficha.success) {
+      expect(ficha.error.flatten().fieldErrors.itens?.[0]).toBe(
+        'A carga não pode ser negativa.'
+      );
+    }
+  });
+
+  it('execução continua íntegra: carga 0 é valor EXPLÍCITO (série vence geral)', () => {
+    // Série define 0 explicitamente → prevalece sobre o default do item (20).
+    const comZeroNaSerie = valoresDaSerie(
+      [
+        {
+          setNumber: 1,
+          kind: 'work',
+          note: null,
+          targetReps: null,
+          restSeconds: null,
+          targetLoad: 0,
+        },
+      ],
+      1,
+      { reps: '10', restSeconds: 60, cargaAlvo: 20 }
+    );
+    expect(comZeroNaSerie.cargaAlvo).toBe(0);
+
+    // Série sem carga (null) herda o default do item, que também pode ser 0.
+    const herdaZeroDoItem = valoresDaSerie(
+      [
+        {
+          setNumber: 1,
+          kind: 'work',
+          note: null,
+          targetReps: null,
+          restSeconds: null,
+          targetLoad: null,
+        },
+      ],
+      1,
+      { reps: '10', restSeconds: 60, cargaAlvo: 0 }
+    );
+    expect(herdaZeroDoItem.cargaAlvo).toBe(0);
   });
 });
 

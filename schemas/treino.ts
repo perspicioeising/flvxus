@@ -41,17 +41,26 @@ const inteiroPositivoOpcional = z.preprocess((valor) => {
 }, z.number().int().positive().optional());
 
 /**
- * Número positivo opcional (carga alvo — coluna `numeric(6,2)`). Aceita vírgula
- * decimal, como é comum no pt-BR. Vazio → `undefined`.
+ * Carga alvo opcional (coluna `numeric(6,2)`). Aceita vírgula decimal, como é
+ * comum no pt-BR. Vazio → `undefined`.
+ *
+ * Aceita ZERO como valor válido: exercícios de peso corporal / sem carga são
+ * legítimos na montagem da ficha (decisão do usuário). Só rejeita cargas
+ * NEGATIVAS, com mensagem em pt-BR (não a mensagem crua em inglês do Zod). A
+ * execução já trata `0` como valor explícito (merge "série vence geral" em
+ * `lib/treino/series.ts`), então aceitar 0 aqui é coerente ponta a ponta.
  */
-const numeroPositivoOpcional = z.preprocess((valor) => {
+const cargaOpcional = z.preprocess((valor) => {
   if (valor === '' || valor === null || valor === undefined) return undefined;
   if (typeof valor === 'string') {
     const n = Number(valor.replace(',', '.'));
     return Number.isNaN(n) ? valor : n;
   }
   return valor;
-}, z.number().positive().optional());
+}, z
+  .number({ invalid_type_error: 'Informe uma carga numérica válida.' })
+  .min(0, 'A carga não pode ser negativa.')
+  .optional());
 
 /** `reps` é `text` no banco (ex.: "12", "8-12", "até a falha"). */
 const repsOpcional = z.preprocess(
@@ -97,7 +106,7 @@ export const serieSchema = z.object({
   note: notaSerieOpcional,
   target_reps: repsOpcional.optional(),
   rest_seconds: inteiroPositivoOpcional,
-  target_load: numeroPositivoOpcional,
+  target_load: cargaOpcional,
 });
 
 // -----------------------------------------------------------------------------
@@ -113,7 +122,7 @@ const camposPrescricao = {
   sets: inteiroPositivoOpcional,
   reps: repsOpcional,
   rest_seconds: inteiroPositivoOpcional,
-  target_load: numeroPositivoOpcional,
+  target_load: cargaOpcional,
   notes: textoOpcional,
   series: z.array(serieSchema).optional(),
 };

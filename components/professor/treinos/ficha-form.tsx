@@ -132,7 +132,19 @@ export function FichaForm({
       if (fe.name?.[0]) setErroNome(fe.name[0]);
       if (fe.itens?.[0]) setErroItens(fe.itens[0]);
       if (fe.rotation_steps?.[0]) setErroRotacao(fe.rotation_steps[0]);
-      toast({ title: 'Verifique os campos destacados.', variant: 'destructive' });
+      // Roteia a primeira mensagem de validação (já em pt-BR) para o toast —
+      // o mesmo canal de feedback do resto do fluxo — em vez de deixar o
+      // usuário caçar o motivo entre os campos. Ex.: carga negativa.
+      const motivo =
+        fe.itens?.[0] ??
+        fe.rotation_steps?.[0] ??
+        fe.student_id?.[0] ??
+        fe.name?.[0];
+      toast({
+        title: 'Verifique os campos destacados.',
+        description: motivo,
+        variant: 'destructive',
+      });
       return;
     }
 
