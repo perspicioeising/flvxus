@@ -157,7 +157,7 @@ Aplique na ordem (cada uma é idempotente e tem `_rollback.sql`):
   filiados, hábitos, IA, desafios/duelos). Responde `{ ok:false, message }` em pt-BR por perfil (master,
   autônomo, filiado, aluno vinculado). **Não usa RLS.** Falha na leitura do estado = **fail-closed**.
   O teste `tests/unit/actions-write-guard.test.ts` impede esquecer o guard em ações novas.
-- **Isentas** (por decisão): `cancelarSessao`, `rejeitarGeracao`, `removerFiliado`, `atualizarVisibilidade`,
+- **Isentas** (por decisão): `cancelarSessao`, `rejeitarGeracao`, `removerFiliado`,  `atualizarVisibilidade`,
   handle e amizades, perfil/auth/legal, billing. O **cron** de liberação agendada continua sem gate.
 - **Rebaixamento de plano**: filiados e dados são preservados; só bloqueia **novos** filiados.
 - **Risco residual**: o legado `app/(dashboard)/dashboard` (v1) escreve direto pela RLS e não passa pelo gate.
