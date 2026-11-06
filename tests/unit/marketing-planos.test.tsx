@@ -5,8 +5,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { PlanosSection } from '@/components/marketing/planos-section';
 
 /**
- * Seção de planos da landing: 3 cards, alternância mensal/anual, links de
- * cadastro e de assinatura (`/assinar`) sem price ID no HTML e sem prefetch.
+ * Seção de planos da landing: 3 cards, alternância mensal/anual, um CTA de
+ * cadastro (teste grátis) por plano, sem price ID no HTML e sem link de checkout.
  */
 describe('PlanosSection', () => {
   it('renderiza os 3 planos com preço mensal por padrão', () => {
@@ -28,16 +28,12 @@ describe('PlanosSection', () => {
     expect(screen.getByText(/2\.388,00/)).toBeInTheDocument();
   });
 
-  it('cada plano tem os dois CTAs com plano/ciclo na URL', () => {
+  it('cada plano tem um único CTA de teste grátis com plano/ciclo na URL', () => {
     render(<PlanosSection />);
     fireEvent.click(screen.getByRole('radio', { name: 'Anual' }));
-    const assinar = screen.getAllByRole('link', { name: 'Assinar agora' });
+    // A assinatura paga acontece dentro do app; a landing não leva ao checkout.
+    expect(screen.queryAllByRole('link', { name: 'Assinar agora' })).toHaveLength(0);
     const testar = screen.getAllByRole('link', { name: 'Testar 14 dias grátis' });
-    expect(assinar.map((a) => a.getAttribute('href'))).toEqual([
-      '/assinar?plano=individual&ciclo=yearly',
-      '/assinar?plano=personal&ciclo=yearly',
-      '/assinar?plano=assessoria&ciclo=yearly',
-    ]);
     expect(testar.map((a) => a.getAttribute('href'))).toEqual([
       '/register?plano=individual&ciclo=yearly',
       '/register?plano=personal&ciclo=yearly',
@@ -50,15 +46,11 @@ describe('PlanosSection', () => {
     expect(container.innerHTML).not.toMatch(/price_[A-Za-z0-9]{8,}/);
   });
 
-  it('todo link para /assinar usa prefetch={false} na fonte do componente', () => {
+  it('a seção de planos não aponta para /assinar (checkout só dentro do app)', () => {
     const fonte = readFileSync(
       join(process.cwd(), 'components', 'marketing', 'planos-section.tsx'),
       'utf8'
     );
-    const links = [...fonte.matchAll(/<Link[^>]*href=\{`\/assinar[^>]*>/g)];
-    expect(links.length).toBeGreaterThan(0);
-    for (const l of links) {
-      expect(l[0]).toContain('prefetch={false}');
-    }
+    expect(fonte).not.toMatch(/href=\{`\/assinar/);
   });
 });

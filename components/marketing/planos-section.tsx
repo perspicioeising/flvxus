@@ -18,11 +18,10 @@ const ICONES: Record<TierOfertado, typeof Target> = {
 type Ciclo = 'monthly' | 'yearly';
 
 /**
- * Seção de planos da landing (pública). Alternância Mensal/Anual; dois CTAs por
- * plano: "Testar 14 dias grátis" (cadastro com o plano pré-selecionado) e
- * "Assinar agora" (`/assinar`, que leva ao cadastro se visitante ou direto ao
- * checkout se logado). Price IDs nunca chegam ao cliente. Links para `/assinar`
- * usam `prefetch={false}` (a rota tem efeito colateral para logados).
+ * Seção de planos da landing (pública). Alternância Mensal/Anual; um CTA por
+ * plano: "Testar 14 dias grátis" (cadastro com o plano/ciclo pré-selecionados).
+ * A assinatura paga acontece dentro do app (tela de plano / banner do trial).
+ * Price IDs nunca chegam ao cliente.
  */
 export function PlanosSection() {
   const [ciclo, setCiclo] = React.useState<Ciclo>('monthly');
@@ -96,16 +95,9 @@ export function PlanosSection() {
                     </li>
                   ))}
                 </ul>
-                <div className="flex flex-col gap-2">
-                  <Button asChild size="lg" variant={destaque ? 'default' : 'outline'} className="w-full">
-                    <Link href={`/register?${query}`}>Testar 14 dias grátis</Link>
-                  </Button>
-                  <Button asChild size="lg" variant="secondary" className="w-full">
-                    <Link href={`/assinar?${query}`} prefetch={false}>
-                      Assinar agora
-                    </Link>
-                  </Button>
-                </div>
+                <Button asChild size="lg" variant={destaque ? 'default' : 'outline'} className="w-full">
+                  <Link href={`/register?${query}`}>Testar 14 dias grátis</Link>
+                </Button>
               </CardContent>
             </Card>
           );
