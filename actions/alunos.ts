@@ -17,6 +17,7 @@ import {
 import { erroDeCampo } from '@/actions/_estado';
 
 import type { EstadoAcao } from '@/actions/_estado';
+import { requireEntitlement } from '@/lib/billing/guard';
 
 // Reexport do shape comum (extraído para actions/_estado.ts) — mantém os imports
 // existentes `import { type EstadoAcao } from '@/actions/alunos'` funcionando.
@@ -57,6 +58,10 @@ export async function convidarAluno(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode convidar alunos.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   // Fase B1: o aluno autônomo (self_managed) NÃO gerencia alunos. Recusa ANTES
@@ -166,6 +171,10 @@ export async function reenviarConvite(userId: string): Promise<EstadoAcao> {
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode reenviar convites.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   // Lê o aluno sob RLS: garante que é do tenant do professor e está pendente.
   const supabase = await createClient();
@@ -219,6 +228,10 @@ export async function editarAluno(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode editar alunos.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const parsed = editarAlunoSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -256,6 +269,10 @@ export async function alterarStatusAluno(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode alterar o status.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const parsed = alterarStatusSchema.safeParse({ status });

@@ -43,6 +43,7 @@ import {
   GENERO_LABEL,
   PROTOCOLO_LABEL,
 } from './labels';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 const OBJETIVOS: GoalType[] = [
   'weight_loss',
@@ -120,6 +121,7 @@ export function AvaliacaoForm({
   const router = useRouter();
   const [etapa, setEtapa] = React.useState(0);
   const [enviando, setEnviando] = React.useState(false);
+  const { podeEscrever } = useAcesso();
   const [arquivos, setArquivos] = React.useState<File[]>([]);
 
   const form = useForm<AvaliacaoFormValues>({
@@ -535,7 +537,7 @@ export function AvaliacaoForm({
           </Button>
 
           {ehUltima ? (
-            <Button key="salvar" type="submit" className="min-h-11" disabled={enviando}>
+            <Button key="salvar" type="submit" className="min-h-11" disabled={enviando || !podeEscrever}>
               {enviando ? 'Salvando…' : modo === 'criar' ? 'Salvar avaliação' : 'Salvar alterações'}
             </Button>
           ) : (

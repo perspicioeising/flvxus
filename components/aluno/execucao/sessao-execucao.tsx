@@ -73,6 +73,7 @@ import { ExercicioInfo } from './exercicio-info';
 import { SeletorDia, type OpcaoDia } from './seletor-dia';
 import { SeletorDivisao, type OpcaoDivisao } from './seletor-divisao';
 import { DialogAvaliacaoTreino } from './dialog-avaliacao-treino';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 /** Item prescrito, com tudo que a UI de execução precisa exibir. */
 export interface ItemExecucao {
@@ -266,6 +267,7 @@ export function SessaoExecucao({
   // controles para evitar a corrida "marca série antes de hidratar".
   const [hidratando, setHidratando] = React.useState(true);
   const [iniciando, setIniciando] = React.useState(false);
+  const { podeEscrever } = useAcesso();
   const [finalizando, setFinalizando] = React.useState(false);
   const [nota, setNota] = React.useState('');
   // Intensidade percebida (RPE 1..10) opcional ao finalizar. `null` = não
@@ -1300,7 +1302,7 @@ export function SessaoExecucao({
                               variant="default"
                               className="min-h-11 flex-1"
                               aria-label={`Salvar série ${setNumber}`}
-                              disabled={estado.salvando || iniciando}
+                              disabled={estado.salvando || iniciando || !podeEscrever}
                               onClick={() =>
                                 salvarEdicaoSerie(itemAtual.id, setNumber)
                               }
@@ -1550,7 +1552,8 @@ export function SessaoExecucao({
                       estado.completed ||
                       estado.salvando ||
                       iniciando ||
-                      hidratando
+                      hidratando ||
+                      !podeEscrever
                     }
                     onClick={() => alternarSerie(itemAtual.id, setNumber)}
                   >
@@ -1618,7 +1621,7 @@ export function SessaoExecucao({
         onNotaChange={setNota}
         onConfirmar={concluir}
         finalizando={finalizando}
-        disabledTrigger={pendente}
+        disabledTrigger={pendente || !podeEscrever}
       />
 
       {/* Descanso entre séries em MODAL: abre automaticamente ao concluir uma

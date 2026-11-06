@@ -11,6 +11,7 @@ import {
   responderDueloSchema,
   responderSolicitacaoSchema,
 } from '@/schemas/arena-social';
+import { requireEntitlement } from '@/lib/billing/guard';
 
 /**
  * Server Actions da UX SOCIAL do atleta na Arena (G3) — amizades e desafios
@@ -248,6 +249,10 @@ export async function criarDuelo(
   if (!usuario) {
     return { ok: false, status: 'sem_sessao', message: 'Sessão expirada.' };
   }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, status: 'forbidden', message: direito.message ?? 'Assinatura inativa.' };
+  }
   if (!podeOperarProprio(usuario)) {
     return {
       ok: false,
@@ -292,6 +297,10 @@ export async function responderDuelo(
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, status: 'sem_sessao', message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, status: 'forbidden', message: direito.message ?? 'Assinatura inativa.' };
   }
   if (!podeOperarProprio(usuario)) {
     return {

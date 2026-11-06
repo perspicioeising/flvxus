@@ -2,6 +2,8 @@ import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { atualizarPerfilProfessor } from '@/actions/perfil';
 import { canAddAffiliate } from '@/lib/billing/entitlement';
+import { getAccess } from '@/lib/billing/access';
+import { mensagemBloqueio } from '@/lib/billing/mensagens';
 import { ErrorState } from '@/components/patterns';
 import { PerfilProfessorForm } from '@/components/professor/perfil/perfil-professor-form';
 import { FotoPerfil } from '@/components/aluno/perfil/foto-perfil';
@@ -87,18 +89,18 @@ export default async function ProfessorConfiguracoesPage() {
   const mostrarSecoesMaster = user.isMaster && user.accountType !== 'self_managed';
 
   if (mostrarSecoesMaster) {
-    const [{ data: vis }, { data: trainers }, { data: sub }] = await Promise.all([
+    const acesso = await getAccess();
+    const [{ data: vis }, { data: trainers }, { data: planoRow }] = await Promise.all([
       supabase.from('tenant_module_visibility').select('module, is_open'),
       supabase
         .from('profiles')
         .select('user_id, full_name, email, deactivated_at')
         .eq('role', 'trainer')
         .eq('is_tenant_master', false),
-      supabase
-        .from('subscriptions')
-        .select('status, plan_id, plans(max_affiliates)')
-        .eq('tenant_id', user.tenantId)
-        .maybeSingle(),
+      // `plans` é legível por qualquer autenticado; o tier vem do estado de acesso.
+      acesso?.tier
+        ? supabase.from('plans').select('max_affiliates').eq('tier', acesso.tier).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     // Visibilidade: default LIBERADO para módulos ausentes.
@@ -117,20 +119,23 @@ export default async function ProfessorConfiguracoesPage() {
 
     usados = filiados.filter((f) => f.ativo).length;
 
-    const plano = (sub?.plans ?? null) as { max_affiliates: number | null } | null;
+    const plano = (planoRow ?? null) as { max_affiliates: number | null } | null;
     limite = plano?.max_affiliates ?? null;
 
+    const podeEscrever = Boolean(acesso?.podeEscrever);
     podeConvidar = canAddAffiliate({
-      status: sub?.status ?? null,
+      podeEscrever,
       maxAffiliates: plano?.max_affiliates,
       usedActive: usados,
-      hasResolvedPlan: Boolean(sub?.plan_id),
+      hasResolvedPlan: Boolean(acesso?.tier),
     });
 
     if (!podeConvidar) {
-      motivoBloqueio = !sub?.status
-        ? 'Você ainda não tem um plano ativo. Assine na tela de Plano para adicionar filiados.'
-        : 'Seu plano atingiu o limite de filiados. Faça upgrade na tela de Plano.';
+      // Sem direito (trial expirado etc.) => texto de bloqueio; com direito, é o limite.
+      motivoBloqueio =
+        acesso && !podeEscrever
+          ? mensagemBloqueio(acesso.motivo, acesso.perfil)
+          : 'Seu plano atingiu o limite de filiados. Faça upgrade na tela de Plano.';
     }
   }
 

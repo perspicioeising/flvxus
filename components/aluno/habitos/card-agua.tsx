@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { registrarAgua } from '@/actions/habitos';
 import { EditarMetaAguaForm } from '@/components/aluno/habitos/editar-meta-agua';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 export interface CardAguaProps {
   /** Total consumido hoje (ml). */
@@ -49,6 +50,7 @@ export function CardAgua({
 }: CardAguaProps) {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
+  const { podeEscrever } = useAcesso();
   const [editando, setEditando] = React.useState(false);
 
   function registrar(amountMl: number) {
@@ -102,7 +104,7 @@ export function CardAgua({
             variant="outline"
             className="min-h-11"
             onClick={() => registrar(ml)}
-            disabled={pendente}
+            disabled={pendente || !podeEscrever}
           >
             <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
             {ml} ml

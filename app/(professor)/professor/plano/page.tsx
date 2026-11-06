@@ -1,8 +1,10 @@
 import { requireMaster } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import { statusComDireito } from '@/lib/billing/entitlement';
+import { getAccess } from '@/lib/billing/access';
+import { tierCompativel } from '@/lib/billing/catalogo';
 import { resolvePeriodStart } from '@/lib/ia/quota';
-import { CheckoutButton } from '@/components/professor/plano/checkout-button';
+import { PlanosGrid, type PlanoCardItem } from '@/components/professor/plano/planos-grid';
+import { PortalButton } from '@/components/professor/plano/portal-button';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -11,34 +13,44 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import type { BillingCycle, PlanTier, SubscriptionStatus } from '@/types/database.types';
+import type { BillingCycle, PlanTier } from '@/types/database.types';
+import type { MotivoAcesso } from '@/lib/billing/acesso';
 
 /**
- * Plano/Assinatura — MASTER-ONLY (Fase 3). Gate server-side `requireMaster()`:
- * o filiado é redirecionado para /professor (não basta esconder o menu). Mostra
- * o plano atual, filiados usados/total, status da assinatura e os planos
- * disponíveis com botão de assinar/trocar via checkout do Stripe.
+ * Plano/Assinatura — MASTER-ONLY. Gate server-side `requireMaster()`. O estado
+ * (trial/ativo/etc.) vem de `getAccess()` (RPC `billing_tenant_state`), a mesma
+ * fonte do gate das Server Actions. Lista só os tiers compatíveis com o tipo de
+ * conta e permite escolher mensal/anual.
  */
-export default async function ProfessorPlanoPage() {
+const AVISO_CHECKOUT: Record<string, string> = {
+  sucesso:
+    'Pagamento recebido. A confirmação pode levar alguns segundos; atualize a página se o plano ainda não aparecer como ativo.',
+  cancelado: 'Checkout cancelado. Nada foi cobrado e seu teste continua como estava.',
+  erro: 'Não foi possível iniciar o checkout. Tente novamente.',
+  incompativel: 'Este plano não está disponível para o seu tipo de conta.',
+  ja_assinante: 'Você já tem uma assinatura. Use "Gerenciar assinatura" para alterá-la.',
+};
+
+export default async function ProfessorPlanoPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ checkout?: string }>;
+}) {
   const master = await requireMaster();
   const supabase = await createClient();
+  const acesso = await getAccess();
+  const sp = (await searchParams) ?? {};
+  const avisoCheckout = sp.checkout ? AVISO_CHECKOUT[sp.checkout] : undefined;
 
   const soloEu = master.accountType === 'self_managed';
 
-  const [{ data: planos }, { data: sub }, { data: trainers }] = await Promise.all([
+  const [{ data: planos }, { data: trainers }] = await Promise.all([
     supabase
       .from('plans')
       .select(
         'id, tier, name, max_affiliates, ai_quota_monthly, price_monthly_cents, price_yearly_cents, stripe_price_id_monthly, stripe_price_id_yearly, trial_days'
       )
       .eq('is_active', true),
-    supabase
-      .from('subscriptions')
-      .select(
-        'status, plan_id, current_period_start, current_period_end, cancel_at_period_end, billing_cycle'
-      )
-      .eq('tenant_id', master.tenantId)
-      .maybeSingle(),
     supabase
       .from('profiles')
       .select('deactivated_at')
@@ -47,14 +59,15 @@ export default async function ProfessorPlanoPage() {
   ]);
 
   const usados = (trainers ?? []).filter((t) => t.deactivated_at === null).length;
-  const status = (sub?.status ?? null) as SubscriptionStatus | null;
-  const planoAtual = (planos ?? []).find((p) => p.id === sub?.plan_id) ?? null;
+  const motivo: MotivoAcesso = acesso?.motivo ?? 'sem_assinatura';
+  const assinaturaAtiva = motivo === 'assinatura_ativa';
+  const planoAtual = (planos ?? []).find((p) => p.tier === acesso?.tier) ?? null;
   const limiteAtual = planoAtual?.max_affiliates ?? null;
 
-  // Uso de franquia de IA do período corrente (FR-B3). O período espelha o
-  // contador das Edge Functions: current_period_start truncado a date, com
-  // fallback no 1º dia do mês. A leitura é via RLS do master (ai_usage_counters).
-  const periodoFranquia = resolvePeriodStart(sub?.current_period_start ?? null);
+  // Uso de franquia de IA do período corrente. O período espelha o contador das
+  // Edge Functions: início do período Stripe truncado a date, com fallback no 1º
+  // dia do mês. A leitura é via RLS do master (ai_usage_counters).
+  const periodoFranquia = resolvePeriodStart(null);
   const franquiaTotal = planoAtual?.ai_quota_monthly ?? null;
   const { data: contador } = await supabase
     .from('ai_usage_counters')
@@ -63,21 +76,28 @@ export default async function ProfessorPlanoPage() {
     .eq('period_start', periodoFranquia)
     .maybeSingle();
   const franquiaUsada = contador?.used ?? 0;
-  // Ciclo vigente (default mensal) para rotular o resumo e os botões.
-  const cicloAtual = (sub?.billing_cycle ?? 'monthly') as BillingCycle;
+  const cicloAtual = (acesso?.billingCycle ?? 'monthly') as BillingCycle;
 
-  // Ordem canônica dos 6 tiers: Fase B primeiro, legados por último.
-  const ordemTier: Record<PlanTier, number> = {
-    individual: 0,
-    personal: 1,
-    assessoria: 2,
-    solo: 3,
-    team: 4,
-    gym: 5,
-  };
-  const planosOrdenados = [...(planos ?? [])].sort(
-    (a, b) => ordemTier[a.tier as PlanTier] - ordemTier[b.tier as PlanTier]
-  );
+  const ordemTier: Partial<Record<PlanTier, number>> = { individual: 0, personal: 1, assessoria: 2 };
+  const cards: PlanoCardItem[] = [...(planos ?? [])]
+    .filter((p) => tierCompativel(master.accountType, p.tier as PlanTier))
+    .sort((a, b) => (ordemTier[a.tier as PlanTier] ?? 9) - (ordemTier[b.tier as PlanTier] ?? 9))
+    .map((p) => ({
+      tier: p.tier as PlanTier,
+      name: p.name,
+      descricao: soloEu
+        ? 'Sua conta individual'
+        : p.max_affiliates === null
+          ? 'Filiados ilimitados'
+          : p.max_affiliates === 0
+            ? 'Sem filiados (só você)'
+            : `Até ${p.max_affiliates} filiados`,
+      mensalCentavos: p.price_monthly_cents,
+      anualCentavos: p.price_yearly_cents,
+      semPriceMensal: !p.stripe_price_id_monthly,
+      semPriceAnual: !p.stripe_price_id_yearly,
+      atual: assinaturaAtiva && p.tier === acesso?.tier,
+    }));
 
   return (
     <section className="mx-auto w-full max-w-3xl space-y-6">
@@ -92,6 +112,12 @@ export default async function ProfessorPlanoPage() {
         </p>
       </header>
 
+      {avisoCheckout ? (
+        <div role="status" className="rounded-md border border-border bg-muted p-3 text-sm">
+          {avisoCheckout}
+        </div>
+      ) : null}
+
       {/* Resumo do plano atual */}
       <Card>
         <CardHeader className="p-4 pb-0">
@@ -99,88 +125,54 @@ export default async function ProfessorPlanoPage() {
             <CardTitle className="text-base">
               Plano atual: {planoAtual?.name ?? 'Nenhum'}
             </CardTitle>
-            <Badge variant={statusComDireito(status) ? 'default' : 'secondary'}>
-              {rotuloStatus(status)}
+            <Badge variant={acesso?.podeEscrever ? 'default' : 'secondary'}>
+              {rotuloMotivo(motivo)}
             </Badge>
           </div>
           <CardDescription>
             {soloEu
-              ? `Cobrança ${rotuloCiclo(cicloAtual)}.`
+              ? assinaturaAtiva
+                ? `Cobrança ${rotuloCiclo(cicloAtual)}.`
+                : ''
               : `Filiados em uso: ${usados} de ${
                   limiteAtual === null ? (planoAtual ? 'ilimitado' : '0') : limiteAtual
-                }. Cobrança ${rotuloCiclo(cicloAtual)}.`}
-            {sub?.cancel_at_period_end
+                }.${assinaturaAtiva ? ` Cobrança ${rotuloCiclo(cicloAtual)}.` : ''}`}
+            {acesso?.cancelAtPeriodEnd
               ? ' Assinatura marcada para cancelar no fim do período.'
               : ''}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-1 p-4 text-sm text-muted-foreground">
-          <p>
-            {sub?.current_period_end
-              ? `Período atual até ${new Date(sub.current_period_end).toLocaleDateString('pt-BR')}.`
-              : 'Sem período ativo.'}
-          </p>
+          {motivo === 'trial_vigente' && acesso?.diasRestantesTrial != null ? (
+            <p>
+              Teste grátis: {acesso.diasRestantesTrial === 1 ? 'resta 1 dia' : `restam ${acesso.diasRestantesTrial} dias`}.
+            </p>
+          ) : null}
+          {motivo === 'trial_expirado' ? (
+            <p>Teste encerrado. Assine para voltar a criar, editar e registrar.</p>
+          ) : null}
+          {assinaturaAtiva ? (
+            <p>
+              {acesso?.currentPeriodEnd
+                ? `Período atual até ${new Date(acesso.currentPeriodEnd).toLocaleDateString('pt-BR')}.`
+                : 'Sem período ativo.'}
+            </p>
+          ) : null}
           <p>
             {franquiaTotal === null
               ? `Gerações de IA neste período: ${franquiaUsada} (ilimitado).`
               : `${franquiaUsada} de ${franquiaTotal} gerações de IA neste período.`}
           </p>
+          {acesso?.hasStripeCustomer && acesso.hasStripeSubscription ? (
+            <div className="pt-2">
+              <PortalButton />
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
-      {/* Planos disponíveis */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {planosOrdenados.map((plano) => {
-          const atual = plano.id === sub?.plan_id && statusComDireito(status);
-          // Price e valor do CICLO vigente. Sem price configurado => desabilita.
-          const priceId =
-            cicloAtual === 'yearly'
-              ? plano.stripe_price_id_yearly
-              : plano.stripe_price_id_monthly;
-          const centavos =
-            cicloAtual === 'yearly' ? plano.price_yearly_cents : plano.price_monthly_cents;
-          const semPrice = !priceId;
-          return (
-            <Card key={plano.id} className="flex flex-col">
-              <CardHeader className="p-4 pb-0">
-                <CardTitle className="text-base">{plano.name}</CardTitle>
-                <CardDescription>
-                  {soloEu
-                    ? 'Sua conta individual'
-                    : plano.max_affiliates === null
-                      ? 'Filiados ilimitados'
-                      : plano.max_affiliates === 0
-                        ? 'Sem filiados (só você)'
-                        : `Até ${plano.max_affiliates} filiados`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="mt-auto space-y-2 p-4">
-                {centavos != null ? (
-                  <p className="text-sm font-semibold text-foreground">
-                    {formatarPreco(centavos)}
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {' '}
-                      /{cicloAtual === 'yearly' ? 'ano' : 'mês'}
-                    </span>
-                  </p>
-                ) : null}
-                {semPrice ? (
-                  <p className="text-xs text-muted-foreground">
-                    Preço ainda não configurado.
-                  </p>
-                ) : null}
-                <CheckoutButton
-                  tier={plano.tier}
-                  cycle={cicloAtual}
-                  label={atual ? 'Plano atual' : 'Assinar / trocar'}
-                  disabled={atual || semPrice}
-                  variant={atual ? 'outline' : 'default'}
-                />
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Planos disponíveis (só os compatíveis com o tipo de conta) */}
+      <PlanosGrid planos={cards} cicloInicial={cicloAtual} emTrial={motivo === 'trial_vigente'} />
     </section>
   );
 }
@@ -190,29 +182,20 @@ function rotuloCiclo(cycle: BillingCycle): string {
   return cycle === 'yearly' ? 'anual' : 'mensal';
 }
 
-/** Formata centavos em BRL (ex.: 1990 => "R$ 19,90"). */
-function formatarPreco(centavos: number): string {
-  return (centavos / 100).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
-}
-
-/** Rótulo pt-BR do status da assinatura. */
-function rotuloStatus(status: SubscriptionStatus | null): string {
-  switch (status) {
-    case 'active':
+/** Rótulo pt-BR do estado de acesso. */
+function rotuloMotivo(motivo: MotivoAcesso): string {
+  switch (motivo) {
+    case 'assinatura_ativa':
       return 'Ativa';
-    case 'trialing':
-      return 'Em teste';
-    case 'past_due':
-      return 'Pagamento atrasado';
-    case 'unpaid':
-      return 'Não paga';
-    case 'canceled':
+    case 'trial_vigente':
+      return 'Teste grátis';
+    case 'trial_expirado':
+      return 'Teste encerrado';
+    case 'pagamento_pendente':
+      return 'Pagamento pendente';
+    case 'cancelada':
       return 'Cancelada';
-    case 'incomplete':
-    case 'incomplete_expired':
+    case 'incompleta':
       return 'Incompleta';
     default:
       return 'Sem assinatura';

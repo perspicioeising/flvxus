@@ -302,6 +302,10 @@ export async function editarModelo(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode editar modelos.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const parsed = modeloSchema.safeParse(entrada);
   if (!parsed.success) {
@@ -372,6 +376,10 @@ export async function excluirModelo(workoutId: string): Promise<EstadoAcao> {
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode excluir modelos.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const supabase = await createClient();
@@ -499,6 +507,10 @@ export async function editarFicha(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode editar fichas.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const parsed = fichaSchema.safeParse(entrada);
   if (!parsed.success) {
@@ -579,6 +591,10 @@ export async function excluirFicha(planId: string): Promise<EstadoAcao> {
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode excluir fichas.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const supabase = await createClient();
@@ -1084,6 +1100,10 @@ export async function reordenarItensModelo(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode reordenar.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const supabase = await createClient();
 
@@ -1115,6 +1135,10 @@ export async function reordenarItensFicha(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode reordenar.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const supabase = await createClient();
@@ -1160,6 +1184,10 @@ export async function alterarStatusFicha(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode mudar o status.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const supabase = await createClient();
@@ -1233,6 +1261,10 @@ export async function programarLiberacao(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode programar a liberação.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const parsed = agendamentoSchema.safeParse(entrada);
@@ -1316,6 +1348,10 @@ export async function desmarcarLiberacao(planId: string): Promise<EstadoAcao> {
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode remover o agendamento.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const supabase = await createClient();

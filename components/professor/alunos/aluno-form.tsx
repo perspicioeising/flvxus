@@ -33,6 +33,7 @@ import {
 } from '@/schemas/aluno';
 import type { EstadoAcao } from '@/actions/alunos';
 import { EXPERIENCIA_LABEL, GENERO_LABEL, OBJETIVO_LABEL } from './labels';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 /** Valor "nenhum" dos selects opcionais (não é um valor do enum). */
 const NENHUM = 'none';
@@ -87,6 +88,7 @@ export function AlunoForm({
 }: AlunoFormProps) {
   const router = useRouter();
   const [enviando, setEnviando] = React.useState(false);
+  const { podeEscrever } = useAcesso();
   const schema = modo === 'criar' ? criarAlunoSchema : editarAlunoSchema;
 
   const form = useForm<AlunoFormValues>({
@@ -311,7 +313,7 @@ export function AlunoForm({
           >
             Cancelar
           </Button>
-          <Button type="submit" className="min-h-11" disabled={enviando}>
+          <Button type="submit" className="min-h-11" disabled={enviando || !podeEscrever}>
             {enviando ? 'Salvando…' : rotuloEnvio ?? (modo === 'criar' ? 'Convidar aluno' : 'Salvar alterações')}
           </Button>
         </div>

@@ -112,20 +112,20 @@ vi.mock('@/lib/stripe/server', () => ({
   }),
 }));
 
-// Mock do service_role client: captura o filtro `.or` da resolução de plano e o
-// payload do upsert, sem rede. Reconfigurável por teste via `planRow`/`orSpy`.
-const { createClientMock, planRow, orSpy, upsertSpy, planSelectSpy } = vi.hoisted(() => ({
+// Mock do service_role client: banco em memória (uma linha de `subscriptions`)
+// que registra o `.or` da resolução de plano, sem rede. Reconfigurável por teste.
+const { createClientMock, planRow, orSpy, upsertSpy, planSelectSpy, linha } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   planRow: { current: null as unknown },
   orSpy: vi.fn(),
   upsertSpy: vi.fn(),
   planSelectSpy: vi.fn(),
+  linha: { current: null as Record<string, unknown> | null },
 }));
-
 vi.mock('@supabase/supabase-js', () => ({
   createClient: createClientMock,
 }));
-
+type Filtro = { col: string; val: unknown };
 function makeDb() {
   return {
     from(table: string) {
@@ -144,26 +144,67 @@ function makeDb() {
       }
       if (table === 'subscriptions') {
         return {
-          upsert: (payload: unknown, opts: unknown) => {
+          upsert: (payload: Record<string, unknown>, opts: unknown) => {
             upsertSpy(payload, opts);
+            linha.current = { ...(linha.current ?? {}), ...payload };
             return Promise.resolve({ error: null });
           },
-          select: () => ({
-            eq: () => ({ maybeSingle: async () => ({ data: null }) }),
-          }),
+          select: () => {
+            const filtros: Filtro[] = [];
+            const q = {
+              eq: (col: string, val: unknown) => {
+                filtros.push({ col, val });
+                return q;
+              },
+              maybeSingle: async () => {
+                const row = linha.current;
+                if (!row) return { data: null };
+                const casa = filtros.every((f) => row[f.col] === f.val || f.col === 'tenant_id');
+                return { data: casa ? { ...row } : null };
+              },
+            };
+            return q;
+          },
+          update: (patch: Record<string, unknown>) => {
+            const filtros: Filtro[] = [];
+            const q = {
+              eq: (col: string, val: unknown) => {
+                filtros.push({ col, val });
+                return q;
+              },
+              is: (col: string, val: unknown) => {
+                filtros.push({ col, val });
+                return q;
+              },
+              select: async () => {
+                const row = linha.current;
+                const casa =
+                  row != null &&
+                  filtros.every(
+                    (f) => f.col === 'tenant_id' || (row[f.col] ?? null) === f.val
+                  );
+                if (casa) {
+                  linha.current = { ...row, ...patch };
+                  return { data: [{ tenant_id: 'tenant-1' }] };
+                }
+                return { data: [] };
+              },
+            };
+            return q;
+          },
         };
       }
       throw new Error(`tabela inesperada no mock: ${table}`);
     },
   };
 }
-
 afterEach(() => {
   vi.clearAllMocks();
   delete process.env.STRIPE_WEBHOOK_SECRET;
   delete process.env.NEXT_PUBLIC_SUPABASE_URL;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
   planRow.current = null;
+  linha.current = null;
 });
 
 async function importRoute() {
@@ -285,5 +326,215 @@ describe('POST /api/stripe/webhook — resolve de plan_id/billing_cycle', () => 
     const [payload] = upsertSpy.mock.calls[0];
     expect(payload).not.toHaveProperty('plan_id');
     expect(payload).not.toHaveProperty('billing_cycle');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ordem / idempotência / robustez (banco em memória)
+// ---------------------------------------------------------------------------
+import { deveAplicarEvento } from '@/lib/stripe/webhook-map';
+
+describe('deveAplicarEvento (puro)', () => {
+  const ativa = {
+    status: 'active' as const,
+    stripe_subscription_id: 'sub_1',
+    stripe_event_at: new Date(2_000_000 * 1000).toISOString(),
+    stripe_event_kind: 'subscription' as const,
+  };
+
+  it('sem linha => aplica', () => {
+    expect(deveAplicarEvento(null, { kind: 'subscription', subscriptionId: 'sub_1', created: 1 })).toBe(true);
+  });
+
+  it('evento antigo é descartado; novo é aplicado; mesmo timestamp da mesma família reaplica', () => {
+    expect(deveAplicarEvento(ativa, { kind: 'subscription', subscriptionId: 'sub_1', created: 1_999_999 })).toBe(false);
+    expect(deveAplicarEvento(ativa, { kind: 'subscription', subscriptionId: 'sub_1', created: 2_000_001 })).toBe(true);
+    expect(deveAplicarEvento(ativa, { kind: 'subscription', subscriptionId: 'sub_1', created: 2_000_000 })).toBe(true);
+  });
+
+  it('empate de timestamp: subscription vence invoice nas duas ordens de chegada', () => {
+    // linha já tem subscription no mesmo instante => invoice descartada
+    expect(deveAplicarEvento(ativa, { kind: 'invoice', subscriptionId: 'sub_1', created: 2_000_000 })).toBe(false);
+    // linha tem invoice no mesmo instante => subscription aplicada
+    const comInvoice = { ...ativa, stripe_event_kind: 'invoice' as const };
+    expect(deveAplicarEvento(comInvoice, { kind: 'subscription', subscriptionId: 'sub_1', created: 2_000_000 })).toBe(true);
+  });
+
+  it('canceled é terminal para o mesmo id; assinatura nova (outro id) reabre', () => {
+    const cancelada = { ...ativa, status: 'canceled' as const };
+    expect(deveAplicarEvento(cancelada, { kind: 'subscription', subscriptionId: 'sub_1', created: 9_999_999 })).toBe(false);
+    expect(deveAplicarEvento(cancelada, { kind: 'invoice', subscriptionId: 'sub_1', created: 9_999_999 })).toBe(false);
+    expect(deveAplicarEvento(cancelada, { kind: 'invoice', subscriptionId: 'sub_2', created: 9_999_999 })).toBe(false);
+    expect(deveAplicarEvento(cancelada, { kind: 'subscription', subscriptionId: 'sub_2', created: 9_999_999 })).toBe(true);
+  });
+
+  it('invoice de outra assinatura (ou sem assinatura) é descartada', () => {
+    expect(deveAplicarEvento(ativa, { kind: 'invoice', subscriptionId: 'sub_outra', created: 9_999_999 })).toBe(false);
+    expect(deveAplicarEvento(ativa, { kind: 'invoice', subscriptionId: undefined, created: 9_999_999 })).toBe(false);
+  });
+});
+
+describe('POST /api/stripe/webhook — ordem, idempotência e robustez', () => {
+  function setupEnv() {
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test';
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+    createClientMock.mockReturnValue(makeDb());
+  }
+  function ev(type: string, created: number, object: Record<string, unknown>): Stripe.Event {
+    return { type, created, data: { object } } as unknown as Stripe.Event;
+  }
+  const sub = (status: string, extra: Record<string, unknown> = {}) => ({
+    id: 'sub_1',
+    customer: 'cus_1',
+    status,
+    current_period_start: 1_700_000_000,
+    current_period_end: 1_702_592_000,
+    cancel_at_period_end: false,
+    metadata: { tenant_id: 'tenant-1' },
+    items: { data: [{ price: { id: 'price_bad,x' } }] },
+    ...extra,
+  });
+  const invoice = (subscription: string | null) => ({
+    customer: 'cus_1',
+    subscription,
+    lines: { data: [{ period: { start: 1_700_000_000, end: 1_702_592_000 } }] },
+  });
+  async function enviar(evento: Stripe.Event): Promise<Response> {
+    constructEventMock.mockReturnValue(evento);
+    const { POST } = await importRoute();
+    return POST(makeRequest('{}', { 'stripe-signature': 'sig' }));
+  }
+
+  it('o mesmo evento duas vezes => mesmo estado final (idempotente)', async () => {
+    setupEnv();
+    const e = ev('customer.subscription.updated', 100, sub('active'));
+    expect((await enviar(e)).status).toBe(200);
+    const aposPrimeira = { ...linha.current };
+    expect((await enviar(e)).status).toBe(200);
+    expect(linha.current).toEqual(aposPrimeira);
+    expect(linha.current).toMatchObject({ status: 'active', stripe_subscription_id: 'sub_1' });
+  });
+
+  it('subscription.deleted (t2) e invoice.payment_succeeded atrasado (t1<t2) => permanece canceled', async () => {
+    setupEnv();
+    await enviar(ev('customer.subscription.updated', 50, sub('active')));
+    await enviar(ev('customer.subscription.deleted', 200, sub('canceled')));
+    expect(linha.current).toMatchObject({ status: 'canceled' });
+    await enviar(ev('invoice.payment_succeeded', 100, invoice('sub_1')));
+    expect(linha.current).toMatchObject({ status: 'canceled' });
+  });
+
+  it('empate de created entre deleted e invoice.payment_succeeded => canceled nas duas ordens', async () => {
+    setupEnv();
+    // Ordem A: deleted depois invoice
+    await enviar(ev('customer.subscription.updated', 50, sub('active')));
+    await enviar(ev('customer.subscription.deleted', 300, sub('canceled')));
+    await enviar(ev('invoice.payment_succeeded', 300, invoice('sub_1')));
+    expect(linha.current).toMatchObject({ status: 'canceled' });
+    // Ordem B: invoice depois deleted
+    linha.current = null;
+    await enviar(ev('customer.subscription.updated', 50, sub('active')));
+    await enviar(ev('invoice.payment_succeeded', 300, invoice('sub_1')));
+    await enviar(ev('customer.subscription.deleted', 300, sub('canceled')));
+    expect(linha.current).toMatchObject({ status: 'canceled' });
+  });
+
+  it('canceled é terminal para o mesmo id; subscription nova (outro id) reabre', async () => {
+    setupEnv();
+    await enviar(ev('customer.subscription.updated', 50, sub('active')));
+    await enviar(ev('customer.subscription.deleted', 100, sub('canceled')));
+    await enviar(ev('customer.subscription.updated', 500, sub('active')));
+    expect(linha.current).toMatchObject({ status: 'canceled' });
+    await enviar(ev('customer.subscription.created', 600, sub('active', { id: 'sub_2' })));
+    expect(linha.current).toMatchObject({ status: 'active', stripe_subscription_id: 'sub_2' });
+  });
+
+  it('invoice de outra assinatura é ignorada (200, sem alterar a linha)', async () => {
+    setupEnv();
+    await enviar(ev('customer.subscription.updated', 50, sub('active')));
+    const res = await enviar(ev('invoice.payment_failed', 900, invoice('sub_antiga')));
+    expect(res.status).toBe(200);
+    expect(linha.current).toMatchObject({ status: 'active' });
+  });
+
+  it('invoice.payment_failed da assinatura da linha => past_due', async () => {
+    setupEnv();
+    await enviar(ev('customer.subscription.updated', 50, sub('active')));
+    await enviar(ev('invoice.payment_failed', 150, invoice('sub_1')));
+    expect(linha.current).toMatchObject({ status: 'past_due' });
+  });
+
+  it('status fora do enum (paused) => ignorado com 200, sem gravar', async () => {
+    setupEnv();
+    const res = await enviar(ev('customer.subscription.updated', 50, sub('paused')));
+    expect(res.status).toBe(200);
+    expect(linha.current).toBeNull();
+    expect(upsertSpy).not.toHaveBeenCalled();
+  });
+
+  it('período lido de items.data[0] quando o raiz não existe (API basil)', async () => {
+    setupEnv();
+    const s = sub('active', {
+      current_period_start: undefined,
+      current_period_end: undefined,
+      items: {
+        data: [
+          {
+            price: { id: 'price_bad,x' },
+            current_period_start: 1_700_000_000,
+            current_period_end: 1_702_592_000,
+          },
+        ],
+      },
+    });
+    await enviar(ev('customer.subscription.updated', 50, s));
+    expect(linha.current).toMatchObject({
+      current_period_end: new Date(1_702_592_000 * 1000).toISOString(),
+    });
+  });
+
+  it('checkout.session.completed só vincula (usa client_reference_id) e não altera status', async () => {
+    setupEnv();
+    const res = await enviar(
+      ev('checkout.session.completed', 10, {
+        client_reference_id: 'tenant-1',
+        customer: 'cus_1',
+        subscription: 'sub_1',
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(linha.current).toMatchObject({
+      tenant_id: 'tenant-1',
+      stripe_customer_id: 'cus_1',
+      stripe_subscription_id: 'sub_1',
+    });
+    expect(linha.current).not.toHaveProperty('status');
+  });
+
+  it('tenant não resolvido => 200 sem gravar', async () => {
+    setupEnv();
+    const res = await enviar(
+      ev('invoice.payment_failed', 10, { customer: 'cus_desconhecido', subscription: 'sub_1' })
+    );
+    expect(res.status).toBe(200);
+    expect(linha.current).toBeNull();
+  });
+
+  it('mapeia o price ID do plano anual da Assessoria para plan_id e ciclo yearly', async () => {
+    setupEnv();
+    planRow.current = {
+      id: 'plan-assessoria',
+      stripe_price_id_monthly: 'price_1UYFcfFVM32R4q9lOZ5d4yoo',
+      stripe_price_id_yearly: 'price_1UYFcfFVM32R4q9lkULnJvme',
+    };
+    await enviar(
+      ev(
+        'customer.subscription.updated',
+        50,
+        sub('active', { items: { data: [{ price: { id: 'price_1UYFcfFVM32R4q9lkULnJvme' } }] } })
+      )
+    );
+    expect(linha.current).toMatchObject({ plan_id: 'plan-assessoria', billing_cycle: 'yearly' });
   });
 });

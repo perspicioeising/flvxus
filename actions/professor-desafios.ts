@@ -8,6 +8,7 @@ import {
   criarDesafioTurmaSchema,
   type CriarDesafioTurmaInput,
 } from '@/schemas/professor-desafios';
+import { requireEntitlement } from '@/lib/billing/guard';
 
 /**
  * Server Action do painel de desafios do PERSONAL (G3, B2B intra-tenant). Mesmo
@@ -68,6 +69,10 @@ export async function criarDesafioTurma(
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, status: 'sem_sessao', message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, status: 'forbidden', message: direito.message ?? 'Assinatura inativa.' };
   }
 
   // Defesa em profundidade: o painel do personal é exclusivo do profissional

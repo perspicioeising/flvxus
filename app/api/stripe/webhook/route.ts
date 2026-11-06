@@ -3,7 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import type Stripe from 'stripe';
 
 import { getStripe } from '@/lib/stripe/server';
-import { mapWebhookEvent, type SubscriptionPatch } from '@/lib/stripe/webhook-map';
+import {
+  deveAplicarEvento,
+  mapWebhookEvent,
+  type FamiliaEvento,
+  type LinhaOrdenacao,
+  type SubscriptionPatch,
+} from '@/lib/stripe/webhook-map';
 import type { Database } from '@/types/database.types';
 
 /**
@@ -31,15 +37,22 @@ function serviceRoleClient() {
   });
 }
 
-/** Remove o price auxiliar do patch e resolve plan_id pelo price. */
-async function aplicarPatch(
-  db: ReturnType<typeof serviceRoleClient>,
-  tenantId: string,
-  patch: SubscriptionPatch
-): Promise<void> {
+type Db = ReturnType<typeof serviceRoleClient>;
+
+/** Lê a linha atual (campos de ordenação) — sempre filtrada por tenant_id. */
+async function lerLinha(db: Db, tenantId: string): Promise<LinhaOrdenacao | null> {
+  const { data } = await db
+    .from('subscriptions')
+    .select('status, stripe_subscription_id, stripe_event_at, stripe_event_kind')
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+  return (data as LinhaOrdenacao | null) ?? null;
+}
+
+/** Monta o UPDATE (resolvendo plan_id/billing_cycle pelo price). */
+async function montarUpdate(db: Db, patch: SubscriptionPatch): Promise<Record<string, unknown>> {
   const { stripePriceId, ...campos } = patch;
   const update: Record<string, unknown> = { ...campos };
-
   // Resolve plan_id pelo price, cobrindo as colunas mensal/anual e o legado
   // (stripe_price_id). Price desconhecido => mantém o plan_id atual (não derruba
   // o webhook). O ciclo é derivado da coluna que casou.
@@ -59,18 +72,47 @@ async function aplicarPatch(
         .maybeSingle();
       if (plano?.id) {
         update.plan_id = plano.id;
-        // yearly quando casou a coluna anual; senão monthly (anual explícito,
-        // mensal ou o legado stripe_price_id).
-        update.billing_cycle =
-          plano.stripe_price_id_yearly === stripePriceId ? 'yearly' : 'monthly';
+        update.billing_cycle = plano.stripe_price_id_yearly === stripePriceId ? 'yearly' : 'monthly';
       }
     }
   }
+  return update;
+}
 
-  // Upsert idempotente por tenant_id (PK). Garante que uma linha exista.
-  await db
-    .from('subscriptions')
-    .upsert({ tenant_id: tenantId, ...update }, { onConflict: 'tenant_id' });
+/**
+ * Aplica o patch com ORDEM/IDEMPOTÊNCIA (`deveAplicarEvento`) e UPDATE otimista
+ * por `stripe_event_at` (protege contra duas entregas concorrentes). Evento
+ * descartado => resolve sem escrever (200). Conflito persistente => lança (500,
+ * a Stripe re-tenta). Toda escrita é filtrada por tenant_id.
+ */
+async function aplicarEvento(
+  db: Db,
+  tenantId: string,
+  patch: SubscriptionPatch,
+  ev: { kind: FamiliaEvento; subscriptionId?: string; created: number }
+): Promise<void> {
+  const update = await montarUpdate(db, patch);
+  for (let tentativa = 0; tentativa < 2; tentativa += 1) {
+    const linha = await lerLinha(db, tenantId);
+    if (!deveAplicarEvento(linha, ev)) {
+      console.warn('[stripe webhook] evento descartado (ordem/terminal) para o tenant.');
+      return;
+    }
+    if (!linha) {
+      // Sem linha: cria (PK tenant_id).
+      await db
+        .from('subscriptions')
+        .upsert({ tenant_id: tenantId, ...update }, { onConflict: 'tenant_id' });
+      return;
+    }
+    let q = db.from('subscriptions').update(update).eq('tenant_id', tenantId);
+    q = linha.stripe_event_at == null ? q.is('stripe_event_at', null) : q.eq('stripe_event_at', linha.stripe_event_at);
+    const { data: afetadas } = await q.select('tenant_id');
+    if (afetadas && afetadas.length > 0) {
+      return;
+    }
+  }
+  throw new Error('conflito de escrita concorrente em subscriptions');
 }
 
 /** Resolve o tenant a partir das pistas do evento (metadata ou customer). */
@@ -130,7 +172,11 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ received: true });
     }
 
-    await aplicarPatch(db, tenantId, mapped.patch);
+    await aplicarEvento(db, tenantId, mapped.patch, {
+      kind: mapped.kind ?? 'subscription',
+      subscriptionId: mapped.subscriptionId,
+      created: mapped.created,
+    });
     return NextResponse.json({ received: true });
   } catch (erro) {
     console.error(

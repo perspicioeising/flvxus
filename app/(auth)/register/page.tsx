@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -27,11 +27,16 @@ import { registrarAceiteLegal } from "@/actions/legal";
 import { definirHandle, verificarDisponibilidadeHandle } from "@/actions/arena-social";
 import { sugerirUsername } from "@/lib/arena/social";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal/versions";
+import { lerIntencao, queryIntencao } from "@/lib/billing/intencao";
 
 type FormValues = z.infer<typeof cadastroProfessorSchema>;
 
 function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Intenção de assinatura vinda da landing (plano + ciclo), validada por Zod.
+  const intencao = lerIntencao(searchParams);
+  const queryComIntencao = intencao ? queryIntencao(intencao, intencao.acao === "assinar") : "";
   const { toast } = useToast();
   const { supabase } = useSupabase();
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +48,7 @@ function RegisterContent() {
     resolver: zodResolver(cadastroProfessorSchema),
     defaultValues: {
       name: "",
-      accountType: "professional",
+      accountType: intencao?.plano === "individual" ? "self_managed" : "professional",
       businessName: "",
       socialHandle: "",
       email: "",
@@ -137,7 +142,7 @@ function RegisterContent() {
           },
           emailRedirectTo:
             typeof window !== "undefined"
-              ? `${window.location.origin}/callback`
+              ? `${window.location.origin}/callback${queryComIntencao ? `?${queryComIntencao}` : ""}`
               : undefined,
         },
       });
@@ -219,6 +224,11 @@ function RegisterContent() {
         title: "Conta criada com sucesso! 🎉",
         description: "Redirecionando para o seu painel...",
       });
+      // Veio da landing por "Assinar agora": segue para o checkout.
+      if (intencao?.acao === "assinar") {
+        window.location.assign(`/assinar?${queryIntencao(intencao)}`);
+        return;
+      }
       router.push(values.accountType === "self_managed" ? "/aluno" : "/professor");
       router.refresh();
     } catch (error: any) {
@@ -301,7 +311,7 @@ function RegisterContent() {
           <>
             Já tem uma conta?{" "}
             <Link
-              href="/login"
+              href={queryComIntencao ? `/login?${queryComIntencao}` : "/login"}
               className="font-semibold text-primary underline-offset-4 hover:underline"
             >
               Faça login

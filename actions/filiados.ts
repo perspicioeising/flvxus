@@ -15,6 +15,7 @@ import {
 
 export type { EstadoAcao } from '@/actions/_estado';
 import type { EstadoAcao } from '@/actions/_estado';
+import { requireEntitlement } from '@/lib/billing/guard';
 
 /**
  * Server Actions de FILIADOS e VISIBILIDADE (Fase 3). TODAS são MASTER-ONLY: o
@@ -37,6 +38,8 @@ export async function convidarFiliado(
   if (!master) {
     return { ok: false, message: 'Acesso negado. Apenas o personal master pode convidar filiados.' };
   }
+  const direito = await requireEntitlement(null, master);
+  if (!direito.ok) return direito;
 
   const parsed = convidarFiliadoSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

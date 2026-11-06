@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
+import { lerIntencao, queryIntencao } from '@/lib/billing/intencao';
 
 /**
  * Callback de autenticação (padrão oficial @supabase/ssr, fluxo PKCE).
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
   // conforme o papel. Sem perfil/erro volta ao login.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, social_handle')
+    .select('role, social_handle, account_type')
     .eq('user_id', userId)
     .single();
 
@@ -102,6 +103,18 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const destino = profile.role === 'student' ? '/aluno' : '/professor';
+  // Intenção de assinatura (landing "Assinar agora"): segue para o checkout.
+  // Só aceita plano/ciclo validados por Zod (nada de `next` livre).
+  const intencao = lerIntencao(searchParams);
+  if (intencao?.acao === 'assinar' && profile.role !== 'student') {
+    return NextResponse.redirect(`${origin}/assinar?${queryIntencao(intencao)}`);
+  }
+
+  // O aluno vinculado e o aluno autônomo (trainer + self_managed) caem em
+  // /aluno; o personal profissional em /professor (mesma regra de login/register).
+  const destino =
+    profile.role === 'student' || profile.account_type === 'self_managed'
+      ? '/aluno'
+      : '/professor';
   return NextResponse.redirect(`${origin}${destino}`);
 }

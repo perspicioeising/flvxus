@@ -13,7 +13,7 @@ import type { PlanTier } from '@/types/database.types';
 /**
  * Testes HEADLESS (sem banco) do mapa de entitlements por tier e da função pura
  * `effectiveEntitlements` (design §B2). Cobre os 6 tiers (legados normalizados),
- * a graça pré-trial do autônomo e o fallback READONLY.
+ * o fallback READONLY (a graça pré-trial infinita do autônomo foi removida).
  */
 
 describe('ENTITLEMENTS_BY_TIER', () => {
@@ -41,85 +41,25 @@ describe('ENTITLEMENTS_BY_TIER', () => {
 });
 
 describe('effectiveEntitlements', () => {
-  it('resolve os 6 tiers quando o status dá direito', () => {
+  it('resolve os 6 tiers quando há direito de escrita', () => {
     for (const tier of ['individual', 'personal', 'assessoria', 'solo', 'team', 'gym'] as PlanTier[]) {
-      const ent = effectiveEntitlements({
-        tier,
-        status: 'active',
-        accountType: 'professional',
-        hasSubscriptionRow: true,
-        hasStripeSubscriptionId: true,
-      });
+      const ent = effectiveEntitlements({ tier, podeEscrever: true });
       expect(ent).toBe(ENTITLEMENTS_BY_TIER[tier]);
+      expect(ent).not.toBe(ENTITLEMENTS_READONLY);
     }
   });
-
-  it('(i) autônomo sem linha/status null => individual trialing (graça)', () => {
-    const ent = effectiveEntitlements({
-      tier: null,
-      status: null,
-      accountType: 'self_managed',
-      hasSubscriptionRow: false,
-      hasStripeSubscriptionId: false,
-    });
-    expect(ent).toBe(INDIVIDUAL);
+  it('sem direito de escrita => READONLY, qualquer que seja o tier', () => {
+    for (const tier of ['individual', 'personal', 'assessoria', 'solo', 'team', 'gym'] as PlanTier[]) {
+      expect(effectiveEntitlements({ tier, podeEscrever: false })).toBe(ENTITLEMENTS_READONLY);
+    }
   });
-
-  it('(ii NEW-2) autônomo incomplete, linha só-customer => individual, não READONLY', () => {
-    const ent = effectiveEntitlements({
-      tier: null,
-      status: 'incomplete',
-      accountType: 'self_managed',
-      hasSubscriptionRow: true,
-      hasStripeSubscriptionId: false,
-    });
-    expect(ent).toBe(INDIVIDUAL);
-    expect(ent).not.toBe(ENTITLEMENTS_READONLY);
+  it('tier nulo/desconhecido => READONLY (lado seguro)', () => {
+    expect(effectiveEntitlements({ tier: null, podeEscrever: true })).toBe(ENTITLEMENTS_READONLY);
+    expect(effectiveEntitlements({ tier: undefined, podeEscrever: true })).toBe(
+      ENTITLEMENTS_READONLY
+    );
   });
-
-  it('(iii) autônomo trialing com subscription real => resolve pela linha real', () => {
-    const ent = effectiveEntitlements({
-      tier: 'personal',
-      status: 'trialing',
-      accountType: 'self_managed',
-      hasSubscriptionRow: true,
-      hasStripeSubscriptionId: true,
-    });
-    // A graça NÃO se aplica (já há subscription real); resolve pelo tier da linha.
-    expect(ent).toBe(PERSONAL);
-  });
-
-  it('(iv) professional incomplete => READONLY', () => {
-    const ent = effectiveEntitlements({
-      tier: 'personal',
-      status: 'incomplete',
-      accountType: 'professional',
-      hasSubscriptionRow: true,
-      hasStripeSubscriptionId: false,
-    });
-    expect(ent).toBe(ENTITLEMENTS_READONLY);
-  });
-
-  it('professional sem direito (canceled/past_due) => READONLY', () => {
-    expect(
-      effectiveEntitlements({
-        tier: 'individual',
-        status: 'canceled',
-        accountType: 'professional',
-        hasSubscriptionRow: true,
-        hasStripeSubscriptionId: true,
-      })
-    ).toBe(ENTITLEMENTS_READONLY);
-  });
-
-  it('tier desconhecido com status com direito => READONLY', () => {
-    const ent = effectiveEntitlements({
-      tier: 'inexistente' as PlanTier,
-      status: 'active',
-      accountType: 'professional',
-      hasSubscriptionRow: true,
-      hasStripeSubscriptionId: true,
-    });
-    expect(ent).toBe(ENTITLEMENTS_READONLY);
+  it('READONLY não libera nenhuma feature', () => {
+    expect(Object.values(ENTITLEMENTS_READONLY.features).some(Boolean)).toBe(false);
   });
 });

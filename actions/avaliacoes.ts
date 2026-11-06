@@ -195,6 +195,10 @@ export async function editarAvaliacao(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode editar avaliações.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const parsed = editarAvaliacaoSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -253,6 +257,10 @@ export async function uploadFotoAvaliacao(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode enviar fotos.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const file = formData.get('foto');
@@ -325,6 +333,10 @@ export async function excluirFotoAvaliacao(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode excluir fotos.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const supabase = await createClient();

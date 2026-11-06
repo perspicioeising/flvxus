@@ -39,6 +39,7 @@ import {
   prefixoMimePermitido,
   type ExerciseMediaKind,
 } from '@/lib/storage/exercise-media';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 /** Valores do formulário: listas ficam como arrays no cliente. */
 export interface ExerciseFormValues {
@@ -353,6 +354,7 @@ export function ExerciseForm({
 }: ExerciseFormProps) {
   const router = useRouter();
   const [enviando, setEnviando] = React.useState(false);
+  const { podeEscrever } = useAcesso();
   // Mídia escolhida no modo criar (enviada via signed URL após o exercício
   // existir). No modo editar a mídia é gerida pelo bloco inline da página.
   const [videoFile, setVideoFile] = React.useState<File | null>(null);
@@ -595,7 +597,7 @@ export function ExerciseForm({
           >
             Cancelar
           </Button>
-          <Button type="submit" className="min-h-11" disabled={enviando}>
+          <Button type="submit" className="min-h-11" disabled={enviando || !podeEscrever}>
             {enviando
               ? 'Salvando…'
               : rotuloEnvio ?? (modo === 'criar' ? 'Criar exercício' : 'Salvar alterações')}

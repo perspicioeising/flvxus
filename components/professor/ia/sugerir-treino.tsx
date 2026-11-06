@@ -26,6 +26,7 @@ import { sugerirTreino } from '@/actions/ia';
 import type { SuggestWorkoutOutput } from '@/schemas/ia/suggest-workout';
 import { RevisaoRascunho } from './revisao-rascunho';
 import { RascunhoTreino } from './rascunho-visualizacoes';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 export interface AlunoOpcao {
   user_id: string;
@@ -70,8 +71,9 @@ export function SugerirTreinoIa({
   // Para o autônomo, nunca bloqueia por "sem alunos" (ele é o próprio aluno).
   const semAlunos = !alunoFixo && alunos.length === 0;
   const diasNum = Number.parseInt(dias, 10);
+  const { podeEscrever } = useAcesso();
   const desabilitado =
-    !studentId || !goal.trim() || !nivel || !Number.isFinite(diasNum) || gerando;
+    !studentId || !goal.trim() || !nivel || !Number.isFinite(diasNum) || gerando || !podeEscrever;
 
   async function gerar() {
     if (desabilitado) return;

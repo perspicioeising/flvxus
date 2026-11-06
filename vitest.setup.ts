@@ -15,3 +15,13 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     dispatchEvent: () => false,
   })) as unknown as typeof window.matchMedia;
 }
+
+// Billing: o gate de somente leitura (`requireEntitlement`) consulta o banco via
+// RPC. Nos testes de unidade das actions, o padrão é "com direito"; testes que
+// exercitam o gate sobrescrevem este mock (`vi.mock` no próprio arquivo) ou usam
+// `vi.importActual('@/lib/billing/guard')`.
+import { vi } from 'vitest';
+vi.mock('@/lib/billing/guard', () => ({
+  requireEntitlement: vi.fn().mockResolvedValue({ ok: true }),
+  MSG_SEM_DIREITO: 'Seu plano atual não inclui este recurso. Revise sua assinatura para liberá-lo.',
+}));

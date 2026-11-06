@@ -12,6 +12,8 @@ interface AppShellProps {
   isMaster?: boolean;
   /** Fase B1: aluno autônomo (self_managed) não vê o item "Alunos". */
   accountType?: AccountType;
+  /** Faixa de assinatura (trial/somente leitura) no topo do <main>. */
+  banner?: ReactNode;
   children: ReactNode;
 }
 
@@ -25,6 +27,7 @@ export function AppShell({
   rootHref,
   isMaster = false,
   accountType = 'professional',
+  banner,
   children,
 }: AppShellProps) {
   return (
@@ -52,6 +55,7 @@ export function AppShell({
         {/* O <main> é a área rolável. pb extra no mobile para o conteúdo não
             ficar sob a bottom-nav fixa. */}
         <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 md:p-6 md:pb-6">
+          {banner}
           {children}
         </main>
       </div>

@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useSupabase } from "@/app/providers";
 import { loginSchema } from "@/schemas/auth";
 import { AuthScreen } from "@/components/auth/auth-screen";
+import { lerIntencao, queryIntencao } from "@/lib/billing/intencao";
 
 type FormValues = z.infer<typeof loginSchema>;
 
@@ -77,6 +78,13 @@ export default function LoginPage() {
         description: "Redirecionando...",
       });
 
+      // Intenção de assinatura vinda da landing (plano/ciclo): após autenticar,
+      // segue para /assinar (checkout). Só aceita valores validados por Zod.
+      const intencao = lerIntencao(new URLSearchParams(window.location.search));
+      if (intencao?.acao === "assinar" && profile?.role !== "student") {
+        window.location.assign(`/assinar?${queryIntencao(intencao)}`);
+        return;
+      }
       router.push(destino);
       router.refresh();
     } catch (error: any) {

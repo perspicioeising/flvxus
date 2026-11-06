@@ -1436,6 +1436,9 @@ export interface Database {
           current_period_end: string | null;
           cancel_at_period_end: boolean;
           billing_cycle: BillingCycle;
+          trial_ends_at: string | null;
+          stripe_event_at: string | null;
+          stripe_event_kind: 'subscription' | 'invoice' | null;
           created_at: string;
           updated_at: string;
         };
@@ -1449,6 +1452,9 @@ export interface Database {
           current_period_end?: string | null;
           cancel_at_period_end?: boolean;
           billing_cycle?: BillingCycle;
+          trial_ends_at?: string | null;
+          stripe_event_at?: string | null;
+          stripe_event_kind?: 'subscription' | 'invoice' | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1462,6 +1468,9 @@ export interface Database {
           current_period_end?: string | null;
           cancel_at_period_end?: boolean;
           billing_cycle?: BillingCycle;
+          trial_ends_at?: string | null;
+          stripe_event_at?: string | null;
+          stripe_event_kind?: 'subscription' | 'invoice' | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1762,6 +1771,20 @@ export interface Database {
       can_add_affiliate: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      // Billing: estado de acesso do tenant do usuario (SECURITY DEFINER, leitura).
+      billing_tenant_state: {
+        Args: Record<string, never>;
+        Returns: {
+          status: SubscriptionStatus;
+          tier: PlanTier | null;
+          billing_cycle: BillingCycle;
+          trial_ends_at: string | null;
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          has_stripe_subscription: boolean;
+          has_stripe_customer: boolean;
+        }[];
       };
       // Arena G1: ranking do tenant (SECURITY DEFINER, somente leitura).
       // p_season null => temporada vigente. Retorno jsonb — ver GamificationLeaderboard.

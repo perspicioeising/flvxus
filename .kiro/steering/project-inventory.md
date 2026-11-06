@@ -79,7 +79,9 @@ Nota de layout: as áreas **vivas** são `app/(professor)/`, `app/(aluno)/`, `ap
 - Água (`registrarAgua`, `removerRegistroAgua`, `definirMetaAgua`), dieta do dia (`alternarRefeicaoCumprida`), check-in (`fazerCheckin`). Triggers de hábito concedem XP via motor (`habit_water_after_change`, `habit_diet_after_change`, `habit_checkin_after_insert`). Meta de água derivável do peso (`lib/habitos/meta-agua.ts`).
 
 ### Billing / planos
-- 3 tiers atuais: `individual`/`personal`/`assessoria` (legados `solo`/`team`/`gym` normalizados). Entitlements puros em `lib/billing/entitlements.ts` (IA quota: individual 50, personal 300, assessoria ∞; filiados: 0/5/∞). Guard em `lib/billing/guard.ts`; espelho de UI em `lib/billing/entitlement.ts` (`canAddAffiliate`, `moduleIsOpen`, `statusComDireito`). Stripe em `lib/stripe/*`, webhook `app/api/stripe/webhook/route.ts` (`lib/stripe/webhook-map.ts`). Trial 14 dias + graça pré-trial do autônomo. Franquia de IA: `lib/ia/quota.ts`, `ai_usage_counters`/`ai_usage_logs`.
+- 3 tiers atuais: `individual`/`personal`/`assessoria` (legados `solo`/`team`/`gym` normalizados). Entitlements puros em `lib/billing/entitlements.ts` (IA quota: individual 50, personal 300, assessoria ∞; filiados: 0/5/∞), agora a partir de `EstadoAcesso`. Espelho de UI em `lib/billing/entitlement.ts` (`canAddAffiliate({podeEscrever,...})`, `moduleIsOpen`, `statusComDireito` — este NÃO conhece expiração de trial). Franquia de IA: `lib/ia/quota.ts`, `ai_usage_counters`/`ai_usage_logs`.
+- **Trial 14 dias controlado pelo app** (sem cartão, sem `trial_period_days` da Stripe): `handle_new_user()` cria `subscriptions` `trialing` + `trial_ends_at`. **Somente leitura** após o prazo / `past_due` / cancelada. Estado puro em `lib/billing/acesso.ts` (`resolverAcesso`); leitura server em `lib/billing/access.ts` (`getAccess` cacheado, `getAccessFor(user)`, fail-closed) via RPC `billing_tenant_state()`; gate em `lib/billing/guard.ts` (`requireEntitlement(feature|null, user?)`, chamado no INÍCIO de toda action de escrita; teste estático `tests/unit/actions-write-guard.test.ts`); textos em `lib/billing/mensagens.ts`; catálogo de exibição da landing em `lib/billing/catalogo.ts`; intenção plano/ciclo em `lib/billing/intencao.ts`.
+- **Checkout**: `lib/billing/checkout.ts` (`criarSessaoCheckout`, usado por `actions/billing.ts` `iniciarCheckout`/`abrirPortal` e por `GET /assinar` em `app/assinar/route.ts`). Landing: `components/marketing/planos-section.tsx` (2 CTAs: "Testar 14 dias grátis" e "Assinar agora"). UI: `components/billing/{banner-assinatura,acesso-provider,aviso-somente-leitura}.tsx`, `components/professor/plano/{planos-grid,portal-button,checkout-button}.tsx`. Webhook `app/api/stripe/webhook/route.ts` + `lib/stripe/webhook-map.ts` (`deveAplicarEvento`: ordem/idempotência, `canceled` terminal). Detalhes e checklist de ambiente: `docs/billing.md`.
 
 ### Aluno autônomo (self_managed)
 - `role='trainer'` + `is_tenant_master=true` + `account_type='self_managed'`. Trigger `enforce_self_managed_no_students` impede alunos. Nav ramificada em `components/navigation/nav-items.ts` (`getNavItems` remove Visão geral/Alunos/Modelos/Desafios e injeta Início/Treinar/Minha dieta/Evolução/Conquistas/Arena). Rótulo "Aluno" (`roleLabel`). Cai em `/aluno` nos 3 pontos de login (ver §7e).
@@ -98,7 +100,7 @@ Nota de layout: as áreas **vivas** são `app/(professor)/`, `app/(aluno)/`, `ap
 
 ## 4. Mapa de migrations (`supabase/migrations/`, ordem por timestamp)
 
-**MAIOR timestamp atual: `20261104090000`** (`_workout_set_logs_exercise_id`). **Qualquer migration nova DEVE usar timestamp estritamente maior e único.**
+**MAIOR timestamp atual: `20261105090100`** (`_plans_stripe_price_ids_seed`). **Qualquer migration nova DEVE usar timestamp estritamente maior e único.**
 
 Rollback pareado (`_rollback.sql`) existe a partir de `20261021110300`. As 11 primeiras (base v2, `20261020*`–`20261021120000`, exceto source_link) **não** têm rollback pareado.
 
@@ -122,6 +124,10 @@ Séries v2 / execução (todas com rollback):
 Evolução de carga resiliente (com rollback):
 - `20261104090000_workout_set_logs_exercise_id` — coluna `workout_set_logs.exercise_id` (FK `exercises`, `on delete set null`, índice): identidade DURÁVEL do exercício executado, gravada no registro (`registrarSerie`: `substitute_exercise_id` senão o `exercise_id` do item prescrito). Sobrevive à recriação de `plan_item_id` pelo `editarFicha`. Backfill idempotente por `coalesce` (recupera só o derivável; órfãos irrecuperáveis ficam NULL — Opção A). Leitura de evolução (`secao-evolucao.tsx` → `montarSerieCarga`) agrupa por `exercise_id`.
 - **Frente de execução por série individual já estava no `main`** (commit `feat: resolver reps/descanso/carga por série na execução`): o merge "série vence; item é fallback" vive em `lib/treino/series.ts` (`valoresDaSerie`), consumido por aluno e professor via `SessaoExecucao`. Testes em `tests/unit/series-valores.test.ts`.
+
+Billing — trial + checkout (todas com rollback):
+- `20261105090000_billing_trial_core` — colunas `subscriptions.trial_ends_at`/`stripe_event_at`/`stripe_event_kind`; RPC `billing_tenant_state()` (SD, leitura do estado por qualquer membro do tenant); `can_add_affiliate()` ciente do trial; `handle_new_user()` cria o trial (bloco com `exception`, nunca derruba o cadastro); backfill idempotente (14 dias a partir da aplicação). **Aplicar ANTES do deploy.**
+- `20261105090100_plans_stripe_price_ids_seed` — seed idempotente dos 6 price IDs em `plans.stripe_price_id_monthly/_yearly` (uma linha por tier). Rollback zera só os IDs semeados (não restaura centavos/`is_active`).
 
 Billing Fase B + aluno autônomo (todas com rollback):
 - `20261025090050_account_type` + `_handle_new_user_account_type` · `090100_plan_tier_values` (individual/personal/assessoria) · `090200_plans_billing_fase_b` (SD) · `090300_subscriptions_billing_cycle` · `090400_ai_usage_counters` (franquia IA).
@@ -189,13 +195,14 @@ Arena: `gamification_event_types`, `gamification_events` (ledger), `gamification
 - **Supabase clients**: `lib/supabase/{server,browser,middleware,admin}.ts`. `admin.ts` (service_role) só nas exceções, sempre filtrando `tenant_id`.
 
 ## 7. Armadilhas / lições aprendidas (crítico — não repetir)
-- **(a) Colisão de timestamp de migration já derrubou o app.** Regra: antes de criar, cheque o maior em `supabase/migrations/` (hoje `20261104090000`) e use estritamente maior e único. Idempotência + rollback pareado obrigatórios.
+- **(a) Colisão de timestamp de migration já derrubou o app.** Regra: antes de criar, cheque o maior em `supabase/migrations/` (hoje `20261105090100`) e use estritamente maior e único. Idempotência + rollback pareado obrigatórios.
 - **(b) Bug de fuso dia-SP.** Sintoma: dia deslocado -1. Causa: reconverter `occurred_on` (dia-SP cru `YYYY-MM-DD`) com `new Date()` → meia-noite UTC → volta um dia. Correção: `diaSPdeDiaOuInstante` em `lib/arena/datas.ts` devolve a string crua após validação, sem reconverter; instantes passam por `Intl.DateTimeFormat` no fuso SP.
 - **(c) Recursão mútua de RLS (Postgres 42P17).** Sintoma: convite de duelo some; "Nenhum desafio" para o professor. Causa: policy de `gamification_challenges` referenciava `_challenge_members` e vice-versa (ciclo). Correção (`20261031090000`): mover as subconsultas cruzadas para helpers SECURITY DEFINER (`gamification_is_challenge_member`/`_creator`, `search_path=''`) — mesmo escopo, sem ciclo. **Padrão a reusar para qualquer policy que leia outra tabela sob RLS.**
 - **(d) Cache de avatar.** Sintoma: foto antiga persistia após troca (path determinístico `{user_id}.<ext>`). Correção: cache-busting `?v=${Date.now()}` na public URL gravada em `profiles.avatar_url` (`lib/storage/avatar.ts`).
 - **(e) 3 pontos de redirect de login do aluno autônomo.** O autônomo (trainer+self_managed) deve cair em `/aluno`, não `/professor`, e não vê "Visão geral". Os 3 pontos: `app/(auth)/login/page.tsx`, `app/(auth)/callback/route.ts`, `app/(auth)/set-password/page.tsx` (register também: `register/page.tsx`). Ao mexer em roteamento pós-login, ajuste **todos**. A ocultação de menu é em `getNavItems`.
 - **(f) Flakiness do build no Windows.** Sintoma: ENOENT em `.next/server/pages-manifest.json` ou `.next/types`. Causa: cache corrompido. Correção: apagar `.next` inteiro e rebuildar. Warnings de `react-hooks/exhaustive-deps` são pré-existentes, não erro.
 - **(g) Lock de `node_modules` no Windows** impede `git worktree remove`. Use `git worktree prune` + limpeza manual.
+- **(h) RLS de `subscriptions` só deixa o master ler.** Aluno vinculado/filiado enxergam "sem assinatura" se lerem a tabela. Para o estado de acesso use SEMPRE `billing_tenant_state()` (`getAccess`/`getAccessFor`), nunca `from('subscriptions')` fora do master. Após o trial, a linha segue `trialing`: nunca use `statusComDireito(status)` na UI; use `EstadoAcesso.podeEscrever`. Toda action de escrita nova DEVE chamar `requireEntitlement` no início (o teste estático quebra se esquecer). O legado `/dashboard` (v1) escreve direto pela RLS e não passa pelo gate.
 
 ## 8. Pendências de produção (lado do usuário, não-código)
 - **Stripe**: price IDs reais e valores são placeholders/configuráveis (env); o usuário define no painel do Stripe (ver `docs/billing.md`). Franquia de IA por plano (50/300/∞) é padrão do código — ajustar conforme custo real.

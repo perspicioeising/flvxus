@@ -1,5 +1,4 @@
-import { statusComDireito } from '@/lib/billing/entitlement';
-import type { AccountType, PlanTier, SubscriptionStatus } from '@/types/database.types';
+import type { PlanTier } from '@/types/database.types';
 
 /**
  * Mapa de ENTITLEMENTS por tier (Fase B2 / design.md §B2). Função PURA e
@@ -87,58 +86,20 @@ export const ENTITLEMENTS_BY_TIER: Record<PlanTier, Entitlements> = {
 export interface EffectiveEntitlementsInput {
   /** Tier do plano vigente (null quando não resolvido). */
   tier: PlanTier | null | undefined;
-  /** Status da assinatura (null quando não há linha). */
-  status: SubscriptionStatus | null | undefined;
-  /** Tipo de conta do master do tenant. */
-  accountType: AccountType;
-  /** TRUE quando existe uma linha em `subscriptions` para o tenant. */
-  hasSubscriptionRow: boolean;
-  /** TRUE quando a linha já tem `stripe_subscription_id` (assinatura real). */
-  hasStripeSubscriptionId: boolean;
+  /** `EstadoAcesso.podeEscrever`: trial vigente ou assinatura com direito. */
+  podeEscrever: boolean;
 }
 
-/** Statuses pré-trial do autônomo que ainda não configuraram assinatura real. */
-const STATUS_PRE_TRIAL: readonly (SubscriptionStatus | null)[] = [
-  null,
-  'incomplete',
-  'incomplete_expired',
-];
-
 /**
- * Resolve os direitos EFETIVOS de um tenant.
- *
- * Graça pré-trial do aluno autônomo (self_managed): enquanto ainda não houver
- * `stripe_subscription_id` e o status estiver num dos pré-trial (null/incomplete/
- * incomplete_expired), tratamos como `individual` em `trialing` — o autônomo
- * usa o produto antes de configurar o Stripe (uma linha só-customer não derruba
- * essa graça). Resolvida a assinatura real, caímos na regra normal.
- *
- * Para os demais casos: status sem direito (não active/trialing) => READONLY;
- * tier desconhecido => READONLY; senão, os direitos do tier.
+ * Resolve os direitos EFETIVOS de um tenant a partir do estado de acesso
+ * (`lib/billing/acesso.ts`). Sem direito de escrita => READONLY; tier
+ * desconhecido => READONLY (lado seguro); senão, os direitos do tier.
+ * A antiga "graça pré-trial" infinita do autônomo foi removida: o trial agora
+ * tem prazo (`subscriptions.trial_ends_at`).
  */
 export function effectiveEntitlements(input: EffectiveEntitlementsInput): Entitlements {
-  const { accountType, status, hasStripeSubscriptionId } = input;
-
-  let tier = input.tier;
-  let statusEfetivo = status;
-
-  // Graça pré-trial do autônomo: sem assinatura real e status pré-trial.
-  if (
-    accountType === 'self_managed' &&
-    !hasStripeSubscriptionId &&
-    STATUS_PRE_TRIAL.includes(status ?? null)
-  ) {
-    tier = 'individual';
-    statusEfetivo = 'trialing';
-  }
-
-  if (!statusComDireito(statusEfetivo)) {
+  if (!input.podeEscrever || input.tier == null) {
     return ENTITLEMENTS_READONLY;
   }
-
-  if (tier == null) {
-    return ENTITLEMENTS_READONLY;
-  }
-
-  return ENTITLEMENTS_BY_TIER[tier] ?? ENTITLEMENTS_READONLY;
+  return ENTITLEMENTS_BY_TIER[input.tier] ?? ENTITLEMENTS_READONLY;
 }

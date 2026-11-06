@@ -12,14 +12,17 @@ import type { SubscriptionStatus, VisibilityModule } from '@/types/database.type
 /** Statuses de assinatura que dão direito a filiados (design §5). */
 export const STATUSES_COM_DIREITO: readonly SubscriptionStatus[] = ['active', 'trialing'];
 
-/** TRUE se o status dá direito a ter/adicionar filiados. */
+/**
+ * TRUE se o status dá direito. NÃO conhece a expiração do trial; na UI use
+ * `EstadoAcesso.podeEscrever` (`lib/billing/acesso.ts`).
+ */
 export function statusComDireito(status: SubscriptionStatus | null | undefined): boolean {
   return status != null && STATUSES_COM_DIREITO.includes(status);
 }
 
 export interface CanAddAffiliateInput {
-  /** Status da assinatura do tenant (null = sem assinatura). */
-  status: SubscriptionStatus | null | undefined;
+  /** `EstadoAcesso.podeEscrever` (trial vigente ou assinatura com direito). */
+  podeEscrever: boolean;
   /** Limite do plano: null = ilimitado; 0 = Solo (nenhum filiado). */
   maxAffiliates: number | null | undefined;
   /** Filiados ATIVOS atuais (role trainer, não-master, não desativados). */
@@ -30,19 +33,19 @@ export interface CanAddAffiliateInput {
 
 /**
  * Espelha a RPC `can_add_affiliate()` (design §6f / MED #8):
- *  - sem status com direito => false (0 filiados);
+ *  - sem direito de escrita (trial expirado etc.) => false (0 filiados);
  *  - plano não resolvido (hasResolvedPlan=false) => false (lado seguro);
  *  - maxAffiliates = 0 (Solo) => false sempre;
  *  - maxAffiliates = null (ilimitado) com plano ativo => true;
  *  - senão => usedActive < maxAffiliates.
  */
 export function canAddAffiliate({
-  status,
+  podeEscrever,
   maxAffiliates,
   usedActive,
   hasResolvedPlan = true,
 }: CanAddAffiliateInput): boolean {
-  if (!statusComDireito(status)) {
+  if (!podeEscrever) {
     return false;
   }
   if (!hasResolvedPlan) {

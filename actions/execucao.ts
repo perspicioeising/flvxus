@@ -24,6 +24,7 @@ import {
   type RegistrarSerieEntrada,
 } from '@/schemas/execucao';
 import { rotationStepsSchema } from '@/schemas/treino';
+import { requireEntitlement } from '@/lib/billing/guard';
 
 /**
  * Server Actions da EXECUÇÃO DE TREINO do aluno (architecture.md §6.4).
@@ -116,6 +117,10 @@ export async function iniciarSessao(
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const parsed = iniciarSessaoSchema.safeParse({
@@ -568,6 +573,10 @@ export async function registrarSerie(input: RegistrarSerieEntrada): Promise<Esta
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
   }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const parsed = registrarSerieSchema.safeParse(input);
   if (!parsed.success) {
@@ -645,6 +654,10 @@ export async function finalizarSessao(input: FinalizarSessaoInput): Promise<Esta
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const parsed = finalizarSessaoSchema.safeParse(input);
@@ -805,6 +818,10 @@ export async function confirmarDescanso(
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   // Mesma resolução/autorização de papel de `iniciarSessao` (inclui o trainer

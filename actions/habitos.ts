@@ -11,6 +11,7 @@ import {
   definirMetaAguaSchema,
   registrarAguaSchema,
 } from '@/schemas/habitos';
+import { requireEntitlement } from '@/lib/billing/guard';
 
 /**
  * Server Actions dos HÁBITOS do aluno — hidratação, aderência à dieta e
@@ -50,6 +51,10 @@ export async function registrarAgua(amountMl: number): Promise<EstadoAcao> {
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
   if (!podeOperarProprio(usuario)) {
     return { ok: false, message: 'Apenas o aluno pode registrar água.' };
@@ -98,6 +103,10 @@ export async function removerRegistroAgua(id: string): Promise<EstadoAcao> {
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
   }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
   if (!podeOperarProprio(usuario)) {
     return { ok: false, message: 'Apenas o aluno pode remover registros de água.' };
   }
@@ -133,6 +142,10 @@ export async function definirMetaAgua(
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const parsed = definirMetaAguaSchema.safeParse({
@@ -208,6 +221,10 @@ export async function alternarRefeicaoCumprida(
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
   if (!podeOperarProprio(usuario)) {
     return { ok: false, message: 'Apenas o aluno pode marcar refeições.' };
@@ -308,6 +325,10 @@ export async function fazerCheckin(): Promise<EstadoAcao> {
   const usuario = await getSessionUser();
   if (!usuario) {
     return { ok: false, message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement(null, usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
   if (!podeOperarProprio(usuario)) {
     return { ok: false, message: 'Apenas o aluno pode fazer check-in.' };

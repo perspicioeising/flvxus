@@ -29,43 +29,23 @@ describe('statusComDireito', () => {
 });
 
 describe('canAddAffiliate', () => {
-  it('bloqueia quando não há status com direito', () => {
-    expect(
-      canAddAffiliate({ status: null, maxAffiliates: 5, usedActive: 0 })
-    ).toBe(false);
-    expect(
-      canAddAffiliate({ status: 'past_due', maxAffiliates: 5, usedActive: 0 })
-    ).toBe(false);
+  it('bloqueia quando não há direito de escrita (sem assinatura, trial expirado, inadimplente)', () => {
+    expect(canAddAffiliate({ podeEscrever: false, maxAffiliates: 5, usedActive: 0 })).toBe(false);
   });
-
-  it('Solo (max_affiliates = 0) sempre bloqueia, mesmo com assinatura ativa', () => {
-    expect(
-      canAddAffiliate({ status: 'active', maxAffiliates: 0, usedActive: 0 })
-    ).toBe(false);
+  it('Solo (max_affiliates = 0) sempre bloqueia, mesmo com direito', () => {
+    expect(canAddAffiliate({ podeEscrever: true, maxAffiliates: 0, usedActive: 0 })).toBe(false);
   });
-
-  it('ilimitado (max_affiliates = null) com plano ativo libera', () => {
-    expect(
-      canAddAffiliate({ status: 'active', maxAffiliates: null, usedActive: 999 })
-    ).toBe(true);
+  it('ilimitado (max_affiliates = null) com direito libera', () => {
+    expect(canAddAffiliate({ podeEscrever: true, maxAffiliates: null, usedActive: 999 })).toBe(true);
   });
-
   it('libera enquanto usados < limite e bloqueia ao atingir', () => {
-    expect(
-      canAddAffiliate({ status: 'active', maxAffiliates: 5, usedActive: 4 })
-    ).toBe(true);
-    expect(
-      canAddAffiliate({ status: 'active', maxAffiliates: 5, usedActive: 5 })
-    ).toBe(false);
-    expect(
-      canAddAffiliate({ status: 'trialing', maxAffiliates: 3, usedActive: 2 })
-    ).toBe(true);
+    expect(canAddAffiliate({ podeEscrever: true, maxAffiliates: 5, usedActive: 4 })).toBe(true);
+    expect(canAddAffiliate({ podeEscrever: true, maxAffiliates: 5, usedActive: 5 })).toBe(false);
   });
-
   it('bloqueia quando o plano ainda não foi resolvido (plan_id nulo)', () => {
     expect(
       canAddAffiliate({
-        status: 'active',
+        podeEscrever: true,
         maxAffiliates: 5,
         usedActive: 0,
         hasResolvedPlan: false,
@@ -73,7 +53,6 @@ describe('canAddAffiliate', () => {
     ).toBe(false);
   });
 });
-
 describe('moduleIsOpen', () => {
   it('ausência de config => LIBERADO (true)', () => {
     expect(moduleIsOpen(null, 'workouts')).toBe(true);

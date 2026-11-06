@@ -21,6 +21,7 @@ import { ItemEditorPorDivisao } from './item-editor-por-divisao';
 import { RotationEditor } from './rotation-editor';
 import type { ExercicioDisponivel } from './exercise-picker';
 import { itensEditaveisParaInput } from './form-helpers';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 /** Aluno disponível para seleção na ficha. */
 export interface AlunoOpcao {
@@ -107,6 +108,7 @@ export function FichaForm({
   const [erroNome, setErroNome] = React.useState<string | null>(null);
   const [erroRotacao, setErroRotacao] = React.useState<string | null>(null);
   const [enviando, setEnviando] = React.useState(false);
+  const { podeEscrever } = useAcesso();
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -258,7 +260,7 @@ export function FichaForm({
         >
           Cancelar
         </Button>
-        <Button type="submit" className="min-h-11" disabled={enviando}>
+        <Button type="submit" className="min-h-11" disabled={enviando || !podeEscrever}>
           {enviando
             ? 'Salvando…'
             : modo === 'criar'

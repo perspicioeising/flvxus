@@ -20,6 +20,7 @@ import {
   type CriarExercicioInput,
   type EditarExercicioInput,
 } from '@/schemas/exercicio';
+import { requireEntitlement } from '@/lib/billing/guard';
 
 /**
  * Server Actions do domínio de exercícios (architecture.md §6.2).
@@ -89,6 +90,10 @@ export async function criarExercicio(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode criar exercícios.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const parsed = criarExercicioSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -135,6 +140,10 @@ export async function editarExercicio(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode editar exercícios.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const parsed = editarExercicioSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -173,6 +182,10 @@ export async function excluirExercicio(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode excluir exercícios.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from('exercises').delete().eq('id', exerciseId);
@@ -204,6 +217,10 @@ export async function duplicarExercicioParaTenant(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode duplicar exercícios.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const supabase = await createClient();
@@ -276,6 +293,10 @@ export async function importarExercicios(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode importar exercícios.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   const entrada = Array.isArray(sourceIds) ? sourceIds : [];
   const parsed = importarExerciciosSchema.safeParse(entrada);
@@ -344,6 +365,10 @@ export async function uploadMidiaExercicio(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode enviar mídia.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const arquivo = formData.get('file');
@@ -436,6 +461,10 @@ export async function criarUploadUrlMidiaExercicio(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode enviar mídia.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   if (!fileMeta || typeof fileMeta.name !== 'string' || fileMeta.name.length === 0) {
     return { ok: false, message: 'Selecione um arquivo para enviar.' };
@@ -504,6 +533,10 @@ export async function confirmarMidiaExercicio(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode enviar mídia.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
 
   if (typeof path !== 'string' || path.length === 0) {
     return { ok: false, message: 'Envio inválido. Tente novamente.' };
@@ -554,6 +587,10 @@ export async function excluirMidiaExercicio(
   const professor = await getSessionUser();
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode excluir mídia.' };
+  }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
   }
 
   const supabase = await createClient();

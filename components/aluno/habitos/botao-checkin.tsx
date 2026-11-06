@@ -7,6 +7,7 @@ import { CheckCircle2, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { fazerCheckin } from '@/actions/habitos';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 export interface BotaoCheckinProps {
   /** `true` quando o aluno já fez check-in hoje (dia-SP). */
@@ -23,6 +24,7 @@ export interface BotaoCheckinProps {
 export function BotaoCheckin({ jaFezHoje }: BotaoCheckinProps) {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
+  const { podeEscrever } = useAcesso();
 
   function marcar() {
     iniciar(async () => {
@@ -53,7 +55,7 @@ export function BotaoCheckin({ jaFezHoje }: BotaoCheckinProps) {
       type="button"
       className="min-h-11 w-full"
       onClick={marcar}
-      disabled={pendente}
+      disabled={pendente || !podeEscrever}
     >
       <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
       {pendente ? 'Registrando…' : 'Fazer check-in'}

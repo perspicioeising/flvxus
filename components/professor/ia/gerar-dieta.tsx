@@ -19,6 +19,7 @@ import { gerarDieta } from '@/actions/ia';
 import type { GenerateDietOutput } from '@/schemas/ia/generate-diet';
 import { RevisaoRascunho } from './revisao-rascunho';
 import { RascunhoDieta } from './rascunho-visualizacoes';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 export interface AlunoOpcao {
   user_id: string;
@@ -52,7 +53,8 @@ export function GerarDietaIa({
 
   // Para o autônomo, nunca mostra "cadastre um aluno" (ele é o próprio aluno).
   const semAlunos = !alunoFixo && alunos.length === 0;
-  const desabilitado = !studentId || !goal.trim() || gerando;
+  const { podeEscrever } = useAcesso();
+  const desabilitado = !studentId || !goal.trim() || gerando || !podeEscrever;
 
   async function gerar() {
     if (!studentId || !goal.trim()) return;

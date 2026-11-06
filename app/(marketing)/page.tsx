@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeroMock } from '@/components/marketing/hero-mock';
 import { LandingFaq } from '@/components/marketing/landing-faq';
+import { PlanosSection } from '@/components/marketing/planos-section';
 
 /**
  * Landing pública do Flvxus (Server Component).
@@ -201,52 +202,6 @@ const paraAutonomo = [
   'Hábitos, evolução e metas de hidratação sob o seu controle.',
   'Participe da Flvxus Arena e dos rankings globais, competindo com todo mundo.',
   'Adicione amigos por @handle e dispute desafios de XP.',
-];
-
-// Os 3 planos (roadmap §B2). Valores confirmados pelo usuário para exibição.
-const planos = [
-  {
-    icon: Target,
-    nome: 'Individual',
-    publico: 'Para quem treina por conta própria',
-    preco: 'R$ 19,90',
-    periodo: '/mês',
-    anual: 'ou R$ 118,80/ano (~R$ 9,90/mês)',
-    destaque: false,
-    itens: [
-      'Crie seus próprios treinos e dietas',
-      'Hábitos, evolução e avaliações',
-      'Flvxus Arena, rankings globais e desafios',
-    ],
-  },
-  {
-    icon: Users,
-    nome: 'Personal',
-    publico: 'Para o personal trainer',
-    preco: 'R$ 129,90',
-    periodo: '/mês',
-    anual: 'ou R$ 1.188,00/ano (~R$ 99,00/mês)',
-    destaque: true,
-    itens: [
-      'Gestão de alunos, avaliações e treinos',
-      'Dieta e treino com apoio de IA',
-      'Painel de desafios da turma e Arena',
-    ],
-  },
-  {
-    icon: Trophy,
-    nome: 'Assessoria',
-    publico: 'Para equipes e academias',
-    preco: 'R$ 249,90',
-    periodo: '/mês',
-    anual: 'ou R$ 2.388,00/ano (~R$ 199,00/mês)',
-    destaque: false,
-    itens: [
-      'Vários profissionais no mesmo espaço',
-      'Tudo do plano Personal',
-      'Ranking da academia entre os alunos',
-    ],
-  },
 ];
 
 // PLACEHOLDER depoimentos — sem depoimentos reais ainda.
@@ -538,82 +493,7 @@ export default function MarketingHomePage() {
       </section>
 
       {/* ===================== PREÇO / PLANOS ===================== */}
-      {/* Valores do roadmap §B2 — sujeitos a confirmação comercial do usuário. */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
-        <div className="mb-8 max-w-2xl">
-          <h2 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl">
-            Planos para cada objetivo
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Comece com 14 dias de teste grátis, com acesso a todas as
-            funcionalidades. Sem compromisso.
-          </p>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          {planos.map((plano) => {
-            const Icon = plano.icon;
-            return (
-              <Card
-                key={plano.nome}
-                className={plano.destaque ? 'border-primary shadow-md' : undefined}
-              >
-                <CardHeader className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    {plano.destaque ? (
-                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                        Mais popular
-                      </span>
-                    ) : null}
-                  </div>
-                  <CardTitle className="text-lg">{plano.nome}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{plano.publico}</p>
-                  <div>
-                    <p className="text-foreground">
-                      <span className="text-3xl font-black tabular-nums">
-                        {plano.preco}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {plano.periodo}
-                      </span>
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {plano.anual}
-                    </p>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
-                    {plano.itens.map((item) => (
-                      <li key={item} className="flex gap-2">
-                        <Check
-                          className="mt-0.5 h-4 w-4 shrink-0 text-primary"
-                          aria-hidden="true"
-                        />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    asChild
-                    size="lg"
-                    variant={plano.destaque ? 'default' : 'outline'}
-                    className="w-full"
-                  >
-                    <Link href="/register">Testar 14 dias grátis</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-xs text-muted-foreground">
-          No plano anual você economiza em relação ao mensal. Cada plano tem uma
-          franquia de uso dos recursos de IA.
-        </p>
-      </section>
+      <PlanosSection />
 
       {/* ===================== FAQ ===================== */}
       <section className="border-t border-border bg-muted/30">

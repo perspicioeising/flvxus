@@ -1,61 +1,48 @@
-import { getSessionUser } from '@/lib/auth';
-import { createClient } from '@/lib/supabase/server';
+import { getSessionUser, type SessionUser } from '@/lib/auth';
+import { getAccessFor } from '@/lib/billing/access';
 import { effectiveEntitlements, type FeatureKey } from '@/lib/billing/entitlements';
+import { MSG_INDISPONIVEL, mensagemBloqueio } from '@/lib/billing/mensagens';
 import type { EstadoAcao } from '@/actions/_estado';
-import type { PlanTier } from '@/types/database.types';
 
 /**
- * Gate de ENTITLEMENT no BACKEND (Fase B2 / NFR-3). Lê a assinatura do tenant
- * e o `accountType` do usuário, resolve os direitos efetivos via
- * `effectiveEntitlements` (puro) e devolve um `EstadoAcao`. É a fronteira real:
- * mesmo com a UI burlada, uma feature bloqueada por plano retorna
- * `{ ok:false }`. A UI apenas espelha a mesma decisão.
+ * Gate de ENTITLEMENT / SOMENTE LEITURA no BACKEND. Lê o estado de acesso do
+ * tenant (trial/assinatura, via RPC `billing_tenant_state`), resolve os direitos
+ * e devolve um `EstadoAcao`. É a fronteira real (não usa RLS): mesmo com a UI
+ * burlada, a escrita sem direito retorna `{ ok:false }` com mensagem pt-BR.
+ * O aluno vinculado herda o estado do tenant do personal.
  *
  * - `feature` = chave de feature: bloqueia quando o plano não a inclui.
- * - `feature` = null: bloqueia apenas quando o status não dá direito (ex.:
- *   criação de treinos, que todo plano com direito permite).
+ * - `feature` = null: bloqueia apenas quando o tenant está em somente leitura.
+ * - `user` (opcional): evita refazer `getSessionUser` quando a action já o tem.
  */
-const MSG_SEM_DIREITO =
+export const MSG_SEM_DIREITO =
   'Seu plano atual não inclui este recurso. Revise sua assinatura para liberá-lo.';
 
-export async function requireEntitlement(feature: FeatureKey | null): Promise<EstadoAcao> {
-  const user = await getSessionUser();
-  if (!user) {
-    return { ok: false, message: 'Sessão expirada. Entre novamente.' };
+export async function requireEntitlement(
+  feature: FeatureKey | null,
+  user?: SessionUser | null
+): Promise<EstadoAcao> {
+  let acesso;
+  if (user) {
+    acesso = await getAccessFor(user);
+  } else {
+    const sessao = await getSessionUser();
+    if (!sessao) {
+      return { ok: false, message: 'Sessão expirada. Entre novamente.' };
+    }
+    acesso = await getAccessFor(sessao);
   }
-
-  const supabase = await createClient();
-
-  // Linha de assinatura do tenant (via RLS). O tier vem do join a `plans`.
-  const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('status, stripe_subscription_id, plans ( tier )')
-    .eq('tenant_id', user.tenantId)
-    .maybeSingle();
-
-  const planos = (sub as { plans?: { tier: PlanTier } | { tier: PlanTier }[] } | null)?.plans;
-  const tier = Array.isArray(planos) ? (planos[0]?.tier ?? null) : (planos?.tier ?? null);
-
-  const entitlements = effectiveEntitlements({
-    tier,
-    status: sub?.status ?? null,
-    accountType: user.accountType,
-    hasSubscriptionRow: sub != null,
-    hasStripeSubscriptionId: sub?.stripe_subscription_id != null,
-  });
-
+  if (acesso.indisponivel) {
+    return { ok: false, message: MSG_INDISPONIVEL };
+  }
+  if (!acesso.podeEscrever) {
+    return { ok: false, message: mensagemBloqueio(acesso.motivo, acesso.perfil) };
+  }
   if (feature != null) {
+    const entitlements = effectiveEntitlements({ tier: acesso.tier, podeEscrever: true });
     if (!entitlements.features[feature]) {
       return { ok: false, message: MSG_SEM_DIREITO };
     }
-    return { ok: true };
-  }
-
-  // feature === null: basta ter QUALQUER direito (status com direito). READONLY
-  // (todas as features falsas) indica status sem direito.
-  const temAlgumDireito = Object.values(entitlements.features).some(Boolean);
-  if (!temAlgumDireito) {
-    return { ok: false, message: MSG_SEM_DIREITO };
   }
   return { ok: true };
 }

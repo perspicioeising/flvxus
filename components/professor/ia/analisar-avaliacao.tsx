@@ -9,6 +9,7 @@ import { analisarAvaliacao } from '@/actions/ia';
 import type { AnalyzeAssessmentOutput } from '@/schemas/ia/analyze-assessment';
 import { RevisaoRascunho } from './revisao-rascunho';
 import { RascunhoAnalise } from './rascunho-visualizacoes';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 /**
  * Botão real "Analisar com IA" (substitui o `AnalisarIaStub`). Dispara
@@ -18,6 +19,7 @@ import { RascunhoAnalise } from './rascunho-visualizacoes';
  * amigável quando a função de IA não está disponível.
  */
 export function AnalisarAvaliacaoIa({ assessmentId }: { assessmentId: string }) {
+  const { podeEscrever } = useAcesso();
   const [analisando, setAnalisando] = React.useState(false);
   const [generationId, setGenerationId] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState<AnalyzeAssessmentOutput | null>(null);
@@ -62,7 +64,7 @@ export function AnalisarAvaliacaoIa({ assessmentId }: { assessmentId: string }) 
       variant="outline"
       className="min-h-11"
       onClick={analisar}
-      disabled={analisando}
+      disabled={analisando || !podeEscrever}
     >
       <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
       {analisando ? 'Analisando…' : 'Analisar avaliação com IA'}

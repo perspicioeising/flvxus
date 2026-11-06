@@ -298,6 +298,8 @@ export async function editarRascunho(
 ): Promise<EstadoAcao> {
   const guard = await exigirProfessor();
   if (!guard.ok) return guard.estado;
+  const direitoEdicao = await requireEntitlement(null);
+  if (!direitoEdicao.ok) return direitoEdicao;
 
   const supabase = await createClient();
 
@@ -372,10 +374,8 @@ export async function aprovarGeracao(generationId: string): Promise<EstadoAcao> 
     weekly_adherence: null,
   };
   const featureAprovacao = featurePorJob[gen.job_type as AiJobType] ?? null;
-  if (featureAprovacao != null) {
-    const direito = await requireEntitlement(featureAprovacao);
-    if (!direito.ok) return direito;
-  }
+  const direito = await requireEntitlement(featureAprovacao);
+  if (!direito.ok) return direito;
 
   const validado = validarDraftPorJob(gen.job_type as AiJobType, gen.output);
   if (!validado.ok) {

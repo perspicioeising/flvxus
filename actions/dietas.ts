@@ -6,6 +6,7 @@ import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { transicaoPermitida } from '@/schemas/treino';
 import type { PlanStatus } from '@/types/database.types';
+import { requireEntitlement } from '@/lib/billing/guard';
 
 /**
  * Server Actions do domínio de dietas.
@@ -38,6 +39,8 @@ export async function alterarStatusDieta(
   if (!professor || professor.role !== 'trainer') {
     return { ok: false, message: 'Apenas o professor pode mudar o status.' };
   }
+  const direito = await requireEntitlement(null, professor);
+  if (!direito.ok) return direito;
 
   const supabase = await createClient();
 

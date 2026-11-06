@@ -13,6 +13,7 @@ import { criarModelo, editarModelo, type EstadoAcao } from '@/actions/treinos';
 import { ItemEditor, type ItemEditavel } from './item-editor';
 import type { ExercicioDisponivel } from './exercise-picker';
 import { itensEditaveisParaInput } from './form-helpers';
+import { useAcesso } from '@/components/billing/acesso-provider';
 
 export interface ModeloFormProps {
   modo: 'criar' | 'editar';
@@ -48,6 +49,7 @@ export function ModeloForm({
   const [erroNome, setErroNome] = React.useState<string | null>(null);
   const [erroItens, setErroItens] = React.useState<string | null>(null);
   const [enviando, setEnviando] = React.useState(false);
+  const { podeEscrever } = useAcesso();
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -142,7 +144,7 @@ export function ModeloForm({
         >
           Cancelar
         </Button>
-        <Button type="submit" className="min-h-11" disabled={enviando}>
+        <Button type="submit" className="min-h-11" disabled={enviando || !podeEscrever}>
           {enviando
             ? 'Salvando…'
             : modo === 'criar'
