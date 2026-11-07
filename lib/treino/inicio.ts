@@ -248,21 +248,15 @@ export function proximoTreinoDaFicha(
 }
 
 /**
- * Monta o "próximo treino" de uma ficha POR DIVISÃO com rotação EXPLÍCITA
- * (`rotation_steps`). Resolve o ponto atual cruzando os dois últimos eventos:
- *   - última divisão concluída → `findIndex` do passo `division` com esse label
- *     (inequívoco: R1 garante label único na sequência);
- *   - último descanso cumprido → o `rest_step_index` direto.
- * O passo "mais recente" (desempate por timestamp) define `ultimoPassoConcluido`;
- * daí `proximoPassoNaRotacao` avança (wrap-around). Se o próximo é descanso,
- * retorna `descanso: true` + `restStepIndex`; se é divisão, monta o treino dela.
+ * Resolve o ÍNDICE do último passo concluído da rotação EXPLÍCITA cruzando os
+ * dois últimos eventos (última divisão concluída e último descanso cumprido);
+ * o MAIS RECENTE vence (desempate por timestamp; empate → descanso). Função
+ * PURA, reutilizada pela projeção da agenda. `null` = sem histórico aplicável.
  */
-function proximoComRotacaoExplicita(
-  ficha: FichaInicio,
-  itens: ItemFichaInicio[],
+export function resolverUltimoPasso(
   steps: PassoRotacao[],
   ultimoEvento: UltimoEventoRotacao | undefined
-): ProximoTreino {
+): number | null {
   // Índice do passo correspondente à última divisão concluída (se houver).
   let idxDivisao: number | null = null;
   const labelDivisao = ultimoEvento?.ultimaDivisao?.label ?? null;
@@ -296,6 +290,26 @@ function proximoComRotacaoExplicita(
   } else if (idxDescanso !== null) {
     ultimoPassoConcluido = idxDescanso;
   }
+  return ultimoPassoConcluido;
+}
+
+/**
+ * Monta o "próximo treino" de uma ficha POR DIVISÃO com rotação EXPLÍCITA
+ * (`rotation_steps`). Resolve o ponto atual cruzando os dois últimos eventos:
+ *   - última divisão concluída → `findIndex` do passo `division` com esse label
+ *     (inequívoco: R1 garante label único na sequência);
+ *   - último descanso cumprido → o `rest_step_index` direto.
+ * O passo "mais recente" (desempate por timestamp) define `ultimoPassoConcluido`;
+ * daí `proximoPassoNaRotacao` avança (wrap-around). Se o próximo é descanso,
+ * retorna `descanso: true` + `restStepIndex`; se é divisão, monta o treino dela.
+ */
+function proximoComRotacaoExplicita(
+  ficha: FichaInicio,
+  itens: ItemFichaInicio[],
+  steps: PassoRotacao[],
+  ultimoEvento: UltimoEventoRotacao | undefined
+): ProximoTreino {
+  const ultimoPassoConcluido = resolverUltimoPasso(steps, ultimoEvento);
 
   const proximo = proximoPassoNaRotacao(steps, ultimoPassoConcluido);
   // `steps.length > 0` garantido pelo chamador → `proximo` nunca é null.
