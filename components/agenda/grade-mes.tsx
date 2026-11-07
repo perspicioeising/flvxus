@@ -1,11 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { AguaResumo } from '@/components/agenda/agua-resumo';
 import { DIAS_SEMANA_CURTO, numeroDoDia } from '@/components/agenda/formatar';
 import { diasDoIntervalo, somarDias, weekdayDeDia } from '@/lib/agenda/fuso';
 import { resumoAguaPorDia } from '@/lib/agenda/agua';
-import type { EventoAgenda, OrigemEvento } from '@/lib/agenda/tipos';
+import type { EventoAgenda } from '@/lib/agenda/tipos';
 
 export interface GradeMesProps {
   diaInicio: string;
@@ -17,21 +16,26 @@ export interface GradeMesProps {
   onSelecionar: (dia: string) => void;
 }
 
-const SIGLA: Record<Exclude<OrigemEvento, 'agua'>, string> = {
-  compromisso: 'Comp.',
-  treino: 'Trein.',
-  refeicao: 'Ref.',
-};
+/** Dot colorido para indicar presença de um tipo de evento na célula do mês. */
+function DotEvento({ cor, label }: { cor: string; label: string }) {
+  return (
+    <span
+      className={`h-2 w-2 rounded-full ${cor}`}
+      title={label}
+      aria-hidden="true"
+    />
+  );
+}
 
-/** Grade 7×N do mês com contagem por origem (água em chip). */
+/** Grade 7×N do mês com dots coloridos por tipo de evento na célula. */
 export function GradeMes({ diaInicio, diaFim, eventos, hoje, selecionado, onSelecionar }: GradeMesProps) {
   const inicioGrade = somarDias(diaInicio, -weekdayDeDia(diaInicio));
   const fimGrade = somarDias(diaFim, 6 - weekdayDeDia(diaFim));
   const dias = diasDoIntervalo(inicioGrade, fimGrade);
   const resumos = new Map(resumoAguaPorDia(eventos).map((r) => [r.dia, r]));
 
-  const contar = (dia: string, origem: OrigemEvento) =>
-    eventos.filter((e) => e.dia === dia && e.origem === origem && e.status !== 'cancelado').length;
+  const temOrigem = (dia: string, origem: EventoAgenda['origem']) =>
+    eventos.some((e) => e.dia === dia && e.origem === origem && e.status !== 'cancelado');
 
   return (
     <div role="group" aria-label="Dias do mês" className="grid grid-cols-7 gap-1">
@@ -43,6 +47,8 @@ export function GradeMes({ diaInicio, diaFim, eventos, hoje, selecionado, onSele
       {dias.map((dia) => {
         const dentro = dia >= diaInicio && dia <= diaFim;
         const ativo = dia === selecionado;
+        const resumoAgua = resumos.get(dia);
+        const temAgua = resumoAgua && resumoAgua.total > 0;
         return (
           <button
             key={dia}
@@ -51,7 +57,7 @@ export function GradeMes({ diaInicio, diaFim, eventos, hoje, selecionado, onSele
             aria-label={`Dia ${numeroDoDia(dia)}${dia === hoje ? ', hoje' : ''}`}
             disabled={!dentro}
             onClick={() => onSelecionar(dia)}
-            className={`flex min-h-16 min-w-0 flex-col items-start gap-0.5 rounded-lg border p-1 text-left text-[11px] ${
+            className={`flex min-h-16 min-w-0 flex-col items-start gap-1 rounded-lg border p-1 text-left ${
               ativo ? 'border-primary bg-primary/10' : 'border-border bg-card'
             } ${dentro ? '' : 'opacity-30'}`}
           >
@@ -60,17 +66,22 @@ export function GradeMes({ diaInicio, diaFim, eventos, hoje, selecionado, onSele
             >
               {numeroDoDia(dia)}
             </span>
-            {dentro
-              ? (['compromisso', 'treino', 'refeicao'] as const).map((o) => {
-                  const n = contar(dia, o);
-                  return n > 0 ? (
-                    <span key={o} className="truncate text-muted-foreground tabular-nums">
-                      {SIGLA[o]} {n}
-                    </span>
-                  ) : null;
-                })
-              : null}
-            {dentro ? <AguaResumo resumo={resumos.get(dia)} /> : null}
+            {dentro ? (
+              <div className="flex flex-wrap gap-0.5">
+                {temOrigem(dia, 'treino') && (
+                  <DotEvento cor="bg-primary" label="Treino" />
+                )}
+                {temOrigem(dia, 'refeicao') && (
+                  <DotEvento cor="bg-warning" label="Refeição" />
+                )}
+                {temOrigem(dia, 'compromisso') && (
+                  <DotEvento cor="bg-chart-4" label="Compromisso" />
+                )}
+                {temAgua && (
+                  <DotEvento cor="bg-info" label="Água" />
+                )}
+              </div>
+            ) : null}
           </button>
         );
       })}

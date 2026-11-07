@@ -79,7 +79,7 @@ export function StatusControl({
               key={para}
               type="button"
               variant={principal ? 'default' : 'outline'}
-              className="min-h-11"
+              className="min-h-11 w-full sm:w-auto"
               disabled={salvando !== null}
               onClick={() => mudar(para)}
             >

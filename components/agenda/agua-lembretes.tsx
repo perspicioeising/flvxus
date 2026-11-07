@@ -19,7 +19,7 @@ export function AguaLembretes({ eventos, ...cartao }: AguaLembretesProps) {
   return (
     <Collapsible open={aberto} onOpenChange={setAberto} className="rounded-2xl border border-border bg-card">
       <CollapsibleTrigger className="flex min-h-11 w-full items-center gap-3 px-3 py-2 text-left">
-        <Droplets className="h-5 w-5 shrink-0" aria-hidden="true" />
+        <Droplets className="h-5 w-5 shrink-0 text-info" aria-hidden="true" />
         <span className="flex-1 text-sm font-semibold text-foreground tabular-nums">
           Água · {feitos}/{eventos.length}
         </span>

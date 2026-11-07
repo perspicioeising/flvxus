@@ -5,6 +5,7 @@ import { CalendarX } from 'lucide-react';
 import { EmptyState } from '@/components/patterns';
 import { EventoCard, type EventoCardProps } from '@/components/agenda/evento-card';
 import { AguaLembretes } from '@/components/agenda/agua-lembretes';
+import { RefeicaoLembretes } from '@/components/agenda/refeicao-lembretes';
 import type { EventoAgenda } from '@/lib/agenda/tipos';
 
 export interface ListaDiaProps extends Omit<EventoCardProps, 'evento'> {
@@ -17,19 +18,21 @@ export function separarDoDia(eventos: EventoAgenda[]): {
   semHorario: EventoAgenda[];
   comHorario: EventoAgenda[];
   agua: EventoAgenda[];
+  refeicoes: EventoAgenda[];
 } {
   const agua = eventos.filter((e) => e.origem === 'agua');
-  const demais = eventos.filter((e) => e.origem !== 'agua');
+  const refeicoes = eventos.filter((e) => e.origem === 'refeicao');
+  const demais = eventos.filter((e) => e.origem !== 'agua' && e.origem !== 'refeicao');
   const semHorario = demais.filter((e) => e.inicio === null);
   const comHorario = demais
     .filter((e) => e.inicio !== null)
     .sort((a, b) => (a.inicio! < b.inicio! ? -1 : a.inicio! > b.inicio! ? 1 : 0));
-  return { semHorario, comHorario, agua };
+  return { semHorario, comHorario, agua, refeicoes };
 }
 
-/** Lista de um dia: faixa "Sem horário" no topo, eventos por horário e o bloco de água. */
+/** Lista de um dia: faixa "Sem horário" no topo, eventos por horário, refeições e água em accordeons. */
 export function ListaDia({ eventos, ...cartao }: ListaDiaProps) {
-  const { semHorario, comHorario, agua } = separarDoDia(eventos);
+  const { semHorario, comHorario, agua, refeicoes } = separarDoDia(eventos);
   if (eventos.length === 0) {
     return (
       <EmptyState
@@ -58,6 +61,7 @@ export function ListaDia({ eventos, ...cartao }: ListaDiaProps) {
           ))}
         </section>
       ) : null}
+      <RefeicaoLembretes eventos={refeicoes} {...cartao} />
       <AguaLembretes eventos={agua} {...cartao} />
     </div>
   );

@@ -42,6 +42,17 @@ const ROTULO_ORIGEM: Record<OrigemEvento, string> = {
   agua: 'Água',
 };
 
+/** Retorna as classes de cor do container do ícone, por origem/kind. */
+function corIcone(origem: OrigemEvento, kind: AppointmentKind | undefined): string {
+  if (origem === 'treino') return 'bg-primary/10 text-primary';
+  if (origem === 'refeicao') return 'bg-warning/10 text-warning';
+  if (origem === 'agua') return 'bg-info/10 text-info';
+  // compromisso
+  if (kind === 'block') return 'bg-destructive/10 text-destructive';
+  if (kind === 'personal') return 'bg-muted text-muted-foreground';
+  return 'bg-chart-4/10 text-chart-4';
+}
+
 const ROTULO_STATUS: Record<StatusEvento, string> = {
   pendente: 'Pendente',
   concluido: 'Concluído',
@@ -115,7 +126,7 @@ export function EventoCard({
       aria-label={`${ROTULO_ORIGEM[evento.origem]}: ${evento.titulo}`}
     >
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${corIcone(evento.origem, kind)}`}>
           <Icone className="h-5 w-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1 space-y-1">
