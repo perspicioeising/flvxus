@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
 import { getSessionUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
@@ -79,4 +80,55 @@ export async function alterarStatusDieta(
   revalidatePath(`/professor/dietas/${dietId}`);
 
   return { ok: true, message: 'Status atualizado.', id: dietId };
+}
+
+/** Horário de refeição `HH:mm` (00:00–23:59). */
+const HORARIO_REFEICAO = /^([01]\d|2[0-3]):[0-5]\d$/;
+const mealIdSchema = z.string().uuid();
+
+/**
+ * Define (ou limpa, com `null`) o horário de uma refeição (`diet_meals.time`),
+ * que alimenta a Agenda. Update via RLS (policy de `diet_meals` isola por
+ * tenant/dono da dieta). Grava `HH:mm`.
+ */
+export async function definirHorarioRefeicao(
+  mealId: string,
+  hora: string | null
+): Promise<EstadoAcao> {
+  const usuario = await getSessionUser();
+  if (!usuario) {
+    return { ok: false, message: 'Sessão expirada.' };
+  }
+  const direito = await requireEntitlement('diets', usuario);
+  if (!direito.ok) {
+    return { ok: false, message: direito.message ?? 'Assinatura inativa.' };
+  }
+  if (!mealIdSchema.safeParse(mealId).success) {
+    return { ok: false, message: 'Refeição inválida.' };
+  }
+  if (hora !== null && !HORARIO_REFEICAO.test(hora)) {
+    return {
+      ok: false,
+      message: 'Horário inválido.',
+      fieldErrors: { hora: 'Use o formato HH:mm.' },
+    };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('diet_meals')
+    .update({ time: hora })
+    .eq('id', mealId)
+    .select('diet_id')
+    .maybeSingle();
+  if (error) {
+    return { ok: false, message: `Não foi possível salvar o horário: ${error.message}` };
+  }
+  if (!data) {
+    return { ok: false, message: 'Refeição não encontrada.' };
+  }
+  revalidatePath(`/professor/dietas/${data.diet_id}`);
+  revalidatePath('/professor/dietas');
+  revalidatePath('/aluno/dieta');
+  revalidatePath('/aluno/agenda');
+  return { ok: true, message: hora ? 'Horário salvo.' : 'Horário removido.', id: mealId };
 }

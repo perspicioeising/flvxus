@@ -34,6 +34,7 @@ const ACOES_ISENTAS: Record<string, string> = {
   atualizarPerfilProfessor: 'conta',
   definirFotoPerfil: 'conta',
   removerFotoPerfil: 'conta',
+  atualizarFusoHorario: 'conta',
   // Billing: é como se sai do bloqueio
   iniciarCheckout: 'billing',
   abrirPortal: 'billing',

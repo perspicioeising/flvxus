@@ -9,6 +9,7 @@ import { erroDeCampo, type EstadoAcao } from '@/actions/_estado';
 import {
   alternarRefeicaoSchema,
   definirMetaAguaSchema,
+  type LembretesAguaInput,
   registrarAguaSchema,
 } from '@/schemas/habitos';
 import { requireEntitlement } from '@/lib/billing/guard';
@@ -137,7 +138,8 @@ export async function removerRegistroAgua(id: string): Promise<EstadoAcao> {
 export async function definirMetaAgua(
   targetMl: number,
   source: 'manual' | 'derived_weight' | 'default',
-  alvoUserId?: string
+  alvoUserId?: string,
+  lembretes?: LembretesAguaInput
 ): Promise<EstadoAcao> {
   const usuario = await getSessionUser();
   if (!usuario) {
@@ -152,6 +154,7 @@ export async function definirMetaAgua(
     target_ml: targetMl,
     source,
     alvo_user_id: alvoUserId,
+    lembretes,
   });
   if (!parsed.success) {
     return {
@@ -188,6 +191,15 @@ export async function definirMetaAgua(
       tenant_id: usuario.tenantId,
       target_ml: parsed.data.target_ml,
       source: parsed.data.source,
+      // Lembretes da Agenda: só entram no upsert quando informados (o PostgREST
+      // atualiza apenas as colunas enviadas).
+      ...(parsed.data.lembretes
+        ? {
+            reminder_interval_min: parsed.data.lembretes.intervaloMin,
+            reminder_start_min: parsed.data.lembretes.inicioMin,
+            reminder_end_min: parsed.data.lembretes.fimMin,
+          }
+        : {}),
     },
     { onConflict: 'user_id' }
   );
@@ -200,6 +212,7 @@ export async function definirMetaAgua(
   }
 
   revalidatePath('/aluno');
+  revalidatePath('/aluno/agenda');
   if (parsed.data.alvo_user_id !== undefined) {
     revalidatePath(`/professor/alunos/${alvo}`);
   }

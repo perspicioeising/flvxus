@@ -15,6 +15,7 @@ export const MODULOS_VISIBILIDADE = [
   'assessments',
   'diets',
   'exercises',
+  'agenda',
 ] as const satisfies readonly VisibilityModule[];
 
 /** Convite de filiado (cria o perfil role='trainer', is_tenant_master=false). */
