@@ -52,6 +52,11 @@ export type SetKind =
 export type AiJobType = 'generate_diet' | 'suggest_workout' | 'analyze_assessment' | 'weekly_adherence';
 export type AiJobStatus = 'pending' | 'succeeded' | 'failed' | 'rejected';
 export type AppointmentStatus = 'scheduled' | 'done' | 'canceled' | 'no_show';
+// Agenda (20261107090100): tipo do compromisso e frequência de recorrência.
+export type AppointmentKind = 'in_person' | 'online' | 'assessment' | 'personal' | 'block';
+export type RecurFreq = 'daily' | 'weekly' | 'monthly';
+// Agenda: escopo de edição/cancelamento de séries (RPC agenda_update/agenda_cancel).
+export type AgendaScope = 'occurrence' | 'following' | 'all';
 export type ConsentType = 'data_processing' | 'health_data' | 'ai_processing' | 'terms';
 export type DataRequestType = 'export' | 'delete';
 export type DataRequestStatus = 'requested' | 'processing' | 'completed' | 'rejected';
@@ -64,7 +69,13 @@ export type LegalDocumentType = 'terms' | 'privacy';
 // projeto hospedado — a regeneração contra um banco sem essas migrations APAGA
 // silenciosamente estes tipos (design-review MED #9).
 // -----------------------------------------------------------------------------
-export type VisibilityModule = 'students' | 'workouts' | 'assessments' | 'diets' | 'exercises';
+export type VisibilityModule =
+  | 'students'
+  | 'workouts'
+  | 'assessments'
+  | 'diets'
+  | 'exercises'
+  | 'agenda';
 export type PlanTier = 'solo' | 'team' | 'gym' | 'individual' | 'personal' | 'assessoria';
 export type SubscriptionStatus =
   | 'trialing'
@@ -145,6 +156,8 @@ export interface Database {
           account_type: AccountType;
           social_handle: string | null;
           deactivated_at: string | null;
+          // Agenda (20261107090100): fuso IANA do usuário (validado por trigger).
+          timezone: string;
           created_at: string;
           updated_at: string;
         };
@@ -169,6 +182,7 @@ export interface Database {
           account_type?: AccountType;
           social_handle?: string | null;
           deactivated_at?: string | null;
+          timezone?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -193,6 +207,7 @@ export interface Database {
           account_type?: AccountType;
           social_handle?: string | null;
           deactivated_at?: string | null;
+          timezone?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -427,6 +442,10 @@ export interface Database {
           target_ml: number;
           source: string;
           updated_at: string;
+          // Agenda (20261107090100): lembretes de água (minutos desde 00:00 no fuso do usuário).
+          reminder_interval_min: number;
+          reminder_start_min: number;
+          reminder_end_min: number;
         };
         Insert: {
           user_id: string;
@@ -434,6 +453,9 @@ export interface Database {
           target_ml: number;
           source?: string;
           updated_at?: string;
+          reminder_interval_min?: number;
+          reminder_start_min?: number;
+          reminder_end_min?: number;
         };
         Update: {
           user_id?: string;
@@ -441,6 +463,9 @@ export interface Database {
           target_ml?: number;
           source?: string;
           updated_at?: string;
+          reminder_interval_min?: number;
+          reminder_start_min?: number;
+          reminder_end_min?: number;
         };
       };
       // Hábitos G2 (20261027090100): registros de ingestão de água do dia-SP.
@@ -1056,40 +1081,78 @@ export interface Database {
           created_at?: string;
         };
       };
+      // Agenda (20261107090100): escrita SÓ via RPC agenda_create/agenda_update/agenda_cancel
+      // (a RLS só tem SELECT). Insert/Update existem apenas por completude do tipo.
       appointments: {
         Row: {
           id: string;
           tenant_id: string;
-          trainer_id: string;
+          owner_id: string;
+          kind: AppointmentKind;
+          trainer_id: string | null;
           student_id: string | null;
+          title: string | null;
+          location: string | null;
           starts_at: string;
-          ends_at: string | null;
+          ends_at: string;
           status: AppointmentStatus;
           notes: string | null;
+          tz: string;
+          recur_freq: RecurFreq | null;
+          recur_weekdays: number[] | null;
+          recur_until: string | null;
+          series_id: string | null;
+          original_date: string | null;
+          canceled_reason: string | null;
+          canceled_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           tenant_id: string;
-          trainer_id: string;
+          owner_id: string;
+          kind: AppointmentKind;
+          trainer_id?: string | null;
           student_id?: string | null;
+          title?: string | null;
+          location?: string | null;
           starts_at: string;
-          ends_at?: string | null;
+          ends_at: string;
           status?: AppointmentStatus;
           notes?: string | null;
+          tz?: string;
+          recur_freq?: RecurFreq | null;
+          recur_weekdays?: number[] | null;
+          recur_until?: string | null;
+          series_id?: string | null;
+          original_date?: string | null;
+          canceled_reason?: string | null;
+          canceled_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           tenant_id?: string;
-          trainer_id?: string;
+          owner_id?: string;
+          kind?: AppointmentKind;
+          trainer_id?: string | null;
           student_id?: string | null;
+          title?: string | null;
+          location?: string | null;
           starts_at?: string;
-          ends_at?: string | null;
+          ends_at?: string;
           status?: AppointmentStatus;
           notes?: string | null;
+          tz?: string;
+          recur_freq?: RecurFreq | null;
+          recur_weekdays?: number[] | null;
+          recur_until?: string | null;
+          series_id?: string | null;
+          original_date?: string | null;
+          canceled_reason?: string | null;
+          canceled_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1756,6 +1819,49 @@ export interface Database {
           total_count: number;
         }[];
       };
+      // Agenda (20261107090200): únicas RPCs de escrita de appointments (SECURITY DEFINER).
+      // Erros P0001 com message = agenda_forbidden | agenda_student_invalid | agenda_past |
+      // agenda_invalid_occurrence | agenda_immutable | agenda_invalid_range.
+      agenda_create: {
+        Args: {
+          p_kind: AppointmentKind;
+          p_student_id: string | null;
+          p_title: string | null;
+          p_notes: string | null;
+          p_location: string | null;
+          p_starts_at: string;
+          p_ends_at: string;
+          p_recur_freq: RecurFreq | null;
+          p_recur_weekdays: number[] | null;
+          p_recur_until: string | null;
+        };
+        Returns: string;
+      };
+      agenda_update: {
+        Args: {
+          p_id: string;
+          p_scope: AgendaScope;
+          p_original_date: string | null;
+          p_title: string | null;
+          p_notes: string | null;
+          p_location: string | null;
+          p_starts_at: string;
+          p_ends_at: string;
+          p_recur_freq: RecurFreq | null;
+          p_recur_weekdays: number[] | null;
+          p_recur_until: string | null;
+        };
+        Returns: string;
+      };
+      agenda_cancel: {
+        Args: {
+          p_id: string;
+          p_scope: AgendaScope;
+          p_original_date: string | null;
+          p_reason?: string;
+        };
+        Returns: undefined;
+      };
       importar_exercicios_globais: {
         Args: { p_source_ids: string[] };
         Returns: number;
@@ -1863,6 +1969,7 @@ export interface Database {
       ai_job_type: AiJobType;
       ai_job_status: AiJobStatus;
       appointment_status: AppointmentStatus;
+      appointment_kind: AppointmentKind;
       consent_type: ConsentType;
       data_request_type: DataRequestType;
       data_request_status: DataRequestStatus;

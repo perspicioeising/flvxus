@@ -22,6 +22,7 @@ const MODULO_LABEL: Record<VisibilityModule, string> = {
   assessments: 'Avaliações',
   diets: 'Dietas',
   exercises: 'Exercícios',
+  agenda: 'Agenda',
 };
 
 /** Ordem de exibição dos módulos. */
