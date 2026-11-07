@@ -39,7 +39,7 @@ const trainerNav: NavItem[] = [
   { label: 'Treinos', href: '/professor/treinos', icon: ClipboardList },
   { label: 'Dietas', href: '/professor/dietas', icon: Utensils },
   { label: 'Desafios', href: '/professor/desafios', icon: Trophy },
-  // { label: 'Agenda', href: '/professor/agenda', icon: Calendar },
+  { label: 'Agenda', href: '/professor/agenda', icon: Calendar },
   { label: 'Configurações', href: '/professor/configuracoes', icon: Settings },
   { label: 'Ajuda', href: '/professor/ajuda', icon: HelpCircle },
 ];
@@ -55,6 +55,7 @@ const studentNav: NavItem[] = [
   { label: 'Início', href: '/aluno', icon: LayoutDashboard },
   { label: 'Treinos', href: '/aluno/treinos', icon: Activity },
   { label: 'Histórico', href: '/aluno/historico', icon: History },
+  { label: 'Agenda', href: '/aluno/agenda', icon: Calendar },
   { label: 'Dieta', href: '/aluno/dieta', icon: Utensils },
   { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
   { label: 'Avaliações', href: '/aluno/avaliacoes', icon: HeartPulse },
@@ -97,7 +98,9 @@ export function getNavItems(
         // "Desafios" é o painel do personal B2B (intra-tenant); o autônomo não
         // gerencia turma, então o item não entra no menu dele (o gate de rota
         // em desafios/layout.tsx é a fronteira real).
-        item.href !== '/professor/desafios',
+        item.href !== '/professor/desafios' &&
+        // A agenda do autônomo é a de uso (/aluno/agenda), injetada em usoItems.
+        item.href !== '/professor/agenda',
     );
     // Itens de uso do autônomo (rotas /aluno reusadas). A "Arena" é exclusiva
     // do autônomo: o professor B2B não tem Arena própria (quem tem são os
@@ -110,6 +113,7 @@ export function getNavItems(
       { label: 'Início', href: '/aluno', icon: Home },
       { label: 'Treinar', href: '/aluno/execucao', icon: Play },
       { label: 'Minha dieta', href: '/aluno/dieta', icon: Utensils },
+      { label: 'Agenda', href: '/aluno/agenda', icon: Calendar },
       { label: 'Evolução', href: '/aluno/evolucao', icon: BarChart3 },
       { label: 'Conquistas', href: '/aluno/conquistas', icon: Trophy },
       { label: 'Arena', href: '/aluno/arena', icon: Sparkles },

@@ -10,6 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { definirMetaAgua } from '@/actions/habitos';
+import {
+  CamposLembreteAgua,
+  LEMBRETES_AGUA_PADRAO,
+  type LembretesAguaValor,
+} from '@/components/aluno/habitos/campos-lembrete-agua';
 
 export interface MetaAguaAlunoProps {
   /** `user_id` do aluno-alvo. */
@@ -18,6 +23,8 @@ export interface MetaAguaAlunoProps {
   metaAtualMl: number | null;
   /** Peso (kg) da última avaliação, para a sugestão quando não há meta salva. */
   pesoKg: number | null;
+  /** Lembretes de água salvos (Agenda) ou `null` para os padrões. */
+  lembretesAtuais?: LembretesAguaValor | null;
 }
 
 /**
@@ -30,7 +37,7 @@ export interface MetaAguaAlunoProps {
  * editar, registramos a origem (`derived_weight` quando havia peso, `default`
  * quando não); qualquer edição manual vira `manual`.
  */
-export function MetaAguaAluno({ alunoId, metaAtualMl, pesoKg }: MetaAguaAlunoProps) {
+export function MetaAguaAluno({ alunoId, metaAtualMl, pesoKg, lembretesAtuais }: MetaAguaAlunoProps) {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
 
@@ -38,6 +45,9 @@ export function MetaAguaAluno({ alunoId, metaAtualMl, pesoKg }: MetaAguaAlunoPro
   const sugerida = metaSugeridaMl(pesoKg);
   const inicial = metaAtualMl ?? sugerida;
   const [valor, setValor] = React.useState(String(inicial));
+  const [lembretes, setLembretes] = React.useState<LembretesAguaValor>(
+    lembretesAtuais ?? LEMBRETES_AGUA_PADRAO
+  );
 
   function salvar() {
     const alvo = Number(valor);
@@ -56,7 +66,7 @@ export function MetaAguaAluno({ alunoId, metaAtualMl, pesoKg }: MetaAguaAlunoPro
       : 'manual';
 
     iniciar(async () => {
-      const r = await definirMetaAgua(alvo, source, alunoId);
+      const r = await definirMetaAgua(alvo, source, alunoId, lembretes);
       if (r.ok) {
         toast({ title: r.message ?? 'Meta salva.' });
         router.refresh();
@@ -104,6 +114,12 @@ export function MetaAguaAluno({ alunoId, metaAtualMl, pesoKg }: MetaAguaAlunoPro
           {pendente ? 'Salvando…' : 'Salvar'}
         </Button>
       </div>
+      <CamposLembreteAgua
+        idPrefixo="aluno-alvo-agua"
+        valor={lembretes}
+        onChange={setLembretes}
+        disabled={pendente}
+      />
     </div>
   );
 }

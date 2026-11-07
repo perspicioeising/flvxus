@@ -144,13 +144,24 @@ export default async function FichaAlunoPage({
       .maybeSingle(),
     // Meta de água do aluno-alvo (G2). Sob RLS do trainer: o ramo trainer da
     // policy de `water_goals` só devolve a linha de um student do mesmo tenant.
-    supabase.from('water_goals').select('target_ml').eq('user_id', id).maybeSingle(),
+    supabase
+      .from('water_goals')
+      .select('target_ml, reminder_interval_min, reminder_start_min, reminder_end_min')
+      .eq('user_id', id)
+      .maybeSingle(),
   ]);
 
   const avaliacao = avaliacaoRes.data;
   const treinos = treinosRes.data ?? [];
   const dieta = dietasRes.data;
   const metaAguaMl = metaAguaRes.data?.target_ml ?? null;
+  const lembretesAgua = metaAguaRes.data
+    ? {
+        intervaloMin: metaAguaRes.data.reminder_interval_min,
+        inicioMin: metaAguaRes.data.reminder_start_min,
+        fimMin: metaAguaRes.data.reminder_end_min,
+      }
+    : null;
   const nome = aluno.full_name ?? 'Aluno sem nome';
   const dias = diasDesde(avaliacao?.assessed_at);
 
@@ -354,6 +365,7 @@ export default async function FichaAlunoPage({
                       alunoId={id}
                       metaAtualMl={metaAguaMl}
                       pesoKg={avaliacao.weight_kg}
+                      lembretesAtuais={lembretesAgua}
                     />
                   </div>
                 ) : (
@@ -363,7 +375,12 @@ export default async function FichaAlunoPage({
                       title="Sem avaliações ainda"
                       description="As avaliações físicas deste aluno aparecerão aqui."
                     />
-                    <MetaAguaAluno alunoId={id} metaAtualMl={metaAguaMl} pesoKg={null} />
+                    <MetaAguaAluno
+                      alunoId={id}
+                      metaAtualMl={metaAguaMl}
+                      pesoKg={null}
+                      lembretesAtuais={lembretesAgua}
+                    />
                   </div>
                 )}
               </AccordionContent>

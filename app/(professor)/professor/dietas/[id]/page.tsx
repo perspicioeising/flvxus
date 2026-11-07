@@ -8,6 +8,7 @@ import { totaisDieta, totaisRefeicao } from '@/lib/dieta/totais';
 import { GOAL_LABEL } from '@/components/aluno/labels';
 import { STATUS_LABEL, STATUS_VARIANTE } from '@/components/professor/treinos/labels';
 import { DietaStatusControl } from '@/components/professor/dietas/status-control';
+import { HorarioRefeicao } from '@/components/professor/dietas/horario-refeicao';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -159,6 +160,28 @@ export default async function ProfessorDietaDetalhePage({
         </div>
       )}
 
+      {/* Horários das refeições (alimentam a Agenda do aluno) */}
+      {refeicoes.length > 0 ? (
+        <Card>
+          <CardHeader className="p-4 pb-0">
+            <CardTitle className="text-base">Horário das refeições</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4">
+            <p className="text-sm text-muted-foreground">
+              Define quando cada refeição aparece na agenda. Sem horário, ela fica na faixa
+              &quot;Sem horário&quot; do dia.
+            </p>
+            {refeicoes.map((refeicao) => (
+              <HorarioRefeicao
+                key={refeicao.id}
+                mealId={refeicao.id}
+                nome={refeicao.name}
+                horaAtual={refeicao.time}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
       {/* Controle de liberação */}
       {soloEu ? null : (
         <div className="space-y-3">

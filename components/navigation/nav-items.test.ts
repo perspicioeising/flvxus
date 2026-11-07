@@ -145,6 +145,7 @@ describe('getNavItems — nav por account_type', () => {
       '/aluno',
       '/aluno/treinos',
       '/aluno/historico',
+      '/aluno/agenda',
       '/aluno/dieta',
       '/aluno/evolucao',
       '/aluno/avaliacoes',

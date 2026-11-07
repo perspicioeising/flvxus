@@ -3,6 +3,29 @@
 Este arquivo registra o que ficou pendente e **por quê**, distinguindo claramente o que está
 bloqueado por **ambiente** (infra ausente) do que está pendente por **código**.
 
+## Agenda Fase 1 — pendências de produção
+
+### Aplicar as 3 migrations (à mão, na ordem, uma execução por arquivo)
+O ambiente não tem Docker; a lógica SQL só foi coberta por teste estático
+(`tests/unit/agenda-migrations.test.ts`). Aplique no painel do Supabase **nesta ordem**, cada arquivo
+numa execução própria (o valor novo do enum só é utilizável depois do commit):
+1. `supabase/migrations/20261107090000_visibility_module_agenda.sql`
+2. `supabase/migrations/20261107090100_agenda_core.sql`
+3. `supabase/migrations/20261107090200_agenda_functions.sql`
+
+Depois de aplicar, o RLS real da agenda (`tests/rls/agenda.visibility.test.ts`, hoje `describe.skip`)
+ainda precisa rodar contra um banco; `types/database.types.ts` segue mantido à mão.
+
+### Revisar o fuso por usuário
+Cada usuário tem `profiles.timezone` (padrão `America/Sao_Paulo`), editável no perfil do aluno e em
+Configurações do professor. A agenda exibe tudo nesse fuso; a gamificação segue em America/Sao_Paulo.
+Quem usar outro fuso deve conferir: horários de refeição e lembretes de água aparecem no fuso dele, mas
+"Concluir" só habilita no dia-SP de hoje. Treinos não têm horário (faixa "Sem horário").
+
+### Ficha sem dias não aparece na agenda
+Treino entra na agenda pelo "Dia da semana" dos exercícios. Fichas liberadas sem nenhum dia (inclui as
+geradas por IA) ficam fora e a página mostra um aviso. A IA não preenche dias.
+
 ## Fase 2 — Banco de dados
 
 ### Bloqueio de ambiente (NÃO é falta de código)

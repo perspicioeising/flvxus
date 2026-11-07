@@ -93,7 +93,10 @@ export default async function AlunoHomePage() {
       .maybeSingle(),
     // Hábitos G2 — meta de água salva (1 linha/aluno). Sem linha → derivamos do
     // peso da última avaliação (ou default) via `metaSugeridaMl`.
-    supabase.from('water_goals').select('target_ml').maybeSingle(),
+    supabase
+      .from('water_goals')
+      .select('target_ml, reminder_interval_min, reminder_start_min, reminder_end_min')
+      .maybeSingle(),
   ]);
 
   // Os hábitos degradam POR BLOCO: um erro aqui não derruba o início (o bloco de
@@ -236,6 +239,15 @@ export default async function AlunoHomePage() {
           metaAtingida={progresso.metaAtingida}
           metaAtualMl={metaRes.error ? null : metaRes.data?.target_ml ?? null}
           pesoKg={avaliacaoRes.data?.weight_kg ?? null}
+          lembretesAtuais={
+            metaRes.error || !metaRes.data
+              ? null
+              : {
+                  intervaloMin: metaRes.data.reminder_interval_min,
+                  inicioMin: metaRes.data.reminder_start_min,
+                  fimMin: metaRes.data.reminder_end_min,
+                }
+          }
         />
         <BotaoCheckin jaFezHoje={jaFezCheckin} />
       </div>

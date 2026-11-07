@@ -4,6 +4,7 @@ import { ErrorState, PageHeader } from '@/components/patterns';
 import { PerfilForm } from '@/components/aluno/perfil/perfil-form';
 import { MeuHandle } from '@/components/aluno/perfil/meu-handle';
 import { FotoPerfil } from '@/components/aluno/perfil/foto-perfil';
+import { FusoHorarioForm } from '@/components/perfil/fuso-horario-form';
 
 /**
  * Perfil do aluno. Leitura via RSC sob RLS: o aluno vê apenas o próprio
@@ -30,7 +31,7 @@ export default async function AlunoPerfilPage() {
 
   const { data: perfil, error: erroPerfil } = await supabase
     .from('profiles')
-    .select('full_name, email, phone, birth_date, gender, height_cm, social_handle, avatar_url')
+    .select('full_name, email, phone, birth_date, gender, height_cm, social_handle, avatar_url, timezone')
     .eq('user_id', aluno.userId)
     .single();
 
@@ -75,6 +76,7 @@ export default async function AlunoPerfilPage() {
       </div>
 
       <MeuHandle handleAtual={perfil.social_handle} />
+      <FusoHorarioForm fusoAtual={perfil.timezone} />
     </section>
   );
 }

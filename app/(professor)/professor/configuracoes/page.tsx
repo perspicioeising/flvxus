@@ -7,7 +7,9 @@ import { mensagemBloqueio } from '@/lib/billing/mensagens';
 import { ErrorState } from '@/components/patterns';
 import { PerfilProfessorForm } from '@/components/professor/perfil/perfil-professor-form';
 import { FotoPerfil } from '@/components/aluno/perfil/foto-perfil';
+import { FusoHorarioForm } from '@/components/perfil/fuso-horario-form';
 import { VisibilidadeSection } from '@/components/professor/configuracoes/visibilidade-section';
+import { MODULOS_VISIBILIDADE } from '@/schemas/filiado';
 import {
   FiliadosSection,
   type FiliadoItem,
@@ -52,7 +54,7 @@ export default async function ProfessorConfiguracoesPage() {
     await Promise.all([
       supabase
         .from('profiles')
-        .select('full_name, email, phone, avatar_url')
+        .select('full_name, email, phone, avatar_url, timezone')
         .eq('user_id', user.userId)
         .single(),
       supabase.from('tenants').select('name').eq('id', user.tenantId).single(),
@@ -104,7 +106,7 @@ export default async function ProfessorConfiguracoesPage() {
     ]);
 
     // Visibilidade: default LIBERADO para módulos ausentes.
-    const MODULOS: VisibilityModule[] = ['students', 'workouts', 'assessments', 'diets', 'exercises'];
+    const MODULOS: readonly VisibilityModule[] = MODULOS_VISIBILIDADE;
     const mapa = new Map((vis ?? []).map((v) => [v.module, v.is_open]));
     visibilidade = Object.fromEntries(
       MODULOS.map((m) => [m, mapa.get(m) ?? true])
@@ -161,6 +163,7 @@ export default async function ProfessorConfiguracoesPage() {
             }}
             onSubmitAction={salvar}
           />
+          <FusoHorarioForm fusoAtual={perfil.timezone} />
         </CardContent>
       </Card>
 

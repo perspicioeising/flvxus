@@ -9,12 +9,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { definirMetaAgua } from '@/actions/habitos';
+import {
+  CamposLembreteAgua,
+  LEMBRETES_AGUA_PADRAO,
+  type LembretesAguaValor,
+} from '@/components/aluno/habitos/campos-lembrete-agua';
 
 export interface EditarMetaAguaFormProps {
   /** Meta atual salva (ml) ou `null` quando ainda não há. */
   metaAtualMl: number | null;
   /** Peso (kg) da última avaliação, para a sugestão quando não há meta salva. */
   pesoKg: number | null;
+  /** Lembretes de água salvos (Agenda) ou `null` para os padrões. */
+  lembretesAtuais?: LembretesAguaValor | null;
   /** Fecha o form (cancelar ou após salvar com sucesso). */
   onFechar: () => void;
 }
@@ -34,7 +41,7 @@ export interface EditarMetaAguaFormProps {
  * origem (`derived_weight` quando havia peso, `default` sem peso); qualquer
  * edição manual vira `manual`.
  */
-export function EditarMetaAguaForm({ metaAtualMl, pesoKg, onFechar }: EditarMetaAguaFormProps) {
+export function EditarMetaAguaForm({ metaAtualMl, pesoKg, lembretesAtuais, onFechar }: EditarMetaAguaFormProps) {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
 
@@ -42,6 +49,9 @@ export function EditarMetaAguaForm({ metaAtualMl, pesoKg, onFechar }: EditarMeta
   const sugerida = metaSugeridaMl(pesoKg);
   const inicial = metaAtualMl ?? sugerida;
   const [valor, setValor] = React.useState(String(inicial));
+  const [lembretes, setLembretes] = React.useState<LembretesAguaValor>(
+    lembretesAtuais ?? LEMBRETES_AGUA_PADRAO
+  );
 
   function salvar() {
     const alvo = Number(valor);
@@ -61,7 +71,7 @@ export function EditarMetaAguaForm({ metaAtualMl, pesoKg, onFechar }: EditarMeta
 
     iniciar(async () => {
       // SEM alvoUserId: a action grava para auth.uid() (a própria meta).
-      const r = await definirMetaAgua(alvo, source);
+      const r = await definirMetaAgua(alvo, source, undefined, lembretes);
       if (r.ok) {
         toast({ title: r.message ?? 'Meta salva.' });
         onFechar();
@@ -106,6 +116,12 @@ export function EditarMetaAguaForm({ metaAtualMl, pesoKg, onFechar }: EditarMeta
           {pendente ? 'Salvando…' : 'Salvar'}
         </Button>
       </div>
+      <CamposLembreteAgua
+        idPrefixo="aluno-agua"
+        valor={lembretes}
+        onChange={setLembretes}
+        disabled={pendente}
+      />
       <div className="flex justify-end">
         <Button
           type="button"

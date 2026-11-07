@@ -25,8 +25,14 @@ const MODULO_LABEL: Record<VisibilityModule, string> = {
   agenda: 'Agenda',
 };
 
+/** Explicação curta exibida sob o módulo (quando houver). */
+const MODULO_DESCRICAO: Partial<Record<VisibilityModule, string>> = {
+  agenda:
+    'Agenda: liberado = todos os personais veem os atendimentos do tenant; restrito = cada filiado vê só os seus.',
+};
+
 /** Ordem de exibição dos módulos. */
-const ORDEM: VisibilityModule[] = ['students', 'workouts', 'assessments', 'diets', 'exercises'];
+const ORDEM: VisibilityModule[] = ['students', 'workouts', 'assessments', 'diets', 'exercises', 'agenda'];
 
 export interface VisibilidadeSectionProps {
   /** Estado atual por módulo (is_open: liberado/bloqueado). */
@@ -90,6 +96,9 @@ export function VisibilidadeSection({ valores }: VisibilidadeSectionProps) {
                   <p className="text-xs text-muted-foreground">
                     {aberto ? 'Liberado (visão geral)' : 'Bloqueado (só o próprio autor)'}
                   </p>
+                  {MODULO_DESCRICAO[module] ? (
+                    <p className="text-xs text-muted-foreground">{MODULO_DESCRICAO[module]}</p>
+                  ) : null}
                 </div>
                 <Switch
                   id={switchId}

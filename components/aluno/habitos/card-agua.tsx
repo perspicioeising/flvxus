@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { registrarAgua } from '@/actions/habitos';
 import { EditarMetaAguaForm } from '@/components/aluno/habitos/editar-meta-agua';
+import type { LembretesAguaValor } from '@/components/aluno/habitos/campos-lembrete-agua';
 import { useAcesso } from '@/components/billing/acesso-provider';
 
 export interface CardAguaProps {
@@ -24,6 +25,8 @@ export interface CardAguaProps {
   metaAtualMl: number | null;
   /** Peso (kg) da última avaliação, para a sugestão quando não há meta salva. */
   pesoKg: number | null;
+  /** Lembretes de água salvos (Agenda) ou `null` para os padrões. */
+  lembretesAtuais?: LembretesAguaValor | null;
 }
 
 /** Quantidades rápidas de registro (ml). */
@@ -47,6 +50,7 @@ export function CardAgua({
   metaAtingida,
   metaAtualMl,
   pesoKg,
+  lembretesAtuais,
 }: CardAguaProps) {
   const router = useRouter();
   const [pendente, iniciar] = React.useTransition();
@@ -116,6 +120,7 @@ export function CardAgua({
         <EditarMetaAguaForm
           metaAtualMl={metaAtualMl}
           pesoKg={pesoKg}
+          lembretesAtuais={lembretesAtuais}
           onFechar={() => setEditando(false)}
         />
       ) : null}

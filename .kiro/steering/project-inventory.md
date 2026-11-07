@@ -57,7 +57,7 @@ Nota de layout: as áreas **vivas** são `app/(professor)/`, `app/(aluno)/`, `ap
 - **Configurações** (`configuracoes/*`): filiados (`components/professor/configuracoes/filiados-section.tsx`) e visibilidade de módulos (`visibilidade-section.tsx`). Actions `actions/filiados.ts` (`convidarFiliado`, `removerFiliado`, `atualizarVisibilidade`).
 - **Plano/Billing** (`plano/*`, master-only): `actions/billing.ts` (`iniciarCheckout` → Stripe), `components/professor/plano/checkout-button.tsx`.
 - **IA (rascunhos)**: `actions/ia.ts` (`gerarDieta`, `sugerirTreino`, `analisarAvaliacao` → Edge Functions; `editarRascunho`, `aprovarGeracao` = única materialização). UI em `components/professor/ia/*`.
-- **Avaliações posturais** (`posture-assessments` existem no legado v1). **Agenda** (`agenda/`) e **ui-kit** existem como rota mas Agenda está **oculta no menu** (ver §9).
+- **Avaliações posturais** (`posture-assessments` existem no legado v1). **ui-kit** existe como rota. A **Agenda** (Fase 1) está viva e visível no menu (ver seção "Agenda" abaixo).
 - Perfil do professor: `actions/perfil.ts` (`atualizarPerfilProfessor`, `definirFotoPerfil`, `removerFotoPerfil`).
 
 ### Aluno (`app/(aluno)/aluno/*`) — reusada também pelo aluno autônomo
@@ -74,6 +74,16 @@ Nota de layout: as áreas **vivas** são `app/(professor)/`, `app/(aluno)/`, `ap
 - **Social (G3)**: amigos (`gamification_friends`), desafios (`gamification_challenges` + `_members`). Actions `actions/arena-social.ts` (`definirHandle`, `verificarDisponibilidadeHandle`, `enviarSolicitacaoPorHandle`, `responderSolicitacao`, `criarDuelo`, `responderDuelo`). Leitura `lib/arena/social.ts`. UI em `components/aluno/arena/social/*`: **amigos e desafios agrupados em acordeão** (`lista-amigos.tsx`, `lista-desafios.tsx` — `Accordion type="single" collapsible`, badge de convites pendentes), `adicionar-amigo-dialog`, `criar-desafio-dialog`, `placar-desafio`, `resultado-desafio`.
 - **Duelo com janela a partir do 2º aceite**: duelo nasce sem janela (`starts_on/ends_on NULL`); a janela comum é fixada quando ambos aceitam (`gamification_respond_duel`, dia-SP do 2º aceite + `duration_days-1`). `window_state` ('pending'|'active'|'finished') no scoreboard. Desafio NUNCA gera XP (medalha = evento de 0 ponto).
 - Aluno autônomo é cidadão de 1ª classe na Arena (entra no global; tenant de 1 nunca vê ranking de tenant — correto, não bug).
+
+### Agenda (Fase 1 — `app/(professor)/professor/agenda`, `app/(aluno)/aluno/agenda`)
+- **Rotas**: `/professor/agenda` (trainer profissional; `self_managed` => `redirect('/aluno/agenda')`) e `/aluno/agenda` (aluno vinculado e autônomo). RSC leem `?visao=dia|semana|mes&data=YYYY-MM-DD` (validados em `lib/agenda/query.ts`; padrão: hoje no fuso do usuário), carregam por `lib/agenda/dados.ts` (`carregarAgenda`, RLS ativo) e renderizam `components/agenda/agenda-view.tsx`. `loading.tsx` por rota; falha de leitura => `ErroAgenda`.
+- **Núcleo puro** em `lib/agenda/*`: `fuso` (instantes por `tz`, nunca o fuso da máquina), `recorrencia` (regra + exceções, expandida na leitura), `treino`/`refeicoes`/`agua` (derivados projetados na leitura, nunca gravados), `permissoes` (matriz papel×tipo×ação, espelho de UI), `erros`, `tipos`, `query`.
+- **Actions** `actions/agenda.ts`: `criarCompromisso`, `editarCompromisso`, `cancelarCompromisso` (RPCs `agenda_*`, escopos ocorrência/seguintes/todos) e `atualizarFusoHorario` (isenta do gate; ação de conta). Também: `definirHorarioRefeicao` em `actions/dietas.ts` e `lembretes` opcional em `definirMetaAgua` (`actions/habitos.ts`). "Concluir" na agenda reusa `registrarAgua`, `alternarRefeicaoCumprida` e `confirmarDescanso` (sem action nova).
+- **UI** `components/agenda/*` (agenda-view, lista-dia, faixa-semana, grade-mes, evento-card, agua-resumo/agua-lembretes, aviso-fichas-sem-dia, compromisso-form, escopo-recorrencia-dialog, selo-responsavel-desativado); `components/perfil/fuso-horario-form.tsx` (perfil do aluno e configurações do professor); `components/professor/dietas/horario-refeicao.tsx` (página da dieta); `components/aluno/habitos/campos-lembrete-agua.tsx` (Intervalo/Início/Fim em `editar-meta-agua` e `meta-agua-aluno`).
+- **Quem vê o quê**: professor vê só compromissos (sem derivados); aluno vinculado e autônomo veem compromissos pessoais + treino (dias = união dos `weekday` dos itens da ficha liberada), refeições (`diet_meals.time`; sem hora => faixa "Sem horário") e lembretes de água. Card de atendimento de terceiro é somente leitura para quem não é `owner_id`, `trainer_id` nem master; passado é somente leitura.
+- **Módulo de visibilidade `agenda`**: liberado = todos os personais veem os atendimentos do tenant; restrito = cada filiado vê só os seus. Em `configuracoes/page.tsx` a lista de módulos deriva de `MODULOS_VISIBILIDADE` (`schemas/filiado.ts`); `visibilidade-section.tsx` lista `agenda` em `ORDEM`/`MODULO_LABEL`.
+- **Menu**: "Agenda" em `trainerNav` (após Desafios), em `studentNav` (4ª posição, após Histórico; as 3 abas primárias não mudam) e em `usoItems` do autônomo (após Minha dieta); o filtro do autônomo remove `/professor/agenda`. Testes em `tests/unit/nav-items.test.ts` e `tests/unit/agenda-componentes.test.tsx`.
+- Fase 1 não tem Google Calendar, notificações, solicitação de horário pelo aluno, IA nem resumo semanal.
 
 ### Hábitos (`actions/habitos.ts`, `lib/habitos/*`)
 - Água (`registrarAgua`, `removerRegistroAgua`, `definirMetaAgua`), dieta do dia (`alternarRefeicaoCumprida`), check-in (`fazerCheckin`). Triggers de hábito concedem XP via motor (`habit_water_after_change`, `habit_diet_after_change`, `habit_checkin_after_insert`). Meta de água derivável do peso (`lib/habitos/meta-agua.ts`).
@@ -100,7 +110,7 @@ Nota de layout: as áreas **vivas** são `app/(professor)/`, `app/(aluno)/`, `ap
 
 ## 4. Mapa de migrations (`supabase/migrations/`, ordem por timestamp)
 
-**MAIOR timestamp atual: `20261105090100`** (`_plans_stripe_price_ids_seed`). **Qualquer migration nova DEVE usar timestamp estritamente maior e único.**
+**MAIOR timestamp atual: `20261107090200`** (`_agenda_functions`). Reconfira com `ls supabase/migrations` antes de criar outra. **Qualquer migration nova DEVE usar timestamp estritamente maior e único.**
 
 Rollback pareado (`_rollback.sql`) existe a partir de `20261021110300`. As 11 primeiras (base v2, `20261020*`–`20261021120000`, exceto source_link) **não** têm rollback pareado.
 
@@ -129,6 +139,11 @@ Billing — trial + checkout (todas com rollback):
 - `20261105090000_billing_trial_core` — colunas `subscriptions.trial_ends_at`/`stripe_event_at`/`stripe_event_kind`; RPC `billing_tenant_state()` (SD, leitura do estado por qualquer membro do tenant); `can_add_affiliate()` ciente do trial; `handle_new_user()` cria o trial (bloco com `exception`, nunca derruba o cadastro); backfill idempotente (14 dias a partir da aplicação). **Aplicar ANTES do deploy.**
 - `20261105090100_plans_stripe_price_ids_seed` — seed idempotente dos 6 price IDs em `plans.stripe_price_id_monthly/_yearly` (uma linha por tier). Rollback zera só os IDs semeados (não restaura centavos/`is_active`).
 
+Agenda Fase 1 (todas com rollback; **aplicar na ordem, cada uma em execução própria**):
+- `20261107090000_visibility_module_agenda` — só `alter type visibility_module add value if not exists 'agenda'`. Rollback é no-op documentado (Postgres não remove valor de enum).
+- `20261107090100_agenda_core` — enum `appointment_kind`; `appointments` evoluída (colunas `owner_id`, `kind`, `title`, `location`, `tz`, `recur_freq`, `recur_weekdays`, `recur_until`, `series_id`, `original_date`, `canceled_reason`, `canceled_at`; RLS de leitura, **sem** policies de escrita); `profiles.timezone` (+ trigger de validação IANA); `water_goals.reminder_interval_min/_start_min/_end_min`. Rollback **destrutivo** (ver cabeçalho).
+- `20261107090200_agenda_functions` (SD) — `agenda_create`, `agenda_update`, `agenda_cancel` (escrita única), helpers `agenda_caller`/`agenda_check_fields`/`agenda_can_manage`/`agenda_occurrence_on`/`agenda_is_occurrence`/`agenda_next_occurrence` e trigger `agenda_on_student_unlink` (aluno arquivado ou vínculo encerrado cancela atendimentos futuros).
+Teste estático: `tests/unit/agenda-migrations.test.ts`; RLS (`describe.skip`): `tests/rls/agenda.visibility.test.ts`.
 Billing Fase B + aluno autônomo (todas com rollback):
 - `20261025090050_account_type` + `_handle_new_user_account_type` · `090100_plan_tier_values` (individual/personal/assessoria) · `090200_plans_billing_fase_b` (SD) · `090300_subscriptions_billing_cycle` · `090400_ai_usage_counters` (franquia IA).
 
@@ -157,16 +172,16 @@ Seeds/scripts (fora de migrations, aplicados à mão): `supabase/seed*.sql`, `su
 `user_role`(trainer/student) · `student_status`(active/inactive/pending/archived) · `goal_type` · `experience_level` · `assessment_protocol`(pollock_3/7, durnin...) · `plan_status`(draft/pending_review/released...) · `ai_job_type` · `ai_job_status`(pending/succeeded/failed/rejected) · `appointment_status` · `consent_type`(data_processing/health_data/ai_processing/terms) · `data_request_type`(export/delete) · `data_request_status` · `legal_document_type`(terms/privacy) · `set_kind`(warmup/adaptation/work +dropset/cluster_set/rest_pause...) · `account_type`(professional/self_managed) · `plan_tier`(solo/team/gym + individual/personal/assessoria) · `billing_cycle`(monthly/yearly) · `subscription_status` · `visibility_module` · `challenge_kind`(duel/coach) · `challenge_status`(active/finished/cancelled) · `challenge_member_result`(pending/won/lost/tie) · `friend_status`(pending/accepted/blocked).
 
 ### Tabelas (das migrations)
-Core: `tenants`, `profiles` (role, tenant_id, is_tenant_master, account_type, deactivated_at, avatar_url, social_handle, total_points legado). 
+Core: `tenants`, `profiles` (role, tenant_id, is_tenant_master, account_type, deactivated_at, avatar_url, social_handle, timezone, total_points legado). 
 Treino: `exercises`, `workouts`, `workout_exercises`, `workout_exercise_sets`, `workout_plans`, `workout_plan_items`, `workout_plan_item_sets`, `workout_plan_rest_completions`, `workout_sessions`, `workout_set_logs`. 
 Avaliação: `physical_assessments` (superset único), `posture_assessments`. 
 Dieta: `diets`, `diet_meals`, `diet_meal_foods`, `diet_meal_completions`, `diet_history`, `diet_shopping_lists`. 
 Conquistas (legado + Arena): `achievements`, `user_achievements`. 
 IA: `ai_generations`, `ai_usage_logs`, `ai_usage_counters`. 
-Agenda: `appointments`. 
+Agenda: `appointments` (evoluída pela Agenda Fase 1; escrita só via `agenda_*`). 
 LGPD: `consent_records`, `data_requests`, `terms_acceptances`. 
 Billing: `plans`, `subscriptions`, `tenant_module_visibility`. 
-Hábitos: `water_goals`, `water_intake_logs`, `daily_checkins`. 
+Hábitos: `water_goals` (meta + lembretes da agenda), `water_intake_logs`, `daily_checkins`. 
 Arena: `gamification_event_types`, `gamification_events` (ledger), `gamification_profiles`, `gamification_seasons`, `gamification_friends`, `gamification_challenges`, `gamification_challenge_members`.
 
 ### Funções SECURITY DEFINER (papel de cada uma)
@@ -195,7 +210,7 @@ Arena: `gamification_event_types`, `gamification_events` (ledger), `gamification
 - **Supabase clients**: `lib/supabase/{server,browser,middleware,admin}.ts`. `admin.ts` (service_role) só nas exceções, sempre filtrando `tenant_id`.
 
 ## 7. Armadilhas / lições aprendidas (crítico — não repetir)
-- **(a) Colisão de timestamp de migration já derrubou o app.** Regra: antes de criar, cheque o maior em `supabase/migrations/` (hoje `20261105090100`) e use estritamente maior e único. Idempotência + rollback pareado obrigatórios.
+- **(a) Colisão de timestamp de migration já derrubou o app.** Regra: antes de criar, cheque o maior em `supabase/migrations/` (hoje `20261107090200`) e use estritamente maior e único. Idempotência + rollback pareado obrigatórios.
 - **(b) Bug de fuso dia-SP.** Sintoma: dia deslocado -1. Causa: reconverter `occurred_on` (dia-SP cru `YYYY-MM-DD`) com `new Date()` → meia-noite UTC → volta um dia. Correção: `diaSPdeDiaOuInstante` em `lib/arena/datas.ts` devolve a string crua após validação, sem reconverter; instantes passam por `Intl.DateTimeFormat` no fuso SP.
 - **(c) Recursão mútua de RLS (Postgres 42P17).** Sintoma: convite de duelo some; "Nenhum desafio" para o professor. Causa: policy de `gamification_challenges` referenciava `_challenge_members` e vice-versa (ciclo). Correção (`20261031090000`): mover as subconsultas cruzadas para helpers SECURITY DEFINER (`gamification_is_challenge_member`/`_creator`, `search_path=''`) — mesmo escopo, sem ciclo. **Padrão a reusar para qualquer policy que leia outra tabela sob RLS.**
 - **(d) Cache de avatar.** Sintoma: foto antiga persistia após troca (path determinístico `{user_id}.<ext>`). Correção: cache-busting `?v=${Date.now()}` na public URL gravada em `profiles.avatar_url` (`lib/storage/avatar.ts`).
@@ -204,6 +219,8 @@ Arena: `gamification_event_types`, `gamification_events` (ledger), `gamification
 - **(g) Lock de `node_modules` no Windows** impede `git worktree remove`. Use `git worktree prune` + limpeza manual.
 - **(h) RLS de `subscriptions` só deixa o master ler.** Aluno vinculado/filiado enxergam "sem assinatura" se lerem a tabela. Para o estado de acesso use SEMPRE `billing_tenant_state()` (`getAccess`/`getAccessFor`), nunca `from('subscriptions')` fora do master. Após o trial, a linha segue `trialing`: nunca use `statusComDireito(status)` na UI; use `EstadoAcesso.podeEscrever`. Toda action de escrita nova DEVE chamar `requireEntitlement` no início (o teste estático quebra se esquecer). O legado `/dashboard` (v1) escreve direto pela RLS e não passa pelo gate.
 
+- **(i) Valor novo de enum não pode ser usado na mesma transação.** `alter type ... add value` (ex.: `'agenda'` em `visibility_module`) só fica utilizável depois do commit; por isso fica numa migration própria (`20261107090000`) e as seguintes (`090100`, `090200`) só rodam depois. No painel do Supabase, execute uma migration por vez; se juntar tudo numa execução, o SQL que referencia o valor novo falha.
+- **(j) Datas da agenda são cruas.** `original_date`, `recur_until` e `occurred_on` são `YYYY-MM-DD` no `tz` da série/dia-SP: nunca `new Date(string)`. Editar/cancelar usa `meta.dataOriginal` + `meta.tzSerie`, nunca o `dia` exibido (que está no fuso do espectador).
 ## 8. Pendências de produção (lado do usuário, não-código)
 - **Stripe**: price IDs reais e valores são placeholders/configuráveis (env); o usuário define no painel do Stripe (ver `docs/billing.md`). Franquia de IA por plano (50/300/∞) é padrão do código — ajustar conforme custo real.
 - **Migrations à mão**: aplicar no painel do Supabase na ordem de timestamp (sem Docker local). `types/database.types.ts` mantido à mão.
@@ -214,7 +231,7 @@ Arena: `gamification_event_types`, `gamification_events` (ledger), `gamification
 
 ## 9. Inconsistências docs × código (para o usuário saber o que pode estar desatualizado)
 - **LGPD do aluno**: `docs/decisions/0012-lgpd-aluno.md` descreve consentimento/controles, mas a UI do aluno e a checagem `ai_processing` na IA foram **removidas** (decisão registrada em `docs/pendencias.md`). Schemas `registrarConsentimento`/`solicitarDados` em `schemas/perfil.ts` permanecem sem uso. Tabelas `consent_records`/`data_requests` existem no banco mas não têm UI ativa.
-- **Agenda/calendário**: tabela `appointments` + rota `app/(professor)/professor/agenda/page.tsx` existem, mas o item de menu está **comentado** em `nav-items.ts` (feature adiada). `app/(dashboard)/dashboard/calendar` é legado v1.
+- **Agenda/calendário**: a Agenda Fase 1 está viva e **deixou de estar oculta no menu** (`nav-items.ts`). Fora da Fase 1 (adiado): Google Calendar, notificações, solicitação de horário pelo aluno, IA e resumo semanal. `app/(dashboard)/dashboard/calendar` continua legado v1.
 - **Resumo semanal de aderência por IA** (`ai_job_type` previsto no ADR 0001): **não implementado** (`weekly_adherence` adiado).
 - **WhatsApp**: rotas em `app/_legacy-api/whatsapp/*` são código morto v1; feature adiada (vars em `.env.example` em branco).
 - **`business_name` do cadastro**: coletado na UI e salvo em `raw_user_meta_data`, mas `handle_new_user()` nomeia o tenant só com `full_name` (não usa `business_name`).
